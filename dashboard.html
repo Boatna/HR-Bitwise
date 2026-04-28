@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard · HR Turnover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="config.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy:  #0A1628; --navy2: #112240; --navy3: #1E3A5F;
+    --gold:  #F59E0B; --gold2: #FCD34D;
+    --teal:  #0EA5E9; --red: #EF4444; --green: #10B981; --purple: #8B5CF6;
+    --white: #F8FAFC; --muted: #94A3B8; --border: rgba(255,255,255,0.08);
+  }
+  body { font-family: 'Noto Sans Thai', sans-serif; background: var(--navy); color: var(--white); min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(14,165,233,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(14,165,233,0.03) 1px, transparent 1px);
+    background-size: 48px 48px; pointer-events: none; z-index: 0;
+  }
+
+  nav {
+    position: fixed; top:0; left:0; right:0; z-index:100;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 32px;
+    background:rgba(10,22,40,0.92); backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+  }
+  .nav-left { display:flex; align-items:center; gap:24px; }
+  .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--white); font-weight:700; font-size:0.95rem; }
+  .logo-icon { width:32px; height:32px; background:linear-gradient(135deg,var(--gold),#F97316); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.9rem; }
+  .nav-tag { font-size:0.75rem; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); color:var(--gold); padding:3px 10px; border-radius:100px; font-weight:600; }
+  .nav-right { display:flex; align-items:center; gap:10px; }
+  .nav-btn { padding:7px 16px; border-radius:8px; font-family:'Noto Sans Thai',sans-serif; font-size:0.83rem; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; transition:all .2s; }
+  .nav-btn-ghost { background:transparent; color:var(--muted); border:1px solid transparent; }
+  .nav-btn-ghost:hover { color:var(--white); border-color:var(--border); }
+  .nav-btn-primary { background:linear-gradient(135deg,var(--gold),#F97316); color:var(--navy); border:none; }
+  .nav-btn-primary:hover { transform:translateY(-1px); }
+  .refresh-btn { background:rgba(255,255,255,0.06); border:1px solid var(--border); color:var(--muted); padding:7px 14px; border-radius:8px; cursor:pointer; font-size:0.82rem; transition:all .2s; display:flex; align-items:center; gap:6px; }
+  .refresh-btn:hover { color:var(--white); border-color:rgba(255,255,255,.2); }
+  .last-updated { font-size:0.75rem; color:var(--muted); }
+
+  .page-wrap { position:relative; z-index:1; padding:80px 28px 60px; max-width:1280px; margin:0 auto; }
+
+  .dash-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:32px; flex-wrap:wrap; gap:16px; }
+  .dash-title { font-size:1.6rem; font-weight:800; margin-bottom:4px; }
+  .dash-subtitle { color:var(--muted); font-size:0.875rem; }
+
+  .filters { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:28px; }
+  .filter-select {
+    background:var(--navy2); border:1px solid var(--border);
+    color:var(--white); padding:8px 32px 8px 14px; border-radius:9px;
+    font-family:'Noto Sans Thai',sans-serif; font-size:0.83rem;
+    cursor:pointer; outline:none; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394A3B8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 12px center; transition:border-color .2s;
+  }
+  .filter-select:focus { border-color:var(--gold); }
+  .filter-select option { background:var(--navy2); }
+
+  .grid-kpi { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+  .grid-2   { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+  .grid-3   { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:24px; }
+
+  .kpi-card { background:var(--navy2); border:1px solid var(--border); border-radius:16px; padding:24px; position:relative; overflow:hidden; transition:all .25s; }
+  .kpi-card:hover { border-color:rgba(255,255,255,0.15); transform:translateY(-2px); }
+  .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+  .kpi-card.gold::before { background:linear-gradient(90deg,var(--gold),#F97316); }
+  .kpi-card.blue::before { background:linear-gradient(90deg,var(--teal),#6366F1); }
+  .kpi-card.red::before  { background:linear-gradient(90deg,var(--red),#F97316); }
+  .kpi-label { font-size:0.78rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; }
+  .kpi-value { font-family:'JetBrains Mono',monospace; font-size:2.4rem; font-weight:700; line-height:1; margin-bottom:8px; }
+  .kpi-card.gold .kpi-value { color:var(--gold); }
+  .kpi-card.blue .kpi-value { color:var(--teal); }
+  .kpi-card.red  .kpi-value { color:var(--red); }
+  .kpi-sub { font-size:0.8rem; color:var(--muted); }
+  .kpi-icon { position:absolute; right:20px; top:20px; font-size:1.8rem; opacity:.2; }
+
+  .chart-card { background:var(--navy2); border:1px solid var(--border); border-radius:16px; padding:24px; transition:all .25s; }
+  .chart-card:hover { border-color:rgba(255,255,255,0.12); }
+  .chart-title { font-size:0.9rem; font-weight:700; margin-bottom:4px; }
+  .chart-subtitle { font-size:0.78rem; color:var(--muted); margin-bottom:20px; }
+
+  .dept-bars { display:flex; flex-direction:column; gap:14px; }
+  .dept-bar-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .dept-bar-name { font-size:0.83rem; font-weight:500; }
+  .dept-bar-pct { font-family:'JetBrains Mono',monospace; font-size:0.83rem; color:var(--muted); }
+  .dept-bar-track { height:8px; background:rgba(255,255,255,0.06); border-radius:100px; overflow:hidden; }
+  .dept-bar-fill { height:100%; border-radius:100px; background:linear-gradient(90deg,var(--gold),#F97316); transition:width 1s ease; }
+
+  .quarter-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .quarter-item { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+  .quarter-label { font-size:0.75rem; color:var(--muted); font-weight:600; margin-bottom:6px; }
+  .quarter-value { font-family:'JetBrains Mono',monospace; font-size:1.6rem; font-weight:700; color:var(--white); }
+  .quarter-bar { height:4px; border-radius:100px; margin-top:10px; background:var(--teal); transition:width 1s ease; }
+
+  .table-card { background:var(--navy2); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+  .table-header { padding:18px 22px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+  .table-title { font-size:0.9rem; font-weight:700; }
+  .table-count { font-size:0.78rem; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:0.84rem; }
+  th { padding:11px 16px; background:rgba(255,255,255,0.03); color:var(--muted); font-weight:600; text-align:left; font-size:0.76rem; text-transform:uppercase; letter-spacing:.05em; }
+  td { padding:11px 16px; border-top:1px solid var(--border); vertical-align:middle; }
+  tr:hover td { background:rgba(255,255,255,0.015); }
+  .badge { display:inline-block; padding:3px 10px; border-radius:100px; font-size:0.74rem; font-weight:600; }
+  .badge-red    { background:rgba(239,68,68,0.12);  color:#FCA5A5; }
+  .badge-blue   { background:rgba(14,165,233,0.12); color:#7DD3FC; }
+  .badge-gold   { background:rgba(245,158,11,0.12); color:#FCD34D; }
+  .badge-purple { background:rgba(139,92,246,0.12); color:#C4B5FD; }
+  .badge-green  { background:rgba(16,185,129,0.12); color:#6EE7B7; }
+  .empty-row td { text-align:center; color:var(--muted); padding:32px; }
+
+  .loading-overlay { position:fixed; inset:0; z-index:200; background:rgba(10,22,40,0.95); backdrop-filter:blur(10px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
+  .loading-spinner { width:44px; height:44px; border:3px solid rgba(255,255,255,0.1); border-top-color:var(--gold); border-radius:50%; animation:spin .8s linear infinite; }
+  .loading-text { color:var(--muted); font-size:0.9rem; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  .error-banner { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:12px; padding:16px 20px; margin-bottom:20px; color:#FCA5A5; font-size:0.875rem; display:none; }
+
+  @media(max-width:960px) {
+    .grid-kpi { grid-template-columns:1fr; }
+    .grid-2   { grid-template-columns:1fr; }
+    .grid-3   { grid-template-columns:1fr; }
+    .page-wrap { padding:76px 16px 50px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">กำลังโหลดข้อมูล Dashboard...</div>
+</div>
+
+<nav>
+  <div class="nav-left">
+    <a href="index.html" class="nav-logo">
+      <div class="logo-icon">📊</div>
+      HR Turnover
+    </a>
+    <span class="nav-tag">Dashboard</span>
+  </div>
+  <div class="nav-right">
+    <span class="last-updated" id="lastUpdated"></span>
+    <button class="refresh-btn" onclick="loadDashboard()">🔄 รีเฟรช</button>
+    <a href="form.html" class="nav-btn nav-btn-primary">+ บันทึกข้อมูล</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">📊 HR Turnover Dashboard</div>
+      <div class="dash-subtitle">วิเคราะห์อัตราการลาออกพนักงาน · เปลี่ยนข้อมูลให้เป็นกลยุทธ์รักษาคนเก่ง</div>
+    </div>
+    <div class="filters">
+      <select class="filter-select" id="filterYear"    onchange="applyFilters()"><option value="">ทุกปี</option></select>
+      <select class="filter-select" id="filterQuarter" onchange="applyFilters()">
+        <option value="">ทุกไตรมาส</option>
+        <option value="1">Q1 (ม.ค.–มี.ค.)</option>
+        <option value="2">Q2 (เม.ย.–มิ.ย.)</option>
+        <option value="3">Q3 (ก.ค.–ก.ย.)</option>
+        <option value="4">Q4 (ต.ค.–ธ.ค.)</option>
+      </select>
+      <select class="filter-select" id="filterDept" onchange="applyFilters()"><option value="">ทุกแผนก</option></select>
+    </div>
+  </div>
+
+  <div class="error-banner" id="errorBanner"></div>
+
+  <!-- KPI -->
+  <div class="grid-kpi">
+    <div class="kpi-card red">
+      <span class="kpi-icon">📉</span>
+      <div class="kpi-label">อัตราการลาออก (Turnover Rate)</div>
+      <div class="kpi-value" id="kpiRate">—</div>
+      <div class="kpi-sub" id="kpiRateSub">เทียบกับเป้าหมาย &lt;10%</div>
+    </div>
+    <div class="kpi-card blue">
+      <span class="kpi-icon">👥</span>
+      <div class="kpi-label">จำนวนพนักงานปัจจุบัน (Headcount)</div>
+      <div class="kpi-value" id="kpiHead">—</div>
+      <div class="kpi-sub">พนักงานทั้งหมดในระบบ</div>
+    </div>
+    <div class="kpi-card gold">
+      <span class="kpi-icon">🚪</span>
+      <div class="kpi-label">จำนวนพนักงานที่ลาออก (Leavers)</div>
+      <div class="kpi-value" id="kpiLeave">—</div>
+      <div class="kpi-sub">ตามช่วงเวลาที่เลือก</div>
+    </div>
+  </div>
+
+  <!-- Trend + Reason -->
+  <div class="grid-3">
+    <div class="chart-card">
+      <div class="chart-title">แนวโน้มการลาออกรายเดือน</div>
+      <div class="chart-subtitle">Monthly Turnover Trend</div>
+      <div style="position:relative;height:220px">
+        <canvas id="chartMonthly"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">สาเหตุการลาออก</div>
+      <div class="chart-subtitle">Reason for Leaving</div>
+      <div style="position:relative;height:220px">
+        <canvas id="chartReason"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dept + Quarter -->
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-title">อัตราการลาออกแยกตามแผนก</div>
+      <div class="chart-subtitle">Turnover by Department</div>
+      <div class="dept-bars" id="deptBars">
+        <div style="color:var(--muted);font-size:.875rem">ยังไม่มีข้อมูล</div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">สรุปรายไตรมาส</div>
+      <div class="chart-subtitle">Quarterly Summary</div>
+      <div class="quarter-grid">
+        <div class="quarter-item"><div class="quarter-label">Q1</div><div class="quarter-value" id="q1">0</div><div class="quarter-bar" id="qbar1" style="width:0%"></div></div>
+        <div class="quarter-item"><div class="quarter-label">Q2</div><div class="quarter-value" id="q2">0</div><div class="quarter-bar" id="qbar2" style="width:0%"></div></div>
+        <div class="quarter-item"><div class="quarter-label">Q3</div><div class="quarter-value" id="q3">0</div><div class="quarter-bar" id="qbar3" style="width:0%"></div></div>
+        <div class="quarter-item"><div class="quarter-label">Q4</div><div class="quarter-value" id="q4">0</div><div class="quarter-bar" id="qbar4" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">📋 รายการพนักงานที่ลาออก</div>
+      <div class="table-count" id="tableCount"></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>ชื่อ-นามสกุล</th>
+            <th>รหัสพนักงาน</th>
+            <th>แผนก</th>
+            <th>Plant</th>
+            <th>วันที่เริ่มงาน</th>
+            <th>วันที่ลาออก</th>
+            <th>อายุงาน</th>
+            <th>สาเหตุ</th>
+          </tr>
+        </thead>
+        <tbody id="dataTableBody">
+          <tr class="empty-row"><td colspan="8">ยังไม่มีข้อมูล</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let rawResults   = [];
+let rawEmployees = [];
+let chartMonthly = null;
+let chartReason  = null;
+
+const REASON_COLORS = ['#F59E0B','#0EA5E9','#10B981','#EF4444','#8B5CF6','#F97316','#EC4899','#14B8A6','#6366F1','#84CC16'];
+const MONTH_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+document.addEventListener('DOMContentLoaded', loadDashboard);
+
+async function loadDashboard() {
+  document.getElementById('loadingOverlay').style.display = 'flex';
+  document.getElementById('errorBanner').style.display = 'none';
+  try {
+    const [empRes, resultRes] = await Promise.all([
+      fetch(CONFIG.APPS_SCRIPT_URL + '?action=getEmployees'),
+      fetch(CONFIG.APPS_SCRIPT_URL + '?action=getResults'),
+    ]);
+    const empJson    = await empRes.json();
+    const resultJson = await resultRes.json();
+
+    if (empJson.status !== 'ok') throw new Error('โหลดข้อมูลพนักงานไม่ได้: ' + empJson.message);
+    if (resultJson.status !== 'ok') throw new Error('โหลดข้อมูลลาออกไม่ได้: ' + resultJson.message);
+
+    rawEmployees = empJson.data    || [];
+    rawResults   = resultJson.data || [];
+
+    buildFilters();
+    renderAll();
+    document.getElementById('lastUpdated').textContent = 'อัพเดต: ' + new Date().toLocaleTimeString('th-TH');
+  } catch (e) {
+    const banner = document.getElementById('errorBanner');
+    banner.style.display = 'block';
+    banner.textContent = '❌ ' + e.message + ' — กรุณาตรวจสอบการตั้งค่า config.js';
+  } finally {
+    document.getElementById('loadingOverlay').style.display = 'none';
+  }
+}
+
+// ─── Filters ──────────────────────────────────────────────────
+function buildFilters() {
+  // ปีจากข้อมูลจริง
+  const years = [...new Set(rawResults.map(r => {
+    const d = r['วันที่ลาออก']; return d ? new Date(d).getFullYear() : null;
+  }).filter(Boolean))].sort().reverse();
+
+  const yearSel = document.getElementById('filterYear');
+  yearSel.innerHTML = '<option value="">ทุกปี</option>' +
+    years.map(y => `<option value="${y}">${y}</option>`).join('');
+
+  // แผนกจากข้อมูล Results (ต้องมีคอลัมน์ 'แผนก' ใน Results sheet)
+  const depts = [...new Set(rawResults.map(r => r['แผนก']).filter(Boolean))].sort();
+  const deptSel = document.getElementById('filterDept');
+  deptSel.innerHTML = '<option value="">ทุกแผนก</option>' +
+    depts.map(d => `<option value="${d}">${d}</option>`).join('');
+}
+
+function getFiltered() {
+  const year = document.getElementById('filterYear').value;
+  const qtr  = document.getElementById('filterQuarter').value;
+  const dept = document.getElementById('filterDept').value;
+
+  return rawResults.filter(r => {
+    const dateStr = r['วันที่ลาออก'];
+    const d = dateStr ? new Date(dateStr) : null;
+    const validDate = d && !isNaN(d);
+
+    if (year && (!validDate || d.getFullYear() !== parseInt(year))) return false;
+    if (qtr && validDate) {
+      const q = Math.ceil((d.getMonth() + 1) / 3);
+      if (q !== parseInt(qtr)) return false;
+    }
+    if (dept && r['แผนก'] !== dept) return false;
+    return true;
+  });
+}
+
+function applyFilters() { renderAll(); }
+
+// ─── Render All ────────────────────────────────────────────────
+function renderAll() {
+  const filtered = getFiltered();
+  renderKPIs(filtered);
+  renderDeptBars(filtered);
+  renderMonthlyChart(filtered);
+  renderReasonChart(filtered);
+  renderQuarters(filtered);
+  renderTable(filtered);
+}
+
+// ─── KPIs ──────────────────────────────────────────────────────
+function renderKPIs(results) {
+  const total   = rawEmployees.length;
+  const leavers = results.length;
+  const rate    = (total + leavers) > 0 ? ((leavers / (total + leavers)) * 100).toFixed(1) : '0.0';
+
+  document.getElementById('kpiRate').textContent  = rate + '%';
+  document.getElementById('kpiHead').textContent  = total.toLocaleString('th-TH');
+  document.getElementById('kpiLeave').textContent = leavers.toLocaleString('th-TH');
+
+  const sub = document.getElementById('kpiRateSub');
+  sub.textContent = parseFloat(rate) > 10 ? '⚠️ เกินเป้าหมาย 10%' : '✅ อยู่ในเป้าหมาย';
+}
+
+// ─── Dept Bars ─────────────────────────────────────────────────
+function renderDeptBars(results) {
+  const counts = {};
+  results.forEach(r => {
+    const d = r['แผนก'] || 'ไม่ระบุ';
+    counts[d] = (counts[d] || 0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  const max    = sorted[0]?.[1] || 1;
+  const total  = results.length || 1;
+  const container = document.getElementById('deptBars');
+
+  if (!sorted.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:.875rem;text-align:center;padding:20px 0">ยังไม่มีข้อมูล</div>';
+    return;
+  }
+  container.innerHTML = sorted.map(([name, count]) => {
+    const pct = ((count / total) * 100).toFixed(1);
+    return `<div>
+      <div class="dept-bar-header">
+        <span class="dept-bar-name">${name}</span>
+        <span class="dept-bar-pct">${count} คน · ${pct}%</span>
+      </div>
+      <div class="dept-bar-track">
+        <div class="dept-bar-fill" style="width:${(count/max)*100}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Monthly Chart ─────────────────────────────────────────────
+function renderMonthlyChart(results) {
+  // [FIX] ถ้าไม่ filter ปี ให้ใช้ปีปัจจุบัน; ถ้า filter ปีแล้วให้ใช้ปีนั้น
+  const yearFilter = document.getElementById('filterYear').value;
+  const targetYear = yearFilter ? parseInt(yearFilter) : new Date().getFullYear();
+
+  const monthly = Array(12).fill(0);
+  results.forEach(r => {
+    const d = r['วันที่ลาออก'] ? new Date(r['วันที่ลาออก']) : null;
+    if (!d || isNaN(d)) return;
+    // [FIX] เมื่อไม่ได้ filter ปี ให้แสดงเฉพาะปีปัจจุบัน (ป้องกัน dataset ผสมปี)
+    if (!yearFilter && d.getFullYear() !== targetYear) return;
+    monthly[d.getMonth()]++;
+  });
+
+  // [FIX] destroy chart ก่อน create ใหม่เสมอ เพื่อป้องกัน canvas re-use error
+  if (chartMonthly) { chartMonthly.destroy(); chartMonthly = null; }
+  chartMonthly = new Chart(document.getElementById('chartMonthly'), {
+    type: 'line',
+    data: {
+      labels: MONTH_TH,
+      datasets: [{
+        label: 'จำนวนพนักงานลาออก',
+        data: monthly,
+        borderColor: '#F59E0B',
+        backgroundColor: 'rgba(245,158,11,0.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#F59E0B',
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#94A3B8', font: { family: 'Noto Sans Thai', size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#94A3B8', font: { family: 'JetBrains Mono', size: 11 }, stepSize: 1 }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+// ─── Reason Chart ──────────────────────────────────────────────
+function renderReasonChart(results) {
+  const counts = {};
+  results.forEach(r => {
+    const reason = (r['สาเหตุที่ลาออก'] || 'ไม่ระบุ').split('(')[0].trim();
+    counts[reason] = (counts[reason] || 0) + 1;
+  });
+  const labels = Object.keys(counts);
+  const data   = Object.values(counts);
+
+  // [FIX] destroy ก่อน create ใหม่เสมอ
+  if (chartReason) { chartReason.destroy(); chartReason = null; }
+
+  if (!data.length) return;
+
+  chartReason = new Chart(document.getElementById('chartReason'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: REASON_COLORS.slice(0, data.length),
+        borderWidth: 0,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#94A3B8', font: { family: 'Noto Sans Thai', size: 10 }, padding: 12, boxWidth: 10 }
+        }
+      }
+    }
+  });
+}
+
+// ─── Quarters ──────────────────────────────────────────────────
+function renderQuarters(results) {
+  const q = [0, 0, 0, 0];
+  results.forEach(r => {
+    const d = r['วันที่ลาออก'] ? new Date(r['วันที่ลาออก']) : null;
+    if (!d || isNaN(d)) return;
+    const idx = Math.ceil((d.getMonth() + 1) / 3) - 1;
+    if (idx >= 0 && idx < 4) q[idx]++;
+  });
+  const max = Math.max(...q, 1);
+  q.forEach((val, i) => {
+    document.getElementById('q' + (i+1)).textContent = val;
+    setTimeout(() => {
+      document.getElementById('qbar' + (i+1)).style.width = ((val / max) * 100) + '%';
+    }, 200);
+  });
+}
+
+// ─── Table ─────────────────────────────────────────────────────
+const REASON_BADGE = {
+  'เงินเดือน':'badge-red', 'ค่าตอบแทน':'badge-red',
+  'ความก้าวหน้า':'badge-blue',
+  'ปริมาณงาน':'badge-gold', 'ชั่วโมงงาน':'badge-gold',
+  'หัวหน้า':'badge-purple', 'เพื่อนร่วมงาน':'badge-purple',
+  'อื่นๆ':'badge-green',
+};
+
+function getBadgeClass(reason) {
+  for (const [key, cls] of Object.entries(REASON_BADGE)) {
+    if (reason.includes(key)) return cls;
+  }
+  return 'badge-blue';
+}
+
+function calcTenure(start, end) {
+  if (!start || !end) return '—';
+  const s = new Date(start), e = new Date(end);
+  if (isNaN(s) || isNaN(e) || e < s) return '—';
+  const months = Math.round((e - s) / (1000 * 60 * 60 * 24 * 30.44));
+  if (months < 12) return `${months} เดือน`;
+  return `${Math.floor(months/12)} ปี ${months%12} เดือน`;
+}
+
+function fmtDate(val) {
+  if (!val) return '—';
+  const d = new Date(val);
+  return isNaN(d) ? val : d.toLocaleDateString('th-TH');
+}
+
+function renderTable(results) {
+  const tbody = document.getElementById('dataTableBody');
+  document.getElementById('tableCount').textContent = `ทั้งหมด ${results.length} รายการ`;
+
+  if (!results.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">ยังไม่มีข้อมูลในช่วงเวลาที่เลือก</td></tr>';
+    return;
+  }
+
+  // เรียงจากวันลาออกล่าสุด
+  const sorted = [...results].sort((a, b) => {
+    const da = a['วันที่ลาออก'] ? new Date(a['วันที่ลาออก']) : 0;
+    const db = b['วันที่ลาออก'] ? new Date(b['วันที่ลาออก']) : 0;
+    return db - da;
+  });
+
+  tbody.innerHTML = sorted.map(r => {
+    const reason  = r['สาเหตุที่ลาออก'] || '—';
+    const bClass  = getBadgeClass(reason);
+    const tenure  = calcTenure(r['วันที่เริ่มงาน'], r['วันที่ลาออก']);
+    return `<tr>
+      <td style="font-weight:600">${r['ชื่อ-นามสกุล'] || '—'}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--muted)">${r['รหัสพนักงาน'] || '—'}</td>
+      <td><span class="badge badge-blue">${r['แผนก'] || '—'}</span></td>
+      <td style="color:var(--muted);font-size:.82rem">${r['Plant'] || '—'}</td>
+      <td style="color:var(--muted);font-size:.82rem">${fmtDate(r['วันที่เริ่มงาน'])}</td>
+      <td style="color:var(--muted);font-size:.82rem">${fmtDate(r['วันที่ลาออก'])}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem">${tenure}</td>
+      <td><span class="badge ${bClass}">${reason.split('(')[0].trim()}</span></td>
+    </tr>`;
+  }).join('');
+}
+</script>
+</body>
+</html>

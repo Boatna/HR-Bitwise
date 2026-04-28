@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HR Dashboard · Bitwise Group</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:       #0D0F14;
+  --ink2:      #151820;
+  --ink3:      #1C202C;
+  --ink4:      #252A38;
+  --amber:     #F59E0B;
+  --amber2:    #FBBF24;
+  --amber-dim: rgba(245,158,11,0.15);
+  --sky:       #38BDF8;
+  --emerald:   #34D399;
+  --rose:      #FB7185;
+  --slate:     #64748B;
+  --slate2:    #94A3B8;
+  --white:     #F1F5F9;
+  --border:    rgba(255,255,255,0.06);
+  --border2:   rgba(255,255,255,0.10);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Noto Sans Thai', 'Space Grotesk', sans-serif;
+  background: var(--ink);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ──────────── BACKGROUND ──────────── */
+.bg-layer {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+}
+.bg-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(56,189,248,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+.bg-noise {
+  position: absolute; inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 128px;
+}
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  animation: drift 12s ease-in-out infinite;
+}
+.glow-1 { width: 700px; height: 700px; background: rgba(245,158,11,0.06); top: -200px; right: -150px; }
+.glow-2 { width: 550px; height: 550px; background: rgba(56,189,248,0.05); bottom: 0; left: -100px; animation-delay: -6s; }
+.glow-3 { width: 400px; height: 400px; background: rgba(52,211,153,0.04); top: 40%; left: 40%; animation-delay: -3s; }
+@keyframes drift { 0%,100%{transform:translate(0,0)} 33%{transform:translate(30px,-20px)} 66%{transform:translate(-20px,30px)} }
+
+/* ──────────── NAV ──────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 48px;
+  height: 64px;
+  background: rgba(13,15,20,0.8);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none; color: var(--white);
+}
+.brand-mark {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--amber), #F97316);
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 1.1rem;
+  box-shadow: 0 0 20px rgba(245,158,11,0.3);
+}
+.brand-text { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.01em; }
+.brand-text sub { font-size: 0.65rem; color: var(--slate2); display: block; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.nav-pill {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px;
+  background: var(--ink2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+}
+.pill-item {
+  padding: 7px 18px; border-radius: 7px;
+  font-size: 0.82rem; font-weight: 500; color: var(--slate2);
+  cursor: pointer; transition: all .2s;
+  text-decoration: none;
+}
+.pill-item:hover { color: var(--white); background: var(--ink3); }
+.pill-item.active { background: linear-gradient(135deg, var(--amber), #F97316); color: var(--ink); font-weight: 700; }
+
+/* ──────────── HERO ──────────── */
+.hero {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  place-items: center;
+  padding: 100px 24px 0;
+}
+.hero-center { text-align: center; max-width: 780px; margin: 0 auto; }
+
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 14px 5px 8px;
+  background: var(--amber-dim);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 100px;
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--amber2);
+  margin-bottom: 28px;
+  opacity: 0; animation: riseUp .7s .1s ease forwards;
+}
+.eyebrow-icon {
+  width: 20px; height: 20px;
+  background: var(--amber);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 0.7rem;
+}
+
+.hero-h1 {
+  font-family: 'Playfair Display', 'Noto Sans Thai', serif;
+  font-size: clamp(2.8rem, 6.5vw, 5.5rem);
+  line-height: 1.05;
+  font-weight: 900;
+  color: var(--white);
+  margin-bottom: 6px;
+  opacity: 0; animation: riseUp .7s .2s ease forwards;
+}
+.hero-h1 em { font-style: italic; color: var(--amber); }
+
+.hero-th {
+  font-family: 'Noto Sans Thai', sans-serif;
+  font-size: clamp(1.1rem, 2.5vw, 1.7rem);
+  font-weight: 800;
+  color: var(--slate2);
+  margin-bottom: 24px;
+  opacity: 0; animation: riseUp .7s .28s ease forwards;
+}
+
+.hero-desc {
+  font-size: 1rem; line-height: 1.85;
+  color: var(--slate2);
+  max-width: 500px; margin: 0 auto 44px;
+  opacity: 0; animation: riseUp .7s .36s ease forwards;
+}
+
+/* ──────────── BUTTON GRID ──────────── */
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  max-width: 700px;
+  margin: 0 auto;
+  opacity: 0; animation: riseUp .7s .44s ease forwards;
+}
+.dash-btn {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px;
+  background: var(--ink2);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--white);
+  font-family: 'Noto Sans Thai', sans-serif;
+  font-size: 0.875rem; font-weight: 500;
+  transition: all .25s;
+  text-align: left;
+  cursor: pointer;
+}
+.dash-btn:hover {
+  border-color: rgba(245,158,11,0.4);
+  background: var(--ink3);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(245,158,11,0.15);
+}
+.dash-btn.primary {
+  background: linear-gradient(135deg, var(--amber) 0%, #F97316 100%);
+  border-color: transparent;
+  color: var(--ink);
+  font-weight: 700;
+  grid-column: span 2;
+  box-shadow: 0 8px 32px rgba(245,158,11,0.25);
+}
+.dash-btn.primary:hover {
+  box-shadow: 0 16px 48px rgba(245,158,11,0.4);
+  transform: translateY(-3px);
+  border-color: transparent;
+}
+.btn-ico {
+  width: 40px; height: 40px; min-width: 40px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 1.1rem;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+.dash-btn.primary .btn-ico { background: rgba(0,0,0,0.15); }
+.btn-label { font-size: 0.82rem; font-weight: 700; display: block; margin-bottom: 2px; }
+.btn-sub { font-size: 0.7rem; color: var(--slate2); font-weight: 400; display: block; }
+.dash-btn.primary .btn-sub { color: rgba(0,0,0,0.6); }
+
+/* ──────────── STATS ──────────── */
+.stats-band {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--border);
+}
+.stat-cell {
+  padding: 36px 24px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+  position: relative; overflow: hidden;
+  transition: background .3s;
+}
+.stat-cell:last-child { border-right: none; }
+.stat-cell::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 40%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  opacity: 0; transition: opacity .3s;
+}
+.stat-cell:hover { background: var(--ink2); }
+.stat-cell:hover::before { opacity: 1; }
+.stat-val {
+  font-family: 'Space Grotesk', monospace;
+  font-size: 2.6rem; font-weight: 700;
+  color: var(--white); line-height: 1;
+  margin-bottom: 8px;
+}
+.stat-val .accent { color: var(--amber); }
+.stat-lbl { font-size: 0.78rem; color: var(--slate); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+
+/* ──────────── SECTION: MODULES ──────────── */
+.modules-section {
+  position: relative; z-index: 1;
+  padding: 96px 24px;
+  max-width: 1060px; margin: 0 auto;
+}
+.section-header { text-align: center; margin-bottom: 56px; }
+.section-tag {
+  display: inline-block;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--amber);
+  margin-bottom: 12px;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  font-weight: 900; line-height: 1.1;
+  margin-bottom: 14px;
+}
+.section-desc { color: var(--slate2); font-size: 0.95rem; max-width: 420px; margin: 0 auto; line-height: 1.8; }
+
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.module-card {
+  background: var(--ink2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  position: relative; overflow: hidden;
+  transition: all .3s;
+  cursor: pointer;
+}
+.module-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, transparent 60%, rgba(245,158,11,0.05));
+  opacity: 0; transition: opacity .3s;
+}
+.module-card:hover { border-color: rgba(245,158,11,0.3); transform: translateY(-5px); box-shadow: 0 24px 56px rgba(0,0,0,0.4); }
+.module-card:hover::after { opacity: 1; }
+
+.module-ico-wrap {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.module-ico {
+  width: 50px; height: 50px;
+  border-radius: 14px;
+  display: grid; place-items: center;
+  font-size: 1.4rem;
+}
+.ico-amber { background: rgba(245,158,11,0.15); }
+.ico-sky   { background: rgba(56,189,248,0.12); }
+.ico-rose  { background: rgba(251,113,133,0.12); }
+.ico-em    { background: rgba(52,211,153,0.12); }
+.ico-violet { background: rgba(167,139,250,0.12); }
+
+.module-badge {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+  padding: 3px 10px; border-radius: 100px;
+  text-transform: uppercase;
+}
+.badge-live { background: rgba(52,211,153,0.12); color: var(--emerald); }
+.badge-beta { background: rgba(56,189,248,0.1); color: var(--sky); }
+
+.module-name { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.module-desc { font-size: 0.8rem; color: var(--slate2); line-height: 1.65; }
+
+.module-footer {
+  margin-top: 20px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.module-link {
+  font-size: 0.78rem; color: var(--amber); font-weight: 600;
+  text-decoration: none; display: flex; align-items: center; gap: 4px;
+  transition: gap .2s;
+}
+.module-link:hover { gap: 8px; }
+.module-dots { display: flex; gap: 4px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); }
+.dot.on { background: var(--emerald); }
+
+/* ──────────── CTA ──────────── */
+.cta-wrap {
+  position: relative; z-index: 1;
+  padding: 0 24px 96px; max-width: 860px; margin: 0 auto;
+}
+.cta-box {
+  background: var(--ink2);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 24px;
+  padding: 64px;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.cta-box::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245,158,11,0.08) 0%, transparent 70%);
+}
+.cta-box > * { position: relative; z-index: 1; }
+.cta-title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; margin-bottom: 12px; }
+.cta-desc { color: var(--slate2); line-height: 1.75; margin-bottom: 32px; font-size: 0.95rem; }
+.cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 28px; border-radius: 10px;
+  font-family: 'Noto Sans Thai', sans-serif;
+  font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: all .25s;
+  text-decoration: none; border: none;
+}
+.btn-cta-gold { background: linear-gradient(135deg, var(--amber), #F97316); color: var(--ink); box-shadow: 0 6px 24px rgba(245,158,11,0.25); }
+.btn-cta-gold:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(245,158,11,0.4); }
+.btn-cta-ghost { background: transparent; color: var(--white); border: 1px solid var(--border2); }
+.btn-cta-ghost:hover { border-color: var(--border2); background: var(--ink3); }
+
+/* ──────────── FOOTER ──────────── */
+footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 28px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.foot-brand { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--slate); }
+.foot-brand strong { color: var(--amber); }
+.foot-right { font-size: 0.78rem; color: var(--slate); display: flex; align-items: center; gap: 16px; }
+.foot-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--slate); }
+.version-badge {
+  padding: 2px 8px;
+  background: var(--ink3);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  font-family: 'Space Grotesk', monospace;
+  font-size: 0.7rem; color: var(--slate2);
+}
+
+/* ──────────── ALERT ──────────── */
+.config-alert {
+  position: relative; z-index: 200;
+  padding: 12px 48px;
+  background: rgba(251,113,133,0.08);
+  border-bottom: 1px solid rgba(251,113,133,0.2);
+  text-align: center;
+  font-size: 0.82rem; color: #FCA5A5;
+  display: none;
+}
+.config-alert code { background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; }
+
+/* ──────────── ANIMATIONS ──────────── */
+@keyframes riseUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+/* ──────────── RESPONSIVE ──────────── */
+@media (max-width: 900px) {
+  .modules-grid { grid-template-columns: repeat(2, 1fr); }
+  nav { padding: 0 20px; }
+  .nav-pill { display: none; }
+}
+@media (max-width: 640px) {
+  .btn-grid { grid-template-columns: 1fr; }
+  .dash-btn.primary { grid-column: span 1; }
+  .stats-band { grid-template-columns: 1fr; }
+  .stat-cell { border-right: none; border-bottom: 1px solid var(--border); }
+  .modules-grid { grid-template-columns: 1fr; }
+  .cta-box { padding: 36px 24px; }
+  footer { flex-direction: column; gap: 12px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-layer">
+  <div class="bg-grid"></div>
+  <div class="bg-noise"></div>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+  <div class="glow glow-3"></div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-brand">
+    <div class="brand-mark">📊</div>
+    <div class="brand-text">
+      HR นะจ๊ะ
+      <sub>Bitwise Group</sub>
+    </div>
+  </a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-center">
+    <div class="eyebrow">
+      <div class="eyebrow-icon">✦</div>
+      Dashboard HR · Bitwise Group
+    </div>
+    <h1 class="hero-h1">ข้อมูล HR <em>ครบ</em><br>ในที่เดียว</h1>
+    <div class="hero-th">ระบบบริหารข้อมูลพนักงาน Real-time</div>
+    <p class="hero-desc">
+      เปลี่ยนข้อมูลพนักงานให้เป็นกลยุทธ์<br>
+      ด้วย Dashboard แบบ Real-time
+    </p>
+
+    <div class="btn-grid">
+      <a href="form.html" class="dash-btn primary">
+        <div class="btn-ico">📝</div>
+        <div>
+          <span class="btn-label">บันทึกข้อมูลลาออก</span>
+          <span class="btn-sub">กรอกข้อมูลพนักงานที่ลาออก</span>
+        </div>
+      </a>
+
+      <a href="dashboard.html" class="dash-btn">
+        <div class="btn-ico">📈</div>
+        <div>
+          <span class="btn-label">Dashboard การลาออก</span>
+          <span class="btn-sub">วิเคราะห์ Turnover Rate</span>
+        </div>
+      </a>
+
+      <a href="https://script.google.com/macros/s/AKfycbwPCmuDRnq-Fsy59qXuK5Chm19moPZ94G5hLzp9pGyy6bPeX-KXS1ZHBlcnrkfFhmAoqg/exec" class="dash-btn">
+        <div class="btn-ico">🏥</div>
+        <div>
+          <span class="btn-label">Dashboard ห้องพยาบาล</span>
+          <span class="btn-sub">สถิติการใช้บริการห้องพยาบาล</span>
+        </div>
+      </a>
+
+      <a href="https://script.google.com/a/macros/bitwise.co.th/s/AKfycbwe9Lmwpoq4itfnTiXqvmXrSI2J2KYOYApWBl8kHfVgnX-PDGkDpOhUd9a-FJHcdpKB/exec" class="dash-btn">
+        <div class="btn-ico">🎓</div>
+        <div>
+          <span class="btn-label">Dashboard ฝึกอบรม</span>
+          <span class="btn-sub">ประวัติการฝึกอบรมพนักงาน</span>
+        </div>
+      </a>
+
+      <a href="https://script.google.com/macros/s/AKfycbyyyzBwHqI2uOP07facMZ2wbU8v7I61neeOqeeEZgoMd2r3RqrACAQ4DyhR5zWJbKqM9g/exec?page=dashboard" class="dash-btn">
+        <div class="btn-ico">⚖️</div>
+        <div>
+          <span class="btn-label">Dashboard วินัย</span>
+          <span class="btn-sub">บันทึกการลงโทษทางวินัย</span>
+        </div>
+      </a>
+
+      <a href="https://script.google.com/macros/s/AKfycbzJe546WJlWYHUHbzxeWL0i7OVIU7u1l7fcsKJdpNp4_uT7_p4tSYuq_2wq1OWkN9w/exec?page=dashboard" class="dash-btn">
+        <div class="btn-ico">🪪</div>
+        <div>
+          <span class="btn-label">Dashboard บัตร</span>
+          <span class="btn-sub">สถิติการลืมบัตรพนักงาน</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</section>
+
+<!-- MODULES SECTION -->
+<section class="modules-section" id="modules">
+  <div class="section-header">
+    <div class="section-tag">ระบบทั้งหมด</div>
+    <h2 class="section-title">ครอบคลุมทุกด้าน HR</h2>
+    <p class="section-desc">ข้อมูลครบทุก Module</p>
+  </div>
+
+  <div class="modules-grid">
+    <div class="module-card">
+      <div class="module-ico-wrap">
+        <div class="module-ico ico-amber">📝</div>
+        <span class="module-badge badge-live">Live</span>
+      </div>
+      <div class="module-name">ระบบบันทึกการลาออก</div>
+      <div class="module-desc">กรอกข้อมูลพนักงานที่ลาออก พร้อมวิเคราะห์สาเหตุและแผนก</div>
+      <div class="module-footer">
+        <a href="form.html" class="module-link">เปิดฟอร์ม →</a>
+        <div class="module-dots"><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-ico-wrap">
+        <div class="module-ico ico-sky">📈</div>
+        <span class="module-badge badge-live">Live</span>
+      </div>
+      <div class="module-name">Dashboard การลาออก</div>
+      <div class="module-desc">วิเคราะห์ Turnover Rate แยกตามแผนก เวลา และสาเหตุ</div>
+      <div class="module-footer">
+        <a href="dashboard.html" class="module-link">ดู Dashboard →</a>
+        <div class="module-dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-ico-wrap">
+        <div class="module-ico ico-rose">🏥</div>
+        <span class="module-badge badge-live">Live</span>
+      </div>
+      <div class="module-name">ห้องพยาบาล</div>
+      <div class="module-desc">บันทึกและวิเคราะห์สถิติการใช้บริการห้องพยาบาลของพนักงาน</div>
+      <div class="module-footer">
+        <a href="https://script.google.com/macros/s/AKfycbwPCmuDRnq-Fsy59qXuK5Chm19moPZ94G5hLzp9pGyy6bPeX-KXS1ZHBlcnrkfFhmAoqg/exec" class="module-link">เปิด →</a>
+        <div class="module-dots"><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-ico-wrap">
+        <div class="module-ico ico-em">🎓</div>
+        <span class="module-badge badge-live">Live</span>
+      </div>
+      <div class="module-name">ประวัติการฝึกอบรม</div>
+      <div class="module-desc">ติดตามการฝึกอบรมพนักงาน หลักสูตร ชั่วโมง และงบประมาณ</div>
+      <div class="module-footer">
+        <a href="https://script.google.com/a/macros/bitwise.co.th/s/AKfycbwe9Lmwpoq4itfnTiXqvmXrSI2J2KYOYApWBl8kHfVgnX-PDGkDpOhUd9a-FJHcdpKB/exec" class="module-link">เปิด →</a>
+        <div class="module-dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-ico-wrap">
+        <div class="module-ico ico-violet">⚖️</div>
+        <span class="module-badge badge-live">Live</span>
+      </div>
+      <div class="module-name">บันทึกวินัย</div>
+      <div class="module-desc">จัดการข้อมูลการลงโทษทางวินัย ติดตามสถิติและแนวโน้ม</div>
+      <div class="module-footer">
+        <a href="https://script.google.com/macros/s/AKfycbyyyzBwHqI2uOP07facMZ2wbU8v7I61neeOqeeEZgoMd2r3RqrACAQ4DyhR5zWJbKqM9g/exec?page=dashboard" class="module-link">เปิด →</a>
+        <div class="module-dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-ico-wrap">
+        <div class="module-ico ico-amber">🪪</div>
+        <span class="module-badge badge-beta">Beta</span>
+      </div>
+      <div class="module-name">สถิติการลืมบัตร</div>
+      <div class="module-desc">ติดตามความถี่การลืมบัตรพนักงาน แยกตามแผนกและบุคคล</div>
+      <div class="module-footer">
+        <a href="https://script.google.com/macros/s/AKfycbzJe546WJlWYHUHbzxeWL0i7OVIU7u1l7fcsKJdpNp4_uT7_p4tSYuq_2wq1OWkN9w/exec?page=dashboard" class="module-link">เปิด →</a>
+        <div class="module-dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-brand">
+    <div class="brand-mark" style="width:28px;height:28px;border-radius:7px;font-size:0.85rem;">📊</div>
+    HR นะจ๊ะ · <strong>Bitwise Group</strong>
+  </div>
+  <div class="foot-right">
+    <span>เชื่อมต่อ Google Sheets</span>
+    <div class="foot-dot"></div>
+    <span class="version-badge">v1.0</span>
+  </div>
+</footer>
+
+<script>
+// ตรวจสอบ config
+try {
+  if (!window.CONFIG?.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes('YOUR_SCRIPT_ID')) {
+    document.getElementById('configAlert').style.display = 'block';
+  }
+} catch(e) {}
+
+// โหลด stats
+async function loadStats() {
+  try {
+    if (!window.CONFIG?.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes('YOUR_SCRIPT_ID')) return;
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL + '?action=getDashboard');
+    const json = await res.json();
+    if (json.status === 'ok') {
+      const d = json.data;
+      animateNum('statHeadcount', d.totalHeadcount);
+      animateNum('statLeavers',   d.totalLeavers);
+      document.getElementById('statRate').innerHTML = `${d.turnoverRate}<span class="accent">%</span>`;
+    }
+  } catch(e) { console.warn('Stats load failed:', e.message); }
+}
+
+function animateNum(id, target) {
+  const el = document.getElementById(id);
+  if (!target) { el.textContent = '0'; return; }
+  let cur = 0;
+  const step = Math.max(1, Math.floor(target / 60));
+  const t = setInterval(() => {
+    cur = Math.min(cur + step, target);
+    el.textContent = cur.toLocaleString('th-TH');
+    if (cur >= target) clearInterval(t);
+  }, 18);
+}
+
+loadStats();
+
+// Scroll reveal animation for module cards
+const observer = new IntersectionObserver(entries => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      entry.target.style.animationDelay = `${i * 0.08}s`;
+      entry.target.style.animation = 'riseUp .6s ease forwards';
+      entry.target.style.opacity = '0';
+      setTimeout(() => { entry.target.style.opacity = ''; entry.target.style.animation = ''; }, 700 + i*80);
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.module-card').forEach(c => {
+  c.style.opacity = '0';
+  observer.observe(c);
+});
+</script>
+</body>
+</html>
