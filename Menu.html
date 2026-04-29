@@ -6,354 +6,267 @@
 <title>เมนูกรอกข้อมูล · Bitwise Group</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --ink:       #0D0F14;
-  --ink2:      #151820;
-  --ink3:      #1C202C;
-  --amber:     #F59E0B;
-  --amber2:    #FBBF24;
-  --amber-dim: rgba(245,158,11,0.15);
-  --sky:       #38BDF8;
-  --emerald:   #34D399;
-  --slate:     #64748B;
-  --slate2:    #94A3B8;
-  --white:     #F1F5F9;
-  --border:    rgba(255,255,255,0.06);
-  --border2:   rgba(255,255,255,0.10);
+  --bg:        #05080F;
+  --bg2:       #090D18;
+  --bg3:       #0D1221;
+  --bg4:       #121829;
+  --blue:      #3B82F6;
+  --blue2:     #60A5FA;
+  --blue3:     #93C5FD;
+  --blue-dim:  rgba(59,130,246,0.12);
+  --cyan:      #22D3EE;
+  --white:     #F0F6FF;
+  --slate:     #3A4A63;
+  --slate2:    #5A6E8A;
+  --slate3:    #8BA4C0;
+  --line:      rgba(255,255,255,0.05);
+  --line2:     rgba(255,255,255,0.09);
 }
 
 html { scroll-behavior: smooth; }
+body { font-family: 'Noto Sans Thai','Outfit',sans-serif; background: var(--bg); color: var(--white); min-height: 100vh; overflow-x: hidden; }
 
-body {
-  font-family: 'Noto Sans Thai', 'Space Grotesk', sans-serif;
-  background: var(--ink);
-  color: var(--white);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* ──────────── BACKGROUND ──────────── */
-.bg-layer { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-.bg-grid {
+/* BG */
+.bg-layer { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.bg-gradient {
   position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(56,189,248,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56,189,248,0.025) 1px, transparent 1px);
-  background-size: 56px 56px;
+  background:
+    radial-gradient(ellipse 70% 50% at 80% -5%, rgba(59,130,246,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at -5% 90%, rgba(34,211,238,0.07) 0%, transparent 50%);
 }
-.bg-noise {
-  position: absolute; inset: 0; opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-size: 128px;
+.bg-dots {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(147,197,253,0.07) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 30%, transparent 100%);
 }
-.glow { position: absolute; border-radius: 50%; filter: blur(140px); animation: drift 12s ease-in-out infinite; }
-.glow-1 { width: 600px; height: 600px; background: rgba(245,158,11,0.06); top: -150px; right: -100px; }
-.glow-2 { width: 500px; height: 500px; background: rgba(56,189,248,0.05); bottom: 0; left: -80px; animation-delay: -6s; }
-@keyframes drift { 0%,100%{transform:translate(0,0)} 33%{transform:translate(30px,-20px)} 66%{transform:translate(-20px,30px)} }
+.bg-lines {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px);
+  background-size: 100% 80px;
+}
 
-/* ──────────── NAV ──────────── */
+/* NAV */
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 clamp(16px, 4vw, 48px);
-  height: 64px;
-  background: rgba(13,15,20,0.85);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid var(--border);
+  padding: 0 clamp(20px,5vw,56px); height: 60px;
+  background: rgba(5,8,15,0.82);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line);
 }
-.nav-brand {
-  display: flex; align-items: center; gap: 12px;
-  text-decoration: none; color: var(--white); flex-shrink: 0;
-}
-.brand-mark {
-  width: 38px; height: 38px; min-width: 38px;
-  background: linear-gradient(135deg, var(--amber), #F97316);
-  border-radius: 10px;
+.nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--white); flex-shrink: 0; }
+.brand-icon {
+  width: 34px; height: 34px; min-width: 34px;
+  border: 1px solid rgba(59,130,246,0.5); border-radius: 8px;
   display: grid; place-items: center;
-  font-size: 1.1rem;
-  box-shadow: 0 0 20px rgba(245,158,11,0.3);
+  background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(59,130,246,0.05));
+  font-size: 0.95rem; box-shadow: 0 0 16px rgba(59,130,246,0.2);
 }
-.brand-text { font-size: 0.95rem; font-weight: 700; }
-.brand-text sub { font-size: 0.65rem; color: var(--slate2); display: block; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; }
-
-.nav-back-btn {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 16px;
-  background: var(--ink2);
-  border: 1px solid var(--border2);
-  border-radius: 9px;
-  text-decoration: none;
-  color: var(--slate2);
-  font-family: 'Noto Sans Thai', sans-serif;
-  font-size: 0.82rem; font-weight: 600;
-  transition: all .2s;
-  white-space: nowrap; flex-shrink: 0;
+.brand-name { font-size: 0.88rem; font-weight: 700; }
+.brand-sub { font-size: 0.62rem; color: var(--slate2); display: block; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px; }
+.nav-back {
+  display: flex; align-items: center; gap: 7px; padding: 7px 16px;
+  background: transparent; border: 1px solid var(--line2); border-radius: 8px;
+  text-decoration: none; color: var(--slate3); font-size: 0.8rem; font-weight: 500; transition: all .2s;
 }
-.nav-back-btn:hover { border-color: rgba(245,158,11,0.4); background: var(--ink3); color: var(--white); }
+.nav-back:hover { border-color: rgba(59,130,246,0.4); color: var(--blue2); background: var(--blue-dim); }
 
-/* ──────────── MAIN ──────────── */
+/* MAIN */
 main {
-  position: relative; z-index: 1;
-  min-height: 100svh;
-  display: flex; flex-direction: column; align-items: center;
-  padding: clamp(88px, 12vw, 120px) clamp(16px, 5vw, 48px) clamp(48px, 6vw, 80px);
+  position: relative; z-index: 1; min-height: 100svh;
+  padding: clamp(80px,10vw,110px) clamp(20px,5vw,56px) clamp(48px,7vw,80px);
+  max-width: 960px; margin: 0 auto;
 }
 
-.page-header {
-  text-align: center;
-  margin-bottom: clamp(40px, 6vw, 64px);
-  opacity: 0; animation: riseUp .6s .1s ease forwards;
+/* HEADER */
+.page-header { margin-bottom: clamp(36px,5vw,56px); opacity: 0; animation: fadeUp .6s .1s ease forwards; }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 4px 12px 4px 6px;
+  border: 1px solid rgba(59,130,246,0.25); border-radius: 100px;
+  background: rgba(59,130,246,0.08);
+  font-size: 0.67rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--blue2);
+  margin-bottom: clamp(18px,3vw,26px);
 }
-.eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 5px 14px 5px 8px;
-  background: var(--amber-dim);
-  border: 1px solid rgba(245,158,11,0.25);
-  border-radius: 100px;
-  font-size: 0.72rem; font-weight: 700;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--amber2);
-  margin-bottom: clamp(16px, 3vw, 24px);
-}
-.eyebrow-icon {
-  width: 20px; height: 20px;
-  background: var(--amber); border-radius: 50%;
-  display: grid; place-items: center; font-size: 0.7rem;
-}
+.chip-ico { width: 18px; height: 18px; background: var(--blue); border-radius: 50%; display: grid; place-items: center; font-size: 0.6rem; }
 .page-title {
-  font-family: 'Playfair Display', 'Noto Sans Thai', serif;
-  font-size: clamp(2rem, 6vw, 3.5rem);
-  font-weight: 900; line-height: 1.1;
-  margin-bottom: 12px;
+  font-family: 'DM Serif Display','Noto Sans Thai',serif;
+  font-size: clamp(2rem,5vw,3.2rem); font-weight: 400; line-height: 1.1; margin-bottom: 12px;
 }
-.page-title em { font-style: italic; color: var(--amber); }
-.page-desc { color: var(--slate2); font-size: clamp(0.85rem, 1.8vw, 0.95rem); line-height: 1.8; }
+.page-title em {
+  font-style: italic;
+  background: linear-gradient(135deg, var(--blue2), var(--blue3));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.page-desc { font-size: clamp(0.82rem,1.6vw,0.9rem); color: var(--slate2); line-height: 1.8; }
 
-/* ──────────── CONTENT AREA ──────────── */
-.content-area {
-  width: 100%; max-width: 800px;
-  opacity: 0; animation: riseUp .6s .25s ease forwards;
+/* SECTION LABEL */
+.section-label {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--slate2);
+  margin-bottom: clamp(14px,2.5vw,20px);
+  opacity: 0; animation: fadeUp .6s .22s ease forwards;
 }
+.section-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, var(--line2), transparent); }
 
-/* ──────────── BUTTON GRID ──────────── */
-.menu-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: clamp(10px, 2vw, 14px);
-  width: 100%;
+/* MENU GRID */
+.menu-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: clamp(10px,1.5vw,14px); opacity: 0; animation: fadeUp .6s .3s ease forwards; }
+
+.menu-card {
+  display: flex; align-items: center; gap: clamp(12px,2vw,16px);
+  padding: clamp(16px,2vw,20px);
+  background: var(--bg2); border: 1px solid var(--line); border-radius: 14px;
+  text-decoration: none; color: var(--white);
+  font-family: 'Noto Sans Thai',sans-serif; transition: all .25s;
+  position: relative; overflow: hidden; min-height: 82px;
 }
-.menu-btn {
-  display: flex; align-items: center; gap: clamp(12px, 2vw, 16px);
-  padding: clamp(16px, 2.5vw, 22px);
-  background: var(--ink2);
-  border: 1px solid var(--border2);
-  border-radius: 16px;
-  text-decoration: none;
-  color: var(--white);
-  font-family: 'Noto Sans Thai', sans-serif;
-  transition: all .25s;
-  cursor: pointer;
-  min-height: 88px;
+.menu-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(59,130,246,0.05), transparent);
+  opacity: 0; transition: opacity .3s;
 }
-.menu-btn:hover {
-  border-color: rgba(245,158,11,0.35);
-  background: var(--ink3);
-  transform: translateY(-3px);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(245,158,11,0.1);
+.menu-card:hover { border-color: rgba(59,130,246,0.22); background: var(--bg3); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.08); }
+.menu-card:hover::before { opacity: 1; }
+
+.mc-num { position: absolute; top: 12px; right: 14px; font-family: 'DM Mono',monospace; font-size: 0.6rem; color: var(--slate); letter-spacing: 0.06em; }
+.mc-ico {
+  width: clamp(40px,5.5vw,48px); height: clamp(40px,5.5vw,48px); min-width: clamp(40px,5.5vw,48px);
+  border-radius: 11px; background: var(--bg4); border: 1px solid var(--line2);
+  display: grid; place-items: center; font-size: clamp(1.1rem,2vw,1.3rem);
+  flex-shrink: 0; transition: border-color .25s;
 }
-.menu-btn-ico {
-  width: clamp(42px, 6vw, 50px); height: clamp(42px, 6vw, 50px);
-  min-width: clamp(42px, 6vw, 50px);
-  border-radius: 12px;
-  background: rgba(255,255,255,0.06);
-  display: grid; place-items: center;
-  font-size: clamp(1.2rem, 2.5vw, 1.4rem);
-  flex-shrink: 0;
-}
-.menu-btn-label {
-  font-size: clamp(0.8rem, 1.8vw, 0.92rem); font-weight: 700;
-  display: block; margin-bottom: 4px; color: var(--slate2);
-}
-.menu-btn-sub {
-  font-size: clamp(0.68rem, 1.4vw, 0.76rem);
-  color: var(--slate); font-weight: 400; display: block;
-}
-@media (max-width: 519px) {
+.menu-card:hover .mc-ico { border-color: rgba(59,130,246,0.3); }
+.mc-body { flex: 1; min-width: 0; padding-right: 20px; }
+.mc-title { font-size: clamp(0.78rem,1.6vw,0.88rem); font-weight: 700; display: block; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-sub { font-size: clamp(0.65rem,1.3vw,0.72rem); color: var(--slate2); font-weight: 400; display: block; line-height: 1.4; }
+.mc-arrow { position: absolute; right: 16px; bottom: 14px; font-size: 0.7rem; color: var(--slate); transition: all .2s; }
+.menu-card:hover .mc-arrow { color: var(--blue2); transform: translate(2px,-2px); }
+
+/* FOOTER */
+footer { position: relative; z-index: 1; border-top: 1px solid var(--line); padding: clamp(18px,3vw,24px) clamp(20px,5vw,56px); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.foot-left { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; color: var(--slate2); }
+.foot-left strong { color: var(--blue2); }
+.foot-right { display: flex; align-items: center; gap: 14px; font-size: 0.72rem; color: var(--slate2); }
+.foot-tag { padding: 2px 8px; background: var(--bg2); border: 1px solid var(--line2); border-radius: 4px; font-family: 'DM Mono',monospace; font-size: 0.68rem; color: var(--slate3); }
+.foot-sep { width: 1px; height: 14px; background: var(--line2); }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+@media (max-width: 600px) {
+  main { padding: 76px 16px 48px; }
   .menu-grid { grid-template-columns: 1fr; }
+  footer { flex-direction: column; align-items: center; text-align: center; }
+  .brand-sub { display: none; }
+  .nav-back .back-text { display: none; }
+  .nav-back { padding: 7px 11px; }
 }
-
-/* placeholder state */
-.placeholder-wrap {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 16px;
-  padding: clamp(48px, 8vw, 80px) clamp(24px, 4vw, 48px);
-  border: 1.5px dashed var(--border2);
-  border-radius: 20px;
-  background: var(--ink2);
-  text-align: center;
-  transition: border-color .3s;
-}
-.placeholder-wrap:hover { border-color: rgba(245,158,11,0.25); }
-.placeholder-ico { font-size: clamp(2.5rem, 6vw, 3.5rem); line-height: 1; }
-.placeholder-title {
-  font-size: clamp(1rem, 2.5vw, 1.2rem); font-weight: 700;
-  color: var(--slate2);
-}
-.placeholder-sub {
-  font-size: clamp(0.78rem, 1.6vw, 0.88rem);
-  color: var(--slate); line-height: 1.7; max-width: 360px;
-}
-.placeholder-code {
-  font-family: 'Space Grotesk', monospace;
-  font-size: 0.78rem; color: var(--amber);
-  background: var(--amber-dim);
-  border: 1px solid rgba(245,158,11,0.2);
-  padding: 6px 14px; border-radius: 6px;
-  margin-top: 4px;
-}
-
-/* ──────────── FOOTER ──────────── */
-footer {
-  position: relative; z-index: 1;
-  border-top: 1px solid var(--border);
-  padding: clamp(20px, 3vw, 28px) clamp(16px, 4vw, 48px);
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
-}
-.foot-brand { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--slate); }
-.foot-brand strong { color: var(--amber); }
-.foot-right { font-size: 0.78rem; color: var(--slate); display: flex; align-items: center; gap: 12px; }
-.foot-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--slate); }
-.version-badge {
-  padding: 2px 8px; background: var(--ink3);
-  border: 1px solid var(--border2); border-radius: 4px;
-  font-family: 'Space Grotesk', monospace; font-size: 0.7rem; color: var(--slate2);
-}
-
-/* ──────────── ANIMATION ──────────── */
-@keyframes riseUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-
-/* ──────────── RESPONSIVE ──────────── */
-@media (max-width: 519px) {
-  .brand-text sub { display: none; }
-  .nav-back-btn span.label-text { display: none; }
-  .nav-back-btn { padding: 8px 11px; }
-  footer { flex-direction: column; align-items: center; text-align: center; gap: 10px; }
-  .foot-right { justify-content: center; }
-}
-
 @supports (padding: max(0px)) {
-  nav { padding-left: max(clamp(16px,4vw,48px), env(safe-area-inset-left)); padding-right: max(clamp(16px,4vw,48px), env(safe-area-inset-right)); }
-  footer { padding-left: max(clamp(16px,4vw,48px), env(safe-area-inset-left)); padding-right: max(clamp(16px,4vw,48px), env(safe-area-inset-right)); padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+  nav { padding-left: max(clamp(20px,5vw,56px),env(safe-area-inset-left)); padding-right: max(clamp(20px,5vw,56px),env(safe-area-inset-right)); }
+  footer { padding-bottom: max(18px,env(safe-area-inset-bottom)); }
+}
+@media (hover: none) and (pointer: coarse) {
+  .menu-card:hover { transform: none; box-shadow: none; }
+  .menu-card:active { background: var(--bg3); border-color: rgba(59,130,246,0.2); }
 }
 </style>
 </head>
 <body>
 
 <div class="bg-layer">
-  <div class="bg-grid"></div>
-  <div class="bg-noise"></div>
-  <div class="glow glow-1"></div>
-  <div class="glow glow-2"></div>
+  <div class="bg-gradient"></div>
+  <div class="bg-dots"></div>
+  <div class="bg-lines"></div>
 </div>
 
-<!-- NAV -->
 <nav>
   <a href="index.html" class="nav-brand">
-    <div class="brand-mark">📊</div>
-    <div class="brand-text">
-      HR Dashboard
-      <sub>Bitwise Group</sub>
+    <div class="brand-icon">📊</div>
+    <div>
+      <div class="brand-name">HR Dashboard</div>
+      <span class="brand-sub">Bitwise Group</span>
     </div>
   </a>
-  <a href="index.html" class="nav-back-btn">
-    ← <span class="label-text">กลับหน้าหลัก</span>
+  <a href="index.html" class="nav-back">
+    ← <span class="back-text">กลับหน้าหลัก</span>
   </a>
 </nav>
 
-<!-- MAIN -->
 <main>
   <div class="page-header">
-    <div class="eyebrow">
-      <div class="eyebrow-icon">🗂️</div>
-      เมนูกรอกข้อมูล · Bitwise Group
+    <div class="chip">
+      <span class="chip-ico">🗂️</span>
+      Input Forms · Bitwise Group
     </div>
     <h1 class="page-title">เมนู<em>กรอกข้อมูล</em></h1>
-    <p class="page-desc">รวมลิงก์และปุ่มสำหรับกรอกข้อมูล HR</p>
+    <p class="page-desc">รวมแบบฟอร์มและลิงก์สำหรับกรอกข้อมูล HR ทุกประเภท</p>
   </div>
 
-  <div class="content-area">
-    <!-- ===== เพิ่ม/แก้ไขปุ่มด้านล่างนี้ ===== -->
-    <div class="menu-grid">
+  <div class="section-label">แบบฟอร์มทั้งหมด · 6 รายการ</div>
 
-      <a href="#" class="menu-btn">
-        <div class="menu-btn-ico">📝</div>
-        <div>
-          <span class="menu-btn-label">ปุ่มที่ 1</span>
-          <span class="menu-btn-sub">คำอธิบาย</span>
-        </div>
-      </a>
+  <div class="menu-grid">
 
-      <a href="#" class="menu-btn">
-        <div class="menu-btn-ico">📋</div>
-        <div>
-          <span class="menu-btn-label">ปุ่มที่ 2</span>
-          <span class="menu-btn-sub">คำอธิบาย</span>
-        </div>
-      </a>
+    <a href="https://script.google.com/macros/s/AKfycbyyyzBwHqI2uOP07facMZ2wbU8v7I61neeOqeeEZgoMd2r3RqrACAQ4DyhR5zWJbKqM9g/exec" class="menu-card">
+      <span class="mc-num">01</span>
+      <div class="mc-ico">📝</div>
+      <div class="mc-body"><span class="mc-title">แบบฟอร์มใบทันบน</span><span class="mc-sub">แบบฟอร์มใบทันบนออนไลน์</span></div>
+      <span class="mc-arrow">↗</span>
+    </a>
 
-      <a href="#" class="menu-btn">
-        <div class="menu-btn-ico">📁</div>
-        <div>
-          <span class="menu-btn-label">ปุ่มที่ 3</span>
-          <span class="menu-btn-sub">คำอธิบาย</span>
-        </div>
-      </a>
+    <a href="https://boatna.github.io/Employee-contract.io/" class="menu-card">
+      <span class="mc-num">02</span>
+      <div class="mc-ico">📋</div>
+      <div class="mc-body"><span class="mc-title">ฟอร์มสัญญาจ้างพนักงาน</span><span class="mc-sub">สร้างและดาวน์โหลดสัญญาเป็น PDF</span></div>
+      <span class="mc-arrow">↗</span>
+    </a>
 
-      <a href="#" class="menu-btn">
-        <div class="menu-btn-ico">📊</div>
-        <div>
-          <span class="menu-btn-label">ปุ่มที่ 4</span>
-          <span class="menu-btn-sub">คำอธิบาย</span>
-        </div>
-      </a>
+    <a href="https://boatna.github.io/Employee-contract.io/jobna.html" class="menu-card">
+      <span class="mc-num">03</span>
+      <div class="mc-ico">📁</div>
+      <div class="mc-body"><span class="mc-title">ฟอร์มใบสมัครงาน</span><span class="mc-sub">แบบฟอร์มสมัครงานออนไลน์</span></div>
+      <span class="mc-arrow">↗</span>
+    </a>
 
-      <a href="#" class="menu-btn">
-        <div class="menu-btn-ico">📌</div>
-        <div>
-          <span class="menu-btn-label">ปุ่มที่ 5</span>
-          <span class="menu-btn-sub">คำอธิบาย</span>
-        </div>
-      </a>
+    <a href="https://script.google.com/macros/s/AKfycbzJe546WJlWYHUHbzxeWL0i7OVIU7u1l7fcsKJdpNp4_uT7_p4tSYuq_2wq1OWkN9w/exec" class="menu-card">
+      <span class="mc-num">04</span>
+      <div class="mc-ico">🪪</div>
+      <div class="mc-body"><span class="mc-title">ฟอร์มบันทึกลืมบัตร</span><span class="mc-sub">สำหรับพนักงานที่ลืมสแกนบัตร</span></div>
+      <span class="mc-arrow">↗</span>
+    </a>
 
-      <a href="#" class="menu-btn">
-        <div class="menu-btn-ico">🗂️</div>
-        <div>
-          <span class="menu-btn-label">ปุ่มที่ 6</span>
-          <span class="menu-btn-sub">คำอธิบาย</span>
-        </div>
-      </a>
+    <a href="https://script.google.com/macros/s/AKfycbwRl4h6lOfZga-0P4O6GSOJ3lOfn_aLY40IfrAKqCR9Bfeyzn-mRLziS94mFg3aJ0mV/exec" class="menu-card">
+      <span class="mc-num">05</span>
+      <div class="mc-ico">📌</div>
+      <div class="mc-body"><span class="mc-title">ระบบตรวจงานแม่บ้าน</span><span class="mc-sub">ตรวจงานและประเมินแม่บ้าน</span></div>
+      <span class="mc-arrow">↗</span>
+    </a>
 
-    </div>
-    <!-- ===== จบส่วนปุ่ม ===== -->
+    <a href="form.html" class="menu-card">
+      <span class="mc-num">06</span>
+      <div class="mc-ico">📝</div>
+      <div class="mc-body"><span class="mc-title">บันทึกข้อมูลลาออก</span><span class="mc-sub">กรอกข้อมูลพนักงานที่ลาออก</span></div>
+      <span class="mc-arrow">↗</span>
+    </a>
+
   </div>
 </main>
 
-<!-- FOOTER -->
 <footer>
-  <div class="foot-brand">
-    <div class="brand-mark" style="width:28px;height:28px;border-radius:7px;font-size:0.85rem;">📊</div>
+  <div class="foot-left">
+    <div class="brand-icon" style="width:28px;height:28px;min-width:28px;border-radius:7px;font-size:0.85rem;">📊</div>
     HR Dashboard · <strong>Bitwise Group</strong>
   </div>
   <div class="foot-right">
     <span>เมนูกรอกข้อมูล</span>
-    <div class="foot-dot"></div>
-    <span class="version-badge">v1.0</span>
+    <div class="foot-sep"></div>
+    <span class="foot-tag">v1.0</span>
   </div>
 </footer>
 
