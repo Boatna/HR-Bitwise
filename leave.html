@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HR บันทึกข้อมูล ขาด/ลา/มาสาย</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F0F6FF; --bg2: #FFFFFF; --bg3: #EBF3FF; --bg4: #DCEEFF;
+    --blue: #1D6FCC; --blue2: #2563EB; --blue3: #3B82F6; --cyan: #0EA5E9; --navy: #1E3A5F;
+    --text: #0F2744; --text2: #2D5080; --text3: #4A7CB5;
+    --line: rgba(29,111,204,0.10); --line2: rgba(29,111,204,0.16);
+    --red: #DC2626; --green: #059669; --yellow: #D97706;
+    --input-bg: #FFFFFF; --input-border: rgba(29,111,204,0.18); --input-focus: rgba(37,99,235,0.18);
+    --shadow: 0 2px 16px rgba(29,111,204,0.10); --shadow2: 0 8px 32px rgba(29,111,204,0.14);
+  }
+  body { font-family: 'Noto Sans Thai', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: radial-gradient(ellipse 70% 50% at 80% -5%, rgba(29,111,204,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at -5% 90%, rgba(14,165,233,0.05) 0%, transparent 50%),
+      radial-gradient(circle, rgba(29,111,204,0.08) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 36px 36px; pointer-events: none; z-index: 0;
+  }
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 40px; height: 62px; background: rgba(255,255,255,0.90); backdrop-filter: blur(20px); border-bottom: 1px solid var(--line2); box-shadow: 0 1px 12px rgba(29,111,204,0.07);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 700; color: var(--navy); font-size: 1.1rem; }
+  .nav-links { display: flex; gap: 8px; }
+  .nav-btn { padding: 7px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all .2s; border: 1.5px solid var(--line2); color: var(--text2); background: transparent; }
+  .nav-btn:hover, .nav-btn.active { color: var(--blue2); border-color: rgba(37,99,235,0.35); background: var(--bg3); }
+  
+  .page-wrap { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 100px 24px 80px; }
+  .page-header { margin-bottom: 30px; text-align: center; }
+  .page-title { font-family: 'DM Serif Display','Noto Sans Thai',serif; font-size: 2rem; color: var(--navy); margin-bottom: 8px; }
+  .page-desc { color: var(--text3); font-size: 0.95rem; }
+
+  .form-card { background: var(--bg2); border: 1px solid var(--line2); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); padding: 32px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .col-span-2 { grid-column: span 2; }
+  
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 0.85rem; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; }
+  .field label .req { color: var(--red); margin-left: 3px; }
+  .field input, .field select, .field textarea { background: var(--input-bg); border: 1.5px solid var(--input-border); border-radius: 10px; padding: 12px 14px; font-family: 'Noto Sans Thai',sans-serif; font-size: 0.95rem; outline: none; transition: all .2s; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue2); box-shadow: 0 0 0 3px var(--input-focus); }
+  
+  .search-wrap { position: relative; }
+  .search-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg2); border: 1.5px solid var(--line2); border-radius: 12px; z-index: 50; max-height: 220px; overflow-y: auto; box-shadow: var(--shadow2); display: none; margin-top: 5px; }
+  .search-dropdown.open { display: block; }
+  .dropdown-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid var(--line); transition: background .15s; }
+  .dropdown-item:hover { background: var(--bg3); }
+  .dropdown-item strong { color: var(--navy); display: block; font-size: 0.95rem; }
+  .dropdown-item span { color: var(--text3); font-size: 0.8rem; }
+
+  .emp-card { background: var(--bg3); border: 1px dashed var(--blue2); border-radius: 12px; padding: 16px; display: none; margin-top: 10px; }
+  .emp-card.show { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .emp-detail { font-size: 0.85rem; color: var(--text2); }
+  .emp-detail strong { color: var(--navy); display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+
+  .btn-submit { width: 100%; padding: 14px; border-radius: 10px; font-family: 'Noto Sans Thai',sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; background: var(--blue2); color: #fff; border: none; box-shadow: 0 4px 16px rgba(37,99,235,0.3); transition: all .2s; margin-top: 10px; }
+  .btn-submit:hover:not(:disabled) { background: var(--blue); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.38); }
+  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .toast-wrap { position: fixed; bottom: 32px; right: 32px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+  .toast { padding: 14px 20px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow2); animation: slideIn .3s ease; }
+  .toast-success { background: #ECFDF5; border: 1.5px solid rgba(5,150,105,0.25); color: #065F46; }
+  .toast-error { background: #FEF2F2; border: 1.5px solid rgba(220,38,38,0.25); color: #991B1B; }
+  @keyframes slideIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="dashboard.html" class="nav-logo">HR บันทึกข้อมูล ขาด/ลา/มาสาย</a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-btn">📝 บันทึกลาออก</a>
+    <a href="leave.html" class="nav-btn active">📅 บันทึกการลา</a>
+    <a href="dashboard.html" class="nav-btn">📈 Dashboard</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="page-title">บันทึกข้อมูล ขาด/ลา/มาสาย</div>
+    <div class="page-desc">บันทึกรายการประจำวันเพื่อนำไปวิเคราะห์บน Dashboard</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-grid">
+      <!-- ค้นหาพนักงาน -->
+      <div class="field col-span-2">
+        <label>ค้นหาพนักงาน <span class="req">*</span></label>
+        <div class="search-wrap">
+          <input type="text" id="empSearch" placeholder="พิมพ์ชื่อ หรือ รหัสพนักงาน..." autocomplete="off" />
+          <div class="search-dropdown" id="searchDropdown"></div>
+        </div>
+        
+        <!-- ข้อมูลพนักงานที่เลือก (Card) -->
+        <div id="empCard" class="emp-card">
+          <div class="emp-detail"><strong>รหัสพนักงาน</strong><span id="lblEmpId">-</span></div>
+          <div class="emp-detail"><strong>แผนก</strong><span id="lblDept">-</span></div>
+          <div class="emp-detail"><strong>Plant</strong><span id="lblPlant">-</span></div>
+          <div class="emp-detail"><strong>ชื่อเต็ม</strong><span id="lblFullName">-</span></div>
+        </div>
+        <input type="hidden" id="empId" />
+        <input type="hidden" id="empName" />
+        <input type="hidden" id="empDept" />
+        <input type="hidden" id="empPlant" />
+      </div>
+
+      <!-- รายละเอียดการลา -->
+      <div class="field col-span-2" style="margin-top: 10px;"><hr style="border: 0; border-top: 1px solid var(--line2);"></div>
+
+      <div class="field">
+        <label>วันที่ลาหยุด <span class="req">*</span></label>
+        <input type="date" id="leaveDate" />
+      </div>
+
+      <div class="field">
+        <label>ประเภทรายการ <span class="req">*</span></label>
+        <select id="leaveType">
+          <option value="">-- เลือกประเภท --</option>
+          <option value="ลาป่วย">ลาป่วย</option>
+          <option value="ลากิจ">ลากิจ</option>
+          <option value="พักร้อน">พักร้อน</option>
+          <option value="ขาดงาน">ขาดงาน</option>
+          <option value="มาสาย">มาสาย</option>
+        </select>
+      </div>
+
+      <!-- จำนวนการลา: Dropdown 2 ช่อง (ตัวเลข และ หน่วย) -->
+      <div class="field col-span-2">
+        <label>จำนวนการลา <span class="req">*</span></label>
+        <div style="display: flex; gap: 10px;">
+          <!-- ช่องเลือกตัวเลข -->
+          <select id="leaveAmountNum" style="flex: 1;">
+            <option value="">-- ระบุจำนวน --</option>
+            <optgroup label="ทศนิยม / ครึ่ง">
+              <option value="0.5">0.5</option>
+              <option value="1.5">1.5</option>
+              <option value="2.5">2.5</option>
+            </optgroup>
+            <optgroup label="จำนวนเต็ม (1-10)">
+              <option value="1">1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option>
+              <option value="7">7</option><option value="8">8</option>
+              <option value="9">9</option><option value="10">10</option>
+            </optgroup>
+            <optgroup label="นาที (สำหรับมาสาย)">
+              <option value="10">10</option><option value="15">15</option>
+              <option value="20">20</option><option value="30">30</option>
+              <option value="40">40</option><option value="45">45</option>
+              <option value="50">50</option><option value="60">60</option>
+            </optgroup>
+          </select>
+
+          <!-- ช่องเลือกหน่วย -->
+          <select id="leaveAmountUnit" style="flex: 1;">
+            <option value="">-- เลือกหน่วย --</option>
+            <option value="วัน">วัน</option>
+            <option value="ชั่วโมง">ชั่วโมง</option>
+            <option value="นาที">นาที</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field col-span-2">
+        <label>หมายเหตุ / สาเหตุที่ลา</label>
+        <textarea id="leaveRemark" rows="2" placeholder="ระบุสาเหตุ..."></textarea>
+      </div>
+
+      <div class="field col-span-2">
+        <button id="submitBtn" class="btn-submit" onclick="submitLeave()">บันทึกข้อมูลการลา</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+let employees = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('leaveDate').value = new Date().toISOString().split('T')[0];
+  setupSearch();
+  await loadEmployees();
+});
+
+async function loadEmployees() {
+  try {
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL + '?action=getEmployees');
+    const json = await res.json();
+    if (json.status === 'ok') employees = json.data;
+  } catch (e) { showToast('ไม่สามารถดึงข้อมูลพนักงานได้', 'error'); }
+}
+
+function setupSearch() {
+  const input = document.getElementById('empSearch'), dropdown = document.getElementById('searchDropdown');
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { dropdown.classList.remove('open'); return; }
+    const matches = employees.filter(e => (e['ชื่อ-นามสกุล'] || '').toLowerCase().includes(q) || String(e['รหัสพนักงาน'] || '').toLowerCase().includes(q)).slice(0, 5);
+    
+    if (!matches.length) dropdown.innerHTML = '<div class="dropdown-empty">ไม่พบพนักงาน</div>';
+    else {
+      dropdown.innerHTML = matches.map((e, idx) => `<div class="dropdown-item" data-idx="${idx}"><strong>${e['ชื่อ-นามสกุล'] || ''}</strong><span>${e['รหัสพนักงาน'] || ''} · ${e['แผนก'] || ''}</span></div>`).join('');
+      dropdown.querySelectorAll('.dropdown-item').forEach((el, idx) => el.addEventListener('click', () => selectEmployee(matches[idx])));
+    }
+    dropdown.classList.add('open');
+  });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.search-wrap')) dropdown.classList.remove('open'); });
+}
+
+function selectEmployee(emp) {
+  document.getElementById('empSearch').value = emp['ชื่อ-นามสกุล'] || '';
+  document.getElementById('searchDropdown').classList.remove('open');
+  document.getElementById('empId').value = emp['รหัสพนักงาน'] || '';
+  document.getElementById('empName').value = emp['ชื่อ-นามสกุล'] || '';
+  document.getElementById('empDept').value = emp['แผนก'] || '';
+  document.getElementById('empPlant').value = emp['Plant'] || '';
+  
+  document.getElementById('lblEmpId').textContent = emp['รหัสพนักงาน'] || '-';
+  document.getElementById('lblDept').textContent = emp['แผนก'] || '-';
+  document.getElementById('lblPlant').textContent = emp['Plant'] || '-';
+  document.getElementById('lblFullName').textContent = emp['ชื่อ-นามสกุล'] || '-';
+  document.getElementById('empCard').classList.add('show');
+}
+
+async function submitLeave() {
+  const empId = document.getElementById('empId').value;
+  const empName = document.getElementById('empName').value;
+  const empDept = document.getElementById('empDept').value;
+  const empPlant = document.getElementById('empPlant').value;
+  const leaveDate = document.getElementById('leaveDate').value;
+  const leaveType = document.getElementById('leaveType').value;
+  
+  // รวมค่าตัวเลขและหน่วยเข้าด้วยกัน (เช่น "1 วัน")
+  const num = document.getElementById('leaveAmountNum').value;
+  const unit = document.getElementById('leaveAmountUnit').value;
+  
+  if (!empId) return showToast('กรุณาเลือกพนักงาน', 'error');
+  if (!leaveDate) return showToast('กรุณาระบุวันที่ลาหยุด', 'error');
+  if (!leaveType) return showToast('กรุณาเลือกประเภทรายการ', 'error');
+  if (!num || !unit) return showToast('กรุณาเลือกจำนวนและหน่วยให้ครบถ้วน', 'error');
+
+  const finalAmount = `${num} ${unit}`;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังบันทึก...';
+
+  // Extract Month and Year from selected Date
+  const d = new Date(leaveDate);
+  const month = (d.getMonth() + 1).toString();
+  const year = d.getFullYear().toString();
+
+  const payload = {
+    action: 'addLeave',
+    data: {
+      'รหัสพนักงาน': empId,
+      'ชื่อ-นามสกุล': empName,
+      'แผนก': empDept,
+      'Plant': empPlant,
+      'วันที่ลาหยุด': leaveDate,
+      'ประเภทรายการ': leaveType,
+      'จำนวนการลา': finalAmount,
+      'เดือน (Month)': month,
+      'ปี (Year)': year,
+      'หมายเหตุ (Remark)': document.getElementById('leaveRemark').value
+    }
+  };
+
+  try {
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const json = await res.json();
+    if (json.status === 'ok') {
+      showToast('✅ บันทึกข้อมูลสำเร็จ!', 'success');
+      resetForm();
+    } else { showToast('เกิดข้อผิดพลาด: ' + (json.message || ''), 'error'); }
+  } catch (e) { showToast('เชื่อมต่อ API ไม่สำเร็จ: ' + e.message, 'error'); }
+  
+  btn.disabled = false;
+  btn.textContent = 'บันทึกข้อมูลการลา';
+}
+
+function resetForm() {
+  document.getElementById('empSearch').value = '';
+  document.getElementById('empId').value = '';
+  document.getElementById('empName').value = '';
+  document.getElementById('empDept').value = '';
+  document.getElementById('empPlant').value = '';
+  document.getElementById('empCard').classList.remove('show');
+  document.getElementById('leaveType').value = '';
+  
+  // รีเซ็ตค่า dropdown 
+  document.getElementById('leaveAmountNum').value = '';
+  document.getElementById('leaveAmountUnit').value = '';
+  
+  document.getElementById('leaveRemark').value = '';
+  document.getElementById('leaveDate').value = new Date().toISOString().split('T')[0];
+}
+
+function showToast(msg, type = 'success') {
+  const wrap = document.getElementById('toastWrap'), el = document.createElement('div');
+  el.className = `toast toast-${type}`; el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${msg}</span>`;
+  wrap.appendChild(el); setTimeout(() => el.remove(), 4000);
+}
+</script>
+</body>
+</html>
