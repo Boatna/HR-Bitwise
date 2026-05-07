@@ -3,63 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HR Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>HR Dashboard · Bitwise Group</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="config.js"></script>
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; color: #333; }
-        nav { background: white; padding: 15px 40px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .nav-btn { padding: 6px 14px; border-radius: 4px; border: 1px solid #ccc; color: #555; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: all 0.2s;}
-        .nav-btn:hover { background: #f0f0f0; color: #000; }
-        .nav-active { background: #1e40af; color: #fff !important; border-color: #1e40af; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --bg:        #F0F6FF;
+            --bg2:       #FFFFFF;
+            --bg3:       #EBF3FF;
+            --bg4:       #DCEEFF;
+            --blue:      #1D6FCC;
+            --blue2:     #2563EB;
+            --blue3:     #3B82F6;
+            --blue4:     #60A5FA;
+            --cyan:      #0EA5E9;
+            --navy:      #1E3A5F;
+            --text:      #0F2744;
+            --text2:     #2D5080;
+            --text3:     #4A7CB5;
+            --line:      rgba(29,111,204,0.10);
+            --line2:     rgba(29,111,204,0.15);
+            --shadow:    0 2px 16px rgba(29,111,204,0.10);
+            --shadow2:   0 8px 32px rgba(29,111,204,0.14);
+            --red:       #DC2626;
+            --yellow:    #EAB308;
+            --orange:    #F97316;
+        }
+        
+        body { 
+            font-family: 'Noto Sans Thai', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            min-height: 100vh; 
+        }
+        
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background-image:
+                radial-gradient(ellipse 70% 50% at 80% -5%, rgba(29,111,204,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at -5% 90%, rgba(14,165,233,0.05) 0%, transparent 50%),
+                radial-gradient(circle, rgba(29,111,204,0.08) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 36px 36px;
+            pointer-events: none; z-index: 0;
+        }
 
-        /* สไตล์สำหรับ Card ของหน้า Turnover (แถบสีเหลืองแบบ Power BI) */
-        .to-card { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; }
-        .to-card-header { background-color: #fde047; padding: 10px; text-align: center; color: #333; font-weight: 700; border-bottom: 1px solid #facc15; font-size: 0.95rem; }
-        .to-card-body { padding: 20px; text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; }
-        
-        .kpi-card { background-color: white; border-radius: 8px; padding: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .chart-container-sm { position: relative; height: 120px; width: 100%; }
-        .chart-container-md { position: relative; height: 220px; width: 100%; }
-        .chart-container-lg { position: relative; height: 300px; width: 100%; }
-        
-        .tab-btn { padding: 10px 24px; font-weight: 700; font-size: 1.1rem; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s; color: #6b7280; }
-        .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; }
+        /* NAV */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 clamp(20px,5vw,56px); height: 62px;
+            background: rgba(255,255,255,0.90);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--line2);
+            box-shadow: 0 1px 12px rgba(29,111,204,0.07);
+        }
+        .nav-brand { 
+            display: flex; align-items: center; gap: 10px; 
+            text-decoration: none; color: var(--text); 
+        }
+        .brand-name { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
+        .nav-links { display: flex; gap: 8px; }
+        .nav-btn {
+            padding: 7px 16px; border-radius: 8px;
+            font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; text-decoration: none; 
+            transition: all .2s; border: 1.5px solid var(--line2);
+            background: transparent; color: var(--text2);
+        }
+        .nav-btn:hover { 
+            color: var(--blue2); 
+            border-color: rgba(37,99,235,0.35); 
+            background: var(--bg3); 
+        }
+        .nav-btn.active { 
+            background: var(--blue2); 
+            color: #fff; 
+            border-color: var(--blue2); 
+        }
+
+        /* MAIN CONTAINER */
+        .container {
+            position: relative; z-index: 1;
+            max-width: 1400px; margin: 0 auto;
+            padding: clamp(80px,10vw,100px) clamp(20px,5vw,40px) clamp(40px,6vw,60px);
+        }
+
+        /* HEADER & FILTERS */
+        .dashboard-header {
+            display: flex; justify-content: space-between; 
+            align-items: flex-end; margin-bottom: clamp(24px,4vw,36px);
+            flex-wrap: wrap; gap: 20px;
+        }
+        .tabs-wrapper {
+            display: flex; border-bottom: 2px solid var(--line2);
+            gap: 4px;
+        }
+        .tab-btn {
+            padding: 10px 24px; font-weight: 700; font-size: 1.05rem;
+            border: none; background: transparent;
+            border-bottom: 3px solid transparent;
+            cursor: pointer; transition: all 0.2s;
+            color: var(--text3);
+        }
+        .tab-btn.active {
+            border-bottom-color: var(--blue2);
+            color: var(--blue2);
+        }
+        .tab-btn:hover:not(.active) { color: var(--text2); }
+
+        .filters {
+            display: flex; gap: 12px;
+            background: var(--bg2); padding: 10px 16px;
+            border-radius: 12px; border: 1px solid var(--line2);
+            box-shadow: var(--shadow);
+        }
+        .filters select {
+            border: none; background: transparent;
+            font-size: 0.88rem; font-weight: 600;
+            outline: none; cursor: pointer;
+            color: var(--text2);
+            font-family: 'Noto Sans Thai', sans-serif;
+        }
+        .filter-sep { width: 1px; background: var(--line2); }
+
+        /* TAB CONTENT */
         .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-content.active { 
+            display: block; 
+            animation: fadeIn 0.3s ease; 
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* KPI CARDS */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: clamp(12px,2vw,20px);
+            margin-bottom: clamp(24px,4vw,36px);
+        }
+        .kpi-card {
+            background: var(--bg2);
+            border: 1px solid var(--line2);
+            border-radius: 16px;
+            padding: clamp(18px,3vw,24px);
+            box-shadow: var(--shadow);
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi-card::before {
+            content: ''; position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(to right, var(--blue2), var(--cyan));
+            opacity: 0; transition: opacity 0.25s;
+        }
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow2);
+            border-color: rgba(37,99,235,0.25);
+        }
+        .kpi-card:hover::before { opacity: 1; }
+
+        .kpi-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text3);
+            margin-bottom: 8px;
+        }
+        .kpi-value {
+            font-family: 'DM Mono', monospace;
+            font-size: clamp(2rem,4vw,2.8rem);
+            font-weight: 700;
+            color: var(--navy);
+            line-height: 1;
+        }
+        .kpi-icon {
+            position: absolute;
+            top: 16px; right: 16px;
+            font-size: 1.8rem;
+            opacity: 0.15;
+        }
+
+        /* BORDER COLOR VARIANTS */
+        .border-blue { border-top: 4px solid var(--blue2); }
+        .border-red { border-top: 4px solid var(--red); }
+        .border-yellow { border-top: 4px solid var(--yellow); }
+        .border-orange { border-top: 4px solid var(--orange); }
+
+        /* CHART CONTAINERS */
+        .charts-grid {
+            display: grid;
+            gap: clamp(16px,2.5vw,24px);
+        }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+
+        .chart-card {
+            background: var(--bg2);
+            border: 1px solid var(--line2);
+            border-radius: 16px;
+            padding: clamp(20px,3vw,28px);
+            box-shadow: var(--shadow);
+        }
+        .chart-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        .chart-subtitle {
+            font-size: 0.75rem;
+            color: var(--text3);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .chart-container-sm { position: relative; height: 140px; }
+        .chart-container-md { position: relative; height: 240px; }
+        .chart-container-lg { position: relative; height: 300px; }
+
+        /* TURNOVER SPECIFIC */
+        .to-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: clamp(16px,2.5vw,24px);
+            margin-bottom: clamp(28px,4vw,40px);
+        }
+        .to-kpi-card {
+            background: var(--bg2);
+            border: 1px solid var(--line2);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.25s;
+        }
+        .to-kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow2);
+        }
+        .to-kpi-header {
+            background: linear-gradient(135deg, var(--blue2), var(--cyan));
+            padding: 14px;
+            text-align: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.88rem;
+        }
+        .to-kpi-header small {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+        .to-kpi-body {
+            padding: 28px 20px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            min-height: 140px;
+        }
+        .to-kpi-icon {
+            font-size: 3.5rem;
+        }
+        .to-kpi-value {
+            font-family: 'DM Mono', monospace;
+            font-size: clamp(2.8rem,5vw,4rem);
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .to-kpi-value.red { color: var(--red); }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .dashboard-header { flex-direction: column; align-items: stretch; }
+            .tabs-wrapper { width: 100%; }
+            .filters { justify-content: space-between; }
+            .kpi-grid { grid-template-columns: 1fr 1fr; }
+            .charts-grid.grid-2,
+            .charts-grid.grid-3 { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 480px) {
+            .kpi-grid { grid-template-columns: 1fr; }
+            .tab-btn { font-size: 0.95rem; padding: 8px 16px; }
+        }
     </style>
 </head>
 <body>
 
     <nav>
-        <div class="text-xl font-bold text-gray-800">HR Dashboard วิเคราะห์ แสดงข้อมูลกำลังคนและการลาออก</div>
-        <div class="flex gap-3">
-            <a href="index.html" class="nav-btn">📝 บันทึกลาออก</a>
+        <a href="index.html" class="nav-brand">
+            <span class="brand-name">📈 HR Dashboard</span>
+        </a>
+        <div class="nav-links">
+            <a href="form.html" class="nav-btn">📝 บันทึกลาออก</a>
             <a href="leave.html" class="nav-btn">📅 บันทึกการลา</a>
-            <a href="dashboard.html" class="nav-btn nav-active">📈 Dashboard</a>
+            <a href="dashboard.html" class="nav-btn active">📈 Dashboard</a>
+            <a href="employees.html"  class="nav-btn active">👥 จัดการพนักงาน</a>
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto p-4">
+    <div class="container">
         
-        <!-- Header & Filters -->
-        <div class="flex justify-between items-end mb-6">
-            <div class="flex border-b border-gray-300 w-full md:w-auto">
-                <div id="btnTab1" class="tab-btn active" onclick="switchTab('tab1')">👥 Manpower</div>
-                <div id="btnTab2" class="tab-btn" onclick="switchTab('tab2')">📉 Resign </div>
+        <!-- HEADER & FILTERS -->
+        <div class="dashboard-header">
+            <div class="tabs-wrapper">
+                <button id="btnTab1" class="tab-btn active" onclick="switchTab('tab1')">👥 Manpower</button>
+                <button id="btnTab2" class="tab-btn" onclick="switchTab('tab2')">📉 Resign</button>
             </div>
             
-            <div class="flex gap-3 bg-white p-2 rounded shadow-sm border border-gray-200">
-                <select id="yearFilter" class="border-0 bg-transparent text-sm font-semibold outline-none cursor-pointer">
+            <div class="filters">
+                <select id="yearFilter">
                     <option value="all">ทุกปี (All Years)</option>
                     <option value="2026">2026</option>
                     <option value="2025">2025</option>
                 </select>
-                <div class="w-px bg-gray-300"></div>
-                <select id="monthFilter" class="border-0 bg-transparent text-sm font-semibold outline-none cursor-pointer">
+                <div class="filter-sep"></div>
+                <select id="monthFilter">
                     <option value="all">ทุกเดือน (All Months)</option>
                     <option value="1">ม.ค.</option>
                     <option value="2">ก.พ.</option>
@@ -78,107 +350,136 @@
         </div>
 
         <!-- ========================================= -->
-        <!-- TAB 1: WORKFORCE KPI (ของเดิม) -->
+        <!-- TAB 1: WORKFORCE KPI -->
         <!-- ========================================= -->
         <div id="tab1" class="tab-content active">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div class="kpi-card text-center border-t-4 border-blue-500">
-                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">กำลังพลปัจจุบัน</h3>
-                    <p id="valEmp" class="text-4xl font-bold text-gray-800 mt-2">0</p>
+            <div class="kpi-grid">
+                <div class="kpi-card border-blue">
+                    <div class="kpi-icon">👥</div>
+                    <div class="kpi-label">กำลังพลปัจจุบัน</div>
+                    <div class="kpi-value" id="valEmp">0</div>
                 </div>
-                <div class="kpi-card text-center border-t-4 border-red-500">
-                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">ขาดงาน (ครั้ง)</h3>
-                    <p id="valAbsent" class="text-4xl font-bold text-gray-800 mt-2">0</p>
+                <div class="kpi-card border-red">
+                    <div class="kpi-icon">❌</div>
+                    <div class="kpi-label">ขาดงาน (ครั้ง)</div>
+                    <div class="kpi-value" id="valAbsent">0</div>
                 </div>
-                <div class="kpi-card text-center border-t-4 border-yellow-500">
-                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">มาสาย (ครั้ง)</h3>
-                    <p id="valLate" class="text-4xl font-bold text-gray-800 mt-2">0</p>
+                <div class="kpi-card border-yellow">
+                    <div class="kpi-icon">⏰</div>
+                    <div class="kpi-label">มาสาย (ครั้ง)</div>
+                    <div class="kpi-value" id="valLate">0</div>
                 </div>
-                <div class="kpi-card text-center border-t-4 border-orange-500">
-                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">ลาป่วย (ครั้ง)</h3>
-                    <p id="valSick" class="text-4xl font-bold text-gray-800 mt-2">0</p>
+                <div class="kpi-card border-orange">
+                    <div class="kpi-icon">🏥</div>
+                    <div class="kpi-label">ลาป่วย (ครั้ง)</div>
+                    <div class="kpi-value" id="valSick">0</div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div class="kpi-card">
-                    <h3 class="text-center font-bold mb-2">โครงสร้างเพศ (Gender)</h3>
+            <div class="charts-grid grid-3">
+                <div class="chart-card">
+                    <div class="chart-title">โครงสร้างเพศ</div>
+                    <div class="chart-subtitle">Gender Distribution</div>
                     <div class="chart-container-md"><canvas id="wfGender"></canvas></div>
                 </div>
-                <div class="kpi-card">
-                    <h3 class="text-center font-bold mb-2">สัดส่วนสัญชาติ (Nationality)</h3>
+                <div class="chart-card">
+                    <div class="chart-title">สัดส่วนสัญชาติ</div>
+                    <div class="chart-subtitle">Nationality Distribution</div>
                     <div class="chart-container-md"><canvas id="wfNation"></canvas></div>
                 </div>
-                <div class="kpi-card">
-                    <h3 class="text-center font-bold mb-2">สถิติการลา (Leave Summary)</h3>
+                <div class="chart-card">
+                    <div class="chart-title">สถิติการลา</div>
+                    <div class="chart-subtitle">Leave Summary</div>
                     <div class="chart-container-md"><canvas id="wfLeave"></canvas></div>
                 </div>
-                <div class="kpi-card lg:col-span-3">
-                    <h3 class="text-center font-bold mb-2">กำลังพลแบ่งตามแผนก (Headcount by Dept)</h3>
+            </div>
+
+            <div class="charts-grid" style="margin-top: clamp(16px,2.5vw,24px);">
+                <div class="chart-card">
+                    <div class="chart-title">กำลังพลแบ่งตามแผนก</div>
+                    <div class="chart-subtitle">Headcount by Department</div>
                     <div class="chart-container-md"><canvas id="wfDept"></canvas></div>
                 </div>
             </div>
         </div>
 
         <!-- ========================================= -->
-        <!-- TAB 2: TURNOVER ANALYSIS (สร้างใหม่) -->
+        <!-- TAB 2: TURNOVER ANALYSIS -->
         <!-- ========================================= -->
         <div id="tab2" class="tab-content">
-            <!-- Top KPI Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div class="to-card">
-                    <div class="to-card-header">อัตราการลาออก<br><span class="text-xs font-normal">(Turnover Rate %)</span></div>
-                    <div class="to-card-body gap-2">
-                        <span class="text-5xl">🔻</span>
-                        <span id="toRate" class="text-6xl font-bold text-red-600">0.0%</span>
+            <!-- TOP KPI CARDS -->
+            <div class="to-kpi-grid">
+                <div class="to-kpi-card">
+                    <div class="to-kpi-header">
+                        อัตราการลาออก
+                        <small>Turnover Rate</small>
+                    </div>
+                    <div class="to-kpi-body">
+                        <span class="to-kpi-icon">📉</span>
+                        <span class="to-kpi-value red" id="toRate">0.0%</span>
                     </div>
                 </div>
-                <div class="to-card">
-                    <div class="to-card-header">จำนวนพนักงานปัจจุบัน<br><span class="text-xs font-normal">(Headcount)</span></div>
-                    <div class="to-card-body gap-2">
-                        <span class="text-5xl">👤</span>
-                        <span id="toHeadcount" class="text-6xl font-bold text-gray-800">0</span>
+                <div class="to-kpi-card">
+                    <div class="to-kpi-header">
+                        จำนวนพนักงานปัจจุบัน
+                        <small>Current Headcount</small>
+                    </div>
+                    <div class="to-kpi-body">
+                        <span class="to-kpi-icon">👤</span>
+                        <span class="to-kpi-value" id="toHeadcount">0</span>
                     </div>
                 </div>
-                <div class="to-card">
-                    <div class="to-card-header">จำนวนพนักงานที่ลาออก<br><span class="text-xs font-normal">(Leavers)</span></div>
-                    <div class="to-card-body gap-2">
-                        <span class="text-5xl">🚶‍♂️</span>
-                        <span id="toLeavers" class="text-6xl font-bold text-gray-800">0</span>
+                <div class="to-kpi-card">
+                    <div class="to-kpi-header">
+                        จำนวนพนักงานที่ลาออก
+                        <small>Total Leavers</small>
+                    </div>
+                    <div class="to-kpi-body">
+                        <span class="to-kpi-icon">🚶</span>
+                        <span class="to-kpi-value" id="toLeavers">0</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Charts Row 1 -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div class="kpi-card">
-                    <h3 class="text-center font-bold text-gray-700 mb-4">อัตราการลาออกแยกตามแผนก<br><span class="text-sm font-normal">(Turnover by Department)</span></h3>
+            <!-- CHARTS -->
+            <div class="charts-grid grid-2">
+                <div class="chart-card">
+                    <div class="chart-title">อัตราการลาออกแยกตามแผนก</div>
+                    <div class="chart-subtitle">Turnover by Department</div>
                     <div class="chart-container-lg"><canvas id="toDeptChart"></canvas></div>
                 </div>
-                <div class="kpi-card">
-                    <h3 class="text-center font-bold text-gray-700 mb-4">สาเหตุการลาออก<br><span class="text-sm font-normal">(Reason for Leaving)</span></h3>
+                <div class="chart-card">
+                    <div class="chart-title">สาเหตุการลาออก</div>
+                    <div class="chart-subtitle">Reason for Leaving</div>
                     <div class="chart-container-lg"><canvas id="toReasonChart"></canvas></div>
                 </div>
             </div>
 
-            <!-- Charts Row 2 -->
-            <div class="kpi-card mb-10">
-                <h3 class="text-center font-bold text-gray-700 mb-4">แนวโน้มการลาออกรายเดือน<br><span class="text-sm font-normal">(Monthly Turnover Trend)</span></h3>
-                <div class="chart-container-md"><canvas id="toTrendChart"></canvas></div>
+            <div class="charts-grid" style="margin-top: clamp(16px,2.5vw,24px);">
+                <div class="chart-card">
+                    <div class="chart-title">แนวโน้มการลาออกรายเดือน</div>
+                    <div class="chart-subtitle">Monthly Turnover Trend</div>
+                    <div class="chart-container-md"><canvas id="toTrendChart"></canvas></div>
+                </div>
             </div>
         </div>
 
     </div>
 
     <script>
-        // สีสำหรับกราฟ Turnover
-        const TO_COLORS = {
-            red: 'rgba(220, 38, 38, 0.8)',
-            redBg: 'rgba(220, 38, 38, 0.2)',
-            blue: 'rgba(37, 99, 235, 0.8)',
-            blueBg: 'rgba(37, 99, 235, 0.2)',
-            grey: 'rgba(107, 114, 128, 0.8)',
-            palette: ['#1e40af', '#3b82f6', '#93c5fd', '#6b7280', '#9ca3af', '#d1d5db']
+        // สีสำหรับกราฟ
+        const COLORS = {
+            blue: '#2563EB',
+            blue2: '#3B82F6',
+            blue3: '#60A5FA',
+            cyan: '#0EA5E9',
+            red: '#DC2626',
+            yellow: '#EAB308',
+            orange: '#F97316',
+            green: '#10B981',
+            purple: '#8B5CF6',
+            pink: '#EC4899',
+            palette: ['#2563EB', '#3B82F6', '#60A5FA', '#0EA5E9', '#8B5CF6', '#EC4899']
         };
 
         let allData = { employees: [], leaves: [], resigns: [] };
@@ -189,7 +490,7 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             
-            event.currentTarget.classList.add('active');
+            document.getElementById('btn' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).classList.add('active');
             document.getElementById(tabId).classList.add('active');
         }
 
@@ -214,9 +515,7 @@
             const leaves = allData.leaves || [];
             const resigns = allData.resigns || [];
 
-            // ----------------------------------------------------
-            // คำนวณข้อมูล Tab 1: Workforce KPI
-            // ----------------------------------------------------
+            // TAB 1: Workforce KPI
             document.getElementById("valEmp").innerText = emps.length;
 
             let sick=0, absent=0, late=0;
@@ -235,20 +534,21 @@
             document.getElementById("valSick").innerText = sick;
 
             // วาดกราฟ Workforce
-            let m=0, f=0; emps.forEach(e => { if(e["คำนำหน้า"]==="นาย") m++; else f++; });
-            drawChart('wfGender', 'pie', ['ชาย','หญิง'], [m,f], ['#3b82f6','#ec4899']);
+            let m=0, f=0; 
+            emps.forEach(e => { if(e["คำนำหน้า"]==="นาย") m++; else f++; });
+            drawChart('wfGender', 'pie', ['ชาย','หญิง'], [m,f], [COLORS.blue, COLORS.pink]);
 
-            let nat={}; emps.forEach(e => { let n = e["สัญชาติ"]||"ไม่ระบุ"; nat[n]=(nat[n]||0)+1; });
-            drawChart('wfNation', 'doughnut', Object.keys(nat), Object.values(nat), ['#10b981','#f59e0b','#6366f1']);
+            let nat={}; 
+            emps.forEach(e => { let n = e["สัญชาติ"]||"ไม่ระบุ"; nat[n]=(nat[n]||0)+1; });
+            drawChart('wfNation', 'doughnut', Object.keys(nat), Object.values(nat), [COLORS.green, COLORS.orange, COLORS.purple]);
 
-            drawChart('wfLeave', 'bar', ['ขาดงาน','มาสาย','ลาป่วย'], [absent, late, sick], ['#ef4444','#eab308','#3b82f6']);
+            drawChart('wfLeave', 'bar', ['ขาดงาน','มาสาย','ลาป่วย'], [absent, late, sick], [COLORS.red, COLORS.yellow, COLORS.blue]);
 
-            let dpt={}; emps.forEach(e => { let d = e["แผนก"]||"ไม่ระบุ"; dpt[d]=(dpt[d]||0)+1; });
-            drawChart('wfDept', 'bar', Object.keys(dpt), Object.values(dpt), ['#6366f1']);
+            let dpt={}; 
+            emps.forEach(e => { let d = e["แผนก"]||"ไม่ระบุ"; dpt[d]=(dpt[d]||0)+1; });
+            drawChart('wfDept', 'bar', Object.keys(dpt), Object.values(dpt), [COLORS.blue]);
 
-            // ----------------------------------------------------
-            // คำนวณข้อมูล Tab 2: Turnover Analysis
-            // ----------------------------------------------------
+            // TAB 2: Turnover Analysis
             const filResigns = resigns.filter(r => {
                 if(!r["วันที่ลาออก"]) return false;
                 const d = new Date(r["วันที่ลาออก"]);
@@ -265,23 +565,18 @@
             document.getElementById("toHeadcount").innerText = headcount;
             document.getElementById("toLeavers").innerText = leavers;
 
-            // กราฟ 1: ลาออกแยกตามแผนก (แนวนอน)
+            // กราฟ Turnover
             let toDept = {};
             filResigns.forEach(r => { let d = r["แผนก"]||"ไม่ระบุ"; toDept[d] = (toDept[d]||0)+1; });
-            // เรียงลำดับจากมากไปน้อย
             const sortedDept = Object.entries(toDept).sort((a,b) => b[1]-a[1]);
-            const deptLabels = sortedDept.map(item => item[0]);
-            const deptValues = sortedDept.map(item => item[1]);
             
-            // กราฟ 2: สาเหตุการลาออก
             let toReason = {};
             filResigns.forEach(r => { 
                 let rs = r["สาเหตุที่ลาออก"]||"ไม่ระบุ"; 
-                rs = rs.split('(')[0].trim(); // ตัดข้อความในวงเล็บออกให้สั้นลง
+                rs = rs.split('(')[0].trim();
                 toReason[rs] = (toReason[rs]||0)+1; 
             });
 
-            // กราฟ 3: แนวโน้มรายเดือน (ดึงข้อมูล 12 เดือนของปีที่เลือก)
             const thMonths = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
             let trendData = new Array(12).fill(0);
             resigns.forEach(r => {
@@ -293,41 +588,71 @@
                 }
             });
 
-            // วาดกราฟ Turnover
-            drawTurnoverBar('toDeptChart', deptLabels, deptValues);
-            drawChart('toReasonChart', 'doughnut', Object.keys(toReason), Object.values(toReason), TO_COLORS.palette);
-            drawTurnoverTrend('toTrendChart', thMonths, trendData);
+            drawBarChart('toDeptChart', sortedDept.map(i => i[0]), sortedDept.map(i => i[1]), COLORS.red);
+            drawChart('toReasonChart', 'doughnut', Object.keys(toReason), Object.values(toReason), COLORS.palette);
+            drawLineChart('toTrendChart', thMonths, trendData);
         }
 
-        // --- Helper Functions สำหรับวาดกราฟ ---
+        // Helper Functions
         function drawChart(id, type, labels, data, colors) {
             const ctx = document.getElementById(id).getContext('2d');
             if(charts[id]) charts[id].destroy();
             charts[id] = new Chart(ctx, {
                 type: type,
-                data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth:1 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: type==='bar'?'none':'bottom' } } }
-            });
-        }
-
-        // กราฟแท่งแนวนอน สีแดง (สำหรับ Department)
-        function drawTurnoverBar(id, labels, data) {
-            const ctx = document.getElementById(id).getContext('2d');
-            if(charts[id]) charts[id].destroy();
-            charts[id] = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: labels, datasets: [{ data: data, backgroundColor: TO_COLORS.red, borderRadius: 4 }] },
-                options: {
-                    indexAxis: 'y', // ทำให้เป็นแนวนอน
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true, grid: {display: false} }, y: { grid: {display: false} } }
+                data: { 
+                    labels: labels, 
+                    datasets: [{ 
+                        data: data, 
+                        backgroundColor: colors, 
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { 
+                            position: type === 'bar' ? 'none' : 'bottom',
+                            labels: { font: { family: 'Noto Sans Thai' } }
+                        } 
+                    },
+                    scales: type === 'bar' ? {
+                        y: { beginAtZero: true, grid: { display: false } },
+                        x: { grid: { display: false } }
+                    } : {}
                 }
             });
         }
 
-        // กราฟเส้น Area Chart สีน้ำเงิน (สำหรับ Trend)
-        function drawTurnoverTrend(id, labels, data) {
+        function drawBarChart(id, labels, data, color) {
+            const ctx = document.getElementById(id).getContext('2d');
+            if(charts[id]) charts[id].destroy();
+            charts[id] = new Chart(ctx, {
+                type: 'bar',
+                data: { 
+                    labels: labels, 
+                    datasets: [{ 
+                        data: data, 
+                        backgroundColor: color + 'CC',
+                        borderRadius: 8,
+                        borderWidth: 0
+                    }] 
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        x: { beginAtZero: true, grid: { display: false } }, 
+                        y: { grid: { display: false } } 
+                    }
+                }
+            });
+        }
+
+        function drawLineChart(id, labels, data) {
             const ctx = document.getElementById(id).getContext('2d');
             if(charts[id]) charts[id].destroy();
             charts[id] = new Chart(ctx, {
@@ -335,27 +660,34 @@
                 data: { 
                     labels: labels, 
                     datasets: [{ 
-                        label: 'จำนวนคนลาออก', data: data, 
-                        borderColor: TO_COLORS.blue, 
-                        backgroundColor: TO_COLORS.blueBg, 
-                        borderWidth: 2, 
-                        fill: true, // ระบายสีใต้กราฟเส้น
-                        tension: 0.3, // ทำให้เส้นโค้งมน
+                        label: 'จำนวนคนลาออก', 
+                        data: data, 
+                        borderColor: COLORS.blue,
+                        backgroundColor: COLORS.blue + '33',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
                         pointBackgroundColor: '#fff',
-                        pointBorderColor: TO_COLORS.blue,
-                        pointRadius: 4
+                        pointBorderColor: COLORS.blue,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
                     }] 
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
+                    responsive: true, 
+                    maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: 'rgba(29,111,204,0.08)' } },
+                        x: { grid: { display: false } }
+                    }
                 }
             });
         }
 
         document.getElementById("monthFilter").addEventListener("change", updateDashboard);
         document.getElementById("yearFilter").addEventListener("change", updateDashboard);
+        
         fetchData();
     </script>
 </body>

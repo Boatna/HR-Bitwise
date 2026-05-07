@@ -4,7 +4,7 @@
 
 const CONFIG = {
   // ⚠️ นำ URL ของ Web App ที่คุณ Deploy แล้วมาใส่ตรงนี้
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzzfTtCF8oH9tbCtDAYJxaoMHaWdlMq-xm5uBAlUiwwZbf6wFWfWXF1QDp7xBni9gTi/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyT0lTgvJLw-ryhemWogAdjjkHDCTbAzKgvFJ0s5QMErR9BI-fyruKpaRluaBh9GBUd/exec",
 
   LEAVE_REASONS: [
     "ได้งานใหม่",

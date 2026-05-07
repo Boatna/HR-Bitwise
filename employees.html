@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>จัดการข้อมูลพนักงาน · HR Bitwise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="config.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#F0F6FF; --bg2:#FFFFFF; --bg3:#EBF3FF; --bg4:#DCEEFF;
+  --blue:#1D6FCC; --blue2:#2563EB; --blue3:#3B82F6; --cyan:#0EA5E9; --navy:#1E3A5F;
+  --text:#0F2744; --text2:#2D5080; --text3:#4A7CB5;
+  --line:rgba(29,111,204,0.10); --line2:rgba(29,111,204,0.16);
+  --red:#DC2626; --green:#059669;
+  --input-bg:#FFFFFF; --input-border:rgba(29,111,204,0.18); --input-focus:rgba(37,99,235,0.18);
+  --shadow:0 2px 16px rgba(29,111,204,0.10); --shadow2:0 8px 32px rgba(29,111,204,0.14);
+}
+body { font-family:'Noto Sans Thai',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 80% -5%,rgba(29,111,204,0.08) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at -5% 90%,rgba(14,165,233,0.05) 0%,transparent 50%),
+    radial-gradient(circle,rgba(29,111,204,0.08) 1px,transparent 1px);
+  background-size:100% 100%,100% 100%,36px 36px;
+}
+
+/* ── NAV ── */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:100;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 clamp(16px,4vw,48px); height:62px;
+  background:rgba(255,255,255,0.92); backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--line2); box-shadow:0 1px 12px rgba(29,111,204,0.07);
+}
+.nav-brand { font-size:1.05rem; font-weight:700; color:var(--navy); text-decoration:none; display:flex; align-items:center; gap:8px; }
+.nav-links { display:flex; gap:6px; flex-wrap:wrap; }
+.nav-btn {
+  padding:6px 14px; border-radius:8px; font-size:0.8rem; font-weight:600;
+  cursor:pointer; text-decoration:none; transition:all .2s;
+  border:1.5px solid var(--line2); background:transparent; color:var(--text2);
+  font-family:'Noto Sans Thai',sans-serif; white-space:nowrap;
+}
+.nav-btn:hover { color:var(--blue2); border-color:rgba(37,99,235,0.35); background:var(--bg3); }
+.nav-btn.active { background:var(--blue2); color:#fff; border-color:var(--blue2); }
+
+/* ── PAGE ── */
+.wrap { position:relative; z-index:1; max-width:1320px; margin:0 auto; padding:86px clamp(16px,4vw,40px) 80px; }
+
+/* ── TOOLBAR ── */
+.toolbar { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+.page-title { font-family:'DM Serif Display',serif; font-size:1.75rem; color:var(--navy); margin-bottom:4px; }
+.page-desc { color:var(--text3); font-size:0.85rem; }
+.toolbar-right { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+.search-box {
+  display:flex; align-items:center; gap:8px; padding:8px 14px;
+  background:var(--bg2); border:1.5px solid var(--line2); border-radius:10px;
+  min-width:240px; box-shadow:var(--shadow);
+}
+.search-box input { border:none; background:transparent; outline:none; font-size:0.88rem; font-family:'Noto Sans Thai',sans-serif; color:var(--text); width:100%; }
+
+/* ── BUTTONS ── */
+.btn {
+  padding:9px 20px; border-radius:10px; font-family:'Noto Sans Thai',sans-serif;
+  font-size:0.88rem; font-weight:700; cursor:pointer; transition:all .2s;
+  display:inline-flex; align-items:center; gap:7px; border:none; white-space:nowrap;
+}
+.btn-primary { background:var(--blue2); color:#fff; box-shadow:0 4px 14px rgba(37,99,235,0.28); }
+.btn-primary:hover:not(:disabled) { background:var(--blue); transform:translateY(-2px); box-shadow:0 8px 22px rgba(37,99,235,0.36); }
+.btn-ghost { background:var(--bg2); color:var(--text2); border:1.5px solid var(--line2); }
+.btn-ghost:hover { color:var(--blue2); border-color:rgba(37,99,235,0.35); background:var(--bg4); }
+.btn-danger { background:var(--red); color:#fff; box-shadow:0 4px 12px rgba(220,38,38,0.28); }
+.btn-danger:hover:not(:disabled) { background:#b91c1c; transform:translateY(-2px); }
+.btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
+
+/* ── STATS ── */
+.stats { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.stat {
+  background:var(--bg2); border:1px solid var(--line2); border-radius:12px;
+  padding:12px 20px; box-shadow:var(--shadow); display:flex; align-items:center; gap:14px;
+}
+.stat-icon { font-size:1.5rem; opacity:.7; }
+.stat-num { font-family:'DM Mono',monospace; font-size:1.5rem; font-weight:700; color:var(--navy); line-height:1; }
+.stat-lbl { font-size:0.72rem; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
+
+/* ── TABLE ── */
+.table-card { background:var(--bg2); border:1px solid var(--line2); border-radius:16px; overflow:hidden; box-shadow:var(--shadow); }
+.table-scroll { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:0.855rem; min-width:820px; }
+th {
+  padding:13px 16px; background:var(--bg3); color:var(--text2); font-weight:700;
+  text-align:left; font-size:0.71rem; text-transform:uppercase; letter-spacing:.07em;
+  border-bottom:1px solid var(--line2); cursor:pointer; user-select:none; white-space:nowrap;
+}
+th:hover { color:var(--blue2); }
+.sort-ic { margin-left:4px; opacity:.35; transition:opacity .15s; }
+th.sorted .sort-ic { opacity:1; color:var(--blue2); }
+td { padding:12px 16px; border-top:1px solid var(--line); vertical-align:middle; }
+tr:hover td { background:var(--bg3); }
+.emp-name { font-weight:600; color:var(--navy); }
+.emp-id { font-family:'DM Mono',monospace; font-size:0.8rem; color:var(--text3); }
+.badge { display:inline-block; padding:3px 10px; border-radius:100px; font-size:0.74rem; font-weight:600; border:1px solid transparent; white-space:nowrap; }
+.badge-blue  { background:var(--bg3); color:var(--blue2); border-color:var(--line2); }
+.badge-green { background:#ECFDF5; color:#065F46; border-color:rgba(5,150,105,0.2); }
+.badge-gray  { background:#F3F4F6; color:#6B7280; border-color:#E5E7EB; }
+.badge-orange{ background:#FFF7ED; color:#C2410C; border-color:rgba(194,65,12,0.2); }
+
+.act-btns { display:flex; gap:6px; justify-content:center; }
+.btn-ic {
+  width:32px; height:32px; border-radius:8px; border:1.5px solid var(--line2);
+  background:transparent; cursor:pointer; font-size:0.9rem; transition:all .15s;
+  display:flex; align-items:center; justify-content:center;
+}
+.btn-ic.edit:hover { border-color:rgba(37,99,235,0.4); background:var(--bg3); }
+.btn-ic.del:hover  { border-color:rgba(220,38,38,0.3); background:#FEF2F2; }
+
+/* ── PAGINATION ── */
+.pagination { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-top:1px solid var(--line2); flex-wrap:wrap; gap:10px; }
+.page-info { font-size:0.82rem; color:var(--text3); }
+.page-btns { display:flex; gap:5px; }
+.pg-btn {
+  min-width:32px; height:32px; padding:0 8px; border-radius:8px; border:1.5px solid var(--line2);
+  background:transparent; cursor:pointer; font-size:0.82rem; font-weight:600; color:var(--text2); transition:all .15s;
+}
+.pg-btn:hover:not(:disabled) { border-color:rgba(37,99,235,0.35); background:var(--bg3); color:var(--blue2); }
+.pg-btn.active { background:var(--blue2); color:#fff; border-color:var(--blue2); }
+.pg-btn:disabled { opacity:.3; cursor:not-allowed; }
+
+.empty-state { text-align:center; padding:60px 20px; color:var(--text3); }
+.empty-state .ic { font-size:2.8rem; margin-bottom:12px; opacity:.4; }
+
+/* ── MODAL ── */
+.overlay {
+  position:fixed; inset:0; z-index:1000;
+  background:rgba(15,39,68,0.45); backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center; padding:20px;
+  opacity:0; pointer-events:none; transition:opacity .22s;
+}
+.overlay.open { opacity:1; pointer-events:auto; }
+.modal {
+  background:var(--bg2); border-radius:20px; border:1px solid var(--line2);
+  box-shadow:var(--shadow2); width:100%; max-width:660px; max-height:90vh;
+  display:flex; flex-direction:column;
+  transform:translateY(18px); transition:transform .22s; overflow:hidden;
+}
+.overlay.open .modal { transform:translateY(0); }
+.modal-head {
+  padding:22px 28px 16px; border-bottom:1px solid var(--line2);
+  display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+}
+.modal-title { font-family:'DM Serif Display',serif; font-size:1.25rem; color:var(--navy); }
+.modal-x {
+  width:32px; height:32px; border-radius:8px; border:1.5px solid var(--line2);
+  background:transparent; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all .15s;
+}
+.modal-x:hover { background:#FEF2F2; border-color:rgba(220,38,38,0.3); color:var(--red); }
+.modal-body { padding:24px 28px; overflow-y:auto; flex:1; }
+.modal-foot {
+  padding:16px 28px; border-top:1px solid var(--line2);
+  display:flex; justify-content:flex-end; gap:10px; flex-shrink:0; background:var(--bg3);
+}
+
+/* ── FORM ── */
+.fgrid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.c2 { grid-column:span 2; }
+.field { display:flex; flex-direction:column; gap:6px; }
+.field label { font-size:0.73rem; font-weight:800; color:var(--text2); text-transform:uppercase; letter-spacing:.07em; }
+.req { color:var(--red); margin-left:2px; }
+.field input,.field select {
+  background:var(--input-bg); border:1.5px solid var(--input-border); border-radius:10px;
+  padding:10px 13px; font-family:'Noto Sans Thai',sans-serif; font-size:0.9rem;
+  color:var(--text); outline:none; transition:all .2s; width:100%;
+}
+.field input:focus,.field select:focus { border-color:var(--blue2); box-shadow:0 0 0 3px var(--input-focus); }
+.field select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A7CB5' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 13px center; padding-right:36px; }
+.field input:disabled { background:var(--bg3); color:var(--text3); cursor:not-allowed; }
+.sec-label { grid-column:span 2; font-size:0.7rem; font-weight:800; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; display:flex; align-items:center; gap:8px; margin-top:4px; }
+.sec-label::after { content:''; flex:1; height:1px; background:var(--line2); }
+
+/* ── DELETE DIALOG ── */
+.del-modal { max-width:420px; }
+.del-body { padding:32px 28px; text-align:center; }
+.del-icon { font-size:3.2rem; margin-bottom:16px; }
+.del-title { font-size:1.1rem; font-weight:700; color:var(--navy); margin-bottom:8px; }
+.del-desc { font-size:0.875rem; color:var(--text3); line-height:1.65; }
+.del-name { color:var(--red); font-weight:700; }
+.del-foot { padding:16px 28px 24px; display:flex; justify-content:center; gap:12px; }
+
+/* ── TOAST ── */
+.toast-wrap { position:fixed; bottom:28px; right:28px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast { padding:12px 18px; border-radius:12px; font-size:0.875rem; font-weight:600; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow2); animation:slideIn .28s ease; min-width:250px; }
+.toast-ok  { background:#ECFDF5; border:1.5px solid rgba(5,150,105,0.25); color:#065F46; }
+.toast-err { background:#FEF2F2; border:1.5px solid rgba(220,38,38,0.25); color:#991B1B; }
+@keyframes slideIn { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:translateX(0)} }
+.spinner { width:15px; height:15px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .55s linear infinite; display:inline-block; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+@media(max-width:768px){
+  .fgrid{grid-template-columns:1fr;} .c2{grid-column:span 1;}
+  .modal-body{padding:18px 20px;} .modal-head,.modal-foot{padding:16px 20px;}
+  .stats{gap:8px;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-brand">📈 HR Dashboard</a>
+  <div class="nav-links">
+    <a href="index.html"      class="nav-btn">📝 บันทึกลาออก</a>
+    <a href="leave.html"      class="nav-btn">📅 บันทึกการลา</a>
+    <a href="dashboard.html"  class="nav-btn">📊 Dashboard</a>
+    <a href="employees.html"  class="nav-btn active">👥 จัดการพนักงาน</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div>
+      <div class="page-title">👥 จัดการข้อมูลพนักงาน</div>
+      <div class="page-desc">เพิ่ม และ แก้ไข ข้อมูลพนักงาน · บันทึกลง Google Sheets อัตโนมัติ</div>
+    </div>
+    <div class="toolbar-right">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="searchInput" placeholder="ค้นหาชื่อ รหัส หรือแผนก…" />
+      </div>
+      <button class="btn btn-primary" onclick="openAdd()">➕ เพิ่มพนักงานใหม่</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><div class="stat-icon">👥</div><div><div class="stat-num" id="sTot">—</div><div class="stat-lbl">ทั้งหมด</div></div></div>
+    <div class="stat"><div class="stat-icon">🇹🇭</div><div><div class="stat-num" id="sTH">—</div><div class="stat-lbl">สัญชาติไทย</div></div></div>
+    <div class="stat"><div class="stat-icon">🌏</div><div><div class="stat-num" id="sMM">—</div><div class="stat-lbl">สัญชาติพม่า</div></div></div>
+    <div class="stat"><div class="stat-icon">🏢</div><div><div class="stat-num" id="sDept">—</div><div class="stat-lbl">แผนก</div></div></div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th onclick="sortBy('รหัสพนักงาน')"  id="th-รหัสพนักงาน">รหัส <span class="sort-ic">↕</span></th>
+          <th onclick="sortBy('ชื่อ-นามสกุล')" id="th-ชื่อ-นามสกุล">ชื่อ-นามสกุล <span class="sort-ic">↕</span></th>
+          <th onclick="sortBy('แผนก')"          id="th-แผนก">แผนก <span class="sort-ic">↕</span></th>
+          <th onclick="sortBy('ตำแหน่ง')"       id="th-ตำแหน่ง">ตำแหน่ง <span class="sort-ic">↕</span></th>
+          <th onclick="sortBy('Plant')"          id="th-Plant">Plant <span class="sort-ic">↕</span></th>
+          <th onclick="sortBy('สัญชาติ')"        id="th-สัญชาติ">สัญชาติ <span class="sort-ic">↕</span></th>
+          <th onclick="sortBy('วันที่เริ่มงาน')" id="th-วันที่เริ่มงาน">วันเริ่มงาน <span class="sort-ic">↕</span></th>
+          <th style="width:88px;text-align:center;">Actions</th>
+        </tr></thead>
+        <tbody id="tbody">
+          <tr><td colspan="8"><div class="empty-state"><div class="ic">⏳</div><div>กำลังโหลดข้อมูล…</div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pgBar" style="display:none">
+      <div class="page-info" id="pgInfo"></div>
+      <div class="page-btns" id="pgBtns"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════ ADD / EDIT MODAL ══════════════ -->
+<div class="overlay" id="formOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">เพิ่มพนักงานใหม่</div>
+      <button class="modal-x" onclick="closeOverlay('formOverlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrid">
+
+        <div class="sec-label c2">ข้อมูลส่วนตัว</div>
+
+        <div class="field">
+          <label>รหัสพนักงาน <span class="req">*</span></label>
+          <input type="text" id="fId" placeholder="เช่น EMP001" />
+        </div>
+        <div class="field">
+          <label>คำนำหน้า <span class="req">*</span></label>
+          <select id="fPrefix">
+            <option value="">— เลือก —</option>
+            <option value="นาย">นาย</option>
+            <option value="นาง">นาง</option>
+            <option value="นางสาว">นางสาว</option>
+          </select>
+        </div>
+
+        <div class="field c2">
+          <label>ชื่อ-นามสกุล <span class="req">*</span></label>
+          <input type="text" id="fName" placeholder="ชื่อ-นามสกุลเต็ม" />
+        </div>
+
+        <div class="field">
+          <label>สัญชาติ</label>
+          <select id="fNat">
+            <option value="">— เลือก —</option>
+            <option value="ไทย">ไทย</option>
+            <option value="พม่า">พม่า</option>
+            <option value="ลาว">ลาว</option>
+            <option value="กัมพูชา">กัมพูชา</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>เบอร์โทรศัพท์</label>
+          <input type="tel" id="fPhone" placeholder="0XX-XXX-XXXX" />
+        </div>
+
+        <div class="sec-label c2">ข้อมูลการทำงาน</div>
+
+        <div class="field">
+          <label>แผนก <span class="req">*</span></label>
+          <input type="text" id="fDept" placeholder="เช่น Production" list="listDept" />
+          <datalist id="listDept"></datalist>
+        </div>
+        <div class="field">
+          <label>ตำแหน่ง <span class="req">*</span></label>
+          <input type="text" id="fPos" placeholder="เช่น พนักงานผลิต" />
+        </div>
+
+        <div class="field">
+          <label>Plant</label>
+          <input type="text" id="fPlant" placeholder="เช่น Plant 1" list="listPlant" />
+          <datalist id="listPlant"></datalist>
+        </div>
+        <div class="field">
+          <label>วันที่เริ่มงาน</label>
+          <input type="date" id="fStart" />
+        </div>
+
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeOverlay('formOverlay')">ยกเลิก</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveEmployee()">
+        <span id="saveBtnIc">💾</span><span id="saveBtnTx">บันทึก</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ DELETE CONFIRM MODAL ══════════════ -->
+<div class="overlay" id="delOverlay">
+  <div class="modal del-modal">
+    <div class="modal-head" style="border:none;padding-bottom:0">
+      <div></div>
+      <button class="modal-x" onclick="closeOverlay('delOverlay')">✕</button>
+    </div>
+    <div class="del-body">
+      <div class="del-icon">🗑️</div>
+      <div class="del-title">ยืนยันการลบพนักงาน</div>
+      <div class="del-desc" style="margin-top:10px">
+        ต้องการลบข้อมูลของ<br>
+        <span class="del-name" id="delName"></span><br>
+        ออกจากระบบหรือไม่?<br>
+        <small style="opacity:.65">ข้อมูลจะถูกลบถาวร ไม่สามารถกู้คืนได้</small>
+      </div>
+    </div>
+    <div class="del-foot">
+      <button class="btn btn-ghost" onclick="closeOverlay('delOverlay')">ยกเลิก</button>
+      <button class="btn btn-danger" id="delBtn" onclick="confirmDelete()">🗑 ลบออกจากระบบ</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+let allEmps = [];
+let filtered = [];
+let sortKey = '';
+let sortAsc = true;
+let page = 1;
+const PER = 20;
+let editRow = null;
+let deleteRow = null;
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  await load();
+  document.getElementById('searchInput').addEventListener('input', filter);
+  // ปิด overlay เมื่อคลิก backdrop
+  document.querySelectorAll('.overlay').forEach(o =>
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); })
+  );
+});
+
+// ══════════════════════════════════════════════════
+// LOAD
+// ══════════════════════════════════════════════════
+async function load() {
+  try {
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL + '?action=getEmployees');
+    const json = await res.json();
+    if (json.status === 'ok') {
+      allEmps = json.data;
+      filter();
+      updateStats();
+      fillDataLists();
+    } else {
+      toast('โหลดข้อมูลไม่สำเร็จ: ' + (json.message || ''), 'err');
+    }
+  } catch (e) {
+    toast('ไม่สามารถเชื่อมต่อ API ได้', 'err');
+  }
+}
+
+// ══════════════════════════════════════════════════
+// STATS & DATALISTS
+// ══════════════════════════════════════════════════
+function updateStats() {
+  document.getElementById('sTot').textContent  = allEmps.length;
+  document.getElementById('sTH').textContent   = allEmps.filter(e => e['สัญชาติ'] === 'ไทย').length;
+  document.getElementById('sMM').textContent   = allEmps.filter(e => e['สัญชาติ'] === 'พม่า').length;
+  document.getElementById('sDept').textContent = new Set(allEmps.map(e => e['แผนก']).filter(Boolean)).size;
+}
+
+function fillDataLists() {
+  const depts  = [...new Set(allEmps.map(e => e['แผนก']).filter(Boolean))];
+  const plants = [...new Set(allEmps.map(e => e['Plant']).filter(Boolean))];
+  document.getElementById('listDept').innerHTML  = depts.map(d  => `<option value="${d}">`).join('');
+  document.getElementById('listPlant').innerHTML = plants.map(p => `<option value="${p}">`).join('');
+}
+
+// ══════════════════════════════════════════════════
+// FILTER & SORT
+// ══════════════════════════════════════════════════
+function filter() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  filtered = allEmps.filter(e =>
+    (e['ชื่อ-นามสกุล'] || '').toLowerCase().includes(q) ||
+    String(e['รหัสพนักงาน'] || '').toLowerCase().includes(q) ||
+    (e['แผนก'] || '').toLowerCase().includes(q) ||
+    (e['ตำแหน่ง'] || '').toLowerCase().includes(q)
+  );
+  if (sortKey) {
+    filtered.sort((a, b) => {
+      const va = String(a[sortKey] || '').toLowerCase();
+      const vb = String(b[sortKey] || '').toLowerCase();
+      return sortAsc ? va.localeCompare(vb, 'th') : vb.localeCompare(va, 'th');
+    });
+  }
+  page = 1;
+  render();
+}
+
+function sortBy(key) {
+  if (sortKey === key) sortAsc = !sortAsc;
+  else { sortKey = key; sortAsc = true; }
+  document.querySelectorAll('th').forEach(th => { th.classList.remove('sorted'); if (th.querySelector('.sort-ic')) th.querySelector('.sort-ic').textContent = '↕'; });
+  const th = document.getElementById('th-' + key);
+  if (th) { th.classList.add('sorted'); th.querySelector('.sort-ic').textContent = sortAsc ? '↑' : '↓'; }
+  filter();
+}
+
+// ══════════════════════════════════════════════════
+// RENDER TABLE
+// ══════════════════════════════════════════════════
+function render() {
+  const tbody = document.getElementById('tbody');
+  const total = filtered.length;
+  const pages = Math.ceil(total / PER) || 1;
+  if (page > pages) page = pages;
+  const s = (page - 1) * PER;
+  const rows = filtered.slice(s, s + PER);
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="ic">${allEmps.length ? '🔍' : '📋'}</div><div>${allEmps.length ? 'ไม่พบพนักงานที่ค้นหา' : 'ยังไม่มีข้อมูลพนักงาน กดปุ่ม "เพิ่มพนักงานใหม่" เพื่อเริ่มต้น'}</div></div></td></tr>`;
+    document.getElementById('pgBar').style.display = 'none';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(e => {
+    const natCls = e['สัญชาติ'] === 'ไทย' ? 'badge-green' : e['สัญชาติ'] === 'พม่า' ? 'badge-blue' : 'badge-gray';
+    const start  = e['วันที่เริ่มงาน'] ? (() => { try { return new Date(e['วันที่เริ่มงาน']).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'}); } catch { return e['วันที่เริ่มงาน']; } })() : '—';
+    return `<tr>
+      <td><span class="emp-id">${e['รหัสพนักงาน'] || '—'}</span></td>
+      <td><div class="emp-name">${e['คำนำหน้า'] || ''}${e['ชื่อ-นามสกุล'] || '—'}</div></td>
+      <td><span class="badge badge-blue">${e['แผนก'] || '—'}</span></td>
+      <td>${e['ตำแหน่ง'] || '—'}</td>
+      <td>${e['Plant'] || '—'}</td>
+      <td><span class="badge ${natCls}">${e['สัญชาติ'] || '—'}</span></td>
+      <td>${start}</td>
+      <td>
+        <div class="act-btns">
+          <button class="btn-ic edit" title="แก้ไข" onclick="openEdit(${e._rowIndex})">✏️</button>
+          <button class="btn-ic del"  title="ลบ"    onclick="openDel(${e._rowIndex},'${(e['ชื่อ-นามสกุล']||'').replace(/'/g,"\\'")}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Pagination
+  const bar = document.getElementById('pgBar');
+  bar.style.display = total > PER ? 'flex' : 'none';
+  document.getElementById('pgInfo').textContent = `แสดง ${s + 1}–${Math.min(s + PER, total)} จาก ${total} คน`;
+
+  let html = `<button class="pg-btn" onclick="goPage(${page-1})" ${page===1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || Math.abs(i - page) <= 1)
+      html += `<button class="pg-btn ${i===page?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    else if (Math.abs(i - page) === 2)
+      html += `<span style="padding:0 3px;color:var(--text3)">…</span>`;
+  }
+  html += `<button class="pg-btn" onclick="goPage(${page+1})" ${page===pages?'disabled':''}>›</button>`;
+  document.getElementById('pgBtns').innerHTML = html;
+}
+
+function goPage(p) {
+  const pages = Math.ceil(filtered.length / PER) || 1;
+  if (p < 1 || p > pages) return;
+  page = p; render();
+}
+
+// ══════════════════════════════════════════════════
+// ADD
+// ══════════════════════════════════════════════════
+function openAdd() {
+  editRow = null;
+  clearForm();
+  document.getElementById('modalTitle').textContent = '➕ เพิ่มพนักงานใหม่';
+  document.getElementById('fId').disabled = false;
+  document.getElementById('fStart').value = new Date().toISOString().split('T')[0];
+  document.getElementById('formOverlay').classList.add('open');
+}
+
+// ══════════════════════════════════════════════════
+// EDIT
+// ══════════════════════════════════════════════════
+function openEdit(rowIndex) {
+  const emp = allEmps.find(e => e._rowIndex === rowIndex);
+  if (!emp) return toast('ไม่พบข้อมูลพนักงาน', 'err');
+  editRow = rowIndex;
+  clearForm();
+  document.getElementById('modalTitle').textContent = '✏️ แก้ไขข้อมูลพนักงาน';
+  document.getElementById('fId').value    = emp['รหัสพนักงาน'] || '';
+  document.getElementById('fId').disabled = true;
+  document.getElementById('fPrefix').value = emp['คำนำหน้า'] || '';
+  document.getElementById('fName').value  = emp['ชื่อ-นามสกุล'] || '';
+  document.getElementById('fNat').value   = emp['สัญชาติ'] || '';
+  document.getElementById('fPhone').value = emp['เบอร์โทรศัพท์'] || '';
+  document.getElementById('fDept').value  = emp['แผนก'] || '';
+  document.getElementById('fPos').value   = emp['ตำแหน่ง'] || '';
+  document.getElementById('fPlant').value = emp['Plant'] || '';
+  document.getElementById('fStart').value = emp['วันที่เริ่มงาน'] || '';
+  document.getElementById('formOverlay').classList.add('open');
+}
+
+// ══════════════════════════════════════════════════
+// SAVE (Add / Edit)
+// ══════════════════════════════════════════════════
+async function saveEmployee() {
+  const id  = document.getElementById('fId').value.trim();
+  const pfx = document.getElementById('fPrefix').value;
+  const nm  = document.getElementById('fName').value.trim();
+  const dep = document.getElementById('fDept').value.trim();
+  const pos = document.getElementById('fPos').value.trim();
+
+  if (!id || !pfx || !nm || !dep || !pos)
+    return toast('กรุณากรอกข้อมูลที่จำเป็น (*) ให้ครบ', 'err');
+
+  setBtnLoading('saveBtn', 'saveBtnIc', 'saveBtnTx', true);
+
+  const data = {
+    'รหัสพนักงาน'  : id,
+    'คำนำหน้า'    : pfx,
+    'ชื่อ-นามสกุล': nm,
+    'สัญชาติ'     : document.getElementById('fNat').value,
+    'เบอร์โทรศัพท์': document.getElementById('fPhone').value.trim(),
+    'แผนก'        : dep,
+    'ตำแหน่ง'     : pos,
+    'Plant'        : document.getElementById('fPlant').value.trim(),
+    'วันที่เริ่มงาน': document.getElementById('fStart').value,
+  };
+
+  const payload = editRow
+    ? { action: 'updateEmployee', rowIndex: editRow, data }
+    : { action: 'addEmployee', data };
+
+  try {
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify(payload) });
+    const json = await res.json();
+    if (json.status === 'ok') {
+      toast(editRow ? '✅ แก้ไขข้อมูลสำเร็จ!' : '✅ เพิ่มพนักงานสำเร็จ!');
+      closeOverlay('formOverlay');
+      await load();
+    } else {
+      toast('เกิดข้อผิดพลาด: ' + (json.message || ''), 'err');
+    }
+  } catch (err) {
+    toast('เกิดข้อผิดพลาด: ' + err.message, 'err');
+  }
+
+  setBtnLoading('saveBtn', 'saveBtnIc', 'saveBtnTx', false);
+}
+
+// ══════════════════════════════════════════════════
+// DELETE
+// ══════════════════════════════════════════════════
+function openDel(rowIndex, name) {
+  deleteRow = rowIndex;
+  document.getElementById('delName').textContent = name;
+  document.getElementById('delOverlay').classList.add('open');
+}
+
+async function confirmDelete() {
+  const btn = document.getElementById('delBtn');
+  btn.disabled = true; btn.textContent = '⏳ กำลังลบ…';
+  try {
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'deleteEmployee', rowIndex: deleteRow }) });
+    const json = await res.json();
+    if (json.status === 'ok') {
+      toast('✅ ลบข้อมูลสำเร็จ');
+      closeOverlay('delOverlay');
+      await load();
+    } else {
+      toast('เกิดข้อผิดพลาด: ' + (json.message || ''), 'err');
+    }
+  } catch (err) {
+    toast('เกิดข้อผิดพลาด: ' + err.message, 'err');
+  }
+  btn.disabled = false; btn.innerHTML = '🗑 ลบออกจากระบบ';
+}
+
+// ══════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════
+function clearForm() {
+  ['fId','fName','fPhone','fDept','fPos','fPlant','fStart'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fPrefix').value = '';
+  document.getElementById('fNat').value = '';
+}
+
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+
+function setBtnLoading(btnId, icId, txId, loading) {
+  document.getElementById(btnId).disabled = loading;
+  document.getElementById(icId).innerHTML = loading ? '<div class="spinner"></div>' : '💾';
+  document.getElementById(txId).textContent = loading ? 'กำลังบันทึก…' : 'บันทึก';
+}
+
+function toast(msg, type = 'ok') {
+  const wrap = document.getElementById('toasts');
+  const el   = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `<span>${type === 'ok' ? '✅' : '❌'}</span><span>${msg}</span>`;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+</script>
+</body>
+</html>
