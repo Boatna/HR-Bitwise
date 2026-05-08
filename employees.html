@@ -12,14 +12,19 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg:#F0F6FF; --bg2:#FFFFFF; --bg3:#EBF3FF; --bg4:#DCEEFF;
-  --blue:#1D6FCC; --blue2:#2563EB; --blue3:#3B82F6; --cyan:#0EA5E9; --navy:#1E3A5F;
+  --blue:#1D6FCC; --blue2:#2563EB; --blue3:#3B82F6; --cyan:#0EA5E9; --navy:#444547;
   --text:#0F2744; --text2:#2D5080; --text3:#4A7CB5;
   --line:rgba(29,111,204,0.10); --line2:rgba(29,111,204,0.16);
   --red:#DC2626; --green:#059669;
   --input-bg:#FFFFFF; --input-border:rgba(29,111,204,0.18); --input-focus:rgba(37,99,235,0.18);
   --shadow:0 2px 16px rgba(29,111,204,0.10); --shadow2:0 8px 32px rgba(29,111,204,0.14);
 }
-body { font-family:'Noto Sans Thai',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+body { 
+  font-family:'Noto Sans Thai',sans-serif; 
+  background:var(--bg); 
+  color:var(--text); 
+  min-height:100vh; 
+}
 body::before {
   content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
   background-image:
@@ -34,10 +39,13 @@ nav {
   position:fixed; top:0; left:0; right:0; z-index:100;
   display:flex; align-items:center; justify-content:space-between;
   padding:0 clamp(16px,4vw,48px); height:62px;
-  background:rgba(255,255,255,0.92); backdrop-filter:blur(20px);
+  background:rgba(255,255,255,0.92); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
   border-bottom:1px solid var(--line2); box-shadow:0 1px 12px rgba(29,111,204,0.07);
 }
-.nav-brand { font-size:1.05rem; font-weight:700; color:var(--navy); text-decoration:none; display:flex; align-items:center; gap:8px; }
+.nav-brand { 
+  font-size:1.05rem; font-weight:700; color:var(--navy); 
+  text-decoration:none; display:flex; align-items:center; gap:8px; 
+}
 .nav-links { display:flex; gap:6px; flex-wrap:wrap; }
 .nav-btn {
   padding:6px 14px; border-radius:8px; font-size:0.8rem; font-weight:600;
@@ -49,11 +57,22 @@ nav {
 .nav-btn.active { background:var(--blue2); color:#fff; border-color:var(--blue2); }
 
 /* ── PAGE ── */
-.wrap { position:relative; z-index:1; max-width:1320px; margin:0 auto; padding:86px clamp(16px,4vw,40px) 80px; }
+.wrap { 
+  position:relative; z-index:1; 
+  max-width:1320px; margin:0 auto; 
+  padding:86px clamp(16px,4vw,40px) 80px; 
+}
 
 /* ── TOOLBAR ── */
-.toolbar { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
-.page-title { font-family:'DM Serif Display',serif; font-size:1.75rem; color:var(--navy); margin-bottom:4px; }
+.toolbar { 
+  display:flex; justify-content:space-between; align-items:flex-start; 
+  gap:16px; flex-wrap:wrap; margin-bottom:24px; 
+}
+.title-group { flex:1; min-width:200px; }
+.page-title { 
+  font-family:'DM Serif Display','Noto Sans Thai',serif; 
+  font-size:1.75rem; color:var(--navy); margin-bottom:4px; 
+}
 .page-desc { color:var(--text3); font-size:0.85rem; }
 .toolbar-right { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 
@@ -62,7 +81,11 @@ nav {
   background:var(--bg2); border:1.5px solid var(--line2); border-radius:10px;
   min-width:240px; box-shadow:var(--shadow);
 }
-.search-box input { border:none; background:transparent; outline:none; font-size:0.88rem; font-family:'Noto Sans Thai',sans-serif; color:var(--text); width:100%; }
+.search-box input { 
+  border:none; background:transparent; outline:none; 
+  font-size:0.88rem; font-family:'Noto Sans Thai',sans-serif; 
+  color:var(--text); width:100%; 
+}
 
 /* ── BUTTONS ── */
 .btn {
@@ -70,12 +93,36 @@ nav {
   font-size:0.88rem; font-weight:700; cursor:pointer; transition:all .2s;
   display:inline-flex; align-items:center; gap:7px; border:none; white-space:nowrap;
 }
-.btn-primary { background:var(--blue2); color:#fff; box-shadow:0 4px 14px rgba(37,99,235,0.28); }
-.btn-primary:hover:not(:disabled) { background:var(--blue); transform:translateY(-2px); box-shadow:0 8px 22px rgba(37,99,235,0.36); }
-.btn-ghost { background:var(--bg2); color:var(--text2); border:1.5px solid var(--line2); }
-.btn-ghost:hover { color:var(--blue2); border-color:rgba(37,99,235,0.35); background:var(--bg4); }
-.btn-danger { background:var(--red); color:#fff; box-shadow:0 4px 12px rgba(220,38,38,0.28); }
-.btn-danger:hover:not(:disabled) { background:#b91c1c; transform:translateY(-2px); }
+.btn-primary { 
+  background:var(--blue2); color:#fff; 
+  box-shadow:0 4px 14px rgba(37,99,235,0.28); 
+}
+.btn-primary:hover:not(:disabled) { 
+  background:var(--blue); transform:translateY(-2px); 
+  box-shadow:0 8px 22px rgba(37,99,235,0.36); 
+}
+.btn-ghost { 
+  background:var(--bg2); color:var(--text2); 
+  border:1.5px solid var(--line2); 
+}
+.btn-ghost:hover { 
+  color:var(--blue2); border-color:rgba(37,99,235,0.35); 
+  background:var(--bg4); 
+}
+.btn-danger { 
+  background:var(--red); color:#fff; 
+  box-shadow:0 4px 12px rgba(220,38,38,0.28); 
+}
+.btn-danger:hover:not(:disabled) { 
+  background:#b91c1c; transform:translateY(-2px); 
+}
+.btn-success {
+  background:var(--green); color:#fff;
+  box-shadow:0 4px 12px rgba(5,150,105,0.28);
+}
+.btn-success:hover:not(:disabled) {
+  background:#047857; transform:translateY(-2px);
+}
 .btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
 
 /* ── STATS ── */
@@ -83,56 +130,112 @@ nav {
 .stat {
   background:var(--bg2); border:1px solid var(--line2); border-radius:12px;
   padding:12px 20px; box-shadow:var(--shadow); display:flex; align-items:center; gap:14px;
+  flex:1; min-width:140px;
 }
 .stat-icon { font-size:1.5rem; opacity:.7; }
-.stat-num { font-family:'DM Mono',monospace; font-size:1.5rem; font-weight:700; color:var(--navy); line-height:1; }
-.stat-lbl { font-size:0.72rem; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
+.stat-num { 
+  font-family:'DM Mono',monospace; font-size:1.5rem; 
+  font-weight:700; color:var(--navy); line-height:1; 
+}
+.stat-lbl { 
+  font-size:0.72rem; font-weight:700; color:var(--text3); 
+  text-transform:uppercase; letter-spacing:.06em; margin-top:2px; 
+}
 
 /* ── TABLE ── */
-.table-card { background:var(--bg2); border:1px solid var(--line2); border-radius:16px; overflow:hidden; box-shadow:var(--shadow); }
-.table-scroll { overflow-x:auto; }
-table { width:100%; border-collapse:collapse; font-size:0.855rem; min-width:820px; }
+.table-card { 
+  background:var(--bg2); border:1px solid var(--line2); 
+  border-radius:16px; overflow:hidden; box-shadow:var(--shadow); 
+}
+.table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table { 
+  width:100%; border-collapse:collapse; font-size:0.855rem; 
+  min-width:900px; 
+}
 th {
   padding:13px 16px; background:var(--bg3); color:var(--text2); font-weight:700;
   text-align:left; font-size:0.71rem; text-transform:uppercase; letter-spacing:.07em;
   border-bottom:1px solid var(--line2); cursor:pointer; user-select:none; white-space:nowrap;
+  position:relative;
 }
-th:hover { color:var(--blue2); }
-.sort-ic { margin-left:4px; opacity:.35; transition:opacity .15s; }
+th:hover { color:var(--blue2); background:var(--bg4); }
+.sort-ic { 
+  margin-left:4px; opacity:.35; transition:opacity .15s; 
+  display:inline-block; width:12px; text-align:center;
+}
 th.sorted .sort-ic { opacity:1; color:var(--blue2); }
-td { padding:12px 16px; border-top:1px solid var(--line); vertical-align:middle; }
+td { 
+  padding:12px 16px; border-top:1px solid var(--line); 
+  vertical-align:middle; 
+}
 tr:hover td { background:var(--bg3); }
 .emp-name { font-weight:600; color:var(--navy); }
-.emp-id { font-family:'DM Mono',monospace; font-size:0.8rem; color:var(--text3); }
-.badge { display:inline-block; padding:3px 10px; border-radius:100px; font-size:0.74rem; font-weight:600; border:1px solid transparent; white-space:nowrap; }
+.emp-id { 
+  font-family:'DM Mono',monospace; font-size:0.8rem; 
+  color:var(--text3); background:var(--bg3); 
+  padding:2px 8px; border-radius:4px; 
+}
+.badge { 
+  display:inline-block; padding:3px 10px; border-radius:100px; 
+  font-size:0.74rem; font-weight:600; border:1px solid transparent; 
+  white-space:nowrap; 
+}
 .badge-blue  { background:var(--bg3); color:var(--blue2); border-color:var(--line2); }
 .badge-green { background:#ECFDF5; color:#065F46; border-color:rgba(5,150,105,0.2); }
 .badge-gray  { background:#F3F4F6; color:#6B7280; border-color:#E5E7EB; }
 .badge-orange{ background:#FFF7ED; color:#C2410C; border-color:rgba(194,65,12,0.2); }
+.badge-red   { background:#FEF2F2; color:#991B1B; border-color:rgba(220,38,38,0.2); }
 
 .act-btns { display:flex; gap:6px; justify-content:center; }
 .btn-ic {
-  width:32px; height:32px; border-radius:8px; border:1.5px solid var(--line2);
+  width:34px; height:34px; border-radius:8px; border:1.5px solid var(--line2);
   background:transparent; cursor:pointer; font-size:0.9rem; transition:all .15s;
   display:flex; align-items:center; justify-content:center;
 }
-.btn-ic.edit:hover { border-color:rgba(37,99,235,0.4); background:var(--bg3); }
-.btn-ic.del:hover  { border-color:rgba(220,38,38,0.3); background:#FEF2F2; }
+.btn-ic.edit:hover { border-color:rgba(37,99,235,0.4); background:var(--bg3); transform:scale(1.05); }
+.btn-ic.del:hover  { border-color:rgba(220,38,38,0.3); background:#FEF2F2; transform:scale(1.05); }
+.btn-ic.copy:hover { border-color:rgba(5,150,105,0.3); background:#ECFDF5; transform:scale(1.05); }
 
 /* ── PAGINATION ── */
-.pagination { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-top:1px solid var(--line2); flex-wrap:wrap; gap:10px; }
-.page-info { font-size:0.82rem; color:var(--text3); }
-.page-btns { display:flex; gap:5px; }
-.pg-btn {
-  min-width:32px; height:32px; padding:0 8px; border-radius:8px; border:1.5px solid var(--line2);
-  background:transparent; cursor:pointer; font-size:0.82rem; font-weight:600; color:var(--text2); transition:all .15s;
+.pagination { 
+  display:flex; align-items:center; justify-content:space-between; 
+  padding:14px 20px; border-top:1px solid var(--line2); 
+  flex-wrap:wrap; gap:10px; 
 }
-.pg-btn:hover:not(:disabled) { border-color:rgba(37,99,235,0.35); background:var(--bg3); color:var(--blue2); }
+.page-info { font-size:0.82rem; color:var(--text3); }
+.page-btns { display:flex; gap:5px; flex-wrap:wrap; }
+.pg-btn {
+  min-width:34px; height:34px; padding:0 8px; border-radius:8px; 
+  border:1.5px solid var(--line2); background:transparent; 
+  cursor:pointer; font-size:0.82rem; font-weight:600; 
+  color:var(--text2); transition:all .15s;
+  font-family:'Noto Sans Thai',sans-serif;
+  display:flex; align-items:center; justify-content:center;
+}
+.pg-btn:hover:not(:disabled) { 
+  border-color:rgba(37,99,235,0.35); background:var(--bg3); color:var(--blue2); 
+}
 .pg-btn.active { background:var(--blue2); color:#fff; border-color:var(--blue2); }
 .pg-btn:disabled { opacity:.3; cursor:not-allowed; }
 
 .empty-state { text-align:center; padding:60px 20px; color:var(--text3); }
 .empty-state .ic { font-size:2.8rem; margin-bottom:12px; opacity:.4; }
+
+/* ── LOADING ── */
+.loading-overlay {
+  position:fixed; top:0; left:0; right:0; bottom:0;
+  background:rgba(240,246,255,0.6); z-index:9999;
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:all;
+}
+.loading-spinner {
+  width:48px; height:48px;
+  border:4px solid rgba(37,99,235,0.15);
+  border-top-color:var(--blue2);
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
 
 /* ── MODAL ── */
 .overlay {
@@ -144,7 +247,7 @@ tr:hover td { background:var(--bg3); }
 .overlay.open { opacity:1; pointer-events:auto; }
 .modal {
   background:var(--bg2); border-radius:20px; border:1px solid var(--line2);
-  box-shadow:var(--shadow2); width:100%; max-width:660px; max-height:90vh;
+  box-shadow:var(--shadow2); width:100%; max-width:700px; max-height:90vh;
   display:flex; flex-direction:column;
   transform:translateY(18px); transition:transform .22s; overflow:hidden;
 }
@@ -153,34 +256,58 @@ tr:hover td { background:var(--bg3); }
   padding:22px 28px 16px; border-bottom:1px solid var(--line2);
   display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
 }
-.modal-title { font-family:'DM Serif Display',serif; font-size:1.25rem; color:var(--navy); }
+.modal-title { 
+  font-family:'DM Serif Display','Noto Sans Thai',serif; 
+  font-size:1.25rem; color:var(--navy); 
+}
 .modal-x {
-  width:32px; height:32px; border-radius:8px; border:1.5px solid var(--line2);
-  background:transparent; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all .15s;
+  width:34px; height:34px; border-radius:8px; border:1.5px solid var(--line2);
+  background:transparent; cursor:pointer; font-size:1rem; 
+  display:flex; align-items:center; justify-content:center; transition:all .15s;
+  color:var(--text3);
 }
 .modal-x:hover { background:#FEF2F2; border-color:rgba(220,38,38,0.3); color:var(--red); }
-.modal-body { padding:24px 28px; overflow-y:auto; flex:1; }
+.modal-body { padding:24px 28px; overflow-y:auto; flex:1; max-height:60vh; }
 .modal-foot {
   padding:16px 28px; border-top:1px solid var(--line2);
-  display:flex; justify-content:flex-end; gap:10px; flex-shrink:0; background:var(--bg3);
+  display:flex; justify-content:flex-end; gap:10px; flex-shrink:0; 
+  background:var(--bg3);
 }
 
 /* ── FORM ── */
 .fgrid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .c2 { grid-column:span 2; }
 .field { display:flex; flex-direction:column; gap:6px; }
-.field label { font-size:0.73rem; font-weight:800; color:var(--text2); text-transform:uppercase; letter-spacing:.07em; }
+.field label { 
+  font-size:0.73rem; font-weight:800; color:var(--text2); 
+  text-transform:uppercase; letter-spacing:.07em; 
+}
 .req { color:var(--red); margin-left:2px; }
 .field input,.field select {
   background:var(--input-bg); border:1.5px solid var(--input-border); border-radius:10px;
   padding:10px 13px; font-family:'Noto Sans Thai',sans-serif; font-size:0.9rem;
   color:var(--text); outline:none; transition:all .2s; width:100%;
 }
-.field input:focus,.field select:focus { border-color:var(--blue2); box-shadow:0 0 0 3px var(--input-focus); }
-.field select { cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A7CB5' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 13px center; padding-right:36px; }
+.field input:focus,.field select:focus { 
+  border-color:var(--blue2); box-shadow:0 0 0 3px var(--input-focus); 
+}
+.field select { 
+  cursor:pointer; appearance:none; 
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A7CB5' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); 
+  background-repeat:no-repeat; background-position:right 13px center; padding-right:36px; 
+}
 .field input:disabled { background:var(--bg3); color:var(--text3); cursor:not-allowed; }
-.sec-label { grid-column:span 2; font-size:0.7rem; font-weight:800; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; display:flex; align-items:center; gap:8px; margin-top:4px; }
+.field.error input,
+.field.error select { border-color:var(--red) !important; box-shadow:0 0 0 3px rgba(220,38,38,0.12) !important; }
+.field-error-msg { font-size:0.72rem; color:var(--red); margin-top:2px; display:none; }
+.field.error .field-error-msg { display:block; }
+.sec-label { 
+  grid-column:span 2; font-size:0.7rem; font-weight:800; color:var(--text3); 
+  text-transform:uppercase; letter-spacing:.1em; display:flex; align-items:center; 
+  gap:8px; margin-top:4px; 
+}
 .sec-label::after { content:''; flex:1; height:1px; background:var(--line2); }
+.field-hint { font-size:0.7rem; color:var(--text3); margin-top:2px; }
 
 /* ── DELETE DIALOG ── */
 .del-modal { max-width:420px; }
@@ -192,57 +319,120 @@ tr:hover td { background:var(--bg3); }
 .del-foot { padding:16px 28px 24px; display:flex; justify-content:center; gap:12px; }
 
 /* ── TOAST ── */
-.toast-wrap { position:fixed; bottom:28px; right:28px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
-.toast { padding:12px 18px; border-radius:12px; font-size:0.875rem; font-weight:600; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow2); animation:slideIn .28s ease; min-width:250px; }
+.toast-wrap { 
+  position:fixed; bottom:28px; right:28px; z-index:9999; 
+  display:flex; flex-direction:column; gap:8px; 
+  max-width:min(420px, calc(100vw - 56px));
+}
+.toast { 
+  padding:12px 18px; border-radius:12px; font-size:0.875rem; font-weight:600; 
+  display:flex; align-items:center; gap:10px; box-shadow:var(--shadow2); 
+  animation:slideIn .28s ease; min-width:250px; 
+}
 .toast-ok  { background:#ECFDF5; border:1.5px solid rgba(5,150,105,0.25); color:#065F46; }
 .toast-err { background:#FEF2F2; border:1.5px solid rgba(220,38,38,0.25); color:#991B1B; }
-@keyframes slideIn { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:translateX(0)} }
-.spinner { width:15px; height:15px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .55s linear infinite; display:inline-block; }
-@keyframes spin { to{transform:rotate(360deg)} }
+.toast-info { background:var(--bg3); border:1.5px solid rgba(37,99,235,0.25); color:var(--blue2); }
+@keyframes slideIn { 
+  from{opacity:0;transform:translateX(24px)} 
+  to{opacity:1;transform:translateX(0)} 
+}
 
+/* ── RESPONSIVE ── */
+@media(max-width:1024px){
+  .stats { gap:8px; }
+  .stat { padding:10px 14px; min-width:120px; }
+}
 @media(max-width:768px){
   .fgrid{grid-template-columns:1fr;} .c2{grid-column:span 1;}
   .modal-body{padding:18px 20px;} .modal-head,.modal-foot{padding:16px 20px;}
-  .stats{gap:8px;}
+  .toolbar { flex-direction:column; align-items:stretch; }
+  .toolbar-right { width:100%; }
+  .search-box { flex:1; }
+  .btn { padding:8px 14px; font-size:0.82rem; }
+  .modal { max-width:95vw; }
+}
+@media(max-width:480px){
+  .stats { flex-direction:column; }
+  .stat { width:100%; }
+  .act-btns { flex-direction:column; gap:4px; }
 }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
+<!-- ══════════════ NAV ══════════════ -->
 <nav>
-  <a href="index.html" class="nav-brand">📈 HR Dashboard</a>
+  <a href="index.html" class="nav-brand">
+    <span style="font-size:1.2rem;">📈</span> HR Dashboard
+  </a>
   <div class="nav-links">
-    <a href="index.html"      class="nav-btn">📝 บันทึกลาออก</a>
+    <a href="form.html"      class="nav-btn">📝 บันทึกลาออก</a>
     <a href="leave.html"      class="nav-btn">📅 บันทึกการลา</a>
     <a href="dashboard.html"  class="nav-btn">📊 Dashboard</a>
     <a href="employees.html"  class="nav-btn active">👥 จัดการพนักงาน</a>
   </div>
 </nav>
 
+<!-- ══════════════ MAIN CONTENT ══════════════ -->
 <div class="wrap">
 
   <!-- TOOLBAR -->
   <div class="toolbar">
-    <div>
+    <div class="title-group">
       <div class="page-title">👥 จัดการข้อมูลพนักงาน</div>
-      <div class="page-desc">เพิ่ม และ แก้ไข ข้อมูลพนักงาน · บันทึกลง Google Sheets อัตโนมัติ</div>
+      <div class="page-desc">เพิ่ม · แก้ไข · ลบ ข้อมูลพนักงาน · บันทึกลง Google Sheets อัตโนมัติ</div>
     </div>
     <div class="toolbar-right">
       <div class="search-box">
         <span>🔍</span>
         <input type="text" id="searchInput" placeholder="ค้นหาชื่อ รหัส หรือแผนก…" />
       </div>
-      <button class="btn btn-primary" onclick="openAdd()">➕ เพิ่มพนักงานใหม่</button>
+      <button class="btn btn-success" onclick="exportToCSV()" title="ส่งออกเป็นไฟล์ CSV">
+        📥 Export
+      </button>
+      <button class="btn btn-primary" onclick="openAdd()">
+        ➕ เพิ่มพนักงานใหม่
+      </button>
     </div>
   </div>
 
   <!-- STATS -->
   <div class="stats">
-    <div class="stat"><div class="stat-icon">👥</div><div><div class="stat-num" id="sTot">—</div><div class="stat-lbl">ทั้งหมด</div></div></div>
-    <div class="stat"><div class="stat-icon">🇹🇭</div><div><div class="stat-num" id="sTH">—</div><div class="stat-lbl">สัญชาติไทย</div></div></div>
-    <div class="stat"><div class="stat-icon">🌏</div><div><div class="stat-num" id="sMM">—</div><div class="stat-lbl">สัญชาติพม่า</div></div></div>
-    <div class="stat"><div class="stat-icon">🏢</div><div><div class="stat-num" id="sDept">—</div><div class="stat-lbl">แผนก</div></div></div>
+    <div class="stat">
+      <div class="stat-icon">👥</div>
+      <div>
+        <div class="stat-num" id="sTot">—</div>
+        <div class="stat-lbl">ทั้งหมด</div>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-icon">🇹🇭</div>
+      <div>
+        <div class="stat-num" id="sTH">—</div>
+        <div class="stat-lbl">สัญชาติไทย</div>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-icon">🌏</div>
+      <div>
+        <div class="stat-num" id="sMM">—</div>
+        <div class="stat-lbl">สัญชาติพม่า</div>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-icon">🏢</div>
+      <div>
+        <div class="stat-num" id="sDept">—</div>
+        <div class="stat-lbl">แผนก</div>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-icon">🏭</div>
+      <div>
+        <div class="stat-num" id="sPlant">—</div>
+        <div class="stat-lbl">Plant</div>
+      </div>
+    </div>
   </div>
 
   <!-- TABLE -->
@@ -250,14 +440,28 @@ tr:hover td { background:var(--bg3); }
     <div class="table-scroll">
       <table>
         <thead><tr>
-          <th onclick="sortBy('รหัสพนักงาน')"  id="th-รหัสพนักงาน">รหัส <span class="sort-ic">↕</span></th>
-          <th onclick="sortBy('ชื่อ-นามสกุล')" id="th-ชื่อ-นามสกุล">ชื่อ-นามสกุล <span class="sort-ic">↕</span></th>
-          <th onclick="sortBy('แผนก')"          id="th-แผนก">แผนก <span class="sort-ic">↕</span></th>
-          <th onclick="sortBy('ตำแหน่ง')"       id="th-ตำแหน่ง">ตำแหน่ง <span class="sort-ic">↕</span></th>
-          <th onclick="sortBy('Plant')"          id="th-Plant">Plant <span class="sort-ic">↕</span></th>
-          <th onclick="sortBy('สัญชาติ')"        id="th-สัญชาติ">สัญชาติ <span class="sort-ic">↕</span></th>
-          <th onclick="sortBy('วันที่เริ่มงาน')" id="th-วันที่เริ่มงาน">วันเริ่มงาน <span class="sort-ic">↕</span></th>
-          <th style="width:88px;text-align:center;">Actions</th>
+          <th onclick="sortBy('รหัสพนักงาน')"  id="th-รหัสพนักงาน" style="width:100px;">
+            รหัส <span class="sort-ic">↕</span>
+          </th>
+          <th onclick="sortBy('ชื่อ-นามสกุล')" id="th-ชื่อ-นามสกุล">
+            ชื่อ-นามสกุล <span class="sort-ic">↕</span>
+          </th>
+          <th onclick="sortBy('แผนก')"          id="th-แผนก" style="width:120px;">
+            แผนก <span class="sort-ic">↕</span>
+          </th>
+          <th onclick="sortBy('ตำแหน่ง')"       id="th-ตำแหน่ง" style="width:120px;">
+            ตำแหน่ง <span class="sort-ic">↕</span>
+          </th>
+          <th onclick="sortBy('Plant')"          id="th-Plant" style="width:100px;">
+            Plant <span class="sort-ic">↕</span>
+          </th>
+          <th onclick="sortBy('สัญชาติ')"        id="th-สัญชาติ" style="width:100px;">
+            สัญชาติ <span class="sort-ic">↕</span>
+          </th>
+          <th onclick="sortBy('วันที่เริ่มงาน')" id="th-วันที่เริ่มงาน" style="width:120px;">
+            วันเริ่มงาน <span class="sort-ic">↕</span>
+          </th>
+          <th style="width:100px;text-align:center;">จัดการ</th>
         </tr></thead>
         <tbody id="tbody">
           <tr><td colspan="8"><div class="empty-state"><div class="ic">⏳</div><div>กำลังโหลดข้อมูล…</div></div></td></tr>
@@ -276,17 +480,18 @@ tr:hover td { background:var(--bg3); }
 <div class="overlay" id="formOverlay">
   <div class="modal">
     <div class="modal-head">
-      <div class="modal-title" id="modalTitle">เพิ่มพนักงานใหม่</div>
-      <button class="modal-x" onclick="closeOverlay('formOverlay')">✕</button>
+      <div class="modal-title" id="modalTitle">➕ เพิ่มพนักงานใหม่</div>
+      <button class="modal-x" onclick="closeOverlay('formOverlay')" title="ปิด">✕</button>
     </div>
     <div class="modal-body">
       <div class="fgrid">
 
-        <div class="sec-label c2">ข้อมูลส่วนตัว</div>
+        <div class="sec-label c2">📋 ข้อมูลส่วนตัว</div>
 
         <div class="field">
           <label>รหัสพนักงาน <span class="req">*</span></label>
-          <input type="text" id="fId" placeholder="เช่น EMP001" />
+          <input type="text" id="fId" placeholder="เช่น EMP001" maxlength="20" />
+          <span class="field-error-msg">กรุณากรอกรหัสพนักงาน</span>
         </div>
         <div class="field">
           <label>คำนำหน้า <span class="req">*</span></label>
@@ -296,11 +501,13 @@ tr:hover td { background:var(--bg3); }
             <option value="นาง">นาง</option>
             <option value="นางสาว">นางสาว</option>
           </select>
+          <span class="field-error-msg">กรุณาเลือกคำนำหน้า</span>
         </div>
 
         <div class="field c2">
           <label>ชื่อ-นามสกุล <span class="req">*</span></label>
           <input type="text" id="fName" placeholder="ชื่อ-นามสกุลเต็ม" />
+          <span class="field-error-msg">กรุณากรอกชื่อ-นามสกุล</span>
         </div>
 
         <div class="field">
@@ -311,29 +518,38 @@ tr:hover td { background:var(--bg3); }
             <option value="พม่า">พม่า</option>
             <option value="ลาว">ลาว</option>
             <option value="กัมพูชา">กัมพูชา</option>
+            <option value="เวียดนาม">เวียดนาม</option>
             <option value="อื่นๆ">อื่นๆ</option>
           </select>
         </div>
         <div class="field">
           <label>เบอร์โทรศัพท์</label>
-          <input type="tel" id="fPhone" placeholder="0XX-XXX-XXXX" />
+          <input type="tel" id="fPhone" placeholder="0XX-XXX-XXXX" maxlength="15" />
         </div>
 
-        <div class="sec-label c2">ข้อมูลการทำงาน</div>
+        <div class="field c2">
+          <label>วันเกิด</label>
+          <input type="date" id="fDob" />
+          <span class="field-hint">ใช้คำนวณอายุบน Dashboard</span>
+        </div>
+
+        <div class="sec-label c2">💼 ข้อมูลการทำงาน</div>
 
         <div class="field">
           <label>แผนก <span class="req">*</span></label>
-          <input type="text" id="fDept" placeholder="เช่น Production" list="listDept" />
+          <input type="text" id="fDept" placeholder="เช่น Production" list="listDept" autocomplete="off" />
           <datalist id="listDept"></datalist>
+          <span class="field-error-msg">กรุณากรอกแผนก</span>
         </div>
         <div class="field">
           <label>ตำแหน่ง <span class="req">*</span></label>
           <input type="text" id="fPos" placeholder="เช่น พนักงานผลิต" />
+          <span class="field-error-msg">กรุณากรอกตำแหน่ง</span>
         </div>
 
         <div class="field">
           <label>Plant</label>
-          <input type="text" id="fPlant" placeholder="เช่น Plant 1" list="listPlant" />
+          <input type="text" id="fPlant" placeholder="เช่น Plant 1" list="listPlant" autocomplete="off" />
           <datalist id="listPlant"></datalist>
         </div>
         <div class="field">
@@ -346,7 +562,8 @@ tr:hover td { background:var(--bg3); }
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeOverlay('formOverlay')">ยกเลิก</button>
       <button class="btn btn-primary" id="saveBtn" onclick="saveEmployee()">
-        <span id="saveBtnIc">💾</span><span id="saveBtnTx">บันทึก</span>
+        <span id="saveBtnIc">💾</span>
+        <span id="saveBtnTx">บันทึก</span>
       </button>
     </div>
   </div>
@@ -357,7 +574,7 @@ tr:hover td { background:var(--bg3); }
   <div class="modal del-modal">
     <div class="modal-head" style="border:none;padding-bottom:0">
       <div></div>
-      <button class="modal-x" onclick="closeOverlay('delOverlay')">✕</button>
+      <button class="modal-x" onclick="closeOverlay('delOverlay')" title="ปิด">✕</button>
     </div>
     <div class="del-body">
       <div class="del-icon">🗑️</div>
@@ -366,16 +583,19 @@ tr:hover td { background:var(--bg3); }
         ต้องการลบข้อมูลของ<br>
         <span class="del-name" id="delName"></span><br>
         ออกจากระบบหรือไม่?<br>
-        <small style="opacity:.65">ข้อมูลจะถูกลบถาวร ไม่สามารถกู้คืนได้</small>
+        <small style="opacity:.65;color:var(--red);">⚠️ ข้อมูลจะถูกลบถาวร ไม่สามารถกู้คืนได้</small>
       </div>
     </div>
     <div class="del-foot">
       <button class="btn btn-ghost" onclick="closeOverlay('delOverlay')">ยกเลิก</button>
-      <button class="btn btn-danger" id="delBtn" onclick="confirmDelete()">🗑 ลบออกจากระบบ</button>
+      <button class="btn btn-danger" id="delBtn" onclick="confirmDelete()">
+        🗑 ลบออกจากระบบ
+      </button>
     </div>
   </div>
 </div>
 
+<!-- ══════════════ TOAST CONTAINER ══════════════ -->
 <div class="toast-wrap" id="toasts"></div>
 
 <script>
@@ -390,36 +610,94 @@ let page = 1;
 const PER = 20;
 let editRow = null;
 let deleteRow = null;
+let isSubmitting = false;
 
 // ══════════════════════════════════════════════════
-// INIT
+// INITIALIZATION
 // ══════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
+  showLoading(true);
   await load();
-  document.getElementById('searchInput').addEventListener('input', filter);
-  // ปิด overlay เมื่อคลิก backdrop
-  document.querySelectorAll('.overlay').forEach(o =>
-    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); })
-  );
+  setupEventListeners();
+  showLoading(false);
 });
+
+function setupEventListeners() {
+  // Search input with debounce
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    let debounceTimer;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(filter, 300);
+    });
+  }
+  
+  // Close overlay when clicking backdrop
+  document.querySelectorAll('.overlay').forEach(o => {
+    o.addEventListener('click', e => { 
+      if (e.target === o) o.classList.remove('open'); 
+    });
+  });
+  
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    // Escape to close modals
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.overlay.open').forEach(o => {
+        o.classList.remove('open');
+      });
+    }
+    // Ctrl+K / Cmd+K to focus search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      document.getElementById('searchInput')?.focus();
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════
+// LOADING INDICATOR
+// ══════════════════════════════════════════════════
+function showLoading(show) {
+  let overlay = document.querySelector('.loading-overlay');
+  if (show) {
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'loading-overlay';
+      overlay.innerHTML = '<div class="loading-spinner"></div>';
+      document.body.appendChild(overlay);
+    }
+  } else {
+    if (overlay) overlay.remove();
+  }
+}
 
 // ══════════════════════════════════════════════════
 // LOAD
 // ══════════════════════════════════════════════════
 async function load() {
   try {
-    const res  = await fetch(CONFIG.APPS_SCRIPT_URL + '?action=getEmployees');
+    const url = `${CONFIG.APPS_SCRIPT_URL}?action=getEmployees`;
+    const res = await fetch(url);
+    
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    
     const json = await res.json();
+    
     if (json.status === 'ok') {
-      allEmps = json.data;
+      allEmps = json.data || [];
       filter();
       updateStats();
       fillDataLists();
     } else {
-      toast('โหลดข้อมูลไม่สำเร็จ: ' + (json.message || ''), 'err');
+      toast('โหลดข้อมูลไม่สำเร็จ: ' + (json.message || 'ไม่ทราบสาเหตุ'), 'err');
     }
   } catch (e) {
-    toast('ไม่สามารถเชื่อมต่อ API ได้', 'err');
+    console.error('Load error:', e);
+    toast('ไม่สามารถเชื่อมต่อ API ได้: ' + e.message, 'err');
   }
 }
 
@@ -427,47 +705,84 @@ async function load() {
 // STATS & DATALISTS
 // ══════════════════════════════════════════════════
 function updateStats() {
-  document.getElementById('sTot').textContent  = allEmps.length;
-  document.getElementById('sTH').textContent   = allEmps.filter(e => e['สัญชาติ'] === 'ไทย').length;
-  document.getElementById('sMM').textContent   = allEmps.filter(e => e['สัญชาติ'] === 'พม่า').length;
-  document.getElementById('sDept').textContent = new Set(allEmps.map(e => e['แผนก']).filter(Boolean)).size;
+  document.getElementById('sTot').textContent   = allEmps.length;
+  document.getElementById('sTH').textContent    = allEmps.filter(e => e['สัญชาติ'] === 'ไทย').length;
+  document.getElementById('sMM').textContent    = allEmps.filter(e => e['สัญชาติ'] === 'พม่า').length;
+  document.getElementById('sDept').textContent  = new Set(allEmps.map(e => e['แผนก']).filter(Boolean)).size;
+  document.getElementById('sPlant').textContent = new Set(allEmps.map(e => e['Plant']).filter(Boolean)).size;
 }
 
 function fillDataLists() {
-  const depts  = [...new Set(allEmps.map(e => e['แผนก']).filter(Boolean))];
-  const plants = [...new Set(allEmps.map(e => e['Plant']).filter(Boolean))];
-  document.getElementById('listDept').innerHTML  = depts.map(d  => `<option value="${d}">`).join('');
-  document.getElementById('listPlant').innerHTML = plants.map(p => `<option value="${p}">`).join('');
+  const depts  = [...new Set(allEmps.map(e => String(e['แผนก'] || '').trim()).filter(Boolean))].sort();
+  const plants = [...new Set(allEmps.map(e => String(e['Plant'] || '').trim()).filter(Boolean))].sort();
+  
+  const deptList = document.getElementById('listDept');
+  const plantList = document.getElementById('listPlant');
+  
+  if (deptList) deptList.innerHTML = depts.map(d => `<option value="${d}">`).join('');
+  if (plantList) plantList.innerHTML = plants.map(p => `<option value="${p}">`).join('');
 }
 
 // ══════════════════════════════════════════════════
 // FILTER & SORT
 // ══════════════════════════════════════════════════
 function filter() {
-  const q = document.getElementById('searchInput').value.trim().toLowerCase();
-  filtered = allEmps.filter(e =>
-    (e['ชื่อ-นามสกุล'] || '').toLowerCase().includes(q) ||
-    String(e['รหัสพนักงาน'] || '').toLowerCase().includes(q) ||
-    (e['แผนก'] || '').toLowerCase().includes(q) ||
-    (e['ตำแหน่ง'] || '').toLowerCase().includes(q)
-  );
+  const q = document.getElementById('searchInput')?.value?.trim()?.toLowerCase() || '';
+  
+  if (!q) {
+    filtered = [...allEmps];
+  } else {
+    filtered = allEmps.filter(e =>
+      (String(e['ชื่อ-นามสกุล'] || '').toLowerCase().includes(q)) ||
+      (String(e['รหัสพนักงาน'] || '').toLowerCase().includes(q)) ||
+      (String(e['แผนก'] || '').toLowerCase().includes(q)) ||
+      (String(e['ตำแหน่ง'] || '').toLowerCase().includes(q)) ||
+      (String(e['Plant'] || '').toLowerCase().includes(q))
+    );
+  }
+  
   if (sortKey) {
     filtered.sort((a, b) => {
       const va = String(a[sortKey] || '').toLowerCase();
       const vb = String(b[sortKey] || '').toLowerCase();
+      
+      // Handle date sorting
+      if (sortKey === 'วันที่เริ่มงาน') {
+        const da = new Date(a[sortKey] || 0);
+        const db = new Date(b[sortKey] || 0);
+        return sortAsc ? da - db : db - da;
+      }
+      
       return sortAsc ? va.localeCompare(vb, 'th') : vb.localeCompare(va, 'th');
     });
   }
+  
   page = 1;
   render();
 }
 
 function sortBy(key) {
-  if (sortKey === key) sortAsc = !sortAsc;
-  else { sortKey = key; sortAsc = true; }
-  document.querySelectorAll('th').forEach(th => { th.classList.remove('sorted'); if (th.querySelector('.sort-ic')) th.querySelector('.sort-ic').textContent = '↕'; });
+  if (sortKey === key) {
+    sortAsc = !sortAsc;
+  } else {
+    sortKey = key;
+    sortAsc = true;
+  }
+  
+  // Update header indicators
+  document.querySelectorAll('th').forEach(th => {
+    th.classList.remove('sorted');
+    const ic = th.querySelector('.sort-ic');
+    if (ic) ic.textContent = '↕';
+  });
+  
   const th = document.getElementById('th-' + key);
-  if (th) { th.classList.add('sorted'); th.querySelector('.sort-ic').textContent = sortAsc ? '↑' : '↓'; }
+  if (th) {
+    th.classList.add('sorted');
+    const ic = th.querySelector('.sort-ic');
+    if (ic) ic.textContent = sortAsc ? '↑' : '↓';
+  }
+  
   filter();
 }
 
@@ -476,33 +791,71 @@ function sortBy(key) {
 // ══════════════════════════════════════════════════
 function render() {
   const tbody = document.getElementById('tbody');
+  if (!tbody) return;
+  
   const total = filtered.length;
   const pages = Math.ceil(total / PER) || 1;
+  
   if (page > pages) page = pages;
+  if (page < 1) page = 1;
+  
   const s = (page - 1) * PER;
   const rows = filtered.slice(s, s + PER);
 
+  // Empty state
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="ic">${allEmps.length ? '🔍' : '📋'}</div><div>${allEmps.length ? 'ไม่พบพนักงานที่ค้นหา' : 'ยังไม่มีข้อมูลพนักงาน กดปุ่ม "เพิ่มพนักงานใหม่" เพื่อเริ่มต้น'}</div></div></td></tr>`;
+    const icon = allEmps.length ? '🔍' : '📋';
+    const message = allEmps.length 
+      ? 'ไม่พบพนักงานที่ค้นหา <br><small>ลองปรับคำค้นหา หรือกด Ctrl+K เพื่อค้นหาใหม่</small>' 
+      : 'ยังไม่มีข้อมูลพนักงาน<br><small>กดปุ่ม "เพิ่มพนักงานใหม่" เพื่อเริ่มต้น</small>';
+    
+    tbody.innerHTML = `<tr><td colspan="8">
+      <div class="empty-state">
+        <div class="ic">${icon}</div>
+        <div>${message}</div>
+      </div>
+    </td></tr>`;
+    
     document.getElementById('pgBar').style.display = 'none';
     return;
   }
 
   tbody.innerHTML = rows.map(e => {
-    const natCls = e['สัญชาติ'] === 'ไทย' ? 'badge-green' : e['สัญชาติ'] === 'พม่า' ? 'badge-blue' : 'badge-gray';
-    const start  = e['วันที่เริ่มงาน'] ? (() => { try { return new Date(e['วันที่เริ่มงาน']).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'}); } catch { return e['วันที่เริ่มงาน']; } })() : '—';
+    const nat = String(e['สัญชาติ'] || '').trim();
+    let natCls = 'badge-gray';
+    if (nat === 'ไทย') natCls = 'badge-green';
+    else if (nat === 'พม่า') natCls = 'badge-blue';
+    else if (nat === 'ลาว' || nat === 'กัมพูชา') natCls = 'badge-orange';
+    
+    const start = e['วันที่เริ่มงาน'] 
+      ? (() => { 
+          try { 
+            return new Date(e['วันที่เริ่มงาน']).toLocaleDateString('th-TH', {
+              day:'2-digit', month:'short', year:'numeric'
+            }); 
+          } catch { return e['วันที่เริ่มงาน']; } 
+        })() 
+      : '—';
+    
+    const fullName = `${e['คำนำหน้า'] || ''}${e['ชื่อ-นามสกุล'] || '—'}`;
+    const escapedName = fullName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    
     return `<tr>
       <td><span class="emp-id">${e['รหัสพนักงาน'] || '—'}</span></td>
-      <td><div class="emp-name">${e['คำนำหน้า'] || ''}${e['ชื่อ-นามสกุล'] || '—'}</div></td>
+      <td>
+        <div class="emp-name">${fullName}</div>
+        ${e['เบอร์โทรศัพท์'] ? `<small style="color:var(--text3);font-size:0.75rem;">📞 ${e['เบอร์โทรศัพท์']}</small>` : ''}
+      </td>
       <td><span class="badge badge-blue">${e['แผนก'] || '—'}</span></td>
       <td>${e['ตำแหน่ง'] || '—'}</td>
       <td>${e['Plant'] || '—'}</td>
-      <td><span class="badge ${natCls}">${e['สัญชาติ'] || '—'}</span></td>
+      <td><span class="badge ${natCls}">${nat || '—'}</span></td>
       <td>${start}</td>
       <td>
         <div class="act-btns">
           <button class="btn-ic edit" title="แก้ไข" onclick="openEdit(${e._rowIndex})">✏️</button>
-          <button class="btn-ic del"  title="ลบ"    onclick="openDel(${e._rowIndex},'${(e['ชื่อ-นามสกุล']||'').replace(/'/g,"\\'")}')">🗑</button>
+          <button class="btn-ic copy" title="คัดลอก" onclick="copyEmployee(${e._rowIndex})">📋</button>
+          <button class="btn-ic del"  title="ลบ" onclick="openDel(${e._rowIndex}, '${escapedName}')">🗑</button>
         </div>
       </td>
     </tr>`;
@@ -511,23 +864,35 @@ function render() {
   // Pagination
   const bar = document.getElementById('pgBar');
   bar.style.display = total > PER ? 'flex' : 'none';
-  document.getElementById('pgInfo').textContent = `แสดง ${s + 1}–${Math.min(s + PER, total)} จาก ${total} คน`;
+  
+  const startRecord = s + 1;
+  const endRecord = Math.min(s + PER, total);
+  document.getElementById('pgInfo').innerHTML = 
+    `แสดง <strong>${startRecord}–${endRecord}</strong> จาก <strong>${total}</strong> คน`;
 
-  let html = `<button class="pg-btn" onclick="goPage(${page-1})" ${page===1?'disabled':''}>‹</button>`;
+  // Build page buttons
+  let html = `<button class="pg-btn" onclick="goPage(${page-1})" ${page===1?'disabled':''} title="หน้าก่อน">‹</button>`;
+  
   for (let i = 1; i <= pages; i++) {
-    if (i === 1 || i === pages || Math.abs(i - page) <= 1)
+    // Show first, last, and pages around current
+    if (i === 1 || i === pages || Math.abs(i - page) <= 1) {
       html += `<button class="pg-btn ${i===page?'active':''}" onclick="goPage(${i})">${i}</button>`;
-    else if (Math.abs(i - page) === 2)
-      html += `<span style="padding:0 3px;color:var(--text3)">…</span>`;
+    } else if (Math.abs(i - page) === 2) {
+      html += `<span style="padding:0 3px;color:var(--text3);">…</span>`;
+    }
   }
-  html += `<button class="pg-btn" onclick="goPage(${page+1})" ${page===pages?'disabled':''}>›</button>`;
+  
+  html += `<button class="pg-btn" onclick="goPage(${page+1})" ${page===pages?'disabled':''} title="หน้าถัดไป">›</button>`;
   document.getElementById('pgBtns').innerHTML = html;
 }
 
 function goPage(p) {
   const pages = Math.ceil(filtered.length / PER) || 1;
   if (p < 1 || p > pages) return;
-  page = p; render();
+  page = p;
+  render();
+  // Scroll to top of table
+  document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ══════════════════════════════════════════════════
@@ -536,10 +901,13 @@ function goPage(p) {
 function openAdd() {
   editRow = null;
   clearForm();
+  clearFormErrors();
   document.getElementById('modalTitle').textContent = '➕ เพิ่มพนักงานใหม่';
   document.getElementById('fId').disabled = false;
   document.getElementById('fStart').value = new Date().toISOString().split('T')[0];
   document.getElementById('formOverlay').classList.add('open');
+  // Focus on first field
+  setTimeout(() => document.getElementById('fId')?.focus(), 300);
 }
 
 // ══════════════════════════════════════════════════
@@ -548,8 +916,11 @@ function openAdd() {
 function openEdit(rowIndex) {
   const emp = allEmps.find(e => e._rowIndex === rowIndex);
   if (!emp) return toast('ไม่พบข้อมูลพนักงาน', 'err');
+  
   editRow = rowIndex;
   clearForm();
+  clearFormErrors();
+  
   document.getElementById('modalTitle').textContent = '✏️ แก้ไขข้อมูลพนักงาน';
   document.getElementById('fId').value    = emp['รหัสพนักงาน'] || '';
   document.getElementById('fId').disabled = true;
@@ -561,34 +932,116 @@ function openEdit(rowIndex) {
   document.getElementById('fPos').value   = emp['ตำแหน่ง'] || '';
   document.getElementById('fPlant').value = emp['Plant'] || '';
   document.getElementById('fStart').value = emp['วันที่เริ่มงาน'] || '';
+  document.getElementById('fDob').value   = emp['วันเกิด'] || '';
+  
   document.getElementById('formOverlay').classList.add('open');
+}
+
+// ══════════════════════════════════════════════════
+// COPY
+// ══════════════════════════════════════════════════
+function copyEmployee(rowIndex) {
+  const emp = allEmps.find(e => e._rowIndex === rowIndex);
+  if (!emp) return toast('ไม่พบข้อมูลพนักงาน', 'err');
+  
+  editRow = null;
+  clearForm();
+  clearFormErrors();
+  
+  document.getElementById('modalTitle').textContent = '📋 เพิ่มพนักงานใหม่ (คัดลอกจาก ' + (emp['รหัสพนักงาน'] || '—') + ')';
+  document.getElementById('fId').value    = ''; // Clear ID for new entry
+  document.getElementById('fId').disabled = false;
+  document.getElementById('fPrefix').value = emp['คำนำหน้า'] || '';
+  document.getElementById('fName').value  = emp['ชื่อ-นามสกุล'] || '';
+  document.getElementById('fNat').value   = emp['สัญชาติ'] || '';
+  document.getElementById('fPhone').value = emp['เบอร์โทรศัพท์'] || '';
+  document.getElementById('fDept').value  = emp['แผนก'] || '';
+  document.getElementById('fPos').value   = emp['ตำแหน่ง'] || '';
+  document.getElementById('fPlant').value = emp['Plant'] || '';
+  document.getElementById('fStart').value = '';
+  document.getElementById('fDob').value   = '';
+  
+  document.getElementById('formOverlay').classList.add('open');
+  toast('คัดลอกข้อมูลแล้ว กรุณาแก้ไขรหัสพนักงานและข้อมูลที่ต้องการ', 'info');
 }
 
 // ══════════════════════════════════════════════════
 // SAVE (Add / Edit)
 // ══════════════════════════════════════════════════
 async function saveEmployee() {
+  if (isSubmitting) return;
+  
   const id  = document.getElementById('fId').value.trim();
   const pfx = document.getElementById('fPrefix').value;
   const nm  = document.getElementById('fName').value.trim();
   const dep = document.getElementById('fDept').value.trim();
   const pos = document.getElementById('fPos').value.trim();
 
-  if (!id || !pfx || !nm || !dep || !pos)
-    return toast('กรุณากรอกข้อมูลที่จำเป็น (*) ให้ครบ', 'err');
+  // Validation
+  let hasError = false;
+  
+  if (!id) { 
+    setFieldError('fId', true); 
+    hasError = true; 
+  } else {
+    setFieldError('fId', false);
+  }
+  
+  if (!pfx) { 
+    setFieldError('fPrefix', true); 
+    hasError = true; 
+  } else {
+    setFieldError('fPrefix', false);
+  }
+  
+  if (!nm) { 
+    setFieldError('fName', true); 
+    hasError = true; 
+  } else {
+    setFieldError('fName', false);
+  }
+  
+  if (!dep) { 
+    setFieldError('fDept', true); 
+    hasError = true; 
+  } else {
+    setFieldError('fDept', false);
+  }
+  
+  if (!pos) { 
+    setFieldError('fPos', true); 
+    hasError = true; 
+  } else {
+    setFieldError('fPos', false);
+  }
+  
+  // Check duplicate employee ID for new entries
+  if (!editRow && allEmps.some(e => e['รหัสพนักงาน'] === id)) {
+    setFieldError('fId', true);
+    const errMsg = document.querySelector('#fId').closest('.field').querySelector('.field-error-msg');
+    if (errMsg) errMsg.textContent = 'รหัสพนักงานนี้มีในระบบแล้ว';
+    hasError = true;
+  }
+  
+  if (hasError) {
+    toast('กรุณากรอกข้อมูลที่จำเป็น (*) ให้ครบถ้วน', 'err');
+    return;
+  }
 
+  isSubmitting = true;
   setBtnLoading('saveBtn', 'saveBtnIc', 'saveBtnTx', true);
 
   const data = {
     'รหัสพนักงาน'  : id,
-    'คำนำหน้า'    : pfx,
-    'ชื่อ-นามสกุล': nm,
-    'สัญชาติ'     : document.getElementById('fNat').value,
+    'คำนำหน้า'     : pfx,
+    'ชื่อ-นามสกุล' : nm,
+    'สัญชาติ'      : document.getElementById('fNat').value,
     'เบอร์โทรศัพท์': document.getElementById('fPhone').value.trim(),
-    'แผนก'        : dep,
-    'ตำแหน่ง'     : pos,
-    'Plant'        : document.getElementById('fPlant').value.trim(),
+    'แผนก'         : dep,
+    'ตำแหน่ง'      : pos,
+    'Plant'         : document.getElementById('fPlant').value.trim(),
     'วันที่เริ่มงาน': document.getElementById('fStart').value,
+    'วันเกิด'      : document.getElementById('fDob').value,
   };
 
   const payload = editRow
@@ -596,20 +1049,27 @@ async function saveEmployee() {
     : { action: 'addEmployee', data };
 
   try {
-    const res  = await fetch(CONFIG.APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify(payload) });
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL, { 
+      method: 'POST', 
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
     const json = await res.json();
+    
     if (json.status === 'ok') {
       toast(editRow ? '✅ แก้ไขข้อมูลสำเร็จ!' : '✅ เพิ่มพนักงานสำเร็จ!');
       closeOverlay('formOverlay');
       await load();
     } else {
-      toast('เกิดข้อผิดพลาด: ' + (json.message || ''), 'err');
+      toast('เกิดข้อผิดพลาด: ' + (json.message || 'ไม่ทราบสาเหตุ'), 'err');
     }
   } catch (err) {
     toast('เกิดข้อผิดพลาด: ' + err.message, 'err');
+  } finally {
+    isSubmitting = false;
+    setBtnLoading('saveBtn', 'saveBtnIc', 'saveBtnTx', false);
   }
-
-  setBtnLoading('saveBtn', 'saveBtnIc', 'saveBtnTx', false);
 }
 
 // ══════════════════════════════════════════════════
@@ -622,48 +1082,137 @@ function openDel(rowIndex, name) {
 }
 
 async function confirmDelete() {
+  if (!deleteRow) return;
+  
   const btn = document.getElementById('delBtn');
-  btn.disabled = true; btn.textContent = '⏳ กำลังลบ…';
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ กำลังลบ…';
+  
   try {
-    const res  = await fetch(CONFIG.APPS_SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'deleteEmployee', rowIndex: deleteRow }) });
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'deleteEmployee', rowIndex: deleteRow }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
     const json = await res.json();
+    
     if (json.status === 'ok') {
       toast('✅ ลบข้อมูลสำเร็จ');
       closeOverlay('delOverlay');
       await load();
     } else {
-      toast('เกิดข้อผิดพลาด: ' + (json.message || ''), 'err');
+      toast('เกิดข้อผิดพลาด: ' + (json.message || 'ไม่ทราบสาเหตุ'), 'err');
     }
   } catch (err) {
     toast('เกิดข้อผิดพลาด: ' + err.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
   }
-  btn.disabled = false; btn.innerHTML = '🗑 ลบออกจากระบบ';
+}
+
+// ══════════════════════════════════════════════════
+// EXPORT CSV
+// ══════════════════════════════════════════════════
+function exportToCSV() {
+  const dataToExport = filtered.length > 0 ? filtered : allEmps;
+  
+  if (dataToExport.length === 0) {
+    toast('ไม่มีข้อมูลที่จะส่งออก', 'err');
+    return;
+  }
+  
+  const headers = ['รหัสพนักงาน', 'คำนำหน้า', 'ชื่อ-นามสกุล', 'สัญชาติ', 
+                   'เบอร์โทรศัพท์', 'แผนก', 'ตำแหน่ง', 'Plant', 
+                   'วันที่เริ่มงาน', 'วันเกิด'];
+  
+  let csv = '\uFEFF' + headers.join(',') + '\n';
+  
+  dataToExport.forEach(emp => {
+    const row = headers.map(h => {
+      let val = String(emp[h] || '').replace(/"/g, '""');
+      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+        val = '"' + val + '"';
+      }
+      return val;
+    });
+    csv += row.join(',') + '\n';
+  });
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `employees_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  toast(`✅ ส่งออกข้อมูล ${dataToExport.length} รายการสำเร็จ`);
 }
 
 // ══════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════
 function clearForm() {
-  ['fId','fName','fPhone','fDept','fPos','fPlant','fStart'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('fPrefix').value = '';
-  document.getElementById('fNat').value = '';
+  ['fId','fName','fPhone','fDept','fPos','fPlant','fStart','fDob'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const fPrefix = document.getElementById('fPrefix');
+  if (fPrefix) fPrefix.value = '';
+  const fNat = document.getElementById('fNat');
+  if (fNat) fNat.value = '';
 }
 
-function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+function clearFormErrors() {
+  document.querySelectorAll('.fgrid .field.error').forEach(f => f.classList.remove('error'));
+  document.querySelectorAll('.field-error-msg').forEach(el => {
+    if (el.closest('#fId')) el.textContent = 'กรุณากรอกรหัสพนักงาน';
+  });
+}
+
+function setFieldError(fieldId, hasError) {
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  const field = el.closest('.field');
+  if (field) {
+    field.classList.toggle('error', hasError);
+  }
+}
+
+function closeOverlay(id) { 
+  const overlay = document.getElementById(id);
+  if (overlay) overlay.classList.remove('open'); 
+}
 
 function setBtnLoading(btnId, icId, txId, loading) {
-  document.getElementById(btnId).disabled = loading;
-  document.getElementById(icId).innerHTML = loading ? '<div class="spinner"></div>' : '💾';
-  document.getElementById(txId).textContent = loading ? 'กำลังบันทึก…' : 'บันทึก';
+  const btn = document.getElementById(btnId);
+  const ic  = document.getElementById(icId);
+  const tx  = document.getElementById(txId);
+  
+  if (btn) btn.disabled = loading;
+  if (ic) ic.innerHTML = loading ? '<span class="loading-spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;"></span>' : '💾';
+  if (tx) tx.textContent = loading ? 'กำลังบันทึก…' : 'บันทึก';
 }
 
 function toast(msg, type = 'ok') {
   const wrap = document.getElementById('toasts');
-  const el   = document.createElement('div');
+  if (!wrap) return;
+  
+  const el = document.createElement('div');
+  const icons = { ok: '✅', err: '❌', info: 'ℹ️' };
   el.className = `toast toast-${type}`;
-  el.innerHTML = `<span>${type === 'ok' ? '✅' : '❌'}</span><span>${msg}</span>`;
+  el.innerHTML = `<span>${icons[type] || '✅'}</span><span>${msg}</span>`;
   wrap.appendChild(el);
-  setTimeout(() => el.remove(), 4000);
+  
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(24px)';
+    el.style.transition = 'all 0.3s ease';
+    setTimeout(() => el.remove(), 300);
+  }, 4000);
 }
 </script>
 </body>
