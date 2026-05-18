@@ -9,380 +9,146 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 <script src="config.js"></script>
 <style>
-/* ─── RESET ─── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* ─── VARIABLES ─── */
-:root {
-  --bg:       #F0F6FF;
-  --bg2:      #FFFFFF;
-  --bg3:      #EBF3FF;
-  --bg4:      #DCEEFF;
-  --blue:     #1D6FCC;
-  --blue2:    #2563EB;
-  --blue3:    #3B82F6;
-  --cyan:     #0EA5E9;
-  --navy:     #1E3A5F;
-  --text:     #0F2744;
-  --text2:    #2D5080;
-  --text3:    #4A7CB5;
-  --line:     rgba(29,111,204,0.10);
-  --line2:    rgba(29,111,204,0.16);
-  --red:      #DC2626;
-  --green:    #059669;
-  --input-bg:     #FFFFFF;
-  --input-border: rgba(29,111,204,0.18);
-  --input-focus:  rgba(37,99,235,0.15);
-  --shadow:   0 2px 16px rgba(29,111,204,0.10);
-  --shadow2:  0 8px 32px rgba(29,111,204,0.14);
-  --nav-h:    62px;
-  --radius:   12px;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F6FF;--bg2:#FFFFFF;--bg3:#EBF3FF;--bg4:#DCEEFF;
+  --blue:#1D6FCC;--blue2:#2563EB;--blue3:#3B82F6;--cyan:#0EA5E9;--navy:#1E3A5F;
+  --text:#0F2744;--text2:#2D5080;--text3:#4A7CB5;
+  --line:rgba(29,111,204,0.10);--line2:rgba(29,111,204,0.16);
+  --red:#DC2626;--green:#059669;
+  --input-bg:#FFFFFF;--input-border:rgba(29,111,204,0.18);--input-focus:rgba(37,99,235,0.15);
+  --shadow:0 2px 16px rgba(29,111,204,0.10);--shadow2:0 8px 32px rgba(29,111,204,0.14);
+  --nav-h:62px;--radius:12px;
 }
-
-/* ─── BASE ─── */
-html { scroll-behavior: smooth; }
-body {
-  font-family: 'Noto Sans Thai', sans-serif;
-  background: var(--bg); color: var(--text); min-height: 100vh;
-}
-body::before {
-  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background-image:
-    radial-gradient(ellipse 70% 50% at 80% -5%, rgba(29,111,204,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at -5% 90%, rgba(14,165,233,0.05) 0%, transparent 50%),
-    radial-gradient(circle, rgba(29,111,204,0.07) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 36px 36px;
-}
-
-/* ─── NAV ─── */
-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 clamp(14px, 3vw, 48px); height: var(--nav-h); gap: 10px;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--line2);
-  box-shadow: 0 1px 12px rgba(29,111,204,0.07);
-}
-.nav-brand {
-  display: flex; align-items: center; gap: 8px;
-  text-decoration: none; flex-shrink: 0;
-}
-.nav-brand-name {
-  font-size: clamp(0.8rem, 2vw, 0.95rem); font-weight: 700;
-  color: var(--navy); white-space: nowrap;
-}
-.nav-links {
-  display: flex; gap: 5px;
-  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
-}
-.nav-links::-webkit-scrollbar { display: none; }
-.nav-btn {
-  padding: 6px clamp(8px, 1.5vw, 14px);
-  border-radius: 8px; font-family: 'Noto Sans Thai', sans-serif;
-  font-size: clamp(0.7rem, 1.5vw, 0.8rem); font-weight: 600;
-  cursor: pointer; text-decoration: none; transition: all .2s;
-  border: 1.5px solid var(--line2); background: transparent;
-  color: var(--text2); white-space: nowrap; flex-shrink: 0;
-}
-.nav-btn:hover  { color: var(--blue2); border-color: rgba(37,99,235,0.35); background: var(--bg3); }
-.nav-btn.active { background: var(--blue2); color: #fff; border-color: var(--blue2); }
-
-/* ─── PAGE WRAPPER ─── */
-.page-wrap {
-  position: relative; z-index: 1;
-  max-width: 860px; margin: 0 auto;
-  padding: calc(var(--nav-h) + clamp(20px,3vw,32px)) clamp(14px,4vw,28px) 72px;
-}
-
-/* ─── PAGE HEADER ─── */
-.page-header { margin-bottom: clamp(20px, 4vw, 36px); }
-.breadcrumb {
-  display: flex; align-items: center; gap: 6px;
-  font-size: clamp(0.72rem, 1.5vw, 0.8rem); color: var(--text3); margin-bottom: 12px;
-}
-.breadcrumb a { color: var(--text3); text-decoration: none; transition: color .2s; }
-.breadcrumb a:hover { color: var(--blue2); }
-.breadcrumb span { opacity: .5; }
-.page-title {
-  font-family: 'DM Serif Display', 'Noto Sans Thai', serif;
-  font-size: clamp(1.5rem, 4vw, 2rem); color: var(--navy); margin-bottom: 6px;
-}
-.page-desc { color: var(--text3); font-size: clamp(0.78rem, 1.8vw, 0.88rem); }
-
-/* ─── FORM CARD ─── */
-.form-card {
-  background: var(--bg2); border: 1px solid var(--line2);
-  border-radius: 20px; overflow: hidden; box-shadow: var(--shadow);
-}
-
-/* ─── SECTION ─── */
-.form-section {
-  padding: clamp(18px, 3vw, 28px) clamp(18px, 4vw, 32px);
-  border-bottom: 1px solid var(--line2);
-}
-.form-section:last-child { border-bottom: none; }
-.section-heading {
-  display: flex; align-items: center; gap: 10px;
-  font-size: clamp(0.88rem, 2vw, 0.98rem); font-weight: 700;
-  color: var(--navy); margin-bottom: clamp(16px, 3vw, 22px);
-}
-.section-heading-icon {
-  width: 32px; height: 32px; flex-shrink: 0;
-  background: var(--bg3); border: 1px solid var(--line2); border-radius: 9px;
-  display: grid; place-items: center; font-size: 0.9rem;
-}
-.req { color: var(--red); margin-left: 2px; }
-
-/* ─── GRID ─── */
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(12px, 2.5vw, 18px);
-}
-.col-span-2 { grid-column: span 2; }
-
-/* ─── FIELD ─── */
-.field { display: flex; flex-direction: column; gap: 5px; }
-.field label {
-  font-size: clamp(0.68rem, 1.4vw, 0.75rem); font-weight: 700;
-  color: var(--text2); text-transform: uppercase; letter-spacing: .06em;
-}
-.field input:not([type="checkbox"]):not([type="radio"]),
-.field select,
-.field textarea {
-  background: var(--input-bg); border: 1.5px solid var(--input-border);
-  border-radius: var(--radius); padding: clamp(10px, 2vw, 12px) 14px;
-  color: var(--text); font-family: 'Noto Sans Thai', sans-serif;
-  font-size: clamp(0.85rem, 2vw, 0.92rem);
-  transition: border-color .2s, box-shadow .2s; outline: none; width: 100%;
-  box-shadow: 0 1px 3px rgba(29,111,204,0.05);
-}
-.field input:focus,
-.field select:focus,
-.field textarea:focus {
-  border-color: var(--blue2);
-  box-shadow: 0 0 0 3px var(--input-focus);
-}
-.field input::placeholder,
-.field textarea::placeholder { color: var(--text3); opacity: .7; }
-.field select {
-  cursor: pointer; appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A7CB5' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 14px center; padding-right: 38px;
-}
-.field textarea { resize: vertical; min-height: 80px; }
-
-/* ─── SEARCH ─── */
-.search-wrap { position: relative; }
-.search-icon {
-  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-  color: var(--text3); pointer-events: none; font-size: 0.95rem;
-}
-.search-wrap input { padding-left: 42px; }
-.search-dropdown {
-  display: none; position: absolute; top: calc(100% + 6px);
-  left: 0; right: 0; z-index: 60;
-  background: var(--bg2); border: 1.5px solid var(--line2);
-  border-radius: 14px; max-height: 240px; overflow-y: auto;
-  box-shadow: var(--shadow2);
-}
-.search-dropdown.open { display: block; }
-.dropdown-item {
-  padding: 11px 16px; cursor: pointer;
-  border-bottom: 1px solid var(--line); transition: background .15s;
-}
-.dropdown-item:last-child { border-bottom: none; }
-.dropdown-item:hover { background: var(--bg3); }
-.dropdown-item strong { color: var(--navy); display: block; font-size: clamp(0.82rem,1.8vw,0.88rem); }
-.dropdown-item span   { color: var(--text3); font-size: clamp(0.7rem,1.4vw,0.76rem); }
-.dropdown-empty { padding: 16px; text-align: center; color: var(--text3); font-size: 0.85rem; }
-
-/* ─── EMP INFO CARD ─── */
-.emp-info-card {
-  display: none;
-  background: linear-gradient(135deg, var(--bg3) 0%, var(--bg4) 100%);
-  border: 1.5px solid rgba(37,99,235,0.18); border-radius: var(--radius);
-  padding: clamp(12px, 2.5vw, 16px) clamp(14px, 3vw, 20px);
-  margin-top: 10px;
-  grid-template-columns: repeat(4, 1fr);
-  gap: clamp(12px, 2.5vw, 20px);
-  animation: fadeIn .25s ease;
-}
-.emp-info-card.show { display: grid; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-.emp-info-lbl {
-  font-size: clamp(0.6rem, 1.2vw, 0.66rem); font-weight: 700;
-  text-transform: uppercase; letter-spacing: .08em; color: var(--text3); margin-bottom: 4px;
-}
-.emp-info-val {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: clamp(0.78rem, 1.8vw, 0.85rem); color: var(--blue2); font-weight: 600;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-/* ─── REASON GRID ─── */
-.reason-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(clamp(155px, 33vw, 205px), 1fr));
-  gap: 10px;
-}
-.reason-option { display: none; }
-.reason-label {
-  display: flex; align-items: center; gap: 10px;
-  padding: clamp(10px, 2vw, 13px) 14px;
-  background: var(--bg3); border: 1.5px solid var(--line2); border-radius: 10px;
-  cursor: pointer; font-size: clamp(0.8rem, 1.8vw, 0.875rem);
-  transition: all .2s; color: var(--text2); user-select: none; line-height: 1.4;
-}
-.reason-label:hover { border-color: rgba(37,99,235,0.35); background: var(--bg4); color: var(--navy); }
-.reason-option:checked + .reason-label {
-  border-color: var(--blue2); background: rgba(37,99,235,0.08); color: var(--blue2);
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
-}
-.reason-radio {
-  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
-  border: 2px solid currentColor; opacity: .4; transition: all .2s;
-}
-.reason-option:checked + .reason-label .reason-radio {
-  background: var(--blue2); border-color: var(--blue2); opacity: 1;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.2);
-}
-
-/* ─── CLEARANCE CHECKS ─── */
-.clearance-grid {
-  display: flex; gap: clamp(10px, 2.5vw, 20px); flex-wrap: wrap; margin-top: 10px;
-}
-.chk-label {
-  display: flex; align-items: center; gap: 9px; cursor: pointer;
-  font-size: clamp(0.82rem, 2vw, 0.9rem); color: var(--text2);
-  padding: 9px 16px; border: 1.5px solid var(--line2); border-radius: 10px;
-  background: var(--bg3); transition: all .2s; user-select: none;
-}
-.chk-label:hover { border-color: rgba(37,99,235,0.35); background: var(--bg4); }
-.chk-label input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--blue2); cursor: pointer; }
-.chk-label.checked { border-color: var(--blue2); background: rgba(37,99,235,0.07); color: var(--blue2); }
-
-/* ─── FORM ACTIONS ─── */
-.form-actions {
-  padding: clamp(14px, 2.5vw, 20px) clamp(18px, 4vw, 32px);
-  display: flex; gap: 10px; justify-content: flex-end; align-items: center;
-  background: var(--bg3); border-top: 1px solid var(--line2); flex-wrap: wrap;
-}
-.btn {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: clamp(10px, 2vw, 12px) clamp(16px, 3vw, 24px);
-  border-radius: 10px; font-family: 'Noto Sans Thai', sans-serif;
-  font-size: clamp(0.85rem, 2vw, 0.92rem); font-weight: 700;
-  cursor: pointer; transition: all .22s; border: none; white-space: nowrap;
-}
-.btn-ghost {
-  background: var(--bg2); color: var(--text2); border: 1.5px solid var(--line2);
-}
-.btn-ghost:hover { color: var(--blue2); border-color: rgba(37,99,235,0.35); background: var(--bg4); }
-.btn-primary {
-  background: var(--blue2); color: #fff;
-  box-shadow: 0 4px 16px rgba(37,99,235,0.28);
-  flex: 1; justify-content: center; min-width: 140px; max-width: 260px;
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--blue); box-shadow: 0 8px 24px rgba(37,99,235,0.38);
-  transform: translateY(-2px);
-}
-.btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; }
-.spinner {
-  width: 16px; height: 16px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
-  animation: spin .55s linear infinite; flex-shrink: 0;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ─── VALIDATION ─── */
-.field.error input,
-.field.error select,
-.field.error textarea { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.12) !important; }
-.field-error-msg { font-size: 0.72rem; color: var(--red); margin-top: 3px; display: none; }
-.field.error .field-error-msg { display: block; }
-
-/* ─── RECENT TABLE ─── */
-.recent-section { margin-top: clamp(28px, 5vw, 44px); }
-.recent-title {
-  font-size: clamp(0.9rem, 2vw, 1rem); font-weight: 700;
-  color: var(--navy); margin-bottom: 14px;
-  display: flex; align-items: center; gap: 8px;
-}
-.table-card {
-  background: var(--bg2); border: 1px solid var(--line2);
-  border-radius: 16px; overflow: hidden; box-shadow: var(--shadow);
-}
-.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-table { width: 100%; border-collapse: collapse; font-size: clamp(0.76rem,1.6vw,0.85rem); min-width: 560px; }
-thead th {
-  padding: clamp(10px,2vw,13px) clamp(12px,2.5vw,16px);
-  background: var(--bg3); color: var(--text2); font-weight: 700;
-  text-align: left; font-size: clamp(0.62rem,1.3vw,0.7rem);
-  text-transform: uppercase; letter-spacing: .08em;
-  border-bottom: 1px solid var(--line2); white-space: nowrap;
-}
-tbody td {
-  padding: clamp(9px,1.8vw,12px) clamp(12px,2.5vw,16px);
-  border-top: 1px solid var(--line); vertical-align: middle;
-}
-tbody tr:hover td { background: var(--bg3); }
-.badge {
-  display: inline-block; padding: 3px 10px; border-radius: 100px;
-  font-size: clamp(0.65rem,1.3vw,0.74rem); font-weight: 600; border: 1px solid transparent;
-}
-.badge-blue { background: var(--bg3); color: var(--blue2); border-color: var(--line2); }
-.badge-red  { background: #FEF2F2; color: #991B1B; border-color: rgba(220,38,38,0.2); }
-.btn-del {
-  background: none; border: none; cursor: pointer;
-  padding: 5px 8px; border-radius: 7px;
-  font-size: 0.85rem; color: var(--text3); transition: all .15s;
-}
-.btn-del:hover { color: var(--red); background: #FEF2F2; }
-.empty-row td { text-align: center; color: var(--text3); padding: 32px; }
-
-/* ─── TOAST ─── */
-.toast-wrap {
-  position: fixed; bottom: clamp(16px,3vw,28px); right: clamp(12px,3vw,28px);
-  z-index: 9999; display: flex; flex-direction: column; gap: 8px;
-  max-width: min(360px, calc(100vw - 24px));
-}
-.toast {
-  padding: 12px 16px; border-radius: 12px;
-  font-size: clamp(0.8rem, 1.8vw, 0.875rem); font-weight: 600;
-  display: flex; align-items: center; gap: 10px;
-  box-shadow: var(--shadow2); animation: toastIn .28s ease;
-}
-.toast-success { background: #ECFDF5; border: 1.5px solid rgba(5,150,105,0.25); color: #065F46; }
-.toast-error   { background: #FEF2F2; border: 1.5px solid rgba(220,38,38,0.25); color: #991B1B; }
-@keyframes toastIn { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:translateX(0)} }
-
-/* ─── RESPONSIVE ─── */
-@media (max-width: 1024px) {
-  .emp-info-card { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 640px) {
-  :root { --nav-h: 56px; }
-  .form-grid { grid-template-columns: 1fr; }
-  .col-span-2 { grid-column: span 1; }
-  .emp-info-card { grid-template-columns: repeat(2, 1fr); }
-  .reason-grid { grid-template-columns: 1fr 1fr; }
-  .form-actions { padding: 14px 16px; }
-  .btn-ghost { flex: 1; justify-content: center; }
-  .btn-primary { max-width: none; }
-}
-@media (max-width: 400px) {
-  .reason-grid { grid-template-columns: 1fr; }
-  .clearance-grid { flex-direction: column; gap: 8px; }
-  .chk-label { width: 100%; }
-}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans Thai',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(ellipse 70% 50% at 80% -5%,rgba(29,111,204,.08) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at -5% 90%,rgba(14,165,233,.05) 0%,transparent 50%),
+    radial-gradient(circle,rgba(29,111,204,.07) 1px,transparent 1px);
+  background-size:100% 100%,100% 100%,36px 36px;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;
+  justify-content:space-between;padding:0 clamp(14px,3vw,48px);height:var(--nav-h);gap:10px;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--line2);box-shadow:0 1px 12px rgba(29,111,204,.07);}
+.nav-brand{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0;}
+.nav-brand-name{font-size:clamp(.8rem,2vw,.95rem);font-weight:700;color:var(--navy);white-space:nowrap;}
+.nav-links{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-btn{padding:6px clamp(8px,1.5vw,14px);border-radius:8px;font-family:'Noto Sans Thai',sans-serif;
+  font-size:clamp(.7rem,1.5vw,.8rem);font-weight:600;cursor:pointer;text-decoration:none;
+  transition:all .2s;border:1.5px solid var(--line2);background:transparent;
+  color:var(--text2);white-space:nowrap;flex-shrink:0;}
+.nav-btn:hover{color:var(--blue2);border-color:rgba(37,99,235,.35);background:var(--bg3)}
+.nav-btn.active{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+.page-wrap{position:relative;z-index:1;max-width:860px;margin:0 auto;
+  padding:calc(var(--nav-h) + clamp(20px,3vw,32px)) clamp(14px,4vw,28px) 72px;}
+.page-header{margin-bottom:clamp(20px,4vw,36px);}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:clamp(.72rem,1.5vw,.8rem);color:var(--text3);margin-bottom:12px;}
+.breadcrumb a{color:var(--text3);text-decoration:none;transition:color .2s}
+.breadcrumb a:hover{color:var(--blue2)}
+.breadcrumb span{opacity:.5}
+.page-title{font-family:'DM Serif Display','Noto Sans Thai',serif;font-size:clamp(1.5rem,4vw,2rem);color:var(--navy);margin-bottom:6px;}
+.page-desc{color:var(--text3);font-size:clamp(.78rem,1.8vw,.88rem)}
+.form-card{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);}
+.form-section{padding:clamp(18px,3vw,28px) clamp(18px,4vw,32px);border-bottom:1px solid var(--line2);}
+.form-section:last-child{border-bottom:none}
+.section-heading{display:flex;align-items:center;gap:10px;font-size:clamp(.88rem,2vw,.98rem);
+  font-weight:700;color:var(--navy);margin-bottom:clamp(16px,3vw,22px);}
+.section-heading-icon{width:32px;height:32px;flex-shrink:0;background:var(--bg3);border:1px solid var(--line2);
+  border-radius:9px;display:grid;place-items:center;font-size:.9rem;}
+.req{color:var(--red);margin-left:2px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,2.5vw,18px);}
+.col-span-2{grid-column:span 2}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:clamp(.68rem,1.4vw,.75rem);font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;}
+.field input:not([type="checkbox"]):not([type="radio"]),.field select,.field textarea{
+  background:var(--input-bg);border:1.5px solid var(--input-border);border-radius:var(--radius);
+  padding:clamp(10px,2vw,12px) 14px;color:var(--text);font-family:'Noto Sans Thai',sans-serif;
+  font-size:clamp(.85rem,2vw,.92rem);transition:border-color .2s,box-shadow .2s;outline:none;width:100%;
+  box-shadow:0 1px 3px rgba(29,111,204,.05);}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue2);box-shadow:0 0 0 3px var(--input-focus);}
+.field select{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A7CB5' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;}
+.field textarea{resize:vertical;min-height:80px}
+.search-wrap{position:relative}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;font-size:.95rem;}
+.search-wrap input{padding-left:42px}
+.search-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:60;
+  background:var(--bg2);border:1.5px solid var(--line2);border-radius:14px;max-height:240px;
+  overflow-y:auto;box-shadow:var(--shadow2);}
+.search-dropdown.open{display:block}
+.dropdown-item{padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--line);transition:background .15s;}
+.dropdown-item:last-child{border-bottom:none}
+.dropdown-item:hover{background:var(--bg3)}
+.dropdown-item strong{color:var(--navy);display:block;font-size:clamp(.82rem,1.8vw,.88rem);}
+.dropdown-item span{color:var(--text3);font-size:clamp(.7rem,1.4vw,.76rem);}
+.dropdown-empty{padding:16px;text-align:center;color:var(--text3);font-size:.85rem}
+.emp-info-card{display:none;background:linear-gradient(135deg,var(--bg3) 0%,var(--bg4) 100%);
+  border:1.5px solid rgba(37,99,235,.18);border-radius:var(--radius);padding:clamp(12px,2.5vw,16px) clamp(14px,3vw,20px);
+  margin-top:10px;grid-template-columns:repeat(4,1fr);gap:clamp(12px,2.5vw,20px);animation:fadeIn .25s ease;}
+.emp-info-card.show{display:grid}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.emp-info-lbl{font-size:clamp(.6rem,1.2vw,.66rem);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:4px;}
+.emp-info-val{font-family:'JetBrains Mono',monospace;font-size:clamp(.78rem,1.8vw,.85rem);color:var(--blue2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.reason-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(155px,33vw,205px),1fr));gap:10px;}
+.reason-option{display:none}
+.reason-label{display:flex;align-items:center;gap:10px;padding:clamp(10px,2vw,13px) 14px;
+  background:var(--bg3);border:1.5px solid var(--line2);border-radius:10px;cursor:pointer;
+  font-size:clamp(.8rem,1.8vw,.875rem);transition:all .2s;color:var(--text2);user-select:none;line-height:1.4;}
+.reason-label:hover{border-color:rgba(37,99,235,.35);background:var(--bg4);color:var(--navy)}
+.reason-option:checked + .reason-label{border-color:var(--blue2);background:rgba(37,99,235,.08);color:var(--blue2);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+.reason-radio{width:16px;height:16px;border-radius:50%;flex-shrink:0;border:2px solid currentColor;opacity:.4;transition:all .2s;}
+.reason-option:checked + .reason-label .reason-radio{background:var(--blue2);border-color:var(--blue2);opacity:1;box-shadow:0 0 0 3px rgba(37,99,235,.2);}
+.form-actions{padding:clamp(14px,2.5vw,20px) clamp(18px,4vw,32px);display:flex;gap:10px;
+  justify-content:flex-end;align-items:center;background:var(--bg3);border-top:1px solid var(--line2);flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:clamp(10px,2vw,12px) clamp(16px,3vw,24px);
+  border-radius:10px;font-family:'Noto Sans Thai',sans-serif;font-size:clamp(.85rem,2vw,.92rem);
+  font-weight:700;cursor:pointer;transition:all .22s;border:none;white-space:nowrap;}
+.btn-ghost{background:var(--bg2);color:var(--text2);border:1.5px solid var(--line2)}
+.btn-ghost:hover{color:var(--blue2);border-color:rgba(37,99,235,.35);background:var(--bg4)}
+.btn-primary{background:var(--blue2);color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.28);flex:1;justify-content:center;min-width:140px;max-width:260px;}
+.btn-primary:hover:not(:disabled){background:var(--blue);box-shadow:0 8px 24px rgba(37,99,235,.38);transform:translateY(-2px)}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:spin .55s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.field.error input,.field.error select,.field.error textarea{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(220,38,38,.12)!important;}
+.field-error-msg{font-size:.72rem;color:var(--red);margin-top:3px;display:none}
+.field.error .field-error-msg{display:block}
+.recent-section{margin-top:clamp(28px,5vw,44px)}
+.recent-title{font-size:clamp(.9rem,2vw,1rem);font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.table-card{background:var(--bg2);border:1px solid var(--line2);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:clamp(.76rem,1.6vw,.85rem);min-width:560px}
+thead th{padding:clamp(10px,2vw,13px) clamp(12px,2.5vw,16px);background:var(--bg3);color:var(--text2);
+  font-weight:700;text-align:left;font-size:clamp(.62rem,1.3vw,.7rem);text-transform:uppercase;
+  letter-spacing:.08em;border-bottom:1px solid var(--line2);white-space:nowrap;}
+tbody td{padding:clamp(9px,1.8vw,12px) clamp(12px,2.5vw,16px);border-top:1px solid var(--line);vertical-align:middle}
+tbody tr:hover td{background:var(--bg3)}
+.badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:clamp(.65rem,1.3vw,.74rem);font-weight:600;border:1px solid transparent}
+.badge-blue{background:var(--bg3);color:var(--blue2);border-color:var(--line2)}
+.badge-red{background:#FEF2F2;color:#991B1B;border-color:rgba(220,38,38,.2)}
+.btn-del{background:none;border:none;cursor:pointer;padding:5px 8px;border-radius:7px;font-size:.85rem;color:var(--text3);transition:all .15s}
+.btn-del:hover{color:var(--red);background:#FEF2F2}
+.empty-row td{text-align:center;color:var(--text3);padding:32px}
+.toast-wrap{position:fixed;bottom:clamp(16px,3vw,28px);right:clamp(12px,3vw,28px);z-index:9999;
+  display:flex;flex-direction:column;gap:8px;max-width:min(360px,calc(100vw - 24px));}
+.toast{padding:12px 16px;border-radius:12px;font-size:clamp(.8rem,1.8vw,.875rem);font-weight:600;
+  display:flex;align-items:center;gap:10px;box-shadow:var(--shadow2);animation:toastIn .28s ease}
+.toast-success{background:#ECFDF5;border:1.5px solid rgba(5,150,105,.25);color:#065F46}
+.toast-error{background:#FEF2F2;border:1.5px solid rgba(220,38,38,.25);color:#991B1B}
+@keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:1024px){.emp-info-card{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){:root{--nav-h:56px}
+  .form-grid{grid-template-columns:1fr}.col-span-2{grid-column:span 1}
+  .emp-info-card{grid-template-columns:repeat(2,1fr)}.reason-grid{grid-template-columns:1fr 1fr}
+  .form-actions{padding:14px 16px}.btn-ghost{flex:1;justify-content:center}.btn-primary{max-width:none}}
+@media(max-width:400px){.reason-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<!-- ─── NAV ─── -->
 <nav>
   <a href="index.html" class="nav-brand">
     <span style="font-size:1.2rem">📈</span>
@@ -396,170 +162,104 @@ tbody tr:hover td { background: var(--bg3); }
   </div>
 </nav>
 
-<!-- ─── PAGE ─── -->
 <div class="page-wrap">
-
-  <!-- Header -->
   <div class="page-header">
-    <div class="breadcrumb">
-      <a href="index.html">หน้าแรก</a>
-      <span>›</span>
-      <span>บันทึกข้อมูลลาออก</span>
-    </div>
+    <div class="breadcrumb"><a href="index.html">หน้าแรก</a><span>›</span><span>บันทึกข้อมูลลาออก</span></div>
     <div class="page-title">📝 บันทึกข้อมูลพนักงานลาออก</div>
     <div class="page-desc">กรอกข้อมูลให้ครบถ้วน · ระบบจะบันทึกลง Google Sheets อัตโนมัติ</div>
   </div>
 
-  <!-- Form Card -->
   <div class="form-card">
-
-    <!-- ── Section 1: ข้อมูลพนักงาน ── -->
+    <!-- SECTION 1: ข้อมูลพนักงาน -->
     <div class="form-section">
-      <div class="section-heading">
-        <div class="section-heading-icon">👤</div>
-        ข้อมูลพนักงาน
-      </div>
-
+      <div class="section-heading"><div class="section-heading-icon">👤</div>ข้อมูลพนักงาน</div>
       <div class="form-grid">
-
-        <!-- ค้นหา -->
         <div class="field col-span-2" id="fieldEmpSearch">
           <label>ค้นหาพนักงาน <span class="req">*</span></label>
           <div class="search-wrap">
             <span class="search-icon">🔍</span>
-            <input
-              type="text" id="empSearch"
-              placeholder="พิมพ์ชื่อ หรือ รหัสพนักงาน…"
-              autocomplete="off"
-            />
+            <input type="text" id="empSearch" placeholder="พิมพ์ชื่อ หรือ รหัสพนักงาน…" autocomplete="off"/>
             <div class="search-dropdown" id="searchDropdown"></div>
           </div>
           <span class="field-error-msg">กรุณาเลือกพนักงานจากรายการ</span>
         </div>
-
-        <!-- Emp Info Card -->
         <div class="col-span-2">
           <div class="emp-info-card" id="empInfoCard">
-            <div>
-              <div class="emp-info-lbl">รหัสพนักงาน</div>
-              <div class="emp-info-val" id="dispEmpId">—</div>
-            </div>
-            <div>
-              <div class="emp-info-lbl">แผนก</div>
-              <div class="emp-info-val" id="dispDept">—</div>
-            </div>
-            <div>
-              <div class="emp-info-lbl">ตำแหน่ง</div>
-              <div class="emp-info-val" id="dispPos">—</div>
-            </div>
-            <div>
-              <div class="emp-info-lbl">Plant</div>
-              <div class="emp-info-val" id="dispPlant">—</div>
-            </div>
+            <div><div class="emp-info-lbl">รหัสพนักงาน</div><div class="emp-info-val" id="dispEmpId">—</div></div>
+            <div><div class="emp-info-lbl">แผนก</div><div class="emp-info-val" id="dispDept">—</div></div>
+            <div><div class="emp-info-lbl">ตำแหน่ง</div><div class="emp-info-val" id="dispPos">—</div></div>
+            <div><div class="emp-info-lbl">Plant</div><div class="emp-info-val" id="dispPlant">—</div></div>
           </div>
-          <!-- Hidden carriers -->
-          <input type="hidden" id="hidEmpId" />
-          <input type="hidden" id="hidDept" />
-          <input type="hidden" id="hidPos" />
-          <input type="hidden" id="hidPlant" />
+          <input type="hidden" id="hidEmpId"/>
+          <input type="hidden" id="hidDept"/>
+          <input type="hidden" id="hidPos"/>
+          <input type="hidden" id="hidPlant"/>
         </div>
-
-        <!-- วันที่เริ่มงาน -->
         <div class="field">
           <label>วันที่เริ่มงาน</label>
-          <input type="date" id="startDate" />
+          <input type="date" id="startDate"/>
         </div>
-
-        <!-- วันที่ลาออก -->
         <div class="field" id="fieldLeaveDate">
           <label>วันที่ลาออก <span class="req">*</span></label>
-          <input type="date" id="leaveDate" />
+          <input type="date" id="leaveDate"/>
           <span class="field-error-msg">กรุณาระบุวันที่ลาออก</span>
         </div>
+      </div>
+    </div>
 
-        <!-- ประเภทการลาออก -->
+    <!-- SECTION 2: ประเภทการลาออก -->
+    <div class="form-section">
+      <div class="section-heading"><div class="section-heading-icon">📋</div>ประเภทการลาออก</div>
+      <div class="form-grid">
         <div class="field col-span-2">
-          <label>ประเภทการลาออก <span class="req">*</span></label>
+          <label>ประเภทการลาออก</label>
           <select id="leaveType">
-            <option value="ลาออกตามความสมัครใจ">ลาออกตามความสมัครใจ (Voluntary)</option>
-            <option value="ให้ออก/เลิกจ้าง">ให้ออก / เลิกจ้าง (Involuntary)</option>
-            <option value="เกษียณอายุ">เกษียณอายุ (Retirement)</option>
+            <option value="">— เลือกประเภท —</option>
+            <option value="ลาออกโดยสมัครใจ">ลาออกโดยสมัครใจ</option>
+            <option value="เลิกจ้าง">เลิกจ้าง</option>
+            <option value="ครบสัญญาจ้าง">ครบสัญญาจ้าง</option>
+            <option value="เกษียณอายุ">เกษียณอายุ</option>
+            <option value="ไม่ผ่านทดลองงาน">ไม่ผ่านทดลองงาน</option>
           </select>
         </div>
-
       </div>
     </div>
 
-    <!-- ── Section 2: สาเหตุการลาออก ── -->
+    <!-- SECTION 3: สาเหตุการลาออก -->
     <div class="form-section">
-      <div class="section-heading">
-        <div class="section-heading-icon">💡</div>
-        สาเหตุการลาออก <span class="req">*</span>
-      </div>
+      <div class="section-heading"><div class="section-heading-icon">💡</div>สาเหตุการลาออก <span class="req">*</span></div>
       <div class="reason-grid" id="reasonGrid"></div>
-      <div id="reasonError" style="display:none; font-size:0.72rem; color:var(--red); margin-top:8px;">
-        กรุณาเลือกสาเหตุการลาออก
-      </div>
+      <div id="reasonError" style="display:none;font-size:.72rem;color:var(--red);margin-top:8px;">กรุณาเลือกสาเหตุการลาออก</div>
     </div>
 
-    <!-- ── Section 3: Clearance & หมายเหตุ ── -->
+    <!-- SECTION 4: หมายเหตุ -->
     <div class="form-section">
-      <div class="section-heading">
-        <div class="section-heading-icon">📋</div>
-        การคืนทรัพย์สิน &amp; หมายเหตุ
-      </div>
-
-      <div class="field" style="margin-bottom: 18px;">
-        <label>Checklist การคืนทรัพย์สิน (Clearance)</label>
-        <div class="clearance-grid">
-          <label class="chk-label" id="lblIdCard">
-            <input type="checkbox" id="chkIdCard" value="บัตรพนักงาน" />
-            🪪 บัตรพนักงาน
-          </label>
-          <label class="chk-label" id="lblUniform">
-            <input type="checkbox" id="chkUniform" value="ชุดยูนิฟอร์ม" />
-            👕 ชุดยูนิฟอร์ม
-          </label>
-          <label class="chk-label" id="lblEquipment">
-            <input type="checkbox" id="chkEquipment" value="อุปกรณ์การทำงาน" />
-            🔧 อุปกรณ์การทำงาน
-          </label>
+      <div class="section-heading"><div class="section-heading-icon">📝</div>หมายเหตุเพิ่มเติม</div>
+      <div class="form-grid">
+        <div class="field col-span-2">
+          <label>หมายเหตุ</label>
+          <textarea id="notes" rows="3" placeholder="ข้อมูลเพิ่มเติม หรือรายละเอียดอื่นๆ…"></textarea>
         </div>
       </div>
-
-      <div class="field">
-        <label>รายละเอียด / ข้อเสนอแนะ (Exit Interview)</label>
-        <textarea id="notes" rows="3" placeholder="กรอกรายละเอียดเพิ่มเติม หรือ ความเห็นจาก Exit Interview…"></textarea>
-      </div>
     </div>
 
-    <!-- ── Form Actions ── -->
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="resetForm()">🔄 ล้างข้อมูล</button>
       <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">
-        <span id="submitIcon">💾</span>
-        <span id="submitText">บันทึกข้อมูล</span>
+        <span id="submitIcon">💾</span><span id="submitText">บันทึกข้อมูล</span>
       </button>
     </div>
+  </div>
 
-  </div><!-- /form-card -->
-
-  <!-- ─── Recent Table ─── -->
+  <!-- RECENT TABLE -->
   <div class="recent-section">
     <div class="recent-title">🕐 รายการล่าสุด (10 รายการ)</div>
     <div class="table-card">
       <div class="table-scroll">
         <table>
-          <thead>
-            <tr>
-              <th>ชื่อ-นามสกุล</th>
-              <th>แผนก</th>
-              <th>วันที่ลาออก</th>
-              <th>ประเภท</th>
-              <th>สาเหตุ</th>
-              <th style="width:44px;"></th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th>ชื่อ-นามสกุล</th><th>แผนก</th><th>วันที่ลาออก</th><th>ประเภท</th><th>สาเหตุ</th><th style="width:44px"></th>
+          </tr></thead>
           <tbody id="recentTableBody">
             <tr class="empty-row"><td colspan="6">⏳ กำลังโหลด…</td></tr>
           </tbody>
@@ -567,8 +267,7 @@ tbody tr:hover td { background: var(--bg3); }
       </div>
     </div>
   </div>
-
-</div><!-- /page-wrap -->
+</div>
 
 <div class="toast-wrap" id="toastWrap"></div>
 
@@ -578,312 +277,214 @@ let selectedEmp = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   buildReasonGrid();
-  setDefaultDates();
+  document.getElementById('leaveDate').value = new Date().toISOString().split('T')[0];
   setupSearch();
-  setupClearanceToggles();
   await loadEmployees();
   await loadRecentResults();
 });
 
-/* ═══ DATES ═══ */
-function setDefaultDates() {
-  document.getElementById('leaveDate').value = new Date().toISOString().split('T')[0];
-}
-
-/* ═══ REASON GRID ═══ */
 function buildReasonGrid() {
   const grid = document.getElementById('reasonGrid');
-  CONFIG.LEAVE_REASONS.forEach((r, i) => {
+  CONFIG.LEAVE_REASONS.forEach((r,i) => {
     const id   = `reason_${i}`;
     const wrap = document.createElement('div');
     wrap.className = 'field';
     wrap.innerHTML = `
-      <input class="reason-option" type="radio" name="leaveReason" id="${id}" value="${r}" />
-      <label class="reason-label" for="${id}">
-        <span class="reason-radio"></span>${r}
-      </label>`;
+      <input class="reason-option" type="radio" name="leaveReason" id="${id}" value="${r}"/>
+      <label class="reason-label" for="${id}"><span class="reason-radio"></span>${r}</label>`;
     grid.appendChild(wrap);
-  });
-}
-
-/* ═══ CLEARANCE TOGGLE ═══ */
-function setupClearanceToggles() {
-  ['chkIdCard','chkUniform','chkEquipment'].forEach(id => {
-    const el = document.getElementById(id);
-    el.addEventListener('change', () => {
-      el.closest('.chk-label').classList.toggle('checked', el.checked);
-    });
   });
 }
 
 async function loadEmployees() {
   try {
-    const res  = await fetch(CONFIG.APPS_SCRIPT_URL + '?action=getEmployees');
+    const res  = await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=getEmployees`);
     const json = await res.json();
-    if (json.status === 'ok') employees = json.data;
-  } catch (e) {
-    showToast('เชื่อมต่อ API ไม่สำเร็จ', 'error');
-  }
+    if (json.status==='ok') employees = json.data || [];
+  } catch(e) { showToast('เชื่อมต่อ API ไม่สำเร็จ','error'); }
 }
 
 function setupSearch() {
   const input    = document.getElementById('empSearch');
   const dropdown = document.getElementById('searchDropdown');
-
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
     if (!q) { closeDropdown(); return; }
-
-    const matches = employees.filter(e =>
-      (e['ชื่อ-นามสกุล'] || '').toLowerCase().includes(q) ||
-      String(e['รหัสพนักงาน'] || '').toLowerCase().includes(q)
-    ).slice(0, 10);
-
+    const matches = employees.filter(e=>
+      (e['ชื่อ-นามสกุล']||'').toLowerCase().includes(q)||
+      String(e['รหัสพนักงาน']||'').toLowerCase().includes(q)
+    ).slice(0,10);
     if (!matches.length) {
-      dropdown.innerHTML = '<div class="dropdown-empty">ไม่พบพนักงานที่ตรงกัน</div>';
+      dropdown.innerHTML='<div class="dropdown-empty">ไม่พบพนักงานที่ตรงกัน</div>';
     } else {
-      dropdown.innerHTML = matches.map((e, idx) => `
+      dropdown.innerHTML=matches.map((e,idx)=>`
         <div class="dropdown-item" data-idx="${idx}">
-          <strong>${e['คำนำหน้า'] || ''}${e['ชื่อ-นามสกุล'] || ''}</strong>
-          <span>${e['รหัสพนักงาน'] || '—'} · ${e['แผนก'] || '—'} · ${e['ตำแหน่ง'] || '—'}</span>
+          <strong>${e['คำนำหน้า']||''}${e['ชื่อ-นามสกุล']||''}</strong>
+          <span>${e['รหัสพนักงาน']||'—'} · ${e['แผนก']||'—'} · ${e['ตำแหน่ง']||'—'}</span>
         </div>`).join('');
-
-      dropdown.querySelectorAll('.dropdown-item').forEach((el, idx) =>
-        el.addEventListener('click', () => selectEmployee(matches[idx]))
-      );
+      dropdown.querySelectorAll('.dropdown-item').forEach((el,idx)=>el.addEventListener('click',()=>selectEmployee(matches[idx])));
     }
     dropdown.classList.add('open');
-    setFieldError('fieldEmpSearch', false);
+    setFieldError('fieldEmpSearch',false);
   });
-
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.search-wrap')) closeDropdown();
-  });
-
-  // If user clears the box → clear selection
-  input.addEventListener('input', () => {
-    if (!input.value.trim()) clearEmpSelection(false);
-  });
+  document.addEventListener('click',e=>{ if(!e.target.closest('.search-wrap')) closeDropdown(); });
+  input.addEventListener('input',()=>{ if(!input.value.trim()) clearEmpSelection(false); });
 }
 
-function closeDropdown() {
-  document.getElementById('searchDropdown').classList.remove('open');
-}
+function closeDropdown(){ document.getElementById('searchDropdown').classList.remove('open'); }
 
 function selectEmployee(emp) {
   selectedEmp = emp;
-
-  // Search box display
-  document.getElementById('empSearch').value =
-    `${emp['คำนำหน้า'] || ''}${emp['ชื่อ-นามสกุล'] || ''}`;
+  document.getElementById('empSearch').value = `${emp['คำนำหน้า']||''}${emp['ชื่อ-นามสกุล']||''}`;
   closeDropdown();
-
-  // Hidden inputs
-  document.getElementById('hidEmpId').value  = emp['รหัสพนักงาน'] || '';
-  document.getElementById('hidDept').value   = emp['แผนก']         || '';
-  document.getElementById('hidPos').value    = emp['ตำแหน่ง']      || '';
-  document.getElementById('hidPlant').value  = emp['Plant']         || '';
-
-  // Pre-fill start date if available
-  if (emp['วันที่เริ่มงาน']) {
-    document.getElementById('startDate').value = emp['วันที่เริ่มงาน'];
-  }
-
-  // Display card
-  document.getElementById('dispEmpId').textContent = emp['รหัสพนักงาน'] || '—';
-  document.getElementById('dispDept').textContent  = emp['แผนก']         || '—';
-  document.getElementById('dispPos').textContent   = emp['ตำแหน่ง']      || '—';
-  document.getElementById('dispPlant').textContent = emp['Plant']         || '—';
+  document.getElementById('hidEmpId').value = emp['รหัสพนักงาน']||'';
+  document.getElementById('hidDept').value  = emp['แผนก']||'';
+  document.getElementById('hidPos').value   = emp['ตำแหน่ง']||'';
+  document.getElementById('hidPlant').value = emp['Plant']||'';
+  if (emp['วันที่เริ่มงาน']) document.getElementById('startDate').value = emp['วันที่เริ่มงาน'];
+  document.getElementById('dispEmpId').textContent = emp['รหัสพนักงาน']||'—';
+  document.getElementById('dispDept').textContent  = emp['แผนก']||'—';
+  document.getElementById('dispPos').textContent   = emp['ตำแหน่ง']||'—';
+  document.getElementById('dispPlant').textContent = emp['Plant']||'—';
   document.getElementById('empInfoCard').classList.add('show');
-
-  setFieldError('fieldEmpSearch', false);
+  setFieldError('fieldEmpSearch',false);
 }
 
-/* clearEmpSelection — pass keepBox=true to leave the search text */
-function clearEmpSelection(keepBox = false) {
-  selectedEmp = null;
-  if (!keepBox) document.getElementById('empSearch').value = '';
-  ['hidEmpId','hidDept','hidPos','hidPlant'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  ['dispEmpId','dispDept','dispPos','dispPlant'].forEach(id => {
-    document.getElementById(id).textContent = '—';
-  });
+function clearEmpSelection(keepBox=false) {
+  selectedEmp=null;
+  if (!keepBox) document.getElementById('empSearch').value='';
+  ['hidEmpId','hidDept','hidPos','hidPlant'].forEach(id=>document.getElementById(id).value='');
+  ['dispEmpId','dispDept','dispPos','dispPlant'].forEach(id=>document.getElementById(id).textContent='—');
   document.getElementById('empInfoCard').classList.remove('show');
 }
 
-function setFieldError(fieldId, hasError) {
-  const el = document.getElementById(fieldId);
-  if (el) el.classList.toggle('error', hasError);
+function setFieldError(fieldId,hasError){
+  const el=document.getElementById(fieldId); if(el) el.classList.toggle('error',hasError);
 }
 
-function validateForm() {
-  let ok = true;
-
-  if (!selectedEmp) {
-    setFieldError('fieldEmpSearch', true);
-    ok = false;
-  } else {
-    setFieldError('fieldEmpSearch', false);
-  }
-
-  if (!document.getElementById('leaveDate').value) {
-    setFieldError('fieldLeaveDate', true);
-    ok = false;
-  } else {
-    setFieldError('fieldLeaveDate', false);
-  }
-
-  const reasonErr = document.getElementById('reasonError');
-  if (!document.querySelector('input[name="leaveReason"]:checked')) {
-    reasonErr.style.display = 'block';
-    ok = false;
-  } else {
-    reasonErr.style.display = 'none';
-  }
-
+function validateForm(){
+  let ok=true;
+  if (!selectedEmp){ setFieldError('fieldEmpSearch',true); ok=false; }
+  else setFieldError('fieldEmpSearch',false);
+  if (!document.getElementById('leaveDate').value){ setFieldError('fieldLeaveDate',true); ok=false; }
+  else setFieldError('fieldLeaveDate',false);
+  const reasonErr=document.getElementById('reasonError');
+  if (!document.querySelector('input[name="leaveReason"]:checked')){ reasonErr.style.display='block'; ok=false; }
+  else reasonErr.style.display='none';
   return ok;
 }
 
-async function submitForm() {
-  if (!validateForm()) {
-    showToast('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน', 'error');
-    const firstErr = document.querySelector('.field.error');
-    if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return;
-  }
+async function submitForm(){
+  if (!validateForm()){ showToast('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน','error');
+    document.querySelector('.field.error')?.scrollIntoView({behavior:'smooth',block:'center'}); return; }
 
   const leaveDate = document.getElementById('leaveDate').value;
   const startDate = document.getElementById('startDate').value;
   const reason    = document.querySelector('input[name="leaveReason"]:checked').value;
   const notes     = document.getElementById('notes').value.trim();
+  const leaveType = document.getElementById('leaveType').value;
 
-  const clearance = ['chkIdCard','chkUniform','chkEquipment']
-    .filter(id => document.getElementById(id).checked)
-    .map(id => document.getElementById(id).value);
-
-  let yearsOfService = '';
-  if (startDate && leaveDate) {
-    const diff = new Date(leaveDate) - new Date(startDate);
-    if (diff > 0) yearsOfService = (diff / (1000*60*60*24*365.25)).toFixed(1);
+  let yearsOfService='';
+  if (startDate&&leaveDate){
+    const diff=new Date(leaveDate)-new Date(startDate);
+    if (diff>0) yearsOfService=(diff/(1000*60*60*24*365.25)).toFixed(1);
   }
 
   setSubmitLoading(true);
 
+  // ✅ แก้: fields ตรงกับ Turnover_Data headers จริง:
+  // วันที่บันทึก | รหัสพนักงาน | ชื่อ-นามสกุล | แผนก | Plant
+  // วันที่เริ่มงาน | วันที่ลาออก | ประเภทการลาออก
+  // สาเหตุที่ลาออก | การคืนทรัพย์สิน | หมายเหตุ | อายุงาน (ปี)
+  // หมายเหตุ: ไม่มี column 'ตำแหน่ง' ใน Turnover_Data sheet
   const payload = {
     action: 'addResult',
     data: {
-      'วันที่บันทึก'    : new Date().toISOString(),
-      'รหัสพนักงาน'    : selectedEmp['รหัสพนักงาน'] || '',
-      'ชื่อ-นามสกุล'   : `${selectedEmp['คำนำหน้า'] || ''}${selectedEmp['ชื่อ-นามสกุล'] || ''}`,
-      'แผนก'           : selectedEmp['แผนก']   || '',
-      'ตำแหน่ง'        : selectedEmp['ตำแหน่ง'] || '',
-      'Plant'           : selectedEmp['Plant']   || '',
+      'วันที่บันทึก'     : new Date().toISOString(),
+      'รหัสพนักงาน'     : selectedEmp['รหัสพนักงาน']||'',
+      'ชื่อ-นามสกุล'    : `${selectedEmp['คำนำหน้า']||''}${selectedEmp['ชื่อ-นามสกุล']||''}`,
+      'แผนก'            : selectedEmp['แผนก']||'',
+      'Plant'            : selectedEmp['Plant']||'',
       'วันที่เริ่มงาน'  : startDate,
       'วันที่ลาออก'     : leaveDate,
-      'อายุงาน (ปี)'   : yearsOfService,
-      'ประเภทการลาออก' : document.getElementById('leaveType').value,
-      'สาเหตุที่ลาออก' : reason,
-      'การคืนทรัพย์สิน': clearance.length ? clearance.join(', ') : 'ไม่มี',
-      'หมายเหตุ'       : notes,
+      'ประเภทการลาออก'  : leaveType,
+      'สาเหตุที่ลาออก'  : reason,
+      'การคืนทรัพย์สิน' : '',
+      'หมายเหตุ'        : notes,
+      'อายุงาน (ปี)'    : yearsOfService,
     }
   };
 
   try {
-    const res  = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
     const json = await res.json();
-    if (json.status === 'ok') {
-      showToast('✅ บันทึกข้อมูลสำเร็จ!', 'success');
-      resetForm();
-      await loadRecentResults();
-    } else {
-      showToast('เกิดข้อผิดพลาด: ' + (json.message || 'ไม่ทราบสาเหตุ'), 'error');
-    }
-  } catch (e) {
-    showToast('เชื่อมต่อ API ไม่สำเร็จ: ' + e.message, 'error');
-  }
-
+    if (json.status==='ok'){
+      showToast('✅ บันทึกข้อมูลสำเร็จ!','success');
+      resetForm(); await loadRecentResults();
+    } else showToast('เกิดข้อผิดพลาด: '+(json.message||'ไม่ทราบสาเหตุ'),'error');
+  } catch(e){ showToast('เชื่อมต่อ API ไม่สำเร็จ: '+e.message,'error'); }
   setSubmitLoading(false);
 }
 
-function setSubmitLoading(on) {
-  document.getElementById('submitBtn').disabled     = on;
-  document.getElementById('submitIcon').innerHTML   = on ? '<div class="spinner"></div>' : '💾';
-  document.getElementById('submitText').textContent = on ? 'กำลังบันทึก…' : 'บันทึกข้อมูล';
+function setSubmitLoading(on){
+  document.getElementById('submitBtn').disabled = on;
+  document.getElementById('submitIcon').innerHTML = on?'<div class="spinner"></div>':'💾';
+  document.getElementById('submitText').textContent = on?'กำลังบันทึก…':'บันทึกข้อมูล';
 }
 
-function resetForm() {
+function resetForm(){
   clearEmpSelection();
-  document.getElementById('startDate').value = '';
-  setDefaultDates();
-  document.getElementById('leaveType').selectedIndex = 0;
-  document.querySelectorAll('input[name="leaveReason"]').forEach(r => r.checked = false);
-  document.getElementById('reasonError').style.display = 'none';
-  ['chkIdCard','chkUniform','chkEquipment'].forEach(id => {
-    const el = document.getElementById(id);
-    el.checked = false;
-    el.closest('.chk-label').classList.remove('checked');
-  });
-  document.getElementById('notes').value = '';
-  document.querySelectorAll('.field.error').forEach(f => f.classList.remove('error'));
+  document.getElementById('startDate').value='';
+  document.getElementById('leaveDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('leaveType').selectedIndex=0;
+  document.querySelectorAll('input[name="leaveReason"]').forEach(r=>r.checked=false);
+  document.getElementById('reasonError').style.display='none';
+  document.getElementById('notes').value='';
+  document.querySelectorAll('.field.error').forEach(f=>f.classList.remove('error'));
 }
 
-async function loadRecentResults() {
-  const tbody = document.getElementById('recentTableBody');
-  tbody.innerHTML = '<tr class="empty-row"><td colspan="6">⏳ กำลังโหลด…</td></tr>';
+async function loadRecentResults(){
+  const tbody=document.getElementById('recentTableBody');
+  tbody.innerHTML='<tr class="empty-row"><td colspan="6">⏳ กำลังโหลด…</td></tr>';
   try {
-    const res  = await fetch(CONFIG.APPS_SCRIPT_URL + '?action=getResults');
+    const res  = await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=getResults`);
     const json = await res.json();
-    if (json.status !== 'ok' || !json.data.length) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">ยังไม่มีข้อมูล</td></tr>';
-      return;
+    if (json.status!=='ok'||!json.data.length){
+      tbody.innerHTML='<tr class="empty-row"><td colspan="6">ยังไม่มีข้อมูล</td></tr>'; return;
     }
-    tbody.innerHTML = [...json.data].reverse().slice(0, 10).map(r => {
-      const dateStr = r['วันที่ลาออก']
-        ? new Date(r['วันที่ลาออก']).toLocaleDateString('th-TH', {day:'2-digit',month:'short',year:'numeric'})
-        : '—';
-      const reason = (r['สาเหตุที่ลาออก'] || '—').split('(')[0].trim();
-      const type   = (r['ประเภทการลาออก'] || '—').split('(')[0].trim();
+    tbody.innerHTML=[...json.data].reverse().slice(0,10).map(r=>{
+      const dateStr=r['วันที่ลาออก']
+        ?new Date(r['วันที่ลาออก']).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'})
+        :'—';
+      const reason=(r['สาเหตุที่ลาออก']||'—').split('(')[0].trim();
+      const type=(r['ประเภทการลาออก']||'—');
       return `<tr>
-        <td><strong>${r['ชื่อ-นามสกุล'] || '—'}</strong></td>
-        <td><span class="badge badge-blue">${r['แผนก'] || '—'}</span></td>
+        <td><strong>${r['ชื่อ-นามสกุล']||'—'}</strong></td>
+        <td><span class="badge badge-blue">${r['แผนก']||'—'}</span></td>
         <td>${dateStr}</td>
-        <td style="font-size:clamp(0.7rem,1.3vw,0.78rem);color:var(--text3);">${type}</td>
+        <td style="font-size:clamp(.7rem,1.3vw,.78rem);color:var(--text3);">${type}</td>
         <td><span class="badge badge-red">${reason}</span></td>
         <td><button class="btn-del" onclick="deleteEntry(${r._rowIndex})" title="ลบ">🗑</button></td>
       </tr>`;
     }).join('');
-  } catch (e) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">โหลดข้อมูลไม่สำเร็จ</td></tr>';
-  }
+  } catch(e){ tbody.innerHTML='<tr class="empty-row"><td colspan="6">โหลดข้อมูลไม่สำเร็จ</td></tr>'; }
 }
 
-async function deleteEntry(rowIndex) {
+async function deleteEntry(rowIndex){
   if (!confirm('ต้องการลบรายการนี้หรือไม่?\nการลบจะไม่สามารถย้อนกลับได้')) return;
   try {
-    const res  = await fetch(CONFIG.APPS_SCRIPT_URL, {
-      method: 'POST',
-      body:   JSON.stringify({ action: 'deleteResult', rowIndex })
-    });
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteResult',rowIndex})});
     const json = await res.json();
-    if (json.status === 'ok') {
-      showToast('ลบรายการสำเร็จ', 'success');
-      await loadRecentResults();
-    } else {
-      showToast('ลบไม่สำเร็จ: ' + (json.message || ''), 'error');
-    }
-  } catch (e) {
-    showToast('เกิดข้อผิดพลาด', 'error');
-  }
+    if (json.status==='ok'){ showToast('ลบรายการสำเร็จ','success'); await loadRecentResults(); }
+    else showToast('ลบไม่สำเร็จ: '+(json.message||''),'error');
+  } catch(e){ showToast('เกิดข้อผิดพลาด','error'); }
 }
 
-function showToast(msg, type = 'success') {
-  const wrap = document.getElementById('toastWrap');
-  const el   = document.createElement('div');
-  el.className = `toast toast-${type}`;
-  el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${msg}</span>`;
-  wrap.appendChild(el);
-  setTimeout(() => el.remove(), 4500);
+function showToast(msg,type='success'){
+  const wrap=document.getElementById('toastWrap');
+  const el=document.createElement('div');el.className=`toast toast-${type}`;
+  el.innerHTML=`<span>${type==='success'?'✅':'❌'}</span><span>${msg}</span>`;
+  wrap.appendChild(el); setTimeout(()=>el.remove(),4500);
 }
 </script>
 </body>

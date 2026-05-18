@@ -56,7 +56,6 @@
             pointer-events: none; z-index: 0;
         }
 
-        /* NAV */
         nav {
             position: fixed; top: 0; left: 0; right: 0; z-index: 100;
             display: flex; align-items: center; justify-content: space-between;
@@ -66,125 +65,66 @@
             border-bottom: 1px solid var(--line2);
             box-shadow: 0 1px 12px rgba(29,111,204,0.07);
         }
-        .nav-brand {
-            display: flex; align-items: center; gap: 10px;
-            text-decoration: none; color: var(--text);
-        }
+        .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
         .brand-name { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
         .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
         .nav-btn {
-            padding: 7px 16px; border-radius: 8px;
-            font-size: 0.82rem; font-weight: 600;
-            cursor: pointer; text-decoration: none;
-            transition: all .2s; border: 1.5px solid var(--line2);
-            background: transparent; color: var(--text2);
-            font-family: 'Noto Sans Thai', sans-serif;
-            white-space: nowrap;
+            padding: 7px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; text-decoration: none; transition: all .2s; border: 1.5px solid var(--line2);
+            background: transparent; color: var(--text2); font-family: 'Noto Sans Thai', sans-serif; white-space: nowrap;
         }
-        .nav-btn:hover {
-            color: var(--blue2);
-            border-color: rgba(37,99,235,0.35);
-            background: var(--bg3);
-        }
-        .nav-btn.active {
-            background: var(--blue2);
-            color: #fff;
-            border-color: var(--blue2);
-        }
+        .nav-btn:hover { color: var(--blue2); border-color: rgba(37,99,235,0.35); background: var(--bg3); }
+        .nav-btn.active { background: var(--blue2); color: #fff; border-color: var(--blue2); }
 
-        /* MAIN */
         .container {
-            position: relative; z-index: 1;
-            max-width: 1400px; margin: 0 auto;
+            position: relative; z-index: 1; max-width: 1400px; margin: 0 auto;
             padding: clamp(80px,10vw,100px) clamp(20px,5vw,40px) clamp(40px,6vw,60px);
         }
 
-        /* HEADER & FILTERS */
         .dashboard-header {
-            display: flex; justify-content: space-between;
-            align-items: flex-end; margin-bottom: clamp(24px,4vw,36px);
-            flex-wrap: wrap; gap: 20px;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: clamp(24px,4vw,36px); flex-wrap: wrap; gap: 20px;
         }
-        .tabs-wrapper {
-            display: flex; border-bottom: 2px solid var(--line2);
-            gap: 4px; flex-wrap: wrap;
-        }
+        .tabs-wrapper { display: flex; border-bottom: 2px solid var(--line2); gap: 4px; flex-wrap: wrap; }
         .tab-btn {
-            padding: 10px 20px; font-weight: 700; font-size: 0.95rem;
-            border: none; background: transparent;
-            border-bottom: 3px solid transparent;
-            cursor: pointer; transition: all 0.2s;
-            color: var(--text3);
-            font-family: 'Noto Sans Thai', sans-serif;
+            padding: 10px 20px; font-weight: 700; font-size: 0.95rem; border: none;
+            background: transparent; border-bottom: 3px solid transparent; cursor: pointer;
+            transition: all 0.2s; color: var(--text3); font-family: 'Noto Sans Thai', sans-serif;
         }
         .tab-btn.active { border-bottom-color: var(--blue2); color: var(--blue2); }
         .tab-btn:hover:not(.active) { color: var(--text2); }
 
         .filters {
-            display: flex; gap: 10px; align-items: center;
-            background: var(--bg2); padding: 10px 16px;
-            border-radius: 12px; border: 1px solid var(--line2);
+            display: flex; gap: 10px; align-items: center; background: var(--bg2);
+            padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line2);
             box-shadow: var(--shadow); flex-wrap: wrap;
         }
         .filters select {
-            border: none; background: transparent;
-            font-size: 0.85rem; font-weight: 600;
-            outline: none; cursor: pointer;
-            color: var(--text2);
-            font-family: 'Noto Sans Thai', sans-serif;
-            min-width: 100px;
+            border: none; background: transparent; font-size: 0.85rem; font-weight: 600;
+            outline: none; cursor: pointer; color: var(--text2);
+            font-family: 'Noto Sans Thai', sans-serif; min-width: 100px;
         }
         .filter-sep { width: 1px; height: 24px; background: var(--line2); }
-        .filter-label {
-            font-size: 0.68rem; font-weight: 700;
-            color: var(--text3); text-transform: uppercase;
-            letter-spacing: 0.05em; white-space: nowrap;
-        }
+        .filter-label { font-size: 0.68rem; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
 
-        /* TAB CONTENT */
         .tab-content { display: none; }
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* KPI CARDS */
         .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: clamp(12px,2vw,20px);
-            margin-bottom: clamp(24px,4vw,36px);
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: clamp(12px,2vw,20px); margin-bottom: clamp(24px,4vw,36px);
         }
         .kpi-card {
-            background: var(--bg2);
-            border: 1px solid var(--line2);
-            border-radius: 16px;
-            padding: clamp(16px,2.5vw,22px);
-            box-shadow: var(--shadow);
-            transition: all 0.25s;
-            position: relative;
-            overflow: hidden;
+            background: var(--bg2); border: 1px solid var(--line2); border-radius: 16px;
+            padding: clamp(16px,2.5vw,22px); box-shadow: var(--shadow); transition: all 0.25s;
+            position: relative; overflow: hidden;
         }
         .kpi-card:hover { transform: translateY(-4px); box-shadow: var(--shadow2); }
-        .kpi-label {
-            font-size: 0.72rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.06em;
-            color: var(--text3); margin-bottom: 6px;
-        }
-        .kpi-value {
-            font-family: 'DM Mono', monospace;
-            font-size: clamp(1.8rem,3.5vw,2.5rem);
-            font-weight: 700; color: var(--navy); line-height: 1;
-        }
+        .kpi-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 6px; }
+        .kpi-value { font-family: 'DM Mono', monospace; font-size: clamp(1.8rem,3.5vw,2.5rem); font-weight: 700; color: var(--navy); line-height: 1; }
         .kpi-sub { font-size: 0.72rem; color: var(--text3); margin-top: 4px; }
-        .kpi-icon {
-            position: absolute; top: 14px; right: 14px;
-            font-size: 1.6rem; opacity: 0.15;
-        }
+        .kpi-icon { position: absolute; top: 14px; right: 14px; font-size: 1.6rem; opacity: 0.15; }
 
         .border-blue   { border-top: 4px solid var(--blue2); }
         .border-red    { border-top: 4px solid var(--red); }
@@ -195,17 +135,13 @@
         .border-pink   { border-top: 4px solid var(--pink); }
         .border-cyan   { border-top: 4px solid var(--cyan); }
 
-        /* CHART CONTAINERS */
         .charts-grid { display: grid; gap: clamp(16px,2.5vw,24px); }
         .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
         .grid-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 
         .chart-card {
-            background: var(--bg2);
-            border: 1px solid var(--line2);
-            border-radius: 16px;
-            padding: clamp(20px,3vw,28px);
-            box-shadow: var(--shadow);
+            background: var(--bg2); border: 1px solid var(--line2); border-radius: 16px;
+            padding: clamp(20px,3vw,28px); box-shadow: var(--shadow);
         }
         .chart-title { font-size: 0.95rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; text-align: center; }
         .chart-subtitle { font-size: 0.75rem; color: var(--text3); margin-bottom: 16px; text-align: center; }
@@ -213,74 +149,58 @@
         .chart-container-lg { position: relative; height: 300px; }
 
         .section-label {
-            font-size: 0.72rem; font-weight: 800;
-            text-transform: uppercase; letter-spacing: 0.1em;
-            color: var(--text3);
-            margin: clamp(24px,4vw,36px) 0 clamp(12px,2vw,16px);
+            font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--text3); margin: clamp(24px,4vw,36px) 0 clamp(12px,2vw,16px);
             display: flex; align-items: center; gap: 10px;
         }
         .section-label::after { content: ''; flex: 1; height: 1px; background: var(--line2); }
 
-        /* NATIONALITY-GENDER GRID */
-        .natgender-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
+        /* Manpower Rate card */
+        .target-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: clamp(12px,2vw,18px); margin-bottom: clamp(16px,2.5vw,24px);
         }
-        .natgender-card {
-            background: var(--bg3); border: 1px solid var(--line2);
-            border-radius: 12px; padding: 16px; text-align: center;
+        .target-card {
+            background: var(--bg2); border: 1px solid var(--line2); border-radius: 14px;
+            padding: 16px 18px; box-shadow: var(--shadow); transition: all 0.2s;
         }
-        .natgender-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); margin-bottom: 6px; }
-        .natgender-value { font-family: 'DM Mono', monospace; font-size: 1.6rem; font-weight: 700; color: var(--navy); }
-        .natgender-pct { font-size: 0.7rem; color: var(--text3); margin-top: 2px; }
+        .target-card:hover { transform: translateY(-3px); box-shadow: var(--shadow2); }
+        .target-dept { font-size: 0.78rem; font-weight: 700; color: var(--text2); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .target-bar-wrap { background: var(--bg3); border-radius: 100px; height: 8px; margin-bottom: 6px; overflow: hidden; }
+        .target-bar { height: 100%; border-radius: 100px; transition: width 0.6s ease; }
+        .target-nums { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text3); }
+        .target-nums strong { color: var(--navy); font-family: 'DM Mono', monospace; }
+        .target-rate { font-family: 'DM Mono', monospace; font-size: 0.9rem; font-weight: 700; color: var(--blue2); float: right; margin-top: -22px; }
 
-        /* TURNOVER */
+        /* Turnover */
         .to-kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: clamp(16px,2.5vw,24px);
-            margin-bottom: clamp(28px,4vw,40px);
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: clamp(16px,2.5vw,24px); margin-bottom: clamp(28px,4vw,40px);
         }
         .to-kpi-card {
-            background: var(--bg2); border: 1px solid var(--line2);
-            border-radius: 16px; overflow: hidden; box-shadow: var(--shadow);
-            transition: all 0.25s;
+            background: var(--bg2); border: 1px solid var(--line2); border-radius: 16px;
+            overflow: hidden; box-shadow: var(--shadow); transition: all 0.25s;
         }
         .to-kpi-card:hover { transform: translateY(-4px); box-shadow: var(--shadow2); }
         .to-kpi-header {
             background: linear-gradient(135deg, var(--blue2), var(--cyan));
-            padding: 14px; text-align: center; color: #fff;
-            font-weight: 700; font-size: 0.88rem;
+            padding: 14px; text-align: center; color: #fff; font-weight: 700; font-size: 0.88rem;
         }
-        .to-kpi-header small {
-            display: block; font-size: 0.7rem; font-weight: 400;
-            opacity: 0.9; margin-top: 2px;
-        }
+        .to-kpi-header small { display: block; font-size: 0.7rem; font-weight: 400; opacity: 0.9; margin-top: 2px; }
         .to-kpi-body {
-            padding: 24px 20px; text-align: center;
-            display: flex; align-items: center; justify-content: center;
-            gap: 12px; min-height: 120px;
+            padding: 24px 20px; text-align: center; display: flex;
+            align-items: center; justify-content: center; gap: 12px; min-height: 120px;
         }
         .to-kpi-icon { font-size: 3rem; }
-        .to-kpi-value {
-            font-family: 'DM Mono', monospace;
-            font-size: clamp(2.4rem,4vw,3.2rem);
-            font-weight: 700; color: var(--navy);
-        }
+        .to-kpi-value { font-family: 'DM Mono', monospace; font-size: clamp(2.4rem,4vw,3.2rem); font-weight: 700; color: var(--navy); }
         .to-kpi-value.red { color: var(--red); }
 
-        /* YEARLY TABLE */
+        /* Yearly table */
         .yearly-table-wrap { overflow-x: auto; }
-        .yearly-table {
-            width: 100%; border-collapse: collapse;
-            font-size: 0.85rem; min-width: 500px;
-        }
+        .yearly-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 500px; }
         .yearly-table th {
-            padding: 10px 14px; background: var(--bg3);
-            color: var(--text2); font-weight: 700;
-            text-align: left; font-size: 0.72rem;
-            text-transform: uppercase; letter-spacing: 0.08em;
+            padding: 10px 14px; background: var(--bg3); color: var(--text2); font-weight: 700;
+            text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
             border-bottom: 1px solid var(--line2);
         }
         .yearly-table td { padding: 10px 14px; border-top: 1px solid var(--line); }
@@ -289,63 +209,47 @@
         .badge-red  { background: #FEF2F2; color: var(--red); }
         .badge-blue { background: var(--bg3); color: var(--blue2); }
 
-        /* ATTENDANCE */
+        /* Attendance */
         .attend-kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: clamp(12px,2vw,18px);
-            margin-bottom: clamp(20px,3vw,28px);
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: clamp(12px,2vw,18px); margin-bottom: clamp(20px,3vw,28px);
         }
 
-        /* SPINNER */
+        /* Spinner */
         .spinner-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(240,246,255,0.7);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 9999; pointer-events: all;
+            background: rgba(240,246,255,0.7); display: flex; align-items: center;
+            justify-content: center; z-index: 9999;
         }
         .spinner-large {
-            width: 50px; height: 50px;
-            border: 4px solid rgba(37,99,235,0.15);
-            border-top-color: var(--blue2);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            width: 50px; height: 50px; border: 4px solid rgba(37,99,235,0.15);
+            border-top-color: var(--blue2); border-radius: 50%; animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* TOAST */
+        /* Toast */
         .toast-wrap {
-            position: fixed; bottom: 28px; right: 28px;
-            z-index: 9999; display: flex; flex-direction: column; gap: 8px;
-            max-width: min(400px, calc(100vw - 56px));
+            position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px; max-width: min(400px, calc(100vw - 56px));
         }
         .toast {
-            padding: 12px 16px; border-radius: 12px;
-            font-size: 0.875rem; font-weight: 600;
-            display: flex; align-items: center; gap: 10px;
-            box-shadow: var(--shadow2); animation: slideIn 0.3s ease;
+            padding: 12px 16px; border-radius: 12px; font-size: 0.875rem; font-weight: 600;
+            display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow2); animation: slideIn 0.3s ease;
         }
         .toast-success { background: #ECFDF5; border: 1.5px solid rgba(16,185,129,0.25); color: #065F46; }
         .toast-error   { background: #FEF2F2; border: 1.5px solid rgba(220,38,38,0.25); color: #991B1B; }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(24px); }
-            to   { opacity: 1; transform: translateX(0); }
-        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
 
-        /* RESPONSIVE */
         @media (max-width: 768px) {
             .dashboard-header { flex-direction: column; align-items: stretch; }
             .tabs-wrapper { width: 100%; }
             .kpi-grid { grid-template-columns: 1fr 1fr; }
-            .charts-grid.grid-2,
-            .charts-grid.grid-3 { grid-template-columns: 1fr; }
-            .natgender-grid { grid-template-columns: 1fr 1fr; }
+            .charts-grid.grid-2, .charts-grid.grid-3 { grid-template-columns: 1fr; }
             nav { padding: 0 16px; }
         }
         @media (max-width: 480px) {
             .kpi-grid { grid-template-columns: 1fr; }
             .tab-btn { font-size: 0.82rem; padding: 8px 12px; }
-            .natgender-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -365,20 +269,13 @@
 
 <div class="container">
 
-    <!-- HEADER & FILTERS -->
     <div class="dashboard-header">
         <div class="tabs-wrapper">
             <button id="btnTab1" class="tab-btn active" onclick="switchTab('tab1')">👥 Manpower</button>
             <button id="btnTab2" class="tab-btn"        onclick="switchTab('tab2')">✅ Attendance</button>
             <button id="btnTab3" class="tab-btn"        onclick="switchTab('tab3')">📉 Resign</button>
         </div>
-
         <div class="filters">
-            <span class="filter-label">🏭 Plant:</span>
-            <select id="plantFilter">
-                <option value="all">ทุก Plant</option>
-            </select>
-            <div class="filter-sep"></div>
             <span class="filter-label">📅 ปี:</span>
             <select id="yearFilter">
                 <option value="all">ทุกปี</option>
@@ -391,25 +288,22 @@
             <span class="filter-label">📆 เดือน:</span>
             <select id="monthFilter">
                 <option value="all">ทุกเดือน</option>
-                <option value="1">ม.ค.</option>
-                <option value="2">ก.พ.</option>
-                <option value="3">มี.ค.</option>
-                <option value="4">เม.ย.</option>
-                <option value="5">พ.ค.</option>
-                <option value="6">มิ.ย.</option>
-                <option value="7">ก.ค.</option>
-                <option value="8">ส.ค.</option>
-                <option value="9">ก.ย.</option>
-                <option value="10">ต.ค.</option>
-                <option value="11">พ.ย.</option>
-                <option value="12">ธ.ค.</option>
+                <option value="1">ม.ค.</option><option value="2">ก.พ.</option>
+                <option value="3">มี.ค.</option><option value="4">เม.ย.</option>
+                <option value="5">พ.ค.</option><option value="6">มิ.ย.</option>
+                <option value="7">ก.ค.</option><option value="8">ส.ค.</option>
+                <option value="9">ก.ย.</option><option value="10">ต.ค.</option>
+                <option value="11">พ.ย.</option><option value="12">ธ.ค.</option>
+            </select>
+            <div class="filter-sep"></div>
+            <span class="filter-label">🏭 แผนก:</span>
+            <select id="deptFilter">
+                <option value="all">ทุกแผนก</option>
             </select>
         </div>
     </div>
 
-    <!-- ═══════════════════════════════
-         TAB 1: MANPOWER
-    ═══════════════════════════════ -->
+    <!-- TAB 1: MANPOWER -->
     <div id="tab1" class="tab-content active">
 
         <div class="section-label">📊 อัตรากำลังพลรวม · Overall Strength</div>
@@ -452,9 +346,13 @@
             </div>
         </div>
 
-        <div class="section-label">🌏 จำแนกสัญชาติ × เพศ · Nationality × Gender Breakdown</div>
-        <div class="chart-card" style="margin-bottom: clamp(16px,2.5vw,24px);">
-            <div class="natgender-grid" id="natGenderGrid"></div>
+        <div class="section-label">🎯 อัตรากำลังพลตามเป้าหมาย · Manpower Rate vs Target</div>
+        <div id="targetSection">
+            <div class="target-grid" id="targetCards">
+                <div style="grid-column: 1/-1; text-align:center; padding: 24px; color: var(--text3); font-size:.88rem;">
+                    ⏳ กำลังโหลดข้อมูลเป้าหมาย...
+                </div>
+            </div>
         </div>
 
         <div class="section-label">📈 โครงสร้างกำลังพล · Workforce Structure</div>
@@ -491,20 +389,16 @@
 
         <div class="charts-grid" style="margin-top: clamp(16px,2.5vw,24px);">
             <div class="chart-card">
-                <div class="chart-title">กำลังพลแยกตามแผนก (ชาย / หญิง)</div>
+                <div class="chart-title">อัตรากำลังพลแยกตามแผนก</div>
                 <div class="chart-subtitle">Headcount by Department × Gender — Stacked Bar</div>
                 <div class="chart-container-lg"><canvas id="wfDeptGender"></canvas></div>
             </div>
         </div>
     </div>
 
-    <!-- ═══════════════════════════════
-         TAB 2: ATTENDANCE
-    ═══════════════════════════════ -->
+    <!-- TAB 2: ATTENDANCE -->
     <div id="tab2" class="tab-content">
-
         <div class="section-label">📋 Attendance Check · ขาด / ลา / มาสาย</div>
-
         <div class="attend-kpi-grid">
             <div class="kpi-card border-red">
                 <div class="kpi-icon">❌</div>
@@ -543,7 +437,6 @@
                 <div class="kpi-sub">Total Records</div>
             </div>
         </div>
-
         <div class="charts-grid grid-2">
             <div class="chart-card">
                 <div class="chart-title">สถิติการลาตามประเภท</div>
@@ -556,7 +449,6 @@
                 <div class="chart-container-md"><canvas id="attDeptChart"></canvas></div>
             </div>
         </div>
-
         <div class="charts-grid" style="margin-top: clamp(16px,2.5vw,24px);">
             <div class="chart-card">
                 <div class="chart-title">แนวโน้มการขาด/ลา/มาสายรายเดือน</div>
@@ -566,44 +458,22 @@
         </div>
     </div>
 
-    <!-- ═══════════════════════════════
-         TAB 3: RESIGN
-    ═══════════════════════════════ -->
+    <!-- TAB 3: RESIGN -->
     <div id="tab3" class="tab-content">
-
         <div class="to-kpi-grid">
             <div class="to-kpi-card">
-                <div class="to-kpi-header">
-                    อัตราการลาออก
-                    <small>Turnover Rate (ช่วงที่เลือก)</small>
-                </div>
-                <div class="to-kpi-body">
-                    <span class="to-kpi-icon">📉</span>
-                    <span class="to-kpi-value red" id="toRate">0.0%</span>
-                </div>
+                <div class="to-kpi-header">อัตราการลาออก<small>Turnover Rate (ช่วงที่เลือก)</small></div>
+                <div class="to-kpi-body"><span class="to-kpi-icon">📉</span><span class="to-kpi-value red" id="toRate">0.0%</span></div>
             </div>
             <div class="to-kpi-card">
-                <div class="to-kpi-header">
-                    จำนวนพนักงานปัจจุบัน
-                    <small>Current Headcount</small>
-                </div>
-                <div class="to-kpi-body">
-                    <span class="to-kpi-icon">👤</span>
-                    <span class="to-kpi-value" id="toHeadcount">0</span>
-                </div>
+                <div class="to-kpi-header">จำนวนพนักงานปัจจุบัน<small>Current Headcount</small></div>
+                <div class="to-kpi-body"><span class="to-kpi-icon">👤</span><span class="to-kpi-value" id="toHeadcount">0</span></div>
             </div>
             <div class="to-kpi-card">
-                <div class="to-kpi-header">
-                    จำนวนที่ลาออก (ช่วงที่เลือก)
-                    <small>Leavers in Period</small>
-                </div>
-                <div class="to-kpi-body">
-                    <span class="to-kpi-icon">🚶</span>
-                    <span class="to-kpi-value" id="toLeavers">0</span>
-                </div>
+                <div class="to-kpi-header">จำนวนที่ลาออก (ช่วงที่เลือก)<small>Leavers in Period</small></div>
+                <div class="to-kpi-body"><span class="to-kpi-icon">🚶</span><span class="to-kpi-value" id="toLeavers">0</span></div>
             </div>
         </div>
-
         <div class="charts-grid grid-2">
             <div class="chart-card">
                 <div class="chart-title">อัตราการลาออกแยกตามแผนก</div>
@@ -616,7 +486,6 @@
                 <div class="chart-container-lg"><canvas id="toReasonChart"></canvas></div>
             </div>
         </div>
-
         <div class="charts-grid" style="margin-top: clamp(16px,2.5vw,24px);">
             <div class="chart-card">
                 <div class="chart-title">แนวโน้มการลาออกรายเดือน</div>
@@ -624,7 +493,6 @@
                 <div class="chart-container-md"><canvas id="toTrendChart"></canvas></div>
             </div>
         </div>
-
         <div class="section-label" style="margin-top: clamp(24px,4vw,36px);">📅 เปรียบเทียบการลาออกรายปี · Annual Resign Comparison</div>
         <div class="chart-card">
             <div class="charts-grid grid-2" style="margin-bottom: 24px;">
@@ -641,14 +509,9 @@
             </div>
             <div class="yearly-table-wrap">
                 <table class="yearly-table">
-                    <thead>
-                        <tr>
-                            <th>ปี</th>
-                            <th>จำนวนลาออก</th>
-                            <th>อัตราลาออก *</th>
-                            <th>สาเหตุหลัก</th>
-                        </tr>
-                    </thead>
+                    <thead><tr>
+                        <th>ปี</th><th>จำนวนลาออก</th><th>อัตราลาออก *</th><th>สาเหตุหลัก</th>
+                    </tr></thead>
                     <tbody id="yearlyTableBody">
                         <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3);">⏳ กำลังโหลด...</td></tr>
                     </tbody>
@@ -663,32 +526,35 @@
 <div class="toast-wrap" id="toastContainer"></div>
 
 <script>
-// ═══════════════════════════════════════════
-// CONSTANTS & STATE
-// ═══════════════════════════════════════════
+// ─── CONSTANTS ───────────────────────────────────────────────────────
 const COLORS = {
-    blue:   '#2563EB',
-    blue2:  '#3B82F6',
-    cyan:   '#0EA5E9',
-    red:    '#DC2626',
-    yellow: '#EAB308',
-    orange: '#F97316',
-    green:  '#10B981',
-    purple: '#8B5CF6',
-    pink:   '#EC4899',
-    teal:   '#14B8A6',
-    get palette() {
-        return [this.blue, this.green, this.orange, this.purple,
-                this.pink, this.cyan, this.yellow, this.teal];
-    }
+    blue:'#2563EB', blue2:'#3B82F6', cyan:'#0EA5E9', red:'#DC2626',
+    yellow:'#EAB308', orange:'#F97316', green:'#10B981', purple:'#8B5CF6',
+    pink:'#EC4899', teal:'#14B8A6',
+    get palette() { return [this.blue,this.green,this.orange,this.purple,this.pink,this.cyan,this.yellow,this.teal]; }
 };
 
-let allData = { employees: [], leaves: [], resigns: [] };
+let allData = { employees:[], leaves:[], resigns:[] };
 let charts  = {};
 
-// ═══════════════════════════════════════════
-// TOAST
-// ═══════════════════════════════════════════
+// ─── HELPERS ─────────────────────────────────────────────────────────
+
+// ✅ แก้: รองรับ นาง/นางสาว = หญิง, อื่นๆ = หญิง (ค่า default ปลอดภัยกว่า)
+function getGender(emp) {
+    const prefix = String(emp['คำนำหน้า'] || '').trim();
+    return prefix === 'นาย' ? 'ชาย' : 'หญิง';
+}
+
+// ✅ แก้: field วันเกิดใน Excel คือ 'วันเกิด/DOB' ไม่ใช่ 'วันเกิด'
+function getDOB(emp) {
+    return emp['วันเกิด/DOB'] || emp['วันเกิด'] || '';
+}
+
+// ✅ แก้: รองรับทั้งชื่อ field เดิมและใหม่สำหรับ leave
+function getLeaveMonth(lv) { return String(lv['เดือน (Month)'] || lv['เดือน'] || ''); }
+function getLeaveYear(lv)  { return String(lv['ปี (Year)']     || lv['ปี']    || ''); }
+
+// ─── TOAST ───────────────────────────────────────────────────────────
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -697,45 +563,34 @@ function showToast(message, type = 'success') {
     toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(24px)';
-        toast.style.transition = 'all 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
+        toast.style.opacity = '0'; toast.style.transform = 'translateX(24px)';
+        toast.style.transition = 'all 0.3s ease'; setTimeout(() => toast.remove(), 300);
     }, 4000);
 }
 
-// ═══════════════════════════════════════════
-// TAB SWITCHING
-// ═══════════════════════════════════════════
+// ─── TAB ─────────────────────────────────────────────────────────────
 function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     const num = tabId.replace('tab','');
-    document.getElementById('btnTab' + num)?.classList.add('active');
+    document.getElementById('btnTab'+num)?.classList.add('active');
     document.getElementById(tabId)?.classList.add('active');
-    setTimeout(() => {
-        Object.values(charts).forEach(c => c?.resize?.());
-    }, 200);
+    setTimeout(() => Object.values(charts).forEach(c => c?.resize?.()), 200);
 }
 
-// ═══════════════════════════════════════════
-// DATA FETCHING
-// ═══════════════════════════════════════════
+// ─── FETCH ────────────────────────────────────────────────────────────
 async function fetchData() {
     showLoading(true);
     try {
-        const url = `${CONFIG.APPS_SCRIPT_URL}?action=getDashboardData`;
-        const res = await fetch(url);
+        const res = await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=getDashboardData`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const result = await res.json();
         if (result.status === 'ok') {
-            allData = result.data || { employees: [], leaves: [], resigns: [] };
-            populatePlantFilter();
+            allData = result.data || { employees:[], leaves:[], resigns:[] };
+            populateDeptFilter();
             updateDashboard();
             showToast('โหลดข้อมูลสำเร็จ', 'success');
-        } else {
-            throw new Error(result.message || 'เกิดข้อผิดพลาด');
-        }
+        } else throw new Error(result.message || 'เกิดข้อผิดพลาด');
     } catch (err) {
         console.error(err);
         showToast('ไม่สามารถโหลดข้อมูล: ' + err.message, 'error');
@@ -747,35 +602,24 @@ async function fetchData() {
 function showLoading(show) {
     let el = document.querySelector('.spinner-overlay');
     if (show && !el) {
-        el = document.createElement('div');
-        el.className = 'spinner-overlay';
-        el.innerHTML = '<div class="spinner-large"></div>';
-        document.body.appendChild(el);
-    } else if (!show && el) {
-        el.remove();
-    }
+        el = document.createElement('div'); el.className = 'spinner-overlay';
+        el.innerHTML = '<div class="spinner-large"></div>'; document.body.appendChild(el);
+    } else if (!show && el) el.remove();
 }
 
-function populatePlantFilter() {
-    const plants = new Set();
-    ['employees','leaves','resigns'].forEach(key => {
-        (allData[key] || []).forEach(r => {
-            if (r['Plant']) plants.add(String(r['Plant']).trim());
-        });
-    });
-    const sel = document.getElementById('plantFilter');
+// ✅ แก้: filter แผนก (แทน plant ที่เป็นชื่อบริษัทเดียวกันทั้งหมด)
+function populateDeptFilter() {
+    const depts = new Set();
+    (allData.employees || []).forEach(e => { if (e['แผนก']) depts.add(String(e['แผนก']).trim()); });
+    const sel = document.getElementById('deptFilter');
     if (!sel) return;
-    sel.innerHTML = '<option value="all">ทุก Plant</option>';
-    [...plants].sort().forEach(p => {
-        sel.innerHTML += `<option value="${p}">🏭 ${p}</option>`;
-    });
+    sel.innerHTML = '<option value="all">ทุกแผนก</option>';
+    [...depts].sort().forEach(d => { sel.innerHTML += `<option value="${d}">${d}</option>`; });
 }
 
-// ═══════════════════════════════════════════
-// MAIN UPDATE
-// ═══════════════════════════════════════════
+// ─── MAIN UPDATE ──────────────────────────────────────────────────────
 function updateDashboard() {
-    const pf = document.getElementById('plantFilter')?.value || 'all';
+    const df = document.getElementById('deptFilter')?.value  || 'all';
     const mf = document.getElementById('monthFilter')?.value || 'all';
     const yf = document.getElementById('yearFilter')?.value  || 'all';
 
@@ -783,10 +627,10 @@ function updateDashboard() {
     let leaves  = [...(allData.leaves    || [])];
     let resigns = [...(allData.resigns   || [])];
 
-    if (pf !== 'all') {
-        emps    = emps.filter(e => (e['Plant'] || '').trim() === pf);
-        leaves  = leaves.filter(l => (l['Plant'] || '').trim() === pf);
-        resigns = resigns.filter(r => (r['Plant'] || '').trim() === pf);
+    if (df !== 'all') {
+        emps    = emps.filter(e    => (e['แผนก']    || '').trim() === df);
+        leaves  = leaves.filter(l  => (l['แผนก']    || '').trim() === df);
+        resigns = resigns.filter(r => (r['แผนก']    || '').trim() === df);
     }
 
     try {
@@ -799,132 +643,92 @@ function updateDashboard() {
     }
 }
 
-// ═══════════════════════════════════════════
-// TAB 1: MANPOWER
-// ═══════════════════════════════════════════
+// ─── TAB 1: MANPOWER ─────────────────────────────────────────────────
 function renderManpower(emps) {
     const total = emps.length;
-    let males = 0, females = 0, thais = 0, myanmars = 0;
-    const natGenderMap = {};
+    let males=0, females=0, thais=0, myanmars=0;
 
     emps.forEach(e => {
-        const prefix = String(e['คำนำหน้า'] || '').trim();
-        const gender = prefix === 'นาย' ? 'ชาย' : 'หญิง';
-        gender === 'ชาย' ? males++ : females++;
+        getGender(e) === 'ชาย' ? males++ : females++;           // ✅ แก้
         const nat = String(e['สัญชาติ'] || 'อื่นๆ').trim();
         if (nat === 'ไทย') thais++;
         else if (nat === 'พม่า') myanmars++;
-        const key = nat + '|' + gender;
-        natGenderMap[key] = (natGenderMap[key] || 0) + 1;
     });
 
     const deptCount = {};
-    emps.forEach(e => { const d = e['แผนก'] || 'ไม่ระบุ'; deptCount[d] = (deptCount[d]||0)+1; });
+    emps.forEach(e => { const d = e['แผนก']||'ไม่ระบุ'; deptCount[d]=(deptCount[d]||0)+1; });
 
-    document.getElementById('valEmp').textContent        = total;
-    document.getElementById('valDeptCount').textContent  = Object.keys(deptCount).length;
-    document.getElementById('valMale').textContent       = males;
-    document.getElementById('valFemale').textContent     = females;
-    document.getElementById('valThai').textContent       = thais;
-    document.getElementById('valMyanmar').textContent    = myanmars;
-    document.getElementById('valMalePct').textContent    = total > 0 ? ((males/total)*100).toFixed(1)+'%' : '—';
-    document.getElementById('valFemalePct').textContent  = total > 0 ? ((females/total)*100).toFixed(1)+'%' : '—';
-    document.getElementById('valThaiPct').textContent    = total > 0 ? ((thais/total)*100).toFixed(1)+'%' : '—';
-    document.getElementById('valMyanmarPct').textContent = total > 0 ? ((myanmars/total)*100).toFixed(1)+'%' : '—';
+    document.getElementById('valEmp').textContent       = total;
+    document.getElementById('valDeptCount').textContent = Object.keys(deptCount).length;
+    document.getElementById('valMale').textContent      = males;
+    document.getElementById('valFemale').textContent    = females;
+    document.getElementById('valThai').textContent      = thais;
+    document.getElementById('valMyanmar').textContent   = myanmars;
+    document.getElementById('valMalePct').textContent   = total>0 ? ((males/total)*100).toFixed(1)+'%' : '—';
+    document.getElementById('valFemalePct').textContent = total>0 ? ((females/total)*100).toFixed(1)+'%' : '—';
+    document.getElementById('valThaiPct').textContent   = total>0 ? ((thais/total)*100).toFixed(1)+'%' : '—';
+    document.getElementById('valMyanmarPct').textContent= total>0 ? ((myanmars/total)*100).toFixed(1)+'%' : '—';
 
-    // Nationality × Gender Grid
-    const grid = document.getElementById('natGenderGrid');
-    if (grid) {
-        grid.innerHTML = '';
-        if (total === 0) {
-            grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);grid-column:1/-1;">ไม่มีข้อมูลพนักงาน</div>';
-        } else {
-            const flags = { 'ไทย': '🇹🇭', 'พม่า': '🇲🇲' };
-            const icons = { 'ชาย': '👱', 'หญิง': '👩' };
-            ['ไทย','พม่า'].forEach(nat => {
-                ['ชาย','หญิง'].forEach(gender => {
-                    const cnt = natGenderMap[nat+'|'+gender] || 0;
-                    const pct = total > 0 ? ((cnt/total)*100).toFixed(1)+'%' : '—';
-                    const card = document.createElement('div');
-                    card.className = 'natgender-card';
-                    card.style.borderTop = gender === 'ชาย' ? '3px solid var(--blue2)' : '3px solid var(--pink)';
-                    card.innerHTML = `
-                        <div class="natgender-label">${flags[nat]} ${nat} · ${icons[gender]} ${gender}</div>
-                        <div class="natgender-value">${cnt}</div>
-                        <div class="natgender-pct">${pct} จากทั้งหมด</div>`;
-                    grid.appendChild(card);
-                });
-                const tot = (natGenderMap[nat+'|ชาย']||0) + (natGenderMap[nat+'|หญิง']||0);
-                const pct = total > 0 ? ((tot/total)*100).toFixed(1)+'%' : '—';
-                const card = document.createElement('div');
-                card.className = 'natgender-card';
-                card.style.background = 'var(--bg4)';
-                card.innerHTML = `
-                    <div class="natgender-label" style="font-weight:800;color:var(--navy);">${flags[nat]} ${nat} · รวม</div>
-                    <div class="natgender-value" style="font-size:1.8rem;">${tot}</div>
-                    <div class="natgender-pct">${pct} จากทั้งหมด</div>`;
-                grid.appendChild(card);
-            });
-        }
-    }
+    // Manpower Target cards
+    renderTargetCards(emps, deptCount);
 
     // Gender Donut
-    drawDonut('wfGender', ['ชาย 👱','หญิง 👩'], [males, females], [COLORS.blue, COLORS.pink]);
+    drawDonut('wfGender',['ชาย 👱','หญิง 👩'],[males,females],[COLORS.blue,COLORS.pink]);
 
     // Nationality Donut
     const natCount = {};
-    emps.forEach(e => { const n = String(e['สัญชาติ']||'อื่นๆ').trim(); natCount[n]=(natCount[n]||0)+1; });
-    const flagsNat = { 'ไทย':'🇹🇭', 'พม่า':'🇲🇲', 'อื่นๆ':'🌐' };
+    emps.forEach(e => { const n=String(e['สัญชาติ']||'อื่นๆ').trim(); natCount[n]=(natCount[n]||0)+1; });
+    const flags = {'ไทย':'🇹🇭','พม่า':'🇲🇲'};
     drawDonut('wfNation',
-        Object.keys(natCount).map(n => (flagsNat[n]||'🌐')+' '+n),
+        Object.keys(natCount).map(n=>(flags[n]||'🌐')+' '+n),
         Object.values(natCount),
-        [COLORS.orange, COLORS.purple, COLORS.teal, COLORS.cyan]
+        [COLORS.orange,COLORS.purple,COLORS.teal,COLORS.cyan]
     );
 
-    // Age Groups
-    const ageGroups = {'<20 ปี':0,'20-29 ปี':0,'30-39 ปี':0,'40-49 ปี':0,'50+ ปี':0};
+    // Age Groups — ✅ แก้: ใช้ field 'วันเกิด/DOB'
+    const ageGroups={'<20 ปี':0,'20-29 ปี':0,'30-39 ปี':0,'40-49 ปี':0,'50+ ปี':0};
     emps.forEach(e => {
-        const dob = e['วันเกิด'] || '';
+        const dob = getDOB(e);                                  // ✅ แก้
         if (!dob) return;
         try {
-            const age = Math.floor((Date.now() - new Date(dob)) / (1000*60*60*24*365.25));
-            if (age < 20)       ageGroups['<20 ปี']++;
-            else if (age < 30)  ageGroups['20-29 ปี']++;
-            else if (age < 40)  ageGroups['30-39 ปี']++;
-            else if (age < 50)  ageGroups['40-49 ปี']++;
-            else                ageGroups['50+ ปี']++;
+            const age = Math.floor((Date.now()-new Date(dob))/(1000*60*60*24*365.25));
+            if (age<20)      ageGroups['<20 ปี']++;
+            else if (age<30) ageGroups['20-29 ปี']++;
+            else if (age<40) ageGroups['30-39 ปี']++;
+            else if (age<50) ageGroups['40-49 ปี']++;
+            else             ageGroups['50+ ปี']++;
         } catch(_) {}
     });
     drawBarH('wfAge', Object.keys(ageGroups), Object.values(ageGroups), COLORS.cyan);
 
     // Tenure Groups
-    const tenureGroups = {'<1 ปี':0,'1-2 ปี':0,'3-5 ปี':0,'6-10 ปี':0,'10+ ปี':0};
+    const tenureGroups={'<1 ปี':0,'1-2 ปี':0,'3-5 ปี':0,'6-10 ปี':0,'10+ ปี':0};
     emps.forEach(e => {
-        const sd = e['วันที่เริ่มงาน'] || '';
+        const sd = e['วันที่เริ่มงาน']||'';
         if (!sd) return;
         try {
-            const yrs = (Date.now() - new Date(sd)) / (1000*60*60*24*365.25);
-            if (yrs < 1)       tenureGroups['<1 ปี']++;
-            else if (yrs < 3)  tenureGroups['1-2 ปี']++;
-            else if (yrs < 6)  tenureGroups['3-5 ปี']++;
-            else if (yrs < 11) tenureGroups['6-10 ปี']++;
-            else               tenureGroups['10+ ปี']++;
+            const yrs=(Date.now()-new Date(sd))/(1000*60*60*24*365.25);
+            if (yrs<1)       tenureGroups['<1 ปี']++;
+            else if (yrs<3)  tenureGroups['1-2 ปี']++;
+            else if (yrs<6)  tenureGroups['3-5 ปี']++;
+            else if (yrs<11) tenureGroups['6-10 ปี']++;
+            else             tenureGroups['10+ ปี']++;
         } catch(_) {}
     });
     drawBarH('wfTenure', Object.keys(tenureGroups), Object.values(tenureGroups), COLORS.teal);
 
-    // Department Bar
-    const sortedDept = Object.entries(deptCount).sort((a,b) => b[1]-a[1]);
+    // Dept Bar
+    const sortedDept = Object.entries(deptCount).sort((a,b)=>b[1]-a[1]);
     drawBarH('wfDept', sortedDept.map(i=>i[0]), sortedDept.map(i=>i[1]), COLORS.blue);
 
     // Dept × Gender Stacked
-    const allDepts = sortedDept.map(i => i[0]);
-    const deptMale = [], deptFemale = [];
+    const allDepts = sortedDept.map(i=>i[0]);
+    const deptMale=[], deptFemale=[];
     allDepts.forEach(dept => {
         let m=0, f=0;
         emps.forEach(e => {
-            if ((e['แผนก']||'ไม่ระบุ').trim() === dept) {
-                String(e['คำนำหน้า']||'').trim() === 'นาย' ? m++ : f++;
+            if ((e['แผนก']||'ไม่ระบุ').trim()===dept) {
+                getGender(e)==='ชาย' ? m++ : f++;               // ✅ แก้
             }
         });
         deptMale.push(m); deptFemale.push(f);
@@ -932,28 +736,58 @@ function renderManpower(emps) {
     drawStackedBar('wfDeptGender', allDepts, deptMale, deptFemale);
 }
 
-// ═══════════════════════════════════════════
-// TAB 2: ATTENDANCE
-// ═══════════════════════════════════════════
-function renderAttendance(leaves, mFilter, yFilter) {
-    // รองรับทั้งชื่อ field แบบเก่าและใหม่
-    function getMonth(lv) { return String(lv['เดือน'] || lv['เดือน (Month)'] || ''); }
-    function getYear(lv)  { return String(lv['ปี']   || lv['ปี (Year)']    || ''); }
+// Manpower Target Cards
+function renderTargetCards(emps, deptCount) {
+    const container = document.getElementById('targetCards');
+    if (!container) return;
 
+    // ลองดึง targets จาก cache (โหลดไว้แล้ว)
+    const targets = window._mpTargets || [];
+
+    if (!targets.length) {
+        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:.85rem;">
+            🚧 ยังไม่มีข้อมูลเป้าหมายกำลังพล — กรุณากรอกข้อมูลใน Sheet <strong>ManpowerTarget</strong>
+            <br><small style="opacity:.7;margin-top:4px;display:block">คอลัมน์: แผนก | Plant | อัตรากำลังพลเป้าหมาย | หมายเหตุ</small>
+        </div>`;
+        return;
+    }
+
+    container.innerHTML = targets.map(t => {
+        const dept    = t['แผนก'] || '—';
+        const target  = parseInt(t['อัตรากำลังพลเป้าหมาย']) || 0;
+        const actual  = deptCount[dept] || 0;
+        const pct     = target > 0 ? Math.min((actual/target)*100, 150) : 0;
+        const color   = pct >= 100 ? COLORS.green : pct >= 80 ? COLORS.orange : COLORS.red;
+        return `<div class="target-card">
+            <div class="target-dept" title="${dept}">${dept}</div>
+            <div class="target-bar-wrap">
+                <div class="target-bar" style="width:${Math.min(pct,100)}%;background:${color}"></div>
+            </div>
+            <div class="target-nums">
+                <span>ปัจจุบัน: <strong>${actual}</strong></span>
+                <span>เป้า: <strong>${target}</strong></span>
+            </div>
+            <div class="target-rate" style="color:${color}">${pct.toFixed(0)}%</div>
+        </div>`;
+    }).join('');
+}
+
+// ─── TAB 2: ATTENDANCE ───────────────────────────────────────────────
+function renderAttendance(leaves, mFilter, yFilter) {
     const filLeaves = leaves.filter(lv => {
-        const matchM = mFilter === 'all' || getMonth(lv) === mFilter;
-        const matchY = yFilter === 'all' || getYear(lv)  === yFilter;
+        const matchM = mFilter==='all' || getLeaveMonth(lv)===mFilter;  // ✅ แก้
+        const matchY = yFilter==='all' || getLeaveYear(lv) ===yFilter;  // ✅ แก้
         return matchM && matchY;
     });
 
-    let absent=0, late=0, sick=0, personal=0, annual=0;
+    let absent=0,late=0,sick=0,personal=0,annual=0;
     filLeaves.forEach(lv => {
-        const t = String(lv['ประเภทรายการ'] || '').trim();
-        if (t === 'ขาดงาน')   absent++;
-        else if (t === 'มาสาย') late++;
-        else if (t === 'ลาป่วย') sick++;
-        else if (t === 'ลากิจ')  personal++;
-        else if (t === 'พักร้อน') annual++;
+        const t = String(lv['ประเภทรายการ']||'').trim();
+        if (t==='ขาดงาน')   absent++;
+        else if (t==='มาสาย')  late++;
+        else if (t==='ลาป่วย') sick++;
+        else if (t==='ลากิจ')  personal++;
+        else if (t==='พักร้อน') annual++;
     });
 
     document.getElementById('attAbsent').textContent   = absent;
@@ -965,278 +799,200 @@ function renderAttendance(leaves, mFilter, yFilter) {
 
     drawDonut('attTypeChart',
         ['ขาดงาน','มาสาย','ลาป่วย','ลากิจ','พักร้อน'],
-        [absent, late, sick, personal, annual],
-        [COLORS.red, COLORS.yellow, COLORS.blue, COLORS.orange, COLORS.green]
+        [absent,late,sick,personal,annual],
+        [COLORS.red,COLORS.yellow,COLORS.blue,COLORS.orange,COLORS.green]
     );
 
-    const deptLeave = {};
+    const deptLeave={};
     filLeaves.forEach(lv => { const d=lv['แผนก']||'ไม่ระบุ'; deptLeave[d]=(deptLeave[d]||0)+1; });
-    const ds = Object.entries(deptLeave).sort((a,b)=>b[1]-a[1]);
-    drawBarH('attDeptChart', ds.map(i=>i[0]), ds.map(i=>i[1]), COLORS.orange);
+    const ds=Object.entries(deptLeave).sort((a,b)=>b[1]-a[1]);
+    drawBarH('attDeptChart',ds.map(i=>i[0]),ds.map(i=>i[1]),COLORS.orange);
 
-    // Monthly trend (filtered by year only for trend)
-    const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    const tA=new Array(12).fill(0), tL=new Array(12).fill(0),
-          tS=new Array(12).fill(0), tP=new Array(12).fill(0), tAn=new Array(12).fill(0);
-
+    // Monthly trend
+    const thMonths=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    const tA=new Array(12).fill(0),tL=new Array(12).fill(0),
+          tS=new Array(12).fill(0),tP=new Array(12).fill(0),tAn=new Array(12).fill(0);
     leaves.forEach(lv => {
-        if (yFilter !== 'all' && getYear(lv) !== yFilter) return;
-        const m = parseInt(getMonth(lv)) - 1;
-        if (m < 0 || m > 11) return;
-        const t = String(lv['ประเภทรายการ']||'').trim();
+        if (yFilter!=='all' && getLeaveYear(lv)!==yFilter) return;
+        const m = parseInt(getLeaveMonth(lv))-1;                // ✅ แก้
+        if (m<0||m>11) return;
+        const t=String(lv['ประเภทรายการ']||'').trim();
         if (t==='ขาดงาน') tA[m]++;
-        else if (t==='มาสาย') tL[m]++;
+        else if (t==='มาสาย')  tL[m]++;
         else if (t==='ลาป่วย') tS[m]++;
         else if (t==='ลากิจ')  tP[m]++;
         else if (t==='พักร้อน') tAn[m]++;
     });
-
-    drawMultiLine('attTrendChart', thMonths, [
-        { label:'ขาดงาน', data:tA,  color:COLORS.red },
-        { label:'มาสาย',  data:tL,  color:COLORS.yellow },
-        { label:'ลาป่วย', data:tS,  color:COLORS.blue },
-        { label:'ลากิจ',  data:tP,  color:COLORS.orange },
-        { label:'พักร้อน',data:tAn, color:COLORS.green },
+    drawMultiLine('attTrendChart',thMonths,[
+        {label:'ขาดงาน',data:tA,color:COLORS.red},
+        {label:'มาสาย',data:tL,color:COLORS.yellow},
+        {label:'ลาป่วย',data:tS,color:COLORS.blue},
+        {label:'ลากิจ',data:tP,color:COLORS.orange},
+        {label:'พักร้อน',data:tAn,color:COLORS.green},
     ]);
 }
 
-// ═══════════════════════════════════════════
-// TAB 3: RESIGN
-// ═══════════════════════════════════════════
+// ─── TAB 3: RESIGN ───────────────────────────────────────────────────
 function renderResign(resigns, emps, mFilter, yFilter) {
     const filResigns = resigns.filter(r => {
         if (!r['วันที่ลาออก']) return false;
         try {
             const d = new Date(r['วันที่ลาออก']);
             if (isNaN(d.getTime())) return false;
-            const rm = String(d.getMonth()+1);
-            const ry = String(d.getFullYear());
+            const rm=String(d.getMonth()+1), ry=String(d.getFullYear());
             return (mFilter==='all'||rm===mFilter) && (yFilter==='all'||ry===yFilter);
         } catch(_) { return false; }
     });
 
     const leavers   = filResigns.length;
     const headcount = emps.length;
-    const toRate    = headcount > 0 ? ((leavers/headcount)*100).toFixed(1) : '0.0';
+    const toRate    = headcount>0 ? ((leavers/headcount)*100).toFixed(1) : '0.0';
 
-    document.getElementById('toRate').textContent      = toRate + '%';
+    document.getElementById('toRate').textContent      = toRate+'%';
     document.getElementById('toHeadcount').textContent = headcount;
     document.getElementById('toLeavers').textContent   = leavers;
 
-    // By Department
-    const toDept = {};
+    const toDept={};
     filResigns.forEach(r => { const d=r['แผนก']||'ไม่ระบุ'; toDept[d]=(toDept[d]||0)+1; });
-    const sd = Object.entries(toDept).sort((a,b)=>b[1]-a[1]);
-    drawBarH('toDeptChart', sd.map(i=>i[0]), sd.map(i=>i[1]), COLORS.red);
+    const sd=Object.entries(toDept).sort((a,b)=>b[1]-a[1]);
+    drawBarH('toDeptChart',sd.map(i=>i[0]),sd.map(i=>i[1]),COLORS.red);
 
-    // Reason
-    const toReason = {};
+    const toReason={};
     filResigns.forEach(r => {
-        let rs = String(r['สาเหตุที่ลาออก']||'ไม่ระบุ').split('(')[0].trim();
-        toReason[rs] = (toReason[rs]||0)+1;
+        const rs=String(r['สาเหตุที่ลาออก']||'ไม่ระบุ').split('(')[0].trim();
+        toReason[rs]=(toReason[rs]||0)+1;
     });
-    drawDonut('toReasonChart', Object.keys(toReason), Object.values(toReason), COLORS.palette);
+    drawDonut('toReasonChart',Object.keys(toReason),Object.values(toReason),COLORS.palette);
 
-    // Monthly Trend
-    const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    const trendData = new Array(12).fill(0);
+    const thMonths=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    const trendData=new Array(12).fill(0);
     resigns.forEach(r => {
         if (!r['วันที่ลาออก']) return;
         try {
-            const d = new Date(r['วันที่ลาออก']);
+            const d=new Date(r['วันที่ลาออก']);
             if (isNaN(d.getTime())) return;
-            if (yFilter==='all' || String(d.getFullYear())===yFilter) trendData[d.getMonth()]++;
+            if (yFilter==='all'||String(d.getFullYear())===yFilter) trendData[d.getMonth()]++;
         } catch(_) {}
     });
-    drawLine('toTrendChart', thMonths, trendData, COLORS.red, 'จำนวนลาออก');
+    drawLine('toTrendChart',thMonths,trendData,COLORS.red,'จำนวนลาออก');
 
-    // ─── Yearly Comparison (ใช้ resigns ทั้งหมดไม่ filter month/year) ───
-    const yearMap = {};
+    // Yearly comparison
+    const yearMap={};
     resigns.forEach(r => {
         if (!r['วันที่ลาออก']) return;
         try {
-            const d = new Date(r['วันที่ลาออก']);
+            const d=new Date(r['วันที่ลาออก']);
             if (isNaN(d.getTime())) return;
-            const yr = String(d.getFullYear());
-            if (!yearMap[yr]) yearMap[yr] = { count: 0, reasons: {} };
+            const yr=String(d.getFullYear());
+            if (!yearMap[yr]) yearMap[yr]={count:0,reasons:{}};
             yearMap[yr].count++;
-            const rs = String(r['สาเหตุที่ลาออก']||'ไม่ระบุ').split('(')[0].trim();
-            yearMap[yr].reasons[rs] = (yearMap[yr].reasons[rs]||0)+1;
+            const rs=String(r['สาเหตุที่ลาออก']||'ไม่ระบุ').split('(')[0].trim();
+            yearMap[yr].reasons[rs]=(yearMap[yr].reasons[rs]||0)+1;
         } catch(_) {}
     });
+    const sortedYears=Object.keys(yearMap).sort();
+    const yearlyCounts=sortedYears.map(y=>yearMap[y].count);
+    const yearlyRates=sortedYears.map(y=>headcount>0?+((yearMap[y].count/headcount)*100).toFixed(1):0);
+    drawBar('toYearlyCountChart',sortedYears,yearlyCounts,COLORS.red,'จำนวนลาออก');
+    drawLine('toYearlyRateChart',sortedYears,yearlyRates,COLORS.orange,'อัตราลาออก (%)');
 
-    const sortedYears  = Object.keys(yearMap).sort();
-    const yearlyCounts = sortedYears.map(y => yearMap[y].count);
-    const yearlyRates  = sortedYears.map(y =>
-        headcount > 0 ? +((yearMap[y].count/headcount)*100).toFixed(1) : 0
-    );
-
-    drawBar('toYearlyCountChart', sortedYears, yearlyCounts, COLORS.red, 'จำนวนลาออก');
-    drawLine('toYearlyRateChart', sortedYears, yearlyRates, COLORS.orange, 'อัตราลาออก (%)');
-
-    // Yearly Table
-    const tbody = document.getElementById('yearlyTableBody');
+    const tbody=document.getElementById('yearlyTableBody');
     if (!sortedYears.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3);">ไม่มีข้อมูล</td></tr>';
+        tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3);">ไม่มีข้อมูล</td></tr>';
     } else {
-        tbody.innerHTML = [...sortedYears].reverse().map(yr => {
-            const rec   = yearMap[yr];
-            const topRs = Object.entries(rec.reasons).sort((a,b)=>b[1]-a[1])[0];
-            const rate  = headcount > 0 ? ((rec.count/headcount)*100).toFixed(1) : '0.0';
+        tbody.innerHTML=[...sortedYears].reverse().map(yr=>{
+            const rec=yearMap[yr];
+            const topRs=Object.entries(rec.reasons).sort((a,b)=>b[1]-a[1])[0];
+            const rate=headcount>0?((rec.count/headcount)*100).toFixed(1):'0.0';
             return `<tr>
                 <td><strong>${yr}</strong></td>
                 <td><strong>${rec.count}</strong> คน</td>
                 <td><span class="badge badge-red">${rate}%</span></td>
-                <td>${topRs ? topRs[0]+' ('+topRs[1]+' คน)' : '—'}</td>
+                <td>${topRs?topRs[0]+' ('+topRs[1]+' คน)':'—'}</td>
             </tr>`;
         }).join('');
     }
 }
 
-// ═══════════════════════════════════════════
-// CHART HELPERS
-// ═══════════════════════════════════════════
-function destroyChart(id) {
-    if (charts[id]) { try { charts[id].destroy(); } catch(_) {} delete charts[id]; }
-}
-function getCtx(id) {
-    const c = document.getElementById(id);
-    if (!c) { console.warn('Canvas not found:', id); return null; }
-    return c.getContext('2d');
+// ─── CHART HELPERS ────────────────────────────────────────────────────
+function destroyChart(id) { if (charts[id]) { try{charts[id].destroy();}catch(_){} delete charts[id]; } }
+function getCtx(id) { const c=document.getElementById(id); if(!c){console.warn('Canvas not found:',id);return null;} return c.getContext('2d'); }
+
+function drawDonut(id,labels,data,colors){
+    destroyChart(id); const ctx=getCtx(id); if(!ctx)return;
+    charts[id]=new Chart(ctx,{type:'doughnut',
+        data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:3,borderColor:'#fff'}]},
+        options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+            plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans Thai',size:12},padding:14,boxWidth:12,usePointStyle:true}},
+                tooltip:{callbacks:{label(ctx){const total=ctx.dataset.data.reduce((a,b)=>a+b,0);return ` ${ctx.label}: ${ctx.parsed} คน (${total>0?((ctx.parsed/total)*100).toFixed(1):0}%)`;}}}}}});
 }
 
-function drawDonut(id, labels, data, colors) {
-    destroyChart(id);
-    const ctx = getCtx(id); if (!ctx) return;
-    charts[id] = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 3, borderColor: '#fff' }] },
-        options: {
-            responsive: true, maintainAspectRatio: false, cutout: '65%',
-            plugins: {
-                legend: { position: 'bottom', labels: { font: { family: 'Noto Sans Thai', size: 12 }, padding: 14, boxWidth: 12, usePointStyle: true } },
-                tooltip: { callbacks: { label(ctx) {
-                    const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
-                    return ` ${ctx.label}: ${ctx.parsed} คน (${total>0?((ctx.parsed/total)*100).toFixed(1):0}%)`;
-                }}}
-            }
-        }
-    });
+function drawBarH(id,labels,data,color){
+    destroyChart(id); const ctx=getCtx(id); if(!ctx)return;
+    charts[id]=new Chart(ctx,{type:'bar',
+        data:{labels,datasets:[{data,backgroundColor:color+'CC',borderRadius:6,borderWidth:0}]},
+        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+            plugins:{legend:{display:false}},
+            scales:{x:{beginAtZero:true,grid:{display:false},ticks:{stepSize:1,callback:v=>Number.isInteger(v)?v:''}},
+                y:{grid:{display:false},ticks:{font:{family:'Noto Sans Thai',size:12}}}}}});
 }
 
-function drawBarH(id, labels, data, color) {
-    destroyChart(id);
-    const ctx = getCtx(id); if (!ctx) return;
-    charts[id] = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [{ data, backgroundColor: color+'CC', borderRadius: 6, borderWidth: 0 }] },
-        options: {
-            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { beginAtZero: true, grid: { display: false }, ticks: { stepSize:1, callback: v => Number.isInteger(v)?v:'' } },
-                y: { grid: { display: false }, ticks: { font: { family:'Noto Sans Thai', size:12 } } }
-            }
-        }
-    });
+function drawBar(id,labels,data,color,label){
+    destroyChart(id); const ctx=getCtx(id); if(!ctx)return;
+    charts[id]=new Chart(ctx,{type:'bar',
+        data:{labels,datasets:[{label,data,backgroundColor:color+'CC',borderRadius:8,borderWidth:0}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+            scales:{y:{beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},ticks:{stepSize:1,callback:v=>Number.isInteger(v)?v:''}},
+                x:{grid:{display:false}}}}});
 }
 
-function drawBar(id, labels, data, color, label) {
-    destroyChart(id);
-    const ctx = getCtx(id); if (!ctx) return;
-    charts[id] = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [{ label, data, backgroundColor: color+'CC', borderRadius: 8, borderWidth: 0 }] },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, grid: { color:'rgba(29,111,204,0.07)' }, ticks: { stepSize:1, callback: v=>Number.isInteger(v)?v:'' } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
+function drawLine(id,labels,data,color,label){
+    destroyChart(id); const ctx=getCtx(id); if(!ctx)return;
+    charts[id]=new Chart(ctx,{type:'line',
+        data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'22',borderWidth:3,fill:true,tension:0.4,pointBackgroundColor:'#fff',pointBorderColor:color,pointRadius:5,pointBorderWidth:2,pointHoverRadius:7}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+            scales:{y:{beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},ticks:{stepSize:1,callback:v=>Number.isInteger(v)?v:''}},
+                x:{grid:{display:false}}}}});
 }
 
-function drawLine(id, labels, data, color, label) {
-    destroyChart(id);
-    const ctx = getCtx(id); if (!ctx) return;
-    charts[id] = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: [{ label, data, borderColor: color, backgroundColor: color+'22', borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor:'#fff', pointBorderColor: color, pointRadius: 5, pointBorderWidth: 2, pointHoverRadius: 7 }] },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, grid: { color:'rgba(29,111,204,0.07)' }, ticks: { stepSize:1, callback: v=>Number.isInteger(v)?v:'' } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
+function drawMultiLine(id,labels,datasets){
+    destroyChart(id); const ctx=getCtx(id); if(!ctx)return;
+    charts[id]=new Chart(ctx,{type:'line',
+        data:{labels,datasets:datasets.map(ds=>({label:ds.label,data:ds.data,borderColor:ds.color,backgroundColor:ds.color+'22',borderWidth:2.5,fill:false,tension:0.4,pointBackgroundColor:'#fff',pointBorderColor:ds.color,pointRadius:4,pointHoverRadius:6}))},
+        options:{responsive:true,maintainAspectRatio:false,
+            plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans Thai',size:12},padding:12,usePointStyle:true}}},
+            scales:{y:{beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},ticks:{stepSize:1,callback:v=>Number.isInteger(v)?v:''}},
+                x:{grid:{display:false}}}}});
 }
 
-function drawMultiLine(id, labels, datasets) {
-    destroyChart(id);
-    const ctx = getCtx(id); if (!ctx) return;
-    charts[id] = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: datasets.map(ds => ({
-                label: ds.label, data: ds.data,
-                borderColor: ds.color, backgroundColor: ds.color+'22',
-                borderWidth: 2.5, fill: false, tension: 0.4,
-                pointBackgroundColor:'#fff', pointBorderColor: ds.color, pointRadius: 4, pointHoverRadius: 6
-            }))
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position:'bottom', labels: { font:{ family:'Noto Sans Thai', size:12 }, padding:12, usePointStyle:true } } },
-            scales: {
-                y: { beginAtZero: true, grid: { color:'rgba(29,111,204,0.07)' }, ticks: { stepSize:1, callback: v=>Number.isInteger(v)?v:'' } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
+function drawStackedBar(id,labels,maleData,femaleData){
+    destroyChart(id); const ctx=getCtx(id); if(!ctx)return;
+    charts[id]=new Chart(ctx,{type:'bar',
+        data:{labels,datasets:[
+            {label:'ชาย 👱',data:maleData,  backgroundColor:COLORS.blue+'CC',borderRadius:6,borderWidth:0},
+            {label:'หญิง 👩',data:femaleData,backgroundColor:COLORS.pink+'CC',borderRadius:6,borderWidth:0},
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,
+            plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans Thai',size:12},padding:12,usePointStyle:true}},
+                tooltip:{callbacks:{label(ctx){const total=ctx.chart.data.datasets.reduce((s,ds)=>s+(ds.data[ctx.dataIndex]||0),0);const pct=total>0?((ctx.parsed.y/total)*100).toFixed(1):0;return ` ${ctx.dataset.label}: ${ctx.parsed.y} คน (${pct}%)`;} }}},
+            scales:{x:{stacked:true,grid:{display:false},ticks:{font:{family:'Noto Sans Thai',size:11},maxRotation:45}},
+                y:{stacked:true,beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},ticks:{stepSize:1,callback:v=>Number.isInteger(v)?v:''},
+                    title:{display:true,text:'จำนวนพนักงาน (คน)',font:{family:'Noto Sans Thai',size:11}}}}}});
 }
 
-function drawStackedBar(id, labels, maleData, femaleData) {
-    destroyChart(id);
-    const ctx = getCtx(id); if (!ctx) return;
-    charts[id] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [
-                { label:'ชาย 👱', data: maleData,   backgroundColor: COLORS.blue+'CC', borderRadius: 6, borderWidth: 0 },
-                { label:'หญิง 👩', data: femaleData, backgroundColor: COLORS.pink+'CC', borderRadius: 6, borderWidth: 0 },
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { position:'bottom', labels:{ font:{family:'Noto Sans Thai',size:12}, padding:12, usePointStyle:true } },
-                tooltip: { callbacks: { label(ctx) {
-                    const total = ctx.chart.data.datasets.reduce((s,ds)=>s+(ds.data[ctx.dataIndex]||0),0);
-                    const pct   = total>0?((ctx.parsed.y/total)*100).toFixed(1):0;
-                    return ` ${ctx.dataset.label}: ${ctx.parsed.y} คน (${pct}%)`;
-                }}}
-            },
-            scales: {
-                x: { stacked:true, grid:{display:false}, ticks:{font:{family:'Noto Sans Thai',size:11}, maxRotation:45} },
-                y: { stacked:true, beginAtZero:true, grid:{color:'rgba(29,111,204,0.07)'}, ticks:{stepSize:1, callback:v=>Number.isInteger(v)?v:''}, title:{display:true, text:'จำนวนพนักงาน (คน)', font:{family:'Noto Sans Thai',size:11}} }
-            }
-        }
-    });
-}
-
-// ═══════════════════════════════════════════
-// EVENT LISTENERS
-// ═══════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-    ['plantFilter','monthFilter','yearFilter'].forEach(id => {
+// ─── EVENT LISTENERS ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+    ['deptFilter','monthFilter','yearFilter'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', updateDashboard);
     });
+
+    // โหลด ManpowerTarget ก่อน แล้วค่อยโหลด dashboard data
+    try {
+        const res  = await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=getTargets`);
+        const json = await res.json();
+        if (json.status === 'ok') window._mpTargets = json.data || [];
+    } catch(_) { window._mpTargets = []; }
+
     fetchData();
 });
 

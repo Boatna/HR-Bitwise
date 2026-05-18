@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Server Room Checklist</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ══════════════════════════════════════════
+       Light Blue Theme — Server Room Checklist
+       ══════════════════════════════════════════ */
+    :root {
+      --bg:          #F0F6FF;
+      --surface:     #FFFFFF;
+      --surface2:    #EBF3FF;
+      --surface3:    #DCEEFF;
+      --border:      rgba(29,111,204,0.15);
+      --border-sub:  rgba(29,111,204,0.08);
+      --text:        #0F2744;
+      --muted:       #4A7CB5;
+      --dim:         #93B8DC;
+      --accent:      #1D6FCC;
+      --accent-glow: rgba(29,111,204,0.10);
+      --green:       #0D7F3F;
+      --green-bg:    rgba(13,127,63,0.09);
+      --red:         #C0392B;
+      --red-bg:      rgba(192,57,43,0.09);
+      --yellow:      #92600A;
+      --purple:      #5B21B6;
+      --purple-bg:   rgba(91,33,182,0.09);
+      --r:     8px;
+      --r-lg:  12px;
+      --touch: 48px;
+      --shadow:  0 2px 16px rgba(29,111,204,0.10);
+      --shadow2: 0 8px 32px rgba(29,111,204,0.14);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; font-size: 16px; scroll-behavior: smooth; }
+    body {
+      font-family: 'Noto Sans Thai', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    /* ══ HEADER ══ */
+    .header {
+      background: rgba(255,255,255,0.92);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .header-icon {
+      width: 36px; height: 36px; flex-shrink: 0;
+      background: var(--accent-glow);
+      border: 1.5px solid rgba(29,111,204,0.30);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .header-title { font-size: 15px; font-weight: 700; color: #1E3A5F; }
+    .header-sub   { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.05em; }
+
+    /* ══ TABS ══ */
+    .tab-nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+    }
+    .tab-btn {
+      flex: 1;
+      height: var(--touch);
+      padding: 0 8px;
+      border: none; background: none;
+      color: var(--muted);
+      font-family: 'Noto Sans Thai', sans-serif;
+      font-size: 14px; font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-btn:hover:not(.active) { color: #2D5080; background: var(--surface2); }
+
+    /* ══ PAGE ══ */
+    .page { display: none; padding: 14px 12px 60px; }
+    .page.active { display: block; }
+
+    /* ══ SECTION LABEL ══ */
+    .sec {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .9px;
+      color: var(--muted);
+      margin: 22px 0 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sec::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ══ FORM ══ */
+    .fg { margin-bottom: 12px; }
+    .lbl { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+    .req::after { content: ' *'; color: var(--red); }
+
+    .fc, .fs {
+      width: 100%;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      color: var(--text);
+      font-family: 'Noto Sans Thai', sans-serif;
+      font-size: 16px;
+      padding: 0 12px;
+      height: var(--touch);
+      transition: border-color .15s, box-shadow .15s;
+      -webkit-appearance: none; appearance: none;
+    }
+    .fc:focus, .fs:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .fc::placeholder { color: var(--dim); }
+    .fs {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234A7CB5' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 34px;
+    }
+    .fs option { background: var(--surface); color: var(--text); }
+    textarea.fc { height: auto; min-height: 88px; padding: 12px; resize: vertical; font-size: 15px; line-height: 1.6; }
+
+    /* ══ 2-COL GRID ══ */
+    .g2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 480px) { .g2 { grid-template-columns: 1fr 1fr; } }
+
+    /* ══ AC CARD ══ */
+    .ac-section-label {
+      font-size: 11px; font-weight: 700; letter-spacing: .7px;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ac-section-label.wall  { background: rgba(29,111,204,0.08); color: var(--accent); border: 1px solid rgba(29,111,204,0.20); }
+    .ac-section-label.floor { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(91,33,182,0.20); }
+
+    .ac-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 12px 12px 14px;
+      box-shadow: var(--shadow);
+    }
+    .ac-card.wall-type  { border-top: 3px solid var(--accent); }
+    .ac-card.floor-type { border-top: 3px solid var(--purple); }
+    .ac-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+    .ac-title.wall-color  { color: var(--accent); }
+    .ac-title.floor-color { color: var(--purple); }
+
+    /* ══ TOGGLE BUTTON ══ */
+    .tg { display: flex; border-radius: var(--r); overflow: hidden; border: 1.5px solid var(--border); }
+    .tg input[type=radio] { display: none; }
+    .tg label {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      height: var(--touch);
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; user-select: none;
+      color: var(--muted);
+      background: var(--surface);
+      transition: background .15s, color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tg label:first-of-type { border-right: 1.5px solid var(--border); }
+    .tg input[value="ปกติ"]:checked    + label { background: var(--green-bg); color: var(--green); }
+    .tg input[value="ผิดปกติ"]:checked + label { background: var(--red-bg);   color: var(--red);   }
+
+    /* ══ SERVER GRID ══ */
+    .srv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (min-width: 600px) { .srv-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    .srv-item {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: 10px 10px 12px;
+      box-shadow: var(--shadow);
+    }
+    .srv-lbl { font-size: 12px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-bottom: 8px; font-weight: 500; }
+
+    /* ══ SUBMIT ══ */
+    .btn-submit {
+      width: 100%; height: 54px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: var(--r);
+      font-family: 'Noto Sans Thai', sans-serif;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer; margin-top: 24px;
+      transition: background .15s, transform .1s, box-shadow .15s;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 4px 16px rgba(29,111,204,0.30);
+    }
+    .btn-submit:hover   { background: #1557A8; box-shadow: 0 8px 24px rgba(29,111,204,0.40); }
+    .btn-submit:active  { background: #1557A8; transform: scale(0.98); }
+    .btn-submit:disabled { background: var(--surface3); color: var(--dim); cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ══ SPINNER ══ */
+    .spin {
+      display: inline-block; width: 15px; height: 15px;
+      border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+      border-radius: 50%; animation: rot .6s linear infinite; vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    /* ══ TOAST ══ */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: var(--r-lg); padding: 13px 22px;
+      font-size: 14px; font-weight: 600;
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+      z-index: 999; white-space: nowrap;
+      box-shadow: var(--shadow2);
+      max-width: calc(100vw - 32px);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.ok   { border-color: var(--green); color: var(--green); background: rgba(13,127,63,0.05); }
+    .toast.err  { border-color: var(--red);   color: var(--red);   background: rgba(192,57,43,0.05); }
+
+    /* ══ DATA PAGE ══ */
+    .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .btn-ref {
+      height: 40px; padding: 0 14px; flex-shrink: 0;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: var(--r); color: var(--text);
+      font-family: 'Noto Sans Thai', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: var(--shadow);
+      transition: background .15s, border-color .15s;
+    }
+    .btn-ref:hover  { background: var(--surface2); border-color: rgba(29,111,204,0.30); }
+    .btn-ref:active { background: var(--surface3); }
+    .fsel {
+      height: 40px; padding: 0 30px 0 10px;
+      flex: 1; min-width: 120px;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: var(--r); color: var(--text);
+      font-family: 'Noto Sans Thai', sans-serif; font-size: 13px; cursor: pointer;
+      -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%234A7CB5' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 8px center;
+      box-shadow: var(--shadow);
+    }
+    .fsel:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .fsel option { background: var(--surface); color: var(--text); }
+    .rec-cnt { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-left: auto; flex-shrink: 0; }
+
+    /* BADGE */
+    .badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 3px 9px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; white-space: nowrap;
+    }
+    .ok { background: var(--green-bg); color: var(--green); border: 1px solid rgba(13,127,63,0.15); }
+    .ng { background: var(--red-bg);   color: var(--red);   border: 1px solid rgba(192,57,43,0.15); }
+    .mono { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 52px 20px; color: var(--muted); }
+    .empty .ico { font-size: 36px; margin-bottom: 12px; opacity: .4; }
+    .empty p { font-size: 13px; }
+
+    /* ── MOBILE: Card list ── */
+    .card-list { display: flex; flex-direction: column; gap: 10px; }
+    .rec-card {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: var(--r-lg); overflow: hidden; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: var(--shadow);
+      transition: box-shadow .2s, border-color .2s;
+    }
+    .rec-card:hover { box-shadow: var(--shadow2); border-color: rgba(29,111,204,0.25); }
+    .rec-card.has-ng { border-color: rgba(192,57,43,0.30); }
+    .card-head {
+      display: flex; align-items: center;
+      padding: 12px 14px; gap: 10px;
+    }
+    .card-meta { flex: 1; min-width: 0; }
+    .card-name { font-size: 15px; font-weight: 700; color: #1E3A5F; }
+    .card-time { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .card-arr  { color: var(--dim); font-size: 20px; transition: transform .2s; flex-shrink: 0; }
+    .rec-card.open .card-arr { transform: rotate(90deg); }
+    .card-body {
+      display: none;
+      border-top: 1px dashed var(--border);
+      padding: 12px 14px;
+      background: var(--surface2);
+    }
+    .rec-card.open .card-body { display: block; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .di { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+    .di-k { font-size: 10px; color: var(--muted); margin-bottom: 3px; font-weight: 500; }
+    .di-v { font-size: 13px; font-weight: 700; color: var(--text); }
+    .di-v.mono2 { font-family: 'IBM Plex Mono', monospace; color: var(--accent); }
+    .di.full { grid-column: 1 / -1; }
+    .di.full .di-v { color: var(--yellow); font-weight: 500; }
+
+    /* ── DESKTOP: Table ── */
+    .table-wrap { display: none; overflow-x: auto; border-radius: var(--r-lg); border: 1.5px solid var(--border); -webkit-overflow-scrolling: touch; box-shadow: var(--shadow); }
+    @media (min-width: 768px) {
+      .card-list  { display: none; }
+      .table-wrap { display: block; }
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    thead { background: var(--surface2); }
+    th {
+      padding: 10px 12px; text-align: left;
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .5px;
+      border-bottom: 1.5px solid var(--border); white-space: nowrap;
+    }
+    td {
+      padding: 10px 12px; font-size: 12px; color: var(--text);
+      border-bottom: 1px solid var(--border-sub); vertical-align: middle;
+      background: var(--surface);
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--surface2); }
+    .detail-inner { padding: 12px 14px; background: var(--surface2); }
+
+    /* ── DESKTOP LAYOUT ── */
+    @media (min-width: 600px) {
+      body { font-size: 14px; }
+      .page { padding: 20px 20px 60px; max-width: 900px; margin: 0 auto; }
+      .header { padding: 12px 20px; }
+    }
+    @media (min-width: 1024px) {
+      .page { max-width: 1100px; }
+    }
+
+    /* ══ AC TYPE DIVIDER ══ */
+    .type-divider { margin: 14px 0 10px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🖥️</div>
+  <div>
+    <div class="header-title">Server Room Monitor</div>
+    <div class="header-sub">Daily Checklist System</div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('form',this)">📋 บันทึกข้อมูล</button>
+  <button class="tab-btn"        onclick="switchTab('data',this)">📊 ดูข้อมูล</button>
+</div>
+
+<!-- ══════════ FORM ══════════ -->
+<div id="page-form" class="page active">
+  <form id="checklistForm" onsubmit="handleSubmit(event)">
+
+    <div class="fg">
+      <label class="lbl req">ผู้ตรวจเช็ค</label>
+      <select class="fs" name="inspector" required>
+        <option value="" disabled selected>— เลือกชื่อผู้ตรวจเช็ค —</option>
+        <option value="ปฏิพล พึ่งพังเทียม">คุณ ปฏิพล พึ่งพังเทียม</option>
+        <option value="สุภาวดี เสนาะเสียง">คุณ สุภาวดี เสนาะเสียง</option>
+      </select>
+    </div>
+
+    <div class="sec">🌡️ สภาพแวดล้อมห้อง</div>
+    <div class="g2">
+      <div class="fg">
+        <label class="lbl req">อุณหภูมิห้องรวม (°C)</label>
+        <input type="number" step="0.1" class="fc" name="room_temperature" required placeholder="เช่น 22.0">
+      </div>
+      <div class="fg">
+        <label class="lbl req">ความชื้นสัมพัทธ์ (%)</label>
+        <input type="number" step="0.1" class="fc" name="room_humidity" required placeholder="เช่น 50.0">
+      </div>
+    </div>
+
+    <div class="sec">❄️ ระบบปรับอากาศ</div>
+
+    <!-- แบบแขวน -->
+    <div class="type-divider">
+      <div class="ac-section-label wall">🔲 แอร์แบบแขวน (Wall Mount) — 2 เครื่อง</div>
+    </div>
+    <div class="g2">
+      <div class="ac-card wall-type">
+        <div class="ac-title wall-color">⚙️ แอร์แขวน เครื่องที่ 1</div>
+        <div class="fg">
+          <label class="lbl req">อุณหภูมิหน้าเครื่อง (°C)</label>
+          <input type="number" step="0.1" class="fc" name="acw1_temp" required placeholder="เช่น 21.0">
+        </div>
+        <div class="tg">
+          <input type="radio" name="acw1_status" id="acw1_ok" value="ปกติ" checked>
+          <label for="acw1_ok">✓ ปกติ</label>
+          <input type="radio" name="acw1_status" id="acw1_ng" value="ผิดปกติ">
+          <label for="acw1_ng">✗ ผิดปกติ</label>
+        </div>
+      </div>
+      <div class="ac-card wall-type">
+        <div class="ac-title wall-color">⚙️ แอร์แขวน เครื่องที่ 2</div>
+        <div class="fg">
+          <label class="lbl req">อุณหภูมิหน้าเครื่อง (°C)</label>
+          <input type="number" step="0.1" class="fc" name="acw2_temp" required placeholder="เช่น 21.2">
+        </div>
+        <div class="tg">
+          <input type="radio" name="acw2_status" id="acw2_ok" value="ปกติ" checked>
+          <label for="acw2_ok">✓ ปกติ</label>
+          <input type="radio" name="acw2_status" id="acw2_ng" value="ผิดปกติ">
+          <label for="acw2_ng">✗ ผิดปกติ</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- แบบตั้ง -->
+    <div class="type-divider" style="margin-top:14px">
+      <div class="ac-section-label floor">🗂️ แอร์แบบตั้ง (Floor Stand) — 2 เครื่อง</div>
+    </div>
+    <div class="g2">
+      <div class="ac-card floor-type">
+        <div class="ac-title floor-color">⚙️ แอร์ตั้ง เครื่องที่ 1</div>
+        <div class="fg">
+          <label class="lbl req">อุณหภูมิหน้าเครื่อง (°C)</label>
+          <input type="number" step="0.1" class="fc" name="acf1_temp" required placeholder="เช่น 20.5">
+        </div>
+        <div class="tg">
+          <input type="radio" name="acf1_status" id="acf1_ok" value="ปกติ" checked>
+          <label for="acf1_ok">✓ ปกติ</label>
+          <input type="radio" name="acf1_status" id="acf1_ng" value="ผิดปกติ">
+          <label for="acf1_ng">✗ ผิดปกติ</label>
+        </div>
+      </div>
+      <div class="ac-card floor-type">
+        <div class="ac-title floor-color">⚙️ แอร์ตั้ง เครื่องที่ 2</div>
+        <div class="fg">
+          <label class="lbl req">อุณหภูมิหน้าเครื่อง (°C)</label>
+          <input type="number" step="0.1" class="fc" name="acf2_temp" required placeholder="เช่น 20.8">
+        </div>
+        <div class="tg">
+          <input type="radio" name="acf2_status" id="acf2_ok" value="ปกติ" checked>
+          <label for="acf2_ok">✓ ปกติ</label>
+          <input type="radio" name="acf2_status" id="acf2_ng" value="ผิดปกติ">
+          <label for="acf2_ng">✗ ผิดปกติ</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">🗄️ สถานะเซิฟเวอร์ (6 เครื่อง)</div>
+    <div class="srv-grid">
+      <div class="srv-item">
+        <div class="srv-lbl">🟦 SRV-121</div>
+        <div class="tg">
+          <input type="radio" name="srv1_status" id="s1ok" value="ปกติ" checked>
+          <label for="s1ok">✓ ปกติ</label>
+          <input type="radio" name="srv1_status" id="s1ng" value="ผิดปกติ">
+          <label for="s1ng">✗ ผิด</label>
+        </div>
+      </div>
+      <div class="srv-item">
+        <div class="srv-lbl">🟦 SRV-122</div>
+        <div class="tg">
+          <input type="radio" name="srv2_status" id="s2ok" value="ปกติ" checked>
+          <label for="s2ok">✓ ปกติ</label>
+          <input type="radio" name="srv2_status" id="s2ng" value="ผิดปกติ">
+          <label for="s2ng">✗ ผิด</label>
+        </div>
+      </div>
+      <div class="srv-item">
+        <div class="srv-lbl">🟦 SRV-123</div>
+        <div class="tg">
+          <input type="radio" name="srv3_status" id="s3ok" value="ปกติ" checked>
+          <label for="s3ok">✓ ปกติ</label>
+          <input type="radio" name="srv3_status" id="s3ng" value="ผิดปกติ">
+          <label for="s3ng">✗ ผิด</label>
+        </div>
+      </div>
+      <div class="srv-item">
+        <div class="srv-lbl">🟦 SRV-124</div>
+        <div class="tg">
+          <input type="radio" name="srv4_status" id="s4ok" value="ปกติ" checked>
+          <label for="s4ok">✓ ปกติ</label>
+          <input type="radio" name="srv4_status" id="s4ng" value="ผิดปกติ">
+          <label for="s4ng">✗ ผิด</label>
+        </div>
+      </div>
+      <div class="srv-item">
+        <div class="srv-lbl">🟦 SRV-125</div>
+        <div class="tg">
+          <input type="radio" name="srv5_status" id="s5ok" value="ปกติ" checked>
+          <label for="s5ok">✓ ปกติ</label>
+          <input type="radio" name="srv5_status" id="s5ng" value="ผิดปกติ">
+          <label for="s5ng">✗ ผิด</label>
+        </div>
+      </div>
+      <div class="srv-item">
+        <div class="srv-lbl">🟦 SRV-126</div>
+        <div class="tg">
+          <input type="radio" name="srv6_status" id="s6ok" value="ปกติ" checked>
+          <label for="s6ok">✓ ปกติ</label>
+          <input type="radio" name="srv6_status" id="s6ng" value="ผิดปกติ">
+          <label for="s6ng">✗ ผิด</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">⚡ ระบบสนับสนุนหลัก</div>
+    <div class="srv-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="srv-item">
+        <div class="srv-lbl">🔋 UPS / ไฟฟ้า</div>
+        <div class="tg">
+          <input type="radio" name="ups_status" id="ups_ok" value="ปกติ" checked>
+          <label for="ups_ok">✓ ปกติ</label>
+          <input type="radio" name="ups_status" id="ups_ng" value="ผิดปกติ">
+          <label for="ups_ng">✗ ผิด</label>
+        </div>
+      </div>
+      <div class="srv-item">
+        <div class="srv-lbl">🛡️ Safety & 5S</div>
+        <div class="tg">
+          <input type="radio" name="safety_status" id="saf_ok" value="ปกติ" checked>
+          <label for="saf_ok">✓ ปกติ</label>
+          <input type="radio" name="safety_status" id="saf_ng" value="ผิดปกติ">
+          <label for="saf_ng">✗ ผิด</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">📝 หมายเหตุ</div>
+    <div class="fg">
+      <label class="lbl">รายละเอียดเพิ่มเติม / เคสผิดปกติ</label>
+      <textarea class="fc" name="remarks" placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)..."></textarea>
+    </div>
+
+    <button type="submit" class="btn-submit" id="submitBtn">ส่งรายงานการตรวจเช็ค →</button>
+  </form>
+</div>
+
+<!-- ══════════ DATA ══════════ -->
+<div id="page-data" class="page">
+  <div class="toolbar">
+    <button class="btn-ref" onclick="loadData()" id="refBtn">
+      <span id="refIco">↺</span> รีเฟรช
+    </button>
+    <select class="fsel" id="fInspector" onchange="render()">
+      <option value="">ทุกคน</option>
+    </select>
+    <select class="fsel" id="fStatus" onchange="render()">
+      <option value="">ทุกสถานะ</option>
+      <option value="normal">ปกติทั้งหมด</option>
+      <option value="abnormal">มีผิดปกติ</option>
+    </select>
+    <span class="rec-cnt" id="recCnt">—</span>
+  </div>
+
+  <!-- Mobile: cards -->
+  <div class="card-list" id="cardList">
+    <div class="empty"><div class="ico">📊</div><p>กดรีเฟรชเพื่อโหลดข้อมูล</p></div>
+  </div>
+
+  <!-- Desktop: table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>เวลา</th><th>ผู้ตรวจ</th><th>°C ห้อง</th><th>% RH</th>
+          <th>แขวน1</th><th>แขวน2</th><th>ตั้ง1</th><th>ตั้ง2</th>
+          <th>เซิฟเวอร์</th><th>UPS</th><th>Safety</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="12"><div class="empty"><div class="ico">📊</div><p>กดรีเฟรชเพื่อโหลดข้อมูล</p></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ══════════════════════════════════════════════════════════════
+  // CONFIG — แก้เพียงค่าเดียวนี้!
+  // ══════════════════════════════════════════════════════════════
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1TBaV4KucIXz5p6mdjLCCkI9i30XV6na5GjgssKhOxICqWxRqThbx-KyyjRp4S61u/exec';
+  /* ── TABS ── */
+  function switchTab(id, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    btn.classList.add('active');
+    if (id === 'data') loadData();
+  }
+
+  /* ── TOAST ── */
+  function toast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = (type === 'ok' ? '✓  ' : '✗  ') + msg;
+    el.className = 'toast ' + type + ' show';
+    setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const btn  = document.getElementById('submitBtn');
+
+    if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+      toast('กรุณาตั้งค่า APPS_SCRIPT_URL ในไฟล์ HTML ก่อน', 'err');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span>กำลังบันทึก...';
+
+    const fd = new FormData(form);
+    const params = new URLSearchParams();
+    fd.forEach((v, k) => params.append(k, v));
+
+    try {
+      // ใช้ no-cors เพื่อหลีกเลี่ยงปัญหา CORS preflight
+      // Apps Script Web App ไม่รองรับ OPTIONS preflight ในบางกรณี
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString(),
+      });
+
+      // no-cors → response เป็น opaque ไม่อ่านได้ แต่ถือว่าส่งสำเร็จถ้าไม่ throw
+      toast('บันทึกข้อมูลสำเร็จ!', 'ok');
+      form.reset();
+
+      // Reset radio buttons กลับเป็น "ปกติ" (form.reset() ทำให้แล้ว แต่ forced reset ป้องกัน edge case)
+      form.querySelectorAll('input[type=radio][value="ปกติ"]').forEach(r => r.checked = true);
+
+    } catch (err) {
+      toast('เกิดข้อผิดพลาด: ' + err.message, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'ส่งรายงานการตรวจเช็ค →';
+    }
+  }
+
+  let allData = [];
+
+  async function loadData() {
+    if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+      toast('กรุณาตั้งค่า APPS_SCRIPT_URL ในไฟล์ HTML ก่อน', 'err');
+      return;
+    }
+
+    const btn = document.getElementById('refBtn');
+    document.getElementById('refIco').innerHTML = '<span class="spin" style="border-top-color:var(--accent)"></span>';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${APPS_SCRIPT_URL}?action=data`);
+
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}`;
+        try {
+          const errJson = await res.json();
+          errMsg += ': ' + (errJson?.message || res.statusText);
+        } catch (_) {
+          errMsg += ': ' + res.statusText;
+        }
+        throw new Error(errMsg);
+      }
+
+      const json = await res.json();
+      if (json.status === 'error') throw new Error(json.message);
+
+      allData = json.values || [];
+      fillFilter();
+      render();
+
+    } catch (err) {
+      toast('โหลดล้มเหลว: ' + err.message, 'err');
+    } finally {
+      document.getElementById('refIco').textContent = '↺';
+      btn.disabled = false;
+    }
+  }
+
+  function fillFilter() {
+    const sel = document.getElementById('fInspector');
+    const cur = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    const rows = allData.length > 1 ? allData.slice(1) : [];
+    [...new Set(rows.map(r => r[1]).filter(Boolean))].forEach(n => {
+      const o = document.createElement('option');
+      o.value = o.textContent = n;
+      sel.appendChild(o);
+    });
+    // คืนค่าที่เลือกไว้ก่อนหน้า (ถ้ายังมีอยู่)
+    if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+  }
+
+  function isNG(r) {
+    const statusCols = [5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+    return statusCols.some(i => r[i] === 'ผิดปกติ');
+  }
+
+  function badge(v) {
+    const ok = v === 'ปกติ';
+    return `<span class="badge ${ok ? 'ok' : 'ng'}">${ok ? '✓' : '✗'} ${v || '—'}</span>`;
+  }
+
+  function fmtTime(v) {
+    if (!v) return '—';
+
+    let d;
+
+    // ลอง parse ตรง (ISO format, หรือ format ที่ Chrome รองรับ)
+    d = new Date(v);
+    if (!isNaN(d.getTime())) {
+      return formatDate(d);
+    }
+
+    // FIX: รองรับ format "DD/MM/YYYY HH:MM:SS" จาก Google Sheets (Thai locale)
+    const m = String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (m) {
+      // new Date(year, month-1, day, hour, min, sec)
+      d = new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +(m[6] || 0));
+      if (!isNaN(d.getTime())) return formatDate(d);
+    }
+
+    // FIX: รองรับ format "M/D/YYYY HH:MM:SS" จาก Google Sheets (US locale)
+    const m2 = String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (m2) {
+      d = new Date(+m2[3], +m2[1] - 1, +m2[2], +m2[4], +m2[5], +(m2[6] || 0));
+      if (!isNaN(d.getTime())) return formatDate(d);
+    }
+
+    // ถ้า parse ไม่ได้ ส่งกลับ string เดิม
+    return String(v);
+  }
+
+  function formatDate(d) {
+    const p = n => String(n).padStart(2, '0');
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${String(d.getFullYear()).slice(-2)} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  function getRows() {
+    const insp   = document.getElementById('fInspector').value;
+    const status = document.getElementById('fStatus').value;
+    let rows = allData.length > 1 ? allData.slice(1) : [];
+    if (insp)                  rows = rows.filter(r => r[1] === insp);
+    if (status === 'normal')   rows = rows.filter(r => !isNG(r));
+    if (status === 'abnormal') rows = rows.filter(r =>  isNG(r));
+    return [...rows].reverse(); // แสดงล่าสุดก่อน
+  }
+
+  function render() {
+    const rows = getRows();
+    document.getElementById('recCnt').textContent = rows.length + ' รายการ';
+    renderCards(rows);
+    renderTable(rows);
+  }
+
+  /* ── FIX: ป้องกัน XSS ด้วย escapeHtml ── */
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function renderCards(rows) {
+    const list = document.getElementById('cardList');
+    if (!rows.length) {
+      list.innerHTML = `<div class="empty"><div class="ico">🔍</div><p>ไม่พบข้อมูล</p></div>`;
+      return;
+    }
+    list.innerHTML = rows.map((r, i) => {
+      const ng = isNG(r);
+      const safeR = r.map(esc);
+      return `
+      <div class="rec-card ${ng ? 'has-ng' : ''}" id="card-${i}" onclick="toggleCard(${i})">
+        <div class="card-head">
+          <div class="card-meta">
+            <div class="card-name">${safeR[1] || '—'}</div>
+            <div class="card-time">${fmtTime(r[0])}</div>
+          </div>
+          <span class="badge ${ng ? 'ng' : 'ok'}">${ng ? '✗ มีผิดปกติ' : '✓ ปกติ'}</span>
+          <div class="card-arr">›</div>
+        </div>
+        <div class="card-body" id="body-${i}">
+          <div class="detail-grid">
+            <div class="di"><div class="di-k">🌡️ อุณหภูมิห้อง</div><div class="di-v mono2">${r[2] != null && r[2] !== '' ? esc(r[2]) + ' °C' : '—'}</div></div>
+            <div class="di"><div class="di-k">💧 ความชื้น</div><div class="di-v mono2">${r[3] != null && r[3] !== '' ? esc(r[3]) + ' %' : '—'}</div></div>
+            <div class="di"><div class="di-k">แขวน1 (${r[4] != null && r[4] !== '' ? esc(r[4]) + '°C' : '—'})</div><div class="di-v">${badge(r[5])}</div></div>
+            <div class="di"><div class="di-k">แขวน2 (${r[6] != null && r[6] !== '' ? esc(r[6]) + '°C' : '—'})</div><div class="di-v">${badge(r[7])}</div></div>
+            <div class="di"><div class="di-k">ตั้ง1 (${r[8] != null && r[8] !== '' ? esc(r[8]) + '°C' : '—'})</div><div class="di-v">${badge(r[9])}</div></div>
+            <div class="di"><div class="di-k">ตั้ง2 (${r[10] != null && r[10] !== '' ? esc(r[10]) + '°C' : '—'})</div><div class="di-v">${badge(r[11])}</div></div>
+            <div class="di"><div class="di-k">SRV-121</div><div class="di-v">${badge(r[12])}</div></div>
+            <div class="di"><div class="di-k">SRV-122</div><div class="di-v">${badge(r[13])}</div></div>
+            <div class="di"><div class="di-k">SRV-123</div><div class="di-v">${badge(r[14])}</div></div>
+            <div class="di"><div class="di-k">SRV-124</div><div class="di-v">${badge(r[15])}</div></div>
+            <div class="di"><div class="di-k">SRV-125</div><div class="di-v">${badge(r[16])}</div></div>
+            <div class="di"><div class="di-k">SRV-126</div><div class="di-v">${badge(r[17])}</div></div>
+            <div class="di"><div class="di-k">UPS / ไฟฟ้า</div><div class="di-v">${badge(r[18])}</div></div>
+            <div class="di"><div class="di-k">Safety & 5S</div><div class="di-v">${badge(r[19])}</div></div>
+            ${r[20] ? `<div class="di full"><div class="di-k">📝 หมายเหตุ</div><div class="di-v">${safeR[20]}</div></div>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function toggleCard(i) {
+    document.getElementById('card-' + i).classList.toggle('open');
+  }
+
+  function renderTable(rows) {
+    const body = document.getElementById('tbody');
+    if (!rows.length) {
+      body.innerHTML = `<tr><td colspan="12"><div class="empty"><div class="ico">🔍</div><p>ไม่พบข้อมูล</p></div></td></tr>`;
+      return;
+    }
+    body.innerHTML = rows.map((r, i) => {
+      const srvOk = [r[12], r[13], r[14], r[15], r[16], r[17]].every(s => s === 'ปกติ');
+      const safeR = r.map(esc);
+      return `
+      <tr onclick="toggleRow(${i})" style="cursor:pointer">
+        <td><span class="mono">${fmtTime(r[0])}</span></td>
+        <td style="font-weight:700;font-size:13px;white-space:nowrap;color:#1E3A5F">${safeR[1] || '—'}</td>
+        <td><span class="mono">${r[2] != null && r[2] !== '' ? esc(r[2]) + '°' : '—'}</span></td>
+        <td><span class="mono">${r[3] != null && r[3] !== '' ? esc(r[3]) + '%' : '—'}</span></td>
+        <td>${badge(r[5])}</td>
+        <td>${badge(r[7])}</td>
+        <td>${badge(r[9])}</td>
+        <td>${badge(r[11])}</td>
+        <td>${srvOk ? '<span class="badge ok">✓ ทั้ง 6</span>' : '<span class="badge ng">✗ บางตัว</span>'}</td>
+        <td>${badge(r[18])}</td>
+        <td>${badge(r[19])}</td>
+        <td style="color:var(--dim);font-size:18px">›</td>
+      </tr>
+      <tr id="tr-${i}" style="display:none">
+        <td colspan="12">
+          <div class="detail-inner">
+            <div class="detail-grid">
+              <div class="di"><div class="di-k">แขวน1 °C</div><div class="di-v mono2">${r[4] != null && r[4] !== '' ? esc(r[4]) + ' °C' : '—'}</div></div>
+              <div class="di"><div class="di-k">แขวน2 °C</div><div class="di-v mono2">${r[6] != null && r[6] !== '' ? esc(r[6]) + ' °C' : '—'}</div></div>
+              <div class="di"><div class="di-k">ตั้ง1 °C</div><div class="di-v mono2">${r[8] != null && r[8] !== '' ? esc(r[8]) + ' °C' : '—'}</div></div>
+              <div class="di"><div class="di-k">ตั้ง2 °C</div><div class="di-v mono2">${r[10] != null && r[10] !== '' ? esc(r[10]) + ' °C' : '—'}</div></div>
+              <div class="di"><div class="di-k">SRV-121</div><div class="di-v">${badge(r[12])}</div></div>
+              <div class="di"><div class="di-k">SRV-122</div><div class="di-v">${badge(r[13])}</div></div>
+              <div class="di"><div class="di-k">SRV-123</div><div class="di-v">${badge(r[14])}</div></div>
+              <div class="di"><div class="di-k">SRV-124</div><div class="di-v">${badge(r[15])}</div></div>
+              <div class="di"><div class="di-k">SRV-125</div><div class="di-v">${badge(r[16])}</div></div>
+              <div class="di"><div class="di-k">SRV-126</div><div class="di-v">${badge(r[17])}</div></div>
+              ${r[20] ? `<div class="di full"><div class="di-k">หมายเหตุ</div><div class="di-v" style="color:var(--yellow)">${safeR[20]}</div></div>` : ''}
+            </div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function toggleRow(i) {
+    const row = document.getElementById('tr-' + i);
+    row.style.display = row.style.display === 'none' ? '' : 'none';
+  }
+</script>
+</body>
+</html>

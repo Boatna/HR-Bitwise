@@ -6,179 +6,253 @@
 <title>HR บันทึกข้อมูล ขาด/ลา/มาสาย</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script src="config.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #F0F6FF; --bg2: #FFFFFF; --bg3: #EBF3FF; --bg4: #DCEEFF;
-    --blue: #1D6FCC; --blue2: #2563EB; --blue3: #3B82F6; --cyan: #0EA5E9; --navy: #1E3A5F;
-    --text: #0F2744; --text2: #2D5080; --text3: #4A7CB5;
-    --line: rgba(29,111,204,0.10); --line2: rgba(29,111,204,0.16);
-    --red: #DC2626; --green: #059669; --yellow: #D97706;
-    --input-bg: #FFFFFF; --input-border: rgba(29,111,204,0.18); --input-focus: rgba(37,99,235,0.18);
-    --shadow: 0 2px 16px rgba(29,111,204,0.10); --shadow2: 0 8px 32px rgba(29,111,204,0.14);
-  }
-  body { font-family: 'Noto Sans Thai', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-  body::before {
-    content: ''; position: fixed; inset: 0;
-    background-image: radial-gradient(ellipse 70% 50% at 80% -5%, rgba(29,111,204,0.08) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 40% at -5% 90%, rgba(14,165,233,0.05) 0%, transparent 50%),
-      radial-gradient(circle, rgba(29,111,204,0.08) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 36px 36px; pointer-events: none; z-index: 0;
-  }
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between;
-    padding: 0 40px; height: 62px; background: rgba(255,255,255,0.90); backdrop-filter: blur(20px); border-bottom: 1px solid var(--line2); box-shadow: 0 1px 12px rgba(29,111,204,0.07);
-  }
-  .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 700; color: var(--navy); font-size: 1.1rem; }
-  .nav-links { display: flex; gap: 8px; }
-  .nav-btn { padding: 7px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all .2s; border: 1.5px solid var(--line2); color: var(--text2); background: transparent; }
-  .nav-btn:hover, .nav-btn.active { color: var(--blue2); border-color: rgba(37,99,235,0.35); background: var(--bg3); }
-  
-  .page-wrap { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 100px 24px 80px; }
-  .page-header { margin-bottom: 30px; text-align: center; }
-  .page-title { font-family: 'DM Serif Display','Noto Sans Thai',serif; font-size: 2rem; color: var(--navy); margin-bottom: 8px; }
-  .page-desc { color: var(--text3); font-size: 0.95rem; }
-
-  .form-card { background: var(--bg2); border: 1px solid var(--line2); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); padding: 32px; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .col-span-2 { grid-column: span 2; }
-  
-  .field { display: flex; flex-direction: column; gap: 6px; }
-  .field label { font-size: 0.85rem; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; }
-  .field label .req { color: var(--red); margin-left: 3px; }
-  .field input, .field select, .field textarea { background: var(--input-bg); border: 1.5px solid var(--input-border); border-radius: 10px; padding: 12px 14px; font-family: 'Noto Sans Thai',sans-serif; font-size: 0.95rem; outline: none; transition: all .2s; }
-  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue2); box-shadow: 0 0 0 3px var(--input-focus); }
-  
-  .search-wrap { position: relative; }
-  .search-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg2); border: 1.5px solid var(--line2); border-radius: 12px; z-index: 50; max-height: 220px; overflow-y: auto; box-shadow: var(--shadow2); display: none; margin-top: 5px; }
-  .search-dropdown.open { display: block; }
-  .dropdown-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid var(--line); transition: background .15s; }
-  .dropdown-item:hover { background: var(--bg3); }
-  .dropdown-item strong { color: var(--navy); display: block; font-size: 0.95rem; }
-  .dropdown-item span { color: var(--text3); font-size: 0.8rem; }
-
-  .emp-card { background: var(--bg3); border: 1px dashed var(--blue2); border-radius: 12px; padding: 16px; display: none; margin-top: 10px; }
-  .emp-card.show { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .emp-detail { font-size: 0.85rem; color: var(--text2); }
-  .emp-detail strong { color: var(--navy); display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-
-  .btn-submit { width: 100%; padding: 14px; border-radius: 10px; font-family: 'Noto Sans Thai',sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; background: var(--blue2); color: #fff; border: none; box-shadow: 0 4px 16px rgba(37,99,235,0.3); transition: all .2s; margin-top: 10px; }
-  .btn-submit:hover:not(:disabled) { background: var(--blue); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.38); }
-  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-  .toast-wrap { position: fixed; bottom: 32px; right: 32px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-  .toast { padding: 14px 20px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow2); animation: slideIn .3s ease; }
-  .toast-success { background: #ECFDF5; border: 1.5px solid rgba(5,150,105,0.25); color: #065F46; }
-  .toast-error { background: #FEF2F2; border: 1.5px solid rgba(220,38,38,0.25); color: #991B1B; }
-  @keyframes slideIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F6FF;--bg2:#FFFFFF;--bg3:#EBF3FF;--bg4:#DCEEFF;
+  --blue:#1D6FCC;--blue2:#2563EB;--cyan:#0EA5E9;--navy:#1E3A5F;
+  --text:#0F2744;--text2:#2D5080;--text3:#4A7CB5;
+  --line:rgba(29,111,204,0.10);--line2:rgba(29,111,204,0.16);
+  --red:#DC2626;--green:#059669;--yellow:#D97706;
+  --input-bg:#FFFFFF;--input-border:rgba(29,111,204,0.18);--input-focus:rgba(37,99,235,0.18);
+  --shadow:0 2px 16px rgba(29,111,204,0.10);--shadow2:0 8px 32px rgba(29,111,204,0.14);
+  --nav-h:62px;
+}
+body{font-family:'Noto Sans Thai',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(ellipse 70% 50% at 80% -5%,rgba(29,111,204,.08) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at -5% 90%,rgba(14,165,233,.05) 0%,transparent 50%),
+    radial-gradient(circle,rgba(29,111,204,.08) 1px,transparent 1px);
+  background-size:100% 100%,100% 100%,36px 36px;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(16px,4vw,48px);height:var(--nav-h);background:rgba(255,255,255,.92);
+  backdrop-filter:blur(20px);border-bottom:1px solid var(--line2);box-shadow:0 1px 12px rgba(29,111,204,.07);}
+.nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;color:var(--navy);font-size:1.05rem}
+.nav-links{display:flex;gap:6px;flex-wrap:wrap}
+.nav-btn{padding:6px 14px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;
+  text-decoration:none;transition:all .2s;border:1.5px solid var(--line2);color:var(--text2);
+  background:transparent;font-family:'Noto Sans Thai',sans-serif;white-space:nowrap;}
+.nav-btn:hover{color:var(--blue2);border-color:rgba(37,99,235,.35);background:var(--bg3)}
+.nav-btn.active{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+.page-wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;
+  padding:calc(var(--nav-h) + 28px) clamp(16px,4vw,28px) 72px;}
+.page-header{margin-bottom:28px}
+.page-title{font-family:'DM Serif Display','Noto Sans Thai',serif;font-size:clamp(1.6rem,4vw,2rem);color:var(--navy);margin-bottom:6px;}
+.page-desc{color:var(--text3);font-size:.88rem}
+.form-card{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);}
+.form-section{padding:clamp(18px,3vw,26px) clamp(18px,4vw,30px);border-bottom:1px solid var(--line2);}
+.form-section:last-child{border-bottom:none}
+.section-heading{display:flex;align-items:center;gap:10px;font-size:.92rem;font-weight:700;color:var(--navy);margin-bottom:clamp(14px,2.5vw,20px);}
+.section-heading-icon{width:30px;height:30px;flex-shrink:0;background:var(--bg3);border:1px solid var(--line2);
+  border-radius:8px;display:grid;place-items:center;font-size:.85rem;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,2.5vw,18px)}
+.col-span-2{grid-column:span 2}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:.73rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;}
+.req{color:var(--red);margin-left:2px}
+.field input:not([type=checkbox]):not([type=radio]),.field select,.field textarea{
+  background:var(--input-bg);border:1.5px solid var(--input-border);border-radius:10px;
+  padding:10px 14px;color:var(--text);font-family:'Noto Sans Thai',sans-serif;
+  font-size:.92rem;transition:border-color .2s,box-shadow .2s;outline:none;width:100%;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue2);box-shadow:0 0 0 3px var(--input-focus);}
+.field textarea{resize:vertical;min-height:72px}
+.field select{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A7CB5' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;padding-right:36px;}
+.field.error input,.field.error select{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(220,38,38,.12)!important;}
+.field-error-msg{font-size:.72rem;color:var(--red);margin-top:3px;display:none}
+.field.error .field-error-msg{display:block}
+.field-hint{font-size:.72rem;color:var(--text3);margin-top:3px}
+.hours-group{display:flex;align-items:stretch;gap:0;}
+.hours-group input[type=number]{flex:1;border-radius:10px 0 0 10px;border-right:none;
+  font-family:'DM Mono',monospace;font-size:1rem;font-weight:600;text-align:center;}
+.hours-group input[type=number]:focus{border-color:var(--blue2);box-shadow:0 0 0 3px var(--input-focus);position:relative;z-index:1;}
+.hours-unit{display:flex;align-items:center;justify-content:center;padding:10px 16px;
+  background:var(--bg3);border:1.5px solid var(--input-border);border-radius:0 10px 10px 0;
+  font-size:.88rem;font-weight:700;color:var(--text2);white-space:nowrap;}
+.quick-pick{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
+.qp-btn{padding:5px 13px;border-radius:7px;border:1.5px solid var(--line2);background:var(--bg3);
+  font-family:'Noto Sans Thai',sans-serif;font-size:.8rem;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;}
+.qp-btn:hover,.qp-btn.active{border-color:var(--blue2);background:rgba(37,99,235,.1);color:var(--blue2);}
+.search-wrap{position:relative}
+.search-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:60;
+  background:var(--bg2);border:1.5px solid var(--line2);border-radius:12px;max-height:220px;
+  overflow-y:auto;box-shadow:var(--shadow2);}
+.search-dropdown.open{display:block}
+.dropdown-item{padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--line);transition:background .15s;}
+.dropdown-item:last-child{border-bottom:none}
+.dropdown-item:hover{background:var(--bg3)}
+.dropdown-item strong{color:var(--navy);display:block;font-size:.88rem}
+.dropdown-item span{color:var(--text3);font-size:.75rem}
+.dropdown-empty{padding:16px;text-align:center;color:var(--text3);font-size:.85rem}
+.emp-card{background:var(--bg3);border:1px dashed rgba(37,99,235,.35);border-radius:10px;
+  padding:12px 16px;display:none;margin-top:8px;animation:fadeUp .2s ease;}
+.emp-card.show{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.emp-detail strong{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);display:block;margin-bottom:2px}
+.emp-detail span{font-size:.85rem;color:var(--navy);font-weight:600}
+.form-actions{padding:clamp(14px,2.5vw,18px) clamp(18px,4vw,30px);display:flex;gap:10px;
+  justify-content:flex-end;align-items:center;background:var(--bg3);border-top:1px solid var(--line2);flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px clamp(16px,3vw,24px);
+  border-radius:10px;font-family:'Noto Sans Thai',sans-serif;font-size:.92rem;font-weight:700;
+  cursor:pointer;transition:all .22s;border:none;white-space:nowrap;}
+.btn-ghost{background:var(--bg2);color:var(--text2);border:1.5px solid var(--line2)}
+.btn-ghost:hover{color:var(--blue2);border-color:rgba(37,99,235,.35);background:var(--bg4)}
+.btn-primary{background:var(--blue2);color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.28);flex:1;justify-content:center;min-width:140px;max-width:260px;}
+.btn-primary:hover:not(:disabled){background:var(--blue);transform:translateY(-2px);box-shadow:0 8px 24px rgba(37,99,235,.38)}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.spinner{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;animation:spin .55s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.recent-section{margin-top:clamp(28px,5vw,40px)}
+.recent-title{font-size:.95rem;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.table-card{background:var(--bg2);border:1px solid var(--line2);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:.83rem;min-width:520px}
+thead th{padding:11px 14px;background:var(--bg3);color:var(--text2);font-weight:700;text-align:left;
+  font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--line2);white-space:nowrap;}
+tbody td{padding:10px 14px;border-top:1px solid var(--line);vertical-align:middle}
+tbody tr:hover td{background:var(--bg3)}
+.badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:.72rem;font-weight:600;border:1px solid transparent}
+.badge-blue{background:var(--bg3);color:var(--blue2);border-color:var(--line2)}
+.badge-red{background:#FEF2F2;color:#991B1B;border-color:rgba(220,38,38,.2)}
+.badge-yellow{background:#FFFBEB;color:#92400E;border-color:rgba(217,119,6,.2)}
+.badge-green{background:#ECFDF5;color:#065F46;border-color:rgba(5,150,105,.2)}
+.badge-orange{background:#FFF7ED;color:#C2410C;border-color:rgba(194,65,12,.2)}
+.mono{font-family:'DM Mono',monospace;font-size:.82rem;font-weight:600;color:var(--navy)}
+.btn-del{background:none;border:none;cursor:pointer;padding:5px 8px;border-radius:7px;font-size:.85rem;color:var(--text3);transition:all .15s}
+.btn-del:hover{color:var(--red);background:#FEF2F2}
+.empty-row td{text-align:center;color:var(--text3);padding:32px}
+.toast-wrap{position:fixed;bottom:clamp(16px,3vw,28px);right:clamp(12px,3vw,28px);z-index:9999;
+  display:flex;flex-direction:column;gap:8px;max-width:min(360px,calc(100vw - 24px))}
+.toast{padding:12px 16px;border-radius:12px;font-size:.875rem;font-weight:600;display:flex;
+  align-items:center;gap:10px;box-shadow:var(--shadow2);animation:toastIn .28s ease}
+.toast-success{background:#ECFDF5;border:1.5px solid rgba(5,150,105,.25);color:#065F46}
+.toast-error{background:#FEF2F2;border:1.5px solid rgba(220,38,38,.25);color:#991B1B}
+@keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:640px){
+  .form-grid{grid-template-columns:1fr}.col-span-2{grid-column:span 1}
+  .emp-card.show{grid-template-columns:1fr 1fr}.btn-primary{max-width:none}
+}
+@media(max-width:400px){.emp-card.show{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
 <nav>
-  <a href="dashboard.html" class="nav-logo">HR บันทึกข้อมูล ขาด/ลา/มาสาย</a>
+  <a href="index.html" class="nav-logo"><span style="font-size:1.2rem">📈</span> HR Dashboard</a>
   <div class="nav-links">
-    <a href="index.html" class="nav-btn">📝 บันทึกลาออก</a>
-    <a href="leave.html" class="nav-btn active">📅 บันทึกการลา</a>
+    <a href="form.html"      class="nav-btn">📝 บันทึกลาออก</a>
+    <a href="leave.html"     class="nav-btn active">📅 บันทึกการลา</a>
     <a href="dashboard.html" class="nav-btn">📈 Dashboard</a>
+    <a href="employees.html" class="nav-btn">👥 พนักงาน</a>
   </div>
 </nav>
 
 <div class="page-wrap">
   <div class="page-header">
-    <div class="page-title">บันทึกข้อมูล ขาด/ลา/มาสาย</div>
-    <div class="page-desc">บันทึกรายการประจำวันเพื่อนำไปวิเคราะห์บน Dashboard</div>
+    <div class="page-title">📅 บันทึกข้อมูล ขาด / ลา / มาสาย</div>
+    <div class="page-desc">บันทึกรายการประจำวัน · บันทึกลง Google Sheets อัตโนมัติ</div>
   </div>
 
   <div class="form-card">
-    <div class="form-grid">
-      <!-- ค้นหาพนักงาน -->
-      <div class="field col-span-2">
-        <label>ค้นหาพนักงาน <span class="req">*</span></label>
-        <div class="search-wrap">
-          <input type="text" id="empSearch" placeholder="พิมพ์ชื่อ หรือ รหัสพนักงาน..." autocomplete="off" />
-          <div class="search-dropdown" id="searchDropdown"></div>
+    <!-- SECTION 1: ค้นหาพนักงาน -->
+    <div class="form-section">
+      <div class="section-heading"><div class="section-heading-icon">👤</div>ข้อมูลพนักงาน</div>
+      <div class="form-grid">
+        <div class="field col-span-2" id="fieldEmpSearch">
+          <label>ค้นหาพนักงาน <span class="req">*</span></label>
+          <div class="search-wrap">
+            <input type="text" id="empSearch" placeholder="พิมพ์ชื่อ หรือ รหัสพนักงาน…" autocomplete="off"/>
+            <div class="search-dropdown" id="searchDropdown"></div>
+          </div>
+          <span class="field-error-msg">กรุณาเลือกพนักงานจากรายการ</span>
         </div>
-        
-        <!-- ข้อมูลพนักงานที่เลือก (Card) -->
-        <div id="empCard" class="emp-card">
-          <div class="emp-detail"><strong>รหัสพนักงาน</strong><span id="lblEmpId">-</span></div>
-          <div class="emp-detail"><strong>แผนก</strong><span id="lblDept">-</span></div>
-          <div class="emp-detail"><strong>Plant</strong><span id="lblPlant">-</span></div>
-          <div class="emp-detail"><strong>ชื่อเต็ม</strong><span id="lblFullName">-</span></div>
+        <div class="col-span-2">
+          <div class="emp-card" id="empCard">
+            <div class="emp-detail"><strong>รหัสพนักงาน</strong><span id="lblEmpId">—</span></div>
+            <div class="emp-detail"><strong>แผนก</strong><span id="lblDept">—</span></div>
+            <div class="emp-detail"><strong>Plant</strong><span id="lblPlant">—</span></div>
+            <div class="emp-detail"><strong>ชื่อเต็ม</strong><span id="lblFullName">—</span></div>
+          </div>
+          <input type="hidden" id="hidEmpId"/>
+          <input type="hidden" id="hidName"/>
+          <input type="hidden" id="hidDept"/>
+          <input type="hidden" id="hidPlant"/>
         </div>
-        <input type="hidden" id="empId" />
-        <input type="hidden" id="empName" />
-        <input type="hidden" id="empDept" />
-        <input type="hidden" id="empPlant" />
       </div>
+    </div>
 
-      <!-- รายละเอียดการลา -->
-      <div class="field col-span-2" style="margin-top: 10px;"><hr style="border: 0; border-top: 1px solid var(--line2);"></div>
-
-      <div class="field">
-        <label>วันที่ลาหยุด <span class="req">*</span></label>
-        <input type="date" id="leaveDate" />
-      </div>
-
-      <div class="field">
-        <label>ประเภทรายการ <span class="req">*</span></label>
-        <select id="leaveType">
-          <option value="">-- เลือกประเภท --</option>
-          <option value="ลาป่วย">ลาป่วย</option>
-          <option value="ลากิจ">ลากิจ</option>
-          <option value="พักร้อน">พักร้อน</option>
-          <option value="ขาดงาน">ขาดงาน</option>
-          <option value="มาสาย">มาสาย</option>
-        </select>
-      </div>
-
-      <!-- จำนวนการลา: Dropdown 2 ช่อง (ตัวเลข และ หน่วย) -->
-      <div class="field col-span-2">
-        <label>จำนวนการลา <span class="req">*</span></label>
-        <div style="display: flex; gap: 10px;">
-          <!-- ช่องเลือกตัวเลข -->
-          <select id="leaveAmountNum" style="flex: 1;">
-            <option value="">-- ระบุจำนวน --</option>
-            <optgroup label="ทศนิยม / ครึ่ง">
-              <option value="0.5">0.5</option>
-              <option value="1.5">1.5</option>
-              <option value="2.5">2.5</option>
-            </optgroup>
-            <optgroup label="จำนวนเต็ม (1-10)">
-              <option value="1">1</option><option value="2">2</option>
-              <option value="3">3</option><option value="4">4</option>
-              <option value="5">5</option><option value="6">6</option>
-              <option value="7">7</option><option value="8">8</option>
-              <option value="9">9</option><option value="10">10</option>
-            </optgroup>
-            <optgroup label="นาที (สำหรับมาสาย)">
-              <option value="10">10</option><option value="15">15</option>
-              <option value="20">20</option><option value="30">30</option>
-              <option value="40">40</option><option value="45">45</option>
-              <option value="50">50</option><option value="60">60</option>
-            </optgroup>
+    <!-- SECTION 2: รายละเอียดการลา -->
+    <div class="form-section">
+      <div class="section-heading"><div class="section-heading-icon">📋</div>รายละเอียดการลา</div>
+      <div class="form-grid">
+        <div class="field" id="fieldLeaveDate">
+          <label>วันที่ลาหยุด <span class="req">*</span></label>
+          <input type="date" id="leaveDate"/>
+          <span class="field-error-msg">กรุณาระบุวันที่</span>
+        </div>
+        <div class="field" id="fieldLeaveType">
+          <label>ประเภทรายการ <span class="req">*</span></label>
+          <select id="leaveType">
+            <option value="">— เลือกประเภท —</option>
+            <option value="ลาป่วย">🏥 ลาป่วย</option>
+            <option value="ลากิจ">🗓️ ลากิจ</option>
+            <option value="พักร้อน">🌴 พักร้อน</option>
+            <option value="ขาดงาน">❌ ขาดงาน</option>
+            <option value="มาสาย">⏰ มาสาย</option>
           </select>
-
-          <!-- ช่องเลือกหน่วย -->
-          <select id="leaveAmountUnit" style="flex: 1;">
-            <option value="">-- เลือกหน่วย --</option>
-            <option value="วัน">วัน</option>
-            <option value="ชั่วโมง">ชั่วโมง</option>
-            <option value="นาที">นาที</option>
-          </select>
+          <span class="field-error-msg">กรุณาเลือกประเภท</span>
+        </div>
+        <div class="field col-span-2" id="fieldHours">
+          <label>จำนวน (ชั่วโมง) <span class="req">*</span></label>
+          <div class="hours-group">
+            <input type="number" id="leaveHours" min="0.5" max="48" step="0.5" placeholder="เช่น 8" autocomplete="off"/>
+            <div class="hours-unit">ชม.</div>
+          </div>
+          <div class="quick-pick" id="quickPick">
+            <button type="button" class="qp-btn" onclick="setHours(0.5)">0.5</button>
+            <button type="button" class="qp-btn" onclick="setHours(1)">1</button>
+            <button type="button" class="qp-btn" onclick="setHours(2)">2</button>
+            <button type="button" class="qp-btn" onclick="setHours(3)">3</button>
+            <button type="button" class="qp-btn" onclick="setHours(4)">4 (ครึ่งวัน)</button>
+            <button type="button" class="qp-btn" onclick="setHours(8)">8 (เต็มวัน)</button>
+          </div>
+          <span class="field-hint">1 วันทำงาน = 8 ชม. · ครึ่งวัน = 4 ชม.</span>
+          <span class="field-error-msg">กรุณาระบุจำนวนชั่วโมง</span>
+        </div>
+        <div class="field col-span-2">
+          <label>หมายเหตุ / สาเหตุที่ลา</label>
+          <textarea id="leaveRemark" rows="2" placeholder="ระบุสาเหตุเพิ่มเติม…"></textarea>
         </div>
       </div>
+    </div>
 
-      <div class="field col-span-2">
-        <label>หมายเหตุ / สาเหตุที่ลา</label>
-        <textarea id="leaveRemark" rows="2" placeholder="ระบุสาเหตุ..."></textarea>
-      </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="resetForm()">🔄 ล้างข้อมูล</button>
+      <button class="btn btn-primary" id="submitBtn" onclick="submitLeave()">
+        <span id="submitIcon">💾</span>
+        <span id="submitText">บันทึกข้อมูลการลา</span>
+      </button>
+    </div>
+  </div>
 
-      <div class="field col-span-2">
-        <button id="submitBtn" class="btn-submit" onclick="submitLeave()">บันทึกข้อมูลการลา</button>
+  <!-- RECENT TABLE -->
+  <div class="recent-section">
+    <div class="recent-title">🕐 รายการล่าสุด (10 รายการ)</div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>ชื่อ-นามสกุล</th><th>แผนก</th><th>วันที่</th>
+            <th>ประเภท</th><th>จำนวน</th><th style="width:44px"></th>
+          </tr></thead>
+          <tbody id="recentTbody">
+            <tr class="empty-row"><td colspan="6">⏳ กำลังโหลด…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -187,132 +261,209 @@
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
-let employees = [];
+let employees   = [];
+let selectedEmp = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('leaveDate').value = new Date().toISOString().split('T')[0];
   setupSearch();
   await loadEmployees();
+  await loadRecent();
+  // quick-pick sync
+  document.getElementById('leaveHours')?.addEventListener('input', () => {
+    const v = parseFloat(document.getElementById('leaveHours').value);
+    document.querySelectorAll('.qp-btn').forEach(b => b.classList.toggle('active', parseFloat(b.textContent) === v));
+  });
 });
 
 async function loadEmployees() {
   try {
-    const res = await fetch(CONFIG.APPS_SCRIPT_URL + '?action=getEmployees');
+    const res  = await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=getEmployees`);
     const json = await res.json();
-    if (json.status === 'ok') employees = json.data;
-  } catch (e) { showToast('ไม่สามารถดึงข้อมูลพนักงานได้', 'error'); }
+    if (json.status === 'ok') employees = json.data || [];
+  } catch(e) { showToast('ไม่สามารถดึงข้อมูลพนักงานได้', 'error'); }
 }
 
 function setupSearch() {
-  const input = document.getElementById('empSearch'), dropdown = document.getElementById('searchDropdown');
+  const input    = document.getElementById('empSearch');
+  const dropdown = document.getElementById('searchDropdown');
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
-    if (!q) { dropdown.classList.remove('open'); return; }
-    const matches = employees.filter(e => (e['ชื่อ-นามสกุล'] || '').toLowerCase().includes(q) || String(e['รหัสพนักงาน'] || '').toLowerCase().includes(q)).slice(0, 5);
-    
-    if (!matches.length) dropdown.innerHTML = '<div class="dropdown-empty">ไม่พบพนักงาน</div>';
-    else {
-      dropdown.innerHTML = matches.map((e, idx) => `<div class="dropdown-item" data-idx="${idx}"><strong>${e['ชื่อ-นามสกุล'] || ''}</strong><span>${e['รหัสพนักงาน'] || ''} · ${e['แผนก'] || ''}</span></div>`).join('');
-      dropdown.querySelectorAll('.dropdown-item').forEach((el, idx) => el.addEventListener('click', () => selectEmployee(matches[idx])));
+    if (!q) { dropdown.classList.remove('open'); clearSelection(false); return; }
+    const hits = employees.filter(e =>
+      (e['ชื่อ-นามสกุล']||'').toLowerCase().includes(q) ||
+      String(e['รหัสพนักงาน']||'').toLowerCase().includes(q)
+    ).slice(0, 8);
+    if (!hits.length) {
+      dropdown.innerHTML = '<div class="dropdown-empty">ไม่พบพนักงาน</div>';
+    } else {
+      dropdown.innerHTML = hits.map((e,i)=>`
+        <div class="dropdown-item" data-i="${i}">
+          <strong>${e['คำนำหน้า']||''}${e['ชื่อ-นามสกุล']||''}</strong>
+          <span>${e['รหัสพนักงาน']||'—'} · ${e['แผนก']||'—'} · ${e['Plant']||'—'}</span>
+        </div>`).join('');
+      dropdown.querySelectorAll('.dropdown-item').forEach((el,i)=>el.addEventListener('click',()=>selectEmployee(hits[i])));
     }
     dropdown.classList.add('open');
+    setErr('fieldEmpSearch', false);
   });
-  document.addEventListener('click', (e) => { if (!e.target.closest('.search-wrap')) dropdown.classList.remove('open'); });
+  document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) dropdown.classList.remove('open'); });
 }
 
 function selectEmployee(emp) {
-  document.getElementById('empSearch').value = emp['ชื่อ-นามสกุล'] || '';
+  selectedEmp = emp;
+  document.getElementById('empSearch').value = `${emp['คำนำหน้า']||''}${emp['ชื่อ-นามสกุล']||''}`;
   document.getElementById('searchDropdown').classList.remove('open');
-  document.getElementById('empId').value = emp['รหัสพนักงาน'] || '';
-  document.getElementById('empName').value = emp['ชื่อ-นามสกุล'] || '';
-  document.getElementById('empDept').value = emp['แผนก'] || '';
-  document.getElementById('empPlant').value = emp['Plant'] || '';
-  
-  document.getElementById('lblEmpId').textContent = emp['รหัสพนักงาน'] || '-';
-  document.getElementById('lblDept').textContent = emp['แผนก'] || '-';
-  document.getElementById('lblPlant').textContent = emp['Plant'] || '-';
-  document.getElementById('lblFullName').textContent = emp['ชื่อ-นามสกุล'] || '-';
+  document.getElementById('hidEmpId').value  = emp['รหัสพนักงาน'] || '';
+  document.getElementById('hidName').value   = emp['ชื่อ-นามสกุล']  || '';
+  document.getElementById('hidDept').value   = emp['แผนก']   || '';
+  document.getElementById('hidPlant').value  = emp['Plant']  || '';
+  document.getElementById('lblEmpId').textContent    = emp['รหัสพนักงาน'] || '—';
+  document.getElementById('lblDept').textContent     = emp['แผนก']   || '—';
+  document.getElementById('lblPlant').textContent    = emp['Plant']  || '—';
+  document.getElementById('lblFullName').textContent = `${emp['คำนำหน้า']||''}${emp['ชื่อ-นามสกุล']||''}`;
   document.getElementById('empCard').classList.add('show');
+  setErr('fieldEmpSearch', false);
+}
+
+function clearSelection(clearBox=true) {
+  selectedEmp = null;
+  if (clearBox) document.getElementById('empSearch').value = '';
+  ['hidEmpId','hidName','hidDept','hidPlant'].forEach(id=>document.getElementById(id).value='');
+  ['lblEmpId','lblDept','lblPlant','lblFullName'].forEach(id=>document.getElementById(id).textContent='—');
+  document.getElementById('empCard').classList.remove('show');
+}
+
+function setHours(val) {
+  document.getElementById('leaveHours').value = val;
+  document.querySelectorAll('.qp-btn').forEach(b=>b.classList.toggle('active',parseFloat(b.textContent)===val));
+  setErr('fieldHours', false);
+}
+
+function setErr(fieldId, hasErr) { document.getElementById(fieldId)?.classList.toggle('error', hasErr); }
+
+function validate() {
+  let ok = true;
+  if (!selectedEmp)                                      { setErr('fieldEmpSearch',true); ok=false; }
+  if (!document.getElementById('leaveDate').value)       { setErr('fieldLeaveDate',true); ok=false; }
+  if (!document.getElementById('leaveType').value)       { setErr('fieldLeaveType',true); ok=false; }
+  const hrs = parseFloat(document.getElementById('leaveHours').value);
+  if (!hrs || hrs<=0)                                    { setErr('fieldHours',true);     ok=false; }
+  return ok;
 }
 
 async function submitLeave() {
-  const empId = document.getElementById('empId').value;
-  const empName = document.getElementById('empName').value;
-  const empDept = document.getElementById('empDept').value;
-  const empPlant = document.getElementById('empPlant').value;
+  if (!validate()) {
+    showToast('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน','error');
+    document.querySelector('.field.error')?.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+
   const leaveDate = document.getElementById('leaveDate').value;
   const leaveType = document.getElementById('leaveType').value;
-  
-  // รวมค่าตัวเลขและหน่วยเข้าด้วยกัน (เช่น "1 วัน")
-  const num = document.getElementById('leaveAmountNum').value;
-  const unit = document.getElementById('leaveAmountUnit').value;
-  
-  if (!empId) return showToast('กรุณาเลือกพนักงาน', 'error');
-  if (!leaveDate) return showToast('กรุณาระบุวันที่ลาหยุด', 'error');
-  if (!leaveType) return showToast('กรุณาเลือกประเภทรายการ', 'error');
-  if (!num || !unit) return showToast('กรุณาเลือกจำนวนและหน่วยให้ครบถ้วน', 'error');
+  const hours     = parseFloat(document.getElementById('leaveHours').value);
+  const remark    = document.getElementById('leaveRemark').value.trim();
+  const d         = new Date(leaveDate);
+  const month     = String(d.getMonth()+1);
+  const year      = String(d.getFullYear());
 
-  const finalAmount = `${num} ${unit}`;
+  setBtnLoading(true);
 
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ กำลังบันทึก...';
-
-  // Extract Month and Year from selected Date
-  const d = new Date(leaveDate);
-  const month = (d.getMonth() + 1).toString();
-  const year = d.getFullYear().toString();
-
+  // ✅ แก้: ส่ง fields ที่ตรงกับ header ของ Leave_Records sheet จริง
+  // Headers: รหัสพนักงาน | ชื่อ-นามสกุล | แผนก | Plant |
+  //          วันที่ลาหยุด | ประเภทรายการ | จำนวนการลา |
+  //          เดือน (Month) | ปี (Year) | หมายเหตุ (Remark)
   const payload = {
     action: 'addLeave',
     data: {
-      'รหัสพนักงาน': empId,
-      'ชื่อ-นามสกุล': empName,
-      'แผนก': empDept,
-      'Plant': empPlant,
-      'วันที่ลาหยุด': leaveDate,
-      'ประเภทรายการ': leaveType,
-      'จำนวนการลา': finalAmount,
-      'เดือน (Month)': month,
-      'ปี (Year)': year,
-      'หมายเหตุ (Remark)': document.getElementById('leaveRemark').value
+      'รหัสพนักงาน'      : document.getElementById('hidEmpId').value,
+      'ชื่อ-นามสกุล'     : `${selectedEmp['คำนำหน้า']||''}${selectedEmp['ชื่อ-นามสกุล']||''}`,
+      'แผนก'             : document.getElementById('hidDept').value,
+      'Plant'             : document.getElementById('hidPlant').value,
+      'วันที่ลาหยุด'     : leaveDate,
+      'ประเภทรายการ'     : leaveType,
+      'จำนวนการลา'       : hours + ' ชม.',   // ✅ column นี้มีใน sheet
+      'เดือน (Month)'    : month,             // ✅ ตรงกับ header
+      'ปี (Year)'        : year,              // ✅ ตรงกับ header
+      'หมายเหตุ (Remark)': remark,            // ✅ ตรงกับ header
     }
   };
 
   try {
-    const res = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
     const json = await res.json();
-    if (json.status === 'ok') {
-      showToast('✅ บันทึกข้อมูลสำเร็จ!', 'success');
+    if (json.status==='ok') {
+      showToast('✅ บันทึกข้อมูลสำเร็จ!','success');
       resetForm();
-    } else { showToast('เกิดข้อผิดพลาด: ' + (json.message || ''), 'error'); }
-  } catch (e) { showToast('เชื่อมต่อ API ไม่สำเร็จ: ' + e.message, 'error'); }
-  
-  btn.disabled = false;
-  btn.textContent = 'บันทึกข้อมูลการลา';
+      await loadRecent();
+    } else showToast('เกิดข้อผิดพลาด: '+(json.message||''),'error');
+  } catch(e) { showToast('เชื่อมต่อ API ไม่สำเร็จ: '+e.message,'error'); }
+
+  setBtnLoading(false);
+}
+
+function setBtnLoading(on) {
+  document.getElementById('submitBtn').disabled = on;
+  document.getElementById('submitIcon').innerHTML = on ? '<div class="spinner"></div>' : '💾';
+  document.getElementById('submitText').textContent = on ? 'กำลังบันทึก…' : 'บันทึกข้อมูลการลา';
 }
 
 function resetForm() {
-  document.getElementById('empSearch').value = '';
-  document.getElementById('empId').value = '';
-  document.getElementById('empName').value = '';
-  document.getElementById('empDept').value = '';
-  document.getElementById('empPlant').value = '';
-  document.getElementById('empCard').classList.remove('show');
-  document.getElementById('leaveType').value = '';
-  
-  // รีเซ็ตค่า dropdown 
-  document.getElementById('leaveAmountNum').value = '';
-  document.getElementById('leaveAmountUnit').value = '';
-  
-  document.getElementById('leaveRemark').value = '';
+  clearSelection();
   document.getElementById('leaveDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('leaveType').value = '';
+  document.getElementById('leaveHours').value = '';
+  document.getElementById('leaveRemark').value = '';
+  document.querySelectorAll('.qp-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.field.error').forEach(f=>f.classList.remove('error'));
 }
 
-function showToast(msg, type = 'success') {
-  const wrap = document.getElementById('toastWrap'), el = document.createElement('div');
-  el.className = `toast toast-${type}`; el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${msg}</span>`;
-  wrap.appendChild(el); setTimeout(() => el.remove(), 4000);
+async function loadRecent() {
+  const tbody = document.getElementById('recentTbody');
+  tbody.innerHTML='<tr class="empty-row"><td colspan="6">⏳ กำลังโหลด…</td></tr>';
+  try {
+    const res  = await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=getLeaves`);
+    const json = await res.json();
+    if (json.status!=='ok'||!json.data?.length) {
+      tbody.innerHTML='<tr class="empty-row"><td colspan="6">ยังไม่มีรายการ</td></tr>'; return;
+    }
+    const rows=[...json.data].reverse().slice(0,10);
+    const typeBadge={'ลาป่วย':'badge-blue','ลากิจ':'badge-orange','พักร้อน':'badge-green','ขาดงาน':'badge-red','มาสาย':'badge-yellow'};
+    tbody.innerHTML=rows.map(r=>{
+      const dateStr = r['วันที่ลาหยุด']
+        ? (()=>{try{return new Date(r['วันที่ลาหยุด']).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'});}catch{return r['วันที่ลาหยุด'];}})()
+        : '—';
+      const type = r['ประเภทรายการ']||'—';
+      const cls  = typeBadge[type]||'badge-blue';
+      const hrs  = r['จำนวนการลา']||'—';                      // ✅ แก้: ใช้ชื่อ field ที่ถูก
+      return `<tr>
+        <td><strong>${r['ชื่อ-นามสกุล']||'—'}</strong></td>
+        <td><span class="badge badge-blue">${r['แผนก']||'—'}</span></td>
+        <td>${dateStr}</td>
+        <td><span class="badge ${cls}">${type}</span></td>
+        <td class="mono">${hrs}</td>
+        <td><button class="btn-del" onclick="deleteRow(${r._rowIndex})" title="ลบ">🗑</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e) { tbody.innerHTML='<tr class="empty-row"><td colspan="6">โหลดข้อมูลไม่สำเร็จ</td></tr>'; }
+}
+
+async function deleteRow(rowIndex) {
+  if (!confirm('ต้องการลบรายการนี้หรือไม่?')) return;
+  try {
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteLeave',rowIndex})});
+    const json = await res.json();
+    if (json.status==='ok') { showToast('ลบรายการสำเร็จ','success'); await loadRecent(); }
+    else showToast('ลบไม่สำเร็จ: '+(json.message||''),'error');
+  } catch(e) { showToast('เกิดข้อผิดพลาด','error'); }
+}
+
+function showToast(msg,type='success') {
+  const wrap=document.getElementById('toastWrap');
+  const el=document.createElement('div');el.className=`toast toast-${type}`;
+  el.innerHTML=`<span>${type==='success'?'✅':'❌'}</span><span>${msg}</span>`;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(),4500);
 }
 </script>
 </body>
