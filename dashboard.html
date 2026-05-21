@@ -134,6 +134,10 @@
         .border-purple { border-top: 4px solid var(--purple); }
         .border-pink   { border-top: 4px solid var(--pink); }
         .border-cyan   { border-top: 4px solid var(--cyan); }
+        .border-teal   { border-top: 4px solid var(--teal); }
+
+        /* ── KPI value size variants ── */
+        .kpi-value-sm { font-family: 'DM Mono', monospace; font-size: clamp(1.3rem,2.5vw,1.8rem); font-weight: 700; color: var(--navy); line-height: 1; }
 
         .charts-grid { display: grid; gap: clamp(16px,2.5vw,24px); }
         .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
@@ -209,11 +213,37 @@
         .badge-red  { background: #FEF2F2; color: var(--red); }
         .badge-blue { background: var(--bg3); color: var(--blue2); }
 
-        /* Attendance */
+        /* ── Attendance Tab ─────────────────────────────── */
         .attend-kpi-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: clamp(12px,2vw,18px); margin-bottom: clamp(20px,3vw,28px);
         }
+
+        /* ── Sick-leave detail card ── */
+        .sick-detail-card {
+            background: linear-gradient(135deg, #FEF2F2 0%, #fff 100%);
+            border: 1.5px solid rgba(220,38,38,0.18); border-radius: 14px;
+            padding: 18px 20px; box-shadow: var(--shadow);
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+            flex-wrap: wrap; margin-bottom: clamp(16px,2.5vw,24px);
+        }
+        .sick-detail-item { text-align: center; flex: 1; min-width: 100px; }
+        .sick-detail-value { font-family: 'DM Mono', monospace; font-size: 2rem; font-weight: 700; color: var(--red); line-height: 1; }
+        .sick-detail-label { font-size: 0.72rem; font-weight: 700; color: #991B1B; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+        .sick-detail-sub { font-size: 0.68rem; color: var(--text3); margin-top: 2px; }
+        .sick-divider { width: 1px; height: 56px; background: rgba(220,38,38,0.18); }
+
+        /* ── Chart view toggle ── */
+        .chart-view-toggle {
+            display: flex; gap: 6px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap;
+        }
+        .view-btn {
+            padding: 5px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700;
+            border: 1.5px solid var(--line2); background: transparent; cursor: pointer;
+            color: var(--text3); font-family: 'Noto Sans Thai', sans-serif; transition: all .2s;
+        }
+        .view-btn.active { background: var(--blue2); color: #fff; border-color: var(--blue2); }
+        .view-btn:hover:not(.active) { border-color: rgba(37,99,235,.35); color: var(--blue2); background: var(--bg3); }
 
         /* Spinner */
         .spinner-overlay {
@@ -246,6 +276,8 @@
             .kpi-grid { grid-template-columns: 1fr 1fr; }
             .charts-grid.grid-2, .charts-grid.grid-3 { grid-template-columns: 1fr; }
             nav { padding: 0 16px; }
+            .sick-detail-card { justify-content: center; }
+            .sick-divider { width: 60px; height: 1px; }
         }
         @media (max-width: 480px) {
             .kpi-grid { grid-template-columns: 1fr; }
@@ -303,11 +335,15 @@
         </div>
     </div>
 
-    <!-- TAB 1: MANPOWER -->
+    <!-- ════════════════════════════════════════════════
+         TAB 1: MANPOWER
+    ════════════════════════════════════════════════ -->
     <div id="tab1" class="tab-content active">
 
         <div class="section-label">📊 อัตรากำลังพลรวม · Overall Strength</div>
         <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+
+            <!-- ✅ FIX #1: เปลี่ยน "จำนวนแผนก" → "อัตรากำลังพล (vs เป้า)" -->
             <div class="kpi-card border-blue">
                 <div class="kpi-icon">👥</div>
                 <div class="kpi-label">กำลังพลปัจจุบัน</div>
@@ -315,10 +351,10 @@
                 <div class="kpi-sub">Total Headcount</div>
             </div>
             <div class="kpi-card border-cyan">
-                <div class="kpi-icon">🏭</div>
-                <div class="kpi-label">จำนวนแผนก</div>
-                <div class="kpi-value" id="valDeptCount">0</div>
-                <div class="kpi-sub">Departments</div>
+                <div class="kpi-icon">🎯</div>
+                <div class="kpi-label">อัตรากำลังพล</div>
+                <div class="kpi-value" id="valMpRate">—</div>
+                <div class="kpi-sub" id="valMpRateSub">Manpower Fill Rate</div>
             </div>
             <div class="kpi-card border-green">
                 <div class="kpi-icon">👱</div>
@@ -396,69 +432,153 @@
         </div>
     </div>
 
-    <!-- TAB 2: ATTENDANCE -->
+    <!-- ════════════════════════════════════════════════
+         TAB 2: ATTENDANCE
+         ✅ FIX #2: นับเป็น ชม. (ขาด/ลา/มาสาย + ชม.ทำงาน + ชม.โอที + ชม.ศูนย์หาย)
+         ✅ FIX #3: ลาป่วย → แยก unique persons
+         ✅ FIX #4: "ทุกเดือน" → stacked แยกรายเดือน
+    ════════════════════════════════════════════════ -->
     <div id="tab2" class="tab-content">
-        <div class="section-label">📋 Attendance Check · ขาด / ลา / มาสาย</div>
+
+        <!-- KPI Row 1: Hours -->
+        <div class="section-label">⏱️ สถิติชั่วโมงการทำงาน · Working Hours Summary</div>
+        <div class="attend-kpi-grid">
+            <div class="kpi-card border-blue">
+                <div class="kpi-icon">⏰</div>
+                <div class="kpi-label">ชม. ทำงานรวม</div>
+                <div class="kpi-value-sm" id="attWorkHrs">0</div>
+                <div class="kpi-sub">Work Hours (hrs)</div>
+            </div>
+            <div class="kpi-card border-orange">
+                <div class="kpi-icon">🌙</div>
+                <div class="kpi-label">ชม. โอที</div>
+                <div class="kpi-value-sm" id="attOtHrs">0</div>
+                <div class="kpi-sub">OT Hours (hrs)</div>
+            </div>
+            <div class="kpi-card border-red">
+                <div class="kpi-icon">❌</div>
+                <div class="kpi-label">ชม. ขาดงาน</div>
+                <div class="kpi-value-sm" id="attAbsentHrs">0</div>
+                <div class="kpi-sub">Absent Hours (hrs)</div>
+            </div>
+            <div class="kpi-card border-yellow">
+                <div class="kpi-icon">💸</div>
+                <div class="kpi-label">ชม. ที่ศูนย์หาย</div>
+                <div class="kpi-value-sm" id="attLostHrs">0</div>
+                <div class="kpi-sub">Lost Hours (hrs)</div>
+            </div>
+        </div>
+
+        <!-- KPI Row 2: Leave counts -->
+        <div class="section-label">📋 สถิติการลา · Leave Records</div>
         <div class="attend-kpi-grid">
             <div class="kpi-card border-red">
                 <div class="kpi-icon">❌</div>
-                <div class="kpi-label">ขาดงาน (ครั้ง)</div>
-                <div class="kpi-value" id="attAbsent">0</div>
-                <div class="kpi-sub">Absent</div>
+                <div class="kpi-label">ขาดงาน (ชม.)</div>
+                <div class="kpi-value-sm" id="attAbsent">0</div>
+                <div class="kpi-sub">Absent (hrs)</div>
             </div>
             <div class="kpi-card border-yellow">
                 <div class="kpi-icon">⏰</div>
-                <div class="kpi-label">มาสาย (ครั้ง)</div>
-                <div class="kpi-value" id="attLate">0</div>
-                <div class="kpi-sub">Late</div>
+                <div class="kpi-label">มาสาย (ชม.)</div>
+                <div class="kpi-value-sm" id="attLate">0</div>
+                <div class="kpi-sub">Late (hrs)</div>
             </div>
             <div class="kpi-card border-orange">
                 <div class="kpi-icon">🏥</div>
-                <div class="kpi-label">ลาป่วย (ครั้ง)</div>
-                <div class="kpi-value" id="attSick">0</div>
-                <div class="kpi-sub">Sick Leave</div>
+                <div class="kpi-label">ลาป่วย (ชม.)</div>
+                <div class="kpi-value-sm" id="attSick">0</div>
+                <div class="kpi-sub">Sick Leave (hrs)</div>
             </div>
             <div class="kpi-card border-blue">
                 <div class="kpi-icon">🗓️</div>
-                <div class="kpi-label">ลากิจ (ครั้ง)</div>
-                <div class="kpi-value" id="attPersonal">0</div>
-                <div class="kpi-sub">Personal Leave</div>
+                <div class="kpi-label">ลากิจ (ชม.)</div>
+                <div class="kpi-value-sm" id="attPersonal">0</div>
+                <div class="kpi-sub">Personal Leave (hrs)</div>
             </div>
             <div class="kpi-card border-green">
                 <div class="kpi-icon">🌴</div>
-                <div class="kpi-label">พักร้อน (ครั้ง)</div>
-                <div class="kpi-value" id="attAnnual">0</div>
-                <div class="kpi-sub">Annual Leave</div>
+                <div class="kpi-label">พักร้อน (ชม.)</div>
+                <div class="kpi-value-sm" id="attAnnual">0</div>
+                <div class="kpi-sub">Annual Leave (hrs)</div>
             </div>
             <div class="kpi-card border-purple">
                 <div class="kpi-icon">📊</div>
-                <div class="kpi-label">รวมทั้งหมด</div>
-                <div class="kpi-value" id="attTotal">0</div>
-                <div class="kpi-sub">Total Records</div>
+                <div class="kpi-label">รวมลา (ชม.)</div>
+                <div class="kpi-value-sm" id="attTotal">0</div>
+                <div class="kpi-sub">Total Leave Hours</div>
             </div>
         </div>
+
+        <!-- ✅ FIX #3: Sick-leave unique persons -->
+        <div class="section-label">🏥 รายละเอียดการลาป่วย · Sick Leave Detail</div>
+        <div class="sick-detail-card">
+            <div class="sick-detail-item">
+                <div class="sick-detail-value" id="sickHrsTotal">0</div>
+                <div class="sick-detail-label">ชั่วโมงลาป่วยรวม</div>
+                <div class="sick-detail-sub">Total Sick Hours</div>
+            </div>
+            <div class="sick-divider"></div>
+            <div class="sick-detail-item">
+                <div class="sick-detail-value" id="sickPersons">0</div>
+                <div class="sick-detail-label">จำนวนพนักงานที่ลาป่วย</div>
+                <div class="sick-detail-sub">Unique Employees</div>
+            </div>
+            <div class="sick-divider"></div>
+            <div class="sick-detail-item">
+                <div class="sick-detail-value" id="sickAvgHrs">0</div>
+                <div class="sick-detail-label">เฉลี่ยต่อคน (ชม.)</div>
+                <div class="sick-detail-sub">Avg Hrs / Person</div>
+            </div>
+            <div class="sick-divider"></div>
+            <div class="sick-detail-item">
+                <div class="sick-detail-value" id="sickTopDept">—</div>
+                <div class="sick-detail-label">แผนกลาป่วยมากสุด</div>
+                <div class="sick-detail-sub">Top Dept (hrs)</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
         <div class="charts-grid grid-2">
             <div class="chart-card">
-                <div class="chart-title">สถิติการลาตามประเภท</div>
-                <div class="chart-subtitle">Leave by Type</div>
+                <div class="chart-title">สถิติการลาตามประเภท (ชม.)</div>
+                <div class="chart-subtitle">Leave by Type (Hours)</div>
                 <div class="chart-container-md"><canvas id="attTypeChart"></canvas></div>
             </div>
             <div class="chart-card">
-                <div class="chart-title">การลาแยกตามแผนก</div>
-                <div class="chart-subtitle">Leave by Department</div>
+                <div class="chart-title">การลาแยกตามแผนก (ชม.)</div>
+                <div class="chart-subtitle">Leave by Department (Hours)</div>
                 <div class="chart-container-md"><canvas id="attDeptChart"></canvas></div>
             </div>
         </div>
+
+        <!-- ✅ FIX #4: Toggle รวม / แยกรายเดือน -->
         <div class="charts-grid" style="margin-top: clamp(16px,2.5vw,24px);">
             <div class="chart-card">
-                <div class="chart-title">แนวโน้มการขาด/ลา/มาสายรายเดือน</div>
-                <div class="chart-subtitle">Monthly Attendance Trend</div>
-                <div class="chart-container-md"><canvas id="attTrendChart"></canvas></div>
+                <div class="chart-title">แนวโน้มการขาด/ลา/มาสายรายเดือน (ชม.)</div>
+                <div class="chart-subtitle" id="attTrendSubtitle">Monthly Attendance Trend (Hours)</div>
+                <div class="chart-view-toggle">
+                    <button class="view-btn active" id="btnViewAll"        onclick="setAttView('all')">📊 รวมทุกประเภท</button>
+                    <button class="view-btn"         id="btnViewStacked"   onclick="setAttView('stacked')">📈 แยกชั้นรายเดือน</button>
+                    <button class="view-btn"         id="btnViewLine"      onclick="setAttView('line')">📉 Line แยกประเภท</button>
+                </div>
+                <div class="chart-container-lg"><canvas id="attTrendChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Work-hours trend -->
+        <div class="charts-grid" style="margin-top: clamp(16px,2.5vw,24px);">
+            <div class="chart-card">
+                <div class="chart-title">ชั่วโมงทำงาน vs โอที รายเดือน</div>
+                <div class="chart-subtitle">Work Hours vs OT Hours by Month</div>
+                <div class="chart-container-md"><canvas id="attWorkOtChart"></canvas></div>
             </div>
         </div>
     </div>
 
-    <!-- TAB 3: RESIGN -->
+    <!-- ════════════════════════════════════════════════
+         TAB 3: RESIGN
+    ════════════════════════════════════════════════ -->
     <div id="tab3" class="tab-content">
         <div class="to-kpi-grid">
             <div class="to-kpi-card">
@@ -526,7 +646,7 @@
 <div class="toast-wrap" id="toastContainer"></div>
 
 <script>
-// ─── CONSTANTS ───────────────────────────────────────────────────────
+// ─── CONSTANTS ────────────────────────────────────────────────────────
 const COLORS = {
     blue:'#2563EB', blue2:'#3B82F6', cyan:'#0EA5E9', red:'#DC2626',
     yellow:'#EAB308', orange:'#F97316', green:'#10B981', purple:'#8B5CF6',
@@ -534,25 +654,56 @@ const COLORS = {
     get palette() { return [this.blue,this.green,this.orange,this.purple,this.pink,this.cyan,this.yellow,this.teal]; }
 };
 
+const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+// ✅ FIX #4: Attendance trend view state
+let attViewMode = 'all'; // 'all' | 'stacked' | 'line'
+
 let allData = { employees:[], leaves:[], resigns:[] };
 let charts  = {};
+let _lastLeavesForAttend = [];   // cache for re-drawing trend
+let _lastMFilter = 'all';
+let _lastYFilter = 'all';
 
 // ─── HELPERS ─────────────────────────────────────────────────────────
-
-// ✅ แก้: รองรับ นาง/นางสาว = หญิง, อื่นๆ = หญิง (ค่า default ปลอดภัยกว่า)
 function getGender(emp) {
     const prefix = String(emp['คำนำหน้า'] || '').trim();
     return prefix === 'นาย' ? 'ชาย' : 'หญิง';
 }
-
-// ✅ แก้: field วันเกิดใน Excel คือ 'วันเกิด/DOB' ไม่ใช่ 'วันเกิด'
 function getDOB(emp) {
     return emp['วันเกิด/DOB'] || emp['วันเกิด'] || '';
 }
-
-// ✅ แก้: รองรับทั้งชื่อ field เดิมและใหม่สำหรับ leave
 function getLeaveMonth(lv) { return String(lv['เดือน (Month)'] || lv['เดือน'] || ''); }
 function getLeaveYear(lv)  { return String(lv['ปี (Year)']     || lv['ปี']    || ''); }
+
+// ✅ FIX #2: ดึงชั่วโมงจาก record — รองรับ field หลายชื่อ
+function getHours(lv, field) {
+    // รองรับ 'จำนวนการลา', 'จำนวน (ชม.)', 'ชม.', 'ชั่วโมง' ฯลฯ
+    const keys = {
+        leave:  ['จำนวนการลา','จำนวน (ชม.)','ชม.ลา','ชั่วโมงลา'],
+        work:   ['ชม.ทำงาน','ชั่วโมงทำงาน','Work Hours','work_hours'],
+        ot:     ['ชม.โอที','ชั่วโมงโอที','OT Hours','ot_hours','โอที'],
+        absent: ['ชม.ขาด','ชั่วโมงขาด','Absent Hours','absent_hours'],
+        lost:   ['ชม.ศูนย์หาย','ชั่วโมงศูนย์หาย','Lost Hours','lost_hours','ศูนย์หาย'],
+    };
+    const candidates = keys[field] || [field];
+    for (const k of candidates) {
+        const v = lv[k];
+        if (v !== undefined && v !== null && v !== '') {
+            const n = parseFloat(v);
+            if (!isNaN(n)) return n;
+        }
+    }
+    // Fallback: ถ้าไม่มี field ชั่วโมงโดยตรง ใช้ 'จำนวนการลา' × 8 สำหรับวันลา
+    if (field === 'leave') {
+        const v = lv['จำนวนการลา'];
+        if (v !== undefined && v !== null && v !== '') {
+            const n = parseFloat(v);
+            if (!isNaN(n)) return n * 8;
+        }
+    }
+    return 0;
+}
 
 // ─── TOAST ───────────────────────────────────────────────────────────
 function showToast(message, type = 'success') {
@@ -607,7 +758,6 @@ function showLoading(show) {
     } else if (!show && el) el.remove();
 }
 
-// ✅ แก้: filter แผนก (แทน plant ที่เป็นชื่อบริษัทเดียวกันทั้งหมด)
 function populateDeptFilter() {
     const depts = new Set();
     (allData.employees || []).forEach(e => { if (e['แผนก']) depts.add(String(e['แผนก']).trim()); });
@@ -633,6 +783,9 @@ function updateDashboard() {
         resigns = resigns.filter(r => (r['แผนก']    || '').trim() === df);
     }
 
+    _lastMFilter = mf;
+    _lastYFilter = yf;
+
     try {
         renderManpower(emps);
         renderAttendance(leaves, mf, yf);
@@ -649,7 +802,7 @@ function renderManpower(emps) {
     let males=0, females=0, thais=0, myanmars=0;
 
     emps.forEach(e => {
-        getGender(e) === 'ชาย' ? males++ : females++;           // ✅ แก้
+        getGender(e) === 'ชาย' ? males++ : females++;
         const nat = String(e['สัญชาติ'] || 'อื่นๆ').trim();
         if (nat === 'ไทย') thais++;
         else if (nat === 'พม่า') myanmars++;
@@ -658,24 +811,32 @@ function renderManpower(emps) {
     const deptCount = {};
     emps.forEach(e => { const d = e['แผนก']||'ไม่ระบุ'; deptCount[d]=(deptCount[d]||0)+1; });
 
-    document.getElementById('valEmp').textContent       = total;
-    document.getElementById('valDeptCount').textContent = Object.keys(deptCount).length;
-    document.getElementById('valMale').textContent      = males;
-    document.getElementById('valFemale').textContent    = females;
-    document.getElementById('valThai').textContent      = thais;
-    document.getElementById('valMyanmar').textContent   = myanmars;
-    document.getElementById('valMalePct').textContent   = total>0 ? ((males/total)*100).toFixed(1)+'%' : '—';
-    document.getElementById('valFemalePct').textContent = total>0 ? ((females/total)*100).toFixed(1)+'%' : '—';
-    document.getElementById('valThaiPct').textContent   = total>0 ? ((thais/total)*100).toFixed(1)+'%' : '—';
-    document.getElementById('valMyanmarPct').textContent= total>0 ? ((myanmars/total)*100).toFixed(1)+'%' : '—';
+    document.getElementById('valEmp').textContent        = total;
+    document.getElementById('valMale').textContent       = males;
+    document.getElementById('valFemale').textContent     = females;
+    document.getElementById('valThai').textContent       = thais;
+    document.getElementById('valMyanmar').textContent    = myanmars;
+    document.getElementById('valMalePct').textContent    = total>0 ? ((males/total)*100).toFixed(1)+'%' : '—';
+    document.getElementById('valFemalePct').textContent  = total>0 ? ((females/total)*100).toFixed(1)+'%' : '—';
+    document.getElementById('valThaiPct').textContent    = total>0 ? ((thais/total)*100).toFixed(1)+'%' : '—';
+    document.getElementById('valMyanmarPct').textContent = total>0 ? ((myanmars/total)*100).toFixed(1)+'%' : '—';
 
-    // Manpower Target cards
+    // ✅ FIX #1: คำนวณ Manpower Fill Rate รวมจากทุกเป้าหมาย
+    const targets = window._mpTargets || [];
+    if (targets.length > 0) {
+        const totalTarget = targets.reduce((s, t) => s + (parseInt(t['อัตรากำลังพลเป้าหมาย']) || 0), 0);
+        const rate = totalTarget > 0 ? ((total / totalTarget) * 100).toFixed(1) : '—';
+        document.getElementById('valMpRate').textContent    = totalTarget > 0 ? rate + '%' : '—';
+        document.getElementById('valMpRateSub').textContent = totalTarget > 0 ? `${total} / ${totalTarget} คน` : 'Manpower Fill Rate';
+    } else {
+        document.getElementById('valMpRate').textContent    = '—';
+        document.getElementById('valMpRateSub').textContent = 'ยังไม่มีเป้าหมาย';
+    }
+
     renderTargetCards(emps, deptCount);
 
-    // Gender Donut
     drawDonut('wfGender',['ชาย 👱','หญิง 👩'],[males,females],[COLORS.blue,COLORS.pink]);
 
-    // Nationality Donut
     const natCount = {};
     emps.forEach(e => { const n=String(e['สัญชาติ']||'อื่นๆ').trim(); natCount[n]=(natCount[n]||0)+1; });
     const flags = {'ไทย':'🇹🇭','พม่า':'🇲🇲'};
@@ -685,10 +846,9 @@ function renderManpower(emps) {
         [COLORS.orange,COLORS.purple,COLORS.teal,COLORS.cyan]
     );
 
-    // Age Groups — ✅ แก้: ใช้ field 'วันเกิด/DOB'
     const ageGroups={'<20 ปี':0,'20-29 ปี':0,'30-39 ปี':0,'40-49 ปี':0,'50+ ปี':0};
     emps.forEach(e => {
-        const dob = getDOB(e);                                  // ✅ แก้
+        const dob = getDOB(e);
         if (!dob) return;
         try {
             const age = Math.floor((Date.now()-new Date(dob))/(1000*60*60*24*365.25));
@@ -701,7 +861,6 @@ function renderManpower(emps) {
     });
     drawBarH('wfAge', Object.keys(ageGroups), Object.values(ageGroups), COLORS.cyan);
 
-    // Tenure Groups
     const tenureGroups={'<1 ปี':0,'1-2 ปี':0,'3-5 ปี':0,'6-10 ปี':0,'10+ ปี':0};
     emps.forEach(e => {
         const sd = e['วันที่เริ่มงาน']||'';
@@ -717,18 +876,16 @@ function renderManpower(emps) {
     });
     drawBarH('wfTenure', Object.keys(tenureGroups), Object.values(tenureGroups), COLORS.teal);
 
-    // Dept Bar
     const sortedDept = Object.entries(deptCount).sort((a,b)=>b[1]-a[1]);
     drawBarH('wfDept', sortedDept.map(i=>i[0]), sortedDept.map(i=>i[1]), COLORS.blue);
 
-    // Dept × Gender Stacked
     const allDepts = sortedDept.map(i=>i[0]);
     const deptMale=[], deptFemale=[];
     allDepts.forEach(dept => {
         let m=0, f=0;
         emps.forEach(e => {
             if ((e['แผนก']||'ไม่ระบุ').trim()===dept) {
-                getGender(e)==='ชาย' ? m++ : f++;               // ✅ แก้
+                getGender(e)==='ชาย' ? m++ : f++;
             }
         });
         deptMale.push(m); deptFemale.push(f);
@@ -736,14 +893,10 @@ function renderManpower(emps) {
     drawStackedBar('wfDeptGender', allDepts, deptMale, deptFemale);
 }
 
-// Manpower Target Cards
 function renderTargetCards(emps, deptCount) {
     const container = document.getElementById('targetCards');
     if (!container) return;
-
-    // ลองดึง targets จาก cache (โหลดไว้แล้ว)
     const targets = window._mpTargets || [];
-
     if (!targets.length) {
         container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:.85rem;">
             🚧 ยังไม่มีข้อมูลเป้าหมายกำลังพล — กรุณากรอกข้อมูลใน Sheet <strong>ManpowerTarget</strong>
@@ -751,7 +904,6 @@ function renderTargetCards(emps, deptCount) {
         </div>`;
         return;
     }
-
     container.innerHTML = targets.map(t => {
         const dept    = t['แผนก'] || '—';
         const target  = parseInt(t['อัตรากำลังพลเป้าหมาย']) || 0;
@@ -773,63 +925,190 @@ function renderTargetCards(emps, deptCount) {
 }
 
 // ─── TAB 2: ATTENDANCE ───────────────────────────────────────────────
+// ✅ FIX #2 + #3 + #4
 function renderAttendance(leaves, mFilter, yFilter) {
+    // cache for re-render on view toggle
+    _lastLeavesForAttend = leaves;
+
     const filLeaves = leaves.filter(lv => {
-        const matchM = mFilter==='all' || getLeaveMonth(lv)===mFilter;  // ✅ แก้
-        const matchY = yFilter==='all' || getLeaveYear(lv) ===yFilter;  // ✅ แก้
+        const matchM = mFilter==='all' || getLeaveMonth(lv)===mFilter;
+        const matchY = yFilter==='all' || getLeaveYear(lv) ===yFilter;
         return matchM && matchY;
     });
 
-    let absent=0,late=0,sick=0,personal=0,annual=0;
+    // ── ชม. ลาแต่ละประเภท ──
+    let absentHrs=0, lateHrs=0, sickHrs=0, personalHrs=0, annualHrs=0;
+    const sickPersonSet = new Set();
+    const sickDeptHrs = {};
+
     filLeaves.forEach(lv => {
-        const t = String(lv['ประเภทรายการ']||'').trim();
-        if (t==='ขาดงาน')   absent++;
-        else if (t==='มาสาย')  late++;
-        else if (t==='ลาป่วย') sick++;
-        else if (t==='ลากิจ')  personal++;
-        else if (t==='พักร้อน') annual++;
+        const t   = String(lv['ประเภทรายการ']||'').trim();
+        const hrs = getHours(lv, 'leave');
+        if (t==='ขาดงาน')   absentHrs   += hrs;
+        else if (t==='มาสาย')  lateHrs     += hrs;
+        else if (t==='ลาป่วย') {
+            sickHrs += hrs;
+            // ✅ FIX #3: เก็บพนักงาน unique ที่ลาป่วย
+            const empId = lv['รหัสพนักงาน'] || lv['ชื่อ-นามสกุล'] || '';
+            if (empId) sickPersonSet.add(String(empId).trim());
+            const dept = (lv['แผนก']||'ไม่ระบุ').trim();
+            sickDeptHrs[dept] = (sickDeptHrs[dept]||0) + hrs;
+        }
+        else if (t==='ลากิจ')  personalHrs += hrs;
+        else if (t==='พักร้อน') annualHrs   += hrs;
     });
 
-    document.getElementById('attAbsent').textContent   = absent;
-    document.getElementById('attLate').textContent     = late;
-    document.getElementById('attSick').textContent     = sick;
-    document.getElementById('attPersonal').textContent = personal;
-    document.getElementById('attAnnual').textContent   = annual;
-    document.getElementById('attTotal').textContent    = absent+late+sick+personal+annual;
+    // ── ชม. ทำงาน / โอที / ศูนย์หาย / ขาด (จาก field แยก) ──
+    let workHrs=0, otHrs=0, lostHrs=0, absentHrsWork=0;
+    filLeaves.forEach(lv => {
+        workHrs      += getHours(lv, 'work');
+        otHrs        += getHours(lv, 'ot');
+        lostHrs      += getHours(lv, 'lost');
+        absentHrsWork+= getHours(lv, 'absent');
+    });
+
+    const fmt = v => Number.isFinite(v) ? v.toFixed(1).replace(/\.0$/,'') : '0';
+
+    // KPI Row 1: Hours
+    document.getElementById('attWorkHrs').textContent    = fmt(workHrs);
+    document.getElementById('attOtHrs').textContent      = fmt(otHrs);
+    document.getElementById('attAbsentHrs').textContent  = fmt(absentHrsWork || absentHrs);
+    document.getElementById('attLostHrs').textContent    = fmt(lostHrs);
+
+    // KPI Row 2: Leave hrs by type
+    document.getElementById('attAbsent').textContent     = fmt(absentHrs);
+    document.getElementById('attLate').textContent       = fmt(lateHrs);
+    document.getElementById('attSick').textContent       = fmt(sickHrs);
+    document.getElementById('attPersonal').textContent   = fmt(personalHrs);
+    document.getElementById('attAnnual').textContent     = fmt(annualHrs);
+    document.getElementById('attTotal').textContent      = fmt(absentHrs+lateHrs+sickHrs+personalHrs+annualHrs);
+
+    // ✅ FIX #3: Sick detail card
+    const sickPersons = sickPersonSet.size;
+    const sickAvg     = sickPersons > 0 ? (sickHrs / sickPersons) : 0;
+    const topDeptEntry= Object.entries(sickDeptHrs).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('sickHrsTotal').textContent = fmt(sickHrs);
+    document.getElementById('sickPersons').textContent  = sickPersons;
+    document.getElementById('sickAvgHrs').textContent   = fmt(sickAvg);
+    document.getElementById('sickTopDept').textContent  = topDeptEntry ? topDeptEntry[0] : '—';
 
     drawDonut('attTypeChart',
         ['ขาดงาน','มาสาย','ลาป่วย','ลากิจ','พักร้อน'],
-        [absent,late,sick,personal,annual],
+        [absentHrs,lateHrs,sickHrs,personalHrs,annualHrs],
         [COLORS.red,COLORS.yellow,COLORS.blue,COLORS.orange,COLORS.green]
     );
 
     const deptLeave={};
-    filLeaves.forEach(lv => { const d=lv['แผนก']||'ไม่ระบุ'; deptLeave[d]=(deptLeave[d]||0)+1; });
+    filLeaves.forEach(lv => {
+        const d=lv['แผนก']||'ไม่ระบุ';
+        deptLeave[d]=(deptLeave[d]||0)+getHours(lv,'leave');
+    });
     const ds=Object.entries(deptLeave).sort((a,b)=>b[1]-a[1]);
-    drawBarH('attDeptChart',ds.map(i=>i[0]),ds.map(i=>i[1]),COLORS.orange);
+    drawBarH('attDeptChart',ds.map(i=>i[0]),ds.map(i=>i[1].toFixed(1)),COLORS.orange);
 
-    // Monthly trend
-    const thMonths=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    const tA=new Array(12).fill(0),tL=new Array(12).fill(0),
-          tS=new Array(12).fill(0),tP=new Array(12).fill(0),tAn=new Array(12).fill(0);
+    // Work vs OT trend
+    const tWork=new Array(12).fill(0), tOT=new Array(12).fill(0);
     leaves.forEach(lv => {
         if (yFilter!=='all' && getLeaveYear(lv)!==yFilter) return;
-        const m = parseInt(getLeaveMonth(lv))-1;                // ✅ แก้
+        const m=parseInt(getLeaveMonth(lv))-1;
+        if (m<0||m>11) return;
+        tWork[m]+=getHours(lv,'work');
+        tOT[m]  +=getHours(lv,'ot');
+    });
+    drawMultiLine('attWorkOtChart',TH_MONTHS,[
+        {label:'ชม. ทำงาน',data:tWork,color:COLORS.blue},
+        {label:'ชม. โอที', data:tOT,  color:COLORS.orange},
+    ]);
+
+    // ✅ FIX #4: วาด trend chart ตาม view mode
+    drawAttTrend(leaves, mFilter, yFilter);
+}
+
+// ✅ FIX #4: วาด Attendance Trend ตาม attViewMode
+function drawAttTrend(leaves, mFilter, yFilter) {
+    // สร้าง monthly data ทั้งหมด (ไม่ filter เดือนสำหรับ trend)
+    const typeKeys = ['ขาดงาน','มาสาย','ลาป่วย','ลากิจ','พักร้อน'];
+    const typeColors = [COLORS.red, COLORS.yellow, COLORS.blue, COLORS.orange, COLORS.green];
+    const byMonth = Array.from({length:12}, ()=>({ขาดงาน:0,มาสาย:0,ลาป่วย:0,ลากิจ:0,พักร้อน:0}));
+
+    leaves.forEach(lv => {
+        if (yFilter!=='all' && getLeaveYear(lv)!==yFilter) return;
+        const m=parseInt(getLeaveMonth(lv))-1;
         if (m<0||m>11) return;
         const t=String(lv['ประเภทรายการ']||'').trim();
-        if (t==='ขาดงาน') tA[m]++;
-        else if (t==='มาสาย')  tL[m]++;
-        else if (t==='ลาป่วย') tS[m]++;
-        else if (t==='ลากิจ')  tP[m]++;
-        else if (t==='พักร้อน') tAn[m]++;
+        const hrs=getHours(lv,'leave');
+        if (typeKeys.includes(t)) byMonth[m][t]+=hrs;
     });
-    drawMultiLine('attTrendChart',thMonths,[
-        {label:'ขาดงาน',data:tA,color:COLORS.red},
-        {label:'มาสาย',data:tL,color:COLORS.yellow},
-        {label:'ลาป่วย',data:tS,color:COLORS.blue},
-        {label:'ลากิจ',data:tP,color:COLORS.orange},
-        {label:'พักร้อน',data:tAn,color:COLORS.green},
-    ]);
+
+    // กรองเฉพาะเดือนที่เลือก (ถ้าเลือก)
+    let labels = TH_MONTHS;
+    let months = byMonth;
+    if (mFilter !== 'all') {
+        const idx = parseInt(mFilter)-1;
+        labels = [TH_MONTHS[idx]];
+        months = [byMonth[idx]];
+    }
+
+    const subtitle = document.getElementById('attTrendSubtitle');
+
+    if (attViewMode === 'all') {
+        // รวมทุกประเภท → bar เดียว
+        const totals = months.map(m => typeKeys.reduce((s,k)=>s+m[k],0));
+        subtitle && (subtitle.textContent = 'Monthly Total Leave Hours');
+        destroyChart('attTrendChart');
+        const ctx = getCtx('attTrendChart'); if(!ctx) return;
+        charts['attTrendChart'] = new Chart(ctx, {
+            type:'bar',
+            data:{ labels, datasets:[{
+                label:'รวมการลา (ชม.)',
+                data: totals.map(v=>+v.toFixed(1)),
+                backgroundColor: COLORS.blue+'CC', borderRadius:8, borderWidth:0
+            }]},
+            options:{responsive:true,maintainAspectRatio:false,
+                plugins:{legend:{display:false}},
+                scales:{y:{beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},
+                    title:{display:true,text:'ชั่วโมง (hrs)',font:{family:'Noto Sans Thai',size:11}}},
+                    x:{grid:{display:false}}}}
+        });
+
+    } else if (attViewMode === 'stacked') {
+        // ✅ แยกชั้น stacked bar รายเดือน
+        subtitle && (subtitle.textContent = 'Monthly Leave Hours — Stacked by Type');
+        destroyChart('attTrendChart');
+        const ctx = getCtx('attTrendChart'); if(!ctx) return;
+        charts['attTrendChart'] = new Chart(ctx, {
+            type:'bar',
+            data:{ labels, datasets: typeKeys.map((k,i)=>({
+                label: k,
+                data: months.map(m=>+m[k].toFixed(1)),
+                backgroundColor: typeColors[i]+'CC',
+                borderRadius: 4, borderWidth: 0,
+            }))},
+            options:{responsive:true,maintainAspectRatio:false,
+                plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans Thai',size:12},padding:12,usePointStyle:true}}},
+                scales:{
+                    x:{stacked:true,grid:{display:false}},
+                    y:{stacked:true,beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},
+                        title:{display:true,text:'ชั่วโมง (hrs)',font:{family:'Noto Sans Thai',size:11}}}}}
+        });
+
+    } else {
+        // line chart แยกประเภท
+        subtitle && (subtitle.textContent = 'Monthly Leave Hours by Type — Line');
+        drawMultiLine('attTrendChart', labels,
+            typeKeys.map((k,i)=>({label:k, data:months.map(m=>+m[k].toFixed(1)), color:typeColors[i]}))
+        );
+    }
+}
+
+// ✅ FIX #4: toggle handler
+function setAttView(mode) {
+    attViewMode = mode;
+    ['all','stacked','line'].forEach(m => {
+        const btn = document.getElementById('btnView' + m.charAt(0).toUpperCase() + m.slice(1));
+        btn && btn.classList.toggle('active', m === mode);
+    });
+    drawAttTrend(_lastLeavesForAttend, _lastMFilter, _lastYFilter);
 }
 
 // ─── TAB 3: RESIGN ───────────────────────────────────────────────────
@@ -864,7 +1143,6 @@ function renderResign(resigns, emps, mFilter, yFilter) {
     });
     drawDonut('toReasonChart',Object.keys(toReason),Object.values(toReason),COLORS.palette);
 
-    const thMonths=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
     const trendData=new Array(12).fill(0);
     resigns.forEach(r => {
         if (!r['วันที่ลาออก']) return;
@@ -874,9 +1152,8 @@ function renderResign(resigns, emps, mFilter, yFilter) {
             if (yFilter==='all'||String(d.getFullYear())===yFilter) trendData[d.getMonth()]++;
         } catch(_) {}
     });
-    drawLine('toTrendChart',thMonths,trendData,COLORS.red,'จำนวนลาออก');
+    drawLine('toTrendChart',TH_MONTHS,trendData,COLORS.red,'จำนวนลาออก');
 
-    // Yearly comparison
     const yearMap={};
     resigns.forEach(r => {
         if (!r['วันที่ลาออก']) return;
@@ -924,7 +1201,7 @@ function drawDonut(id,labels,data,colors){
         data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:3,borderColor:'#fff'}]},
         options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
             plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans Thai',size:12},padding:14,boxWidth:12,usePointStyle:true}},
-                tooltip:{callbacks:{label(ctx){const total=ctx.dataset.data.reduce((a,b)=>a+b,0);return ` ${ctx.label}: ${ctx.parsed} คน (${total>0?((ctx.parsed/total)*100).toFixed(1):0}%)`;}}}}}});
+                tooltip:{callbacks:{label(ctx){const total=ctx.dataset.data.reduce((a,b)=>a+b,0);return ` ${ctx.label}: ${ctx.parsed} (${total>0?((ctx.parsed/total)*100).toFixed(1):0}%)`;}}}}}});
 }
 
 function drawBarH(id,labels,data,color){
@@ -933,7 +1210,7 @@ function drawBarH(id,labels,data,color){
         data:{labels,datasets:[{data,backgroundColor:color+'CC',borderRadius:6,borderWidth:0}]},
         options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
             plugins:{legend:{display:false}},
-            scales:{x:{beginAtZero:true,grid:{display:false},ticks:{stepSize:1,callback:v=>Number.isInteger(v)?v:''}},
+            scales:{x:{beginAtZero:true,grid:{display:false}},
                 y:{grid:{display:false},ticks:{font:{family:'Noto Sans Thai',size:12}}}}}});
 }
 
@@ -942,8 +1219,7 @@ function drawBar(id,labels,data,color,label){
     charts[id]=new Chart(ctx,{type:'bar',
         data:{labels,datasets:[{label,data,backgroundColor:color+'CC',borderRadius:8,borderWidth:0}]},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-            scales:{y:{beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},ticks:{stepSize:1,callback:v=>Number.isInteger(v)?v:''}},
-                x:{grid:{display:false}}}}});
+            scales:{y:{beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'}},x:{grid:{display:false}}}}});
 }
 
 function drawLine(id,labels,data,color,label){
@@ -951,8 +1227,7 @@ function drawLine(id,labels,data,color,label){
     charts[id]=new Chart(ctx,{type:'line',
         data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'22',borderWidth:3,fill:true,tension:0.4,pointBackgroundColor:'#fff',pointBorderColor:color,pointRadius:5,pointBorderWidth:2,pointHoverRadius:7}]},
         options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-            scales:{y:{beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},ticks:{stepSize:1,callback:v=>Number.isInteger(v)?v:''}},
-                x:{grid:{display:false}}}}});
+            scales:{y:{beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'}},x:{grid:{display:false}}}}});
 }
 
 function drawMultiLine(id,labels,datasets){
@@ -961,7 +1236,8 @@ function drawMultiLine(id,labels,datasets){
         data:{labels,datasets:datasets.map(ds=>({label:ds.label,data:ds.data,borderColor:ds.color,backgroundColor:ds.color+'22',borderWidth:2.5,fill:false,tension:0.4,pointBackgroundColor:'#fff',pointBorderColor:ds.color,pointRadius:4,pointHoverRadius:6}))},
         options:{responsive:true,maintainAspectRatio:false,
             plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans Thai',size:12},padding:12,usePointStyle:true}}},
-            scales:{y:{beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},ticks:{stepSize:1,callback:v=>Number.isInteger(v)?v:''}},
+            scales:{y:{beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},
+                title:{display:true,text:'ชั่วโมง (hrs)',font:{family:'Noto Sans Thai',size:11}}},
                 x:{grid:{display:false}}}}});
 }
 
@@ -973,10 +1249,9 @@ function drawStackedBar(id,labels,maleData,femaleData){
             {label:'หญิง 👩',data:femaleData,backgroundColor:COLORS.pink+'CC',borderRadius:6,borderWidth:0},
         ]},
         options:{responsive:true,maintainAspectRatio:false,
-            plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans Thai',size:12},padding:12,usePointStyle:true}},
-                tooltip:{callbacks:{label(ctx){const total=ctx.chart.data.datasets.reduce((s,ds)=>s+(ds.data[ctx.dataIndex]||0),0);const pct=total>0?((ctx.parsed.y/total)*100).toFixed(1):0;return ` ${ctx.dataset.label}: ${ctx.parsed.y} คน (${pct}%)`;} }}},
+            plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans Thai',size:12},padding:12,usePointStyle:true}}},
             scales:{x:{stacked:true,grid:{display:false},ticks:{font:{family:'Noto Sans Thai',size:11},maxRotation:45}},
-                y:{stacked:true,beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},ticks:{stepSize:1,callback:v=>Number.isInteger(v)?v:''},
+                y:{stacked:true,beginAtZero:true,grid:{color:'rgba(29,111,204,0.07)'},
                     title:{display:true,text:'จำนวนพนักงาน (คน)',font:{family:'Noto Sans Thai',size:11}}}}}});
 }
 
@@ -986,7 +1261,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById(id)?.addEventListener('change', updateDashboard);
     });
 
-    // โหลด ManpowerTarget ก่อน แล้วค่อยโหลด dashboard data
     try {
         const res  = await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=getTargets`);
         const json = await res.json();
