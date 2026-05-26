@@ -368,11 +368,6 @@ async function submitLeave() {
   const year      = String(d.getFullYear());
 
   setBtnLoading(true);
-
-  // ✅ แก้: ส่ง fields ที่ตรงกับ header ของ Leave_Records sheet จริง
-  // Headers: รหัสพนักงาน | ชื่อ-นามสกุล | แผนก | Plant |
-  //          วันที่ลาหยุด | ประเภทรายการ | จำนวนการลา |
-  //          เดือน (Month) | ปี (Year) | หมายเหตุ (Remark)
   const payload = {
     action: 'addLeave',
     data: {
@@ -382,10 +377,10 @@ async function submitLeave() {
       'Plant'             : document.getElementById('hidPlant').value,
       'วันที่ลาหยุด'     : leaveDate,
       'ประเภทรายการ'     : leaveType,
-      'จำนวนการลา'       : hours + ' ชม.',   // ✅ column นี้มีใน sheet
-      'เดือน (Month)'    : month,             // ✅ ตรงกับ header
-      'ปี (Year)'        : year,              // ✅ ตรงกับ header
-      'หมายเหตุ (Remark)': remark,            // ✅ ตรงกับ header
+      'จำนวนการลา'       : hours + ' ชม.',
+      'เดือน (Month)'    : month,
+      'ปี (Year)'        : year,
+      'หมายเหตุ (Remark)': remark,
     }
   };
 
@@ -435,7 +430,7 @@ async function loadRecent() {
         : '—';
       const type = r['ประเภทรายการ']||'—';
       const cls  = typeBadge[type]||'badge-blue';
-      const hrs  = r['จำนวนการลา']||'—';                      // ✅ แก้: ใช้ชื่อ field ที่ถูก
+      const hrs  = r['จำนวนการลา']||'—';
       return `<tr>
         <td><strong>${r['ชื่อ-นามสกุล']||'—'}</strong></td>
         <td><span class="badge badge-blue">${r['แผนก']||'—'}</span></td>

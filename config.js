@@ -4,7 +4,7 @@
 
 const CONFIG = {
   // ⚠️ นำ URL ของ Web App ที่คุณ Deploy แล้วมาใส่ตรงนี้
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyNo2FabqS92X10TKAUjU8r1hvaN0dx83HSoaDbazyjZvUpGfTacXtMEbYK-iEKDnNm/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxQi_fithhND3wT5w1L-uXUOyj6k6ZwieS_M4EVQscqumQM_tf4K2MPlLxXZQ0Dp6Bf/exec",
 
   // ── Employees Sheet columns ──────────────────────────────────────
   // รหัสพนักงาน | ชื่อ-นามสกุล | แผนก | ตำแหน่ง | Plant
