@@ -37,11 +37,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .btn-success{background:var(--green);color:#fff;box-shadow:0 4px 12px rgba(5,150,105,.28)}
 .btn-success:hover:not(:disabled){background:#047857;transform:translateY(-2px)}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+
+/* FIX BUG #2: เพิ่ม CSS สำหรับ stats bar (มีอยู่แล้ว แต่ขาด HTML elements) */
 .stats{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
 .stat{background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:12px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;flex:1;min-width:140px}
 .stat-icon{font-size:1.5rem;opacity:.7}
 .stat-num{font-family:'DM Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--navy);line-height:1}
 .stat-lbl{font-size:.72rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
 .table-card{background:var(--bg2);border:1px solid var(--line2);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;font-size:.855rem;min-width:900px}
@@ -144,6 +147,43 @@ tr:hover td{background:var(--bg3)}
       </div>
       <button class="btn btn-success" onclick="exportToCSV()">📥 Export</button>
       <button class="btn btn-primary" onclick="openAdd()">➕ เพิ่มพนักงานใหม่</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-icon">👥</span>
+      <div>
+        <div class="stat-num" id="sTot">—</div>
+        <div class="stat-lbl">พนักงานทั้งหมด</div>
+      </div>
+    </div>
+    <div class="stat">
+      <span class="stat-icon">🇹🇭</span>
+      <div>
+        <div class="stat-num" id="sTH">—</div>
+        <div class="stat-lbl">ชาวไทย</div>
+      </div>
+    </div>
+    <div class="stat">
+      <span class="stat-icon">🇲🇲</span>
+      <div>
+        <div class="stat-num" id="sMM">—</div>
+        <div class="stat-lbl">ชาวพม่า</div>
+      </div>
+    </div>
+    <div class="stat">
+      <span class="stat-icon">🏭</span>
+      <div>
+        <div class="stat-num" id="sDept">—</div>
+        <div class="stat-lbl">แผนก</div>
+      </div>
+    </div>
+    <div class="stat">
+      <span class="stat-icon">🏢</span>
+      <div>
+        <div class="stat-num" id="sPlant">—</div>
+        <div class="stat-lbl">Plant</div>
+      </div>
     </div>
   </div>
 
@@ -314,6 +354,7 @@ async function load(){
   }catch(e){console.error(e);toast('ไม่สามารถเชื่อมต่อ API: '+e.message,'err');}
 }
 
+// FIX BUG #2: updateStats ทำงานได้แล้วเพราะมี HTML elements ครบ
 function updateStats(){
   document.getElementById('sTot').textContent=allEmps.length;
   document.getElementById('sTH').textContent=allEmps.filter(e=>e['สัญชาติ']==='ไทย').length;
@@ -387,7 +428,6 @@ function render(){
   bar.style.display=total>PER?'flex':'none';
   document.getElementById('pgInfo').innerHTML=`แสดง <strong>${s+1}–${Math.min(s+PER,total)}</strong> จาก <strong>${total}</strong> คน`;
 
-  // Fixed pagination - no duplicate ellipsis
   let html=`<button class="pg-btn" onclick="goPage(${page-1})" ${page===1?'disabled':''}>‹</button>`;
   let last=0;
   for(let i=1;i<=pages;i++){

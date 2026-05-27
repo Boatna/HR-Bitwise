@@ -307,13 +307,7 @@
         </div>
         <div class="filters">
             <span class="filter-label">📅 ปี:</span>
-            <select id="yearFilter">
-                <option value="all">ทุกปี</option>
-                <option value="2026">2026</option>
-                <option value="2025" selected>2025</option>
-                <option value="2024">2024</option>
-                <option value="2023">2023</option>
-            </select>
+            <select id="yearFilter"></select>
             <div class="filter-sep"></div>
             <span class="filter-label">📆 เดือน:</span>
             <select id="monthFilter">
@@ -354,7 +348,6 @@
                 <div class="kpi-icon">👥</div>
                 <div class="kpi-label">กำลังพลปัจจุบัน</div>
                 <div class="kpi-value" id="valEmp">—</div>
-                <!-- ✅ BUG FIX #5: แก้ sub text ให้ตรงกับความจริง — ดึงจาก Employees sheet -->
                 <div class="kpi-sub">Total Headcount (จาก Employees)</div>
             </div>
         </div>
@@ -399,7 +392,7 @@
 
         <div class="section-label">🎯 เปรียบเทียบกำลังพลกับเป้าหมายรายแผนก · Actual vs Target by Department</div>
         <div class="chart-card" id="targetSection">
-            <div class="chart-title">กำลังพลปัจจุบัน vs อัตตรากำลังพล (Stacked)</div>
+            <div class="chart-title">กำลังพลปัจจุบัน vs อัตตรากำลังพล (Stacked Column)</div>
             <div class="chart-subtitle">แท่งแสดงสัดส่วน: 🟦 กำลังพลปัจจุบัน + 🟧 ส่วนที่ยังขาด (Gap to Target)</div>
             <div id="targetChartWrap" style="position:relative; height:420px;">
                 <canvas id="targetBarChart"></canvas>
@@ -563,10 +556,6 @@
                 <div class="to-kpi-body"><span class="to-kpi-icon">📉</span><span class="to-kpi-value red" id="toRate">0.0%</span></div>
             </div>
             <div class="to-kpi-card">
-                <div class="to-kpi-header">กำลังพลปัจจุบัน<small>Current Headcount</small></div>
-                <div class="to-kpi-body"><span class="to-kpi-icon">👥</span><span class="to-kpi-value" id="toHeadcount">0</span></div>
-            </div>
-            <div class="to-kpi-card">
                 <div class="to-kpi-header">จำนวนที่ลาออก (ช่วงที่เลือก)<small>Leavers in Period</small></div>
                 <div class="to-kpi-body"><span class="to-kpi-icon">🚶</span><span class="to-kpi-value" id="toLeavers">0</span></div>
             </div>
@@ -615,7 +604,7 @@
                         <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3);">⏳ กำลังโหลด...</td></tr>
                     </tbody>
                 </table>
-                <p style="font-size:0.7rem;color:var(--text3);padding:8px 14px;">* คำนวณจาก headcount ปัจจุบัน (จำนวนพนักงานจริงใน Employees sheet)</p>
+                <p style="font-size:0.7rem;color:var(--text3);padding:8px 14px;">* คำนวณจาก headcount ของแผนก/Plant ที่เลือก (filtered employees count)</p>
             </div>
         </div>
     </div>
@@ -625,9 +614,7 @@
 <div class="toast-wrap" id="toastContainer"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════
-//  CONSTANTS
-// ═══════════════════════════════════════════════════════════════════
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
 const COLORS = {
     blue:'#2563EB', blue2:'#3B82F6', cyan:'#0EA5E9', red:'#DC2626',
     yellow:'#EAB308', orange:'#F97316', green:'#10B981', purple:'#8B5CF6',
@@ -644,25 +631,29 @@ let _lastLeavesForAttend = [];
 let _lastMFilter = 'all';
 let _lastYFilter = 'all';
 
-// ═══════════════════════════════════════════════════════════════════
-//  HELPERS
-// ═══════════════════════════════════════════════════════════════════
+function buildYearFilter() {
+    const sel = document.getElementById('yearFilter');
+    if (!sel) return;
+    const currentYear = new Date().getFullYear();
+    let html = '<option value="all">ทุกปี</option>';
+    for (let y = currentYear + 1; y >= currentYear - 4; y--) {
+        const selected = y === currentYear ? ' selected' : '';
+        html += `<option value="${y}"${selected}>${y}</option>`;
+    }
+    sel.innerHTML = html;
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
 function getGender(emp) {
     const prefix = String(emp['คำนำหน้า'] || '').trim();
-    // ✅ BUG FIX #6: เพิ่ม 'นาง' เข้าในเงื่อนไขหญิง
-    // เดิม: ตรวจแค่ 'นาย' → male, อื่นๆ → female
-    // ปัญหา: 'นาง' และ 'นางสาว' ถูกจับรวมกันถูก แต่ logic ไม่ชัดเจน ให้ explicit แทน
     if (prefix === 'นาย') return 'ชาย';
-    return 'หญิง'; // นาง, นางสาว, ว่าง → หญิง
+    return 'หญิง';
 }
 
 function getDOB(emp) {
     return emp['วันเกิด/DOB'] || emp['วันเกิด'] || '';
 }
 
-// ✅ BUG FIX #3: getLeaveMonth / getLeaveYear ให้ handle ค่าตัวเลข (number) ด้วย
-// เดิม: String(raw).trim() — ถ้า Apps Script ส่ง Number กลับมา เช่น 5 (ไม่ใช่ "5") จะ compare fail
-// แก้:  แปลงเป็น String เสมอ และ trim
 function getLeaveMonth(lv) {
     const raw = lv['เดือน (Month)'] ?? lv['เดือน'] ?? '';
     return String(raw).trim();
@@ -677,7 +668,7 @@ function getHours(lv, field) {
         const v = lv['จำนวนการลา'];
         if (v !== undefined && v !== null && v !== '') {
             const n = parseFloat(v);
-            if (!isNaN(n)) return n * 8;
+            if (!isNaN(n)) return n;
         }
         return 0;
     }
@@ -697,14 +688,6 @@ function getHours(lv, field) {
     return 0;
 }
 
-// ✅ BUG FIX #7: getActualFromTarget ไม่ได้ถูกใช้งานจริงใน drawTargetStackedBar
-// เดิม: ฟังก์ชัน getActualFromTarget อ่าน 'กำลังพลปัจจุบัน' จาก ManpowerTarget
-//       แต่ใน Sheet จริงคอลัมน์นั้น = null ทุก row (ยังไม่ได้กรอก)
-//       และ drawTargetStackedBar ก็ไม่ได้เรียก getActualFromTarget เลย
-//       แต่นับจาก Employees sheet แทน (ถูกต้อง)
-// แก้:  เอา getActualFromTarget ออก เพื่อไม่สร้างความสับสน
-//       และ document ให้ชัดว่า actual มาจาก Employees sheet เสมอ
-
 function getTargetValue(obj) {
     const keys = ['อัตตรากำลังพล', 'อัตรากำลังพลตามเป้าหมาย', 'อัตรากำลังพลเป้าหมาย', 'เป้าหมาย', 'Target', 'target'];
     for (const k of keys) {
@@ -716,9 +699,7 @@ function getTargetValue(obj) {
     return 0;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  TOAST
-// ═══════════════════════════════════════════════════════════════════
+// ─── TOAST ───────────────────────────────────────────────────────────────────
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -732,9 +713,7 @@ function showToast(message, type = 'success') {
     }, 4000);
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  TAB
-// ═══════════════════════════════════════════════════════════════════
+// ─── TAB ─────────────────────────────────────────────────────────────────────
 function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -744,9 +723,7 @@ function switchTab(tabId) {
     setTimeout(() => Object.values(charts).forEach(c => c?.resize?.()), 200);
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  LOADING / SPINNER
-// ═══════════════════════════════════════════════════════════════════
+// ─── LOADING / SPINNER ───────────────────────────────────────────────────────
 function showLoading(show) {
     let el = document.querySelector('.spinner-overlay');
     if (show && !el) {
@@ -755,9 +732,7 @@ function showLoading(show) {
     } else if (!show && el) el.remove();
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  FETCH DATA
-// ═══════════════════════════════════════════════════════════════════
+// ─── FETCH DATA ──────────────────────────────────────────────────────────────
 async function fetchData() {
     showLoading(true);
     try {
@@ -780,9 +755,6 @@ async function fetchData() {
     }
 }
 
-// ✅ BUG FIX #5 (ต่อ): เพิ่ม populatePlantFilter ให้ plantFilter ทำงานได้จริง
-// เดิม: plantFilter ถูก populate ไว้ใน HTML แต่ไม่มี logic filter ใช้งาน
-// แก้:  populate จาก data จริง + เพิ่ม event listener ที่ทำงาน
 function populateFilters() {
     const depts = new Set();
     const plants = new Set();
@@ -809,12 +781,10 @@ function populateFilters() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  MAIN UPDATE
-// ═══════════════════════════════════════════════════════════════════
+// ─── MAIN UPDATE ─────────────────────────────────────────────────────────────
 function updateDashboard() {
     const df = document.getElementById('deptFilter')?.value  || 'all';
-    const pf = document.getElementById('plantFilter')?.value || 'all'; // ✅ BUG FIX #5: เพิ่ม plant filter
+    const pf = document.getElementById('plantFilter')?.value || 'all';
     const mf = document.getElementById('monthFilter')?.value || 'all';
     const yf = document.getElementById('yearFilter')?.value  || 'all';
 
@@ -830,7 +800,6 @@ function updateDashboard() {
         targets = targets.filter(t => String(t['แผนก']  || '').trim() === df);
     }
 
-    // ✅ BUG FIX #5: Plant filter ที่ทำงานจริง
     if (pf !== 'all') {
         emps    = emps.filter(e    => String(e['Plant']  || '').trim() === pf);
         leaves  = leaves.filter(l  => String(l['Plant']  || '').trim() === pf);
@@ -843,16 +812,12 @@ function updateDashboard() {
 
     try { renderManpower(emps, targets);             } catch(err){ console.error('Manpower error:',err); }
     try { renderAttendance(leaves, mf, yf);          } catch(err){ console.error('Attendance error:',err); }
-    try { renderResign(resigns, targets, mf, yf);    } catch(err){ console.error('Resign error:',err); }
+    try { renderResign(resigns, emps, mf, yf);       } catch(err){ console.error('Resign error:',err); }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  TAB 1: MANPOWER
-// ═══════════════════════════════════════════════════════════════════
+// ─── TAB 1: MANPOWER ─────────────────────────────────────────────────────────
 function renderManpower(emps, targets) {
-    // กำลังพลปัจจุบัน: นับจาก Employees sheet (ถูกต้อง)
     const totalActual = emps.length;
-    // อัตตรากำลังพล: SUM จาก ManpowerTarget sheet
     const totalTarget = targets.reduce((s, t) => s + getTargetValue(t), 0);
 
     setText('valEmp',      totalActual);
@@ -950,11 +915,7 @@ function renderManpower(emps, targets) {
     drawStackedBar('wfDeptGender', allDepts, deptMale, deptFemale);
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  drawTargetStackedBar
-//  actual = นับจาก Employees sheet (รายแผนก) — ถูกต้อง
-//  target = อัตตรากำลังพล จาก ManpowerTarget sheet
-// ═══════════════════════════════════════════════════════════════════
+// ─── drawTargetStackedBar (Vertical Stacked Column Chart) ────────────────────
 function drawTargetStackedBar(targets, emps) {
     const wrap   = document.getElementById('targetChartWrap');
     const noData = document.getElementById('targetNoData');
@@ -971,7 +932,6 @@ function drawTargetStackedBar(targets, emps) {
     if (noData) noData.style.display = 'none';
     if (legend) legend.style.display = 'flex';
 
-    // นับพนักงานจริงรายแผนกจาก Employees sheet
     const deptCount = {};
     (emps || []).forEach(e => {
         const d = String(e['แผนก'] || 'ไม่ระบุ').trim();
@@ -984,18 +944,20 @@ function drawTargetStackedBar(targets, emps) {
     const tgts    = sorted.map(t => Math.round(getTargetValue(t)));
     const gaps    = actuals.map((a, i) => Math.max(0, tgts[i] - a));
 
+    // แสดงสีเขียวเมื่อกำลังพลเกิน/เท่ากับเป้า สีน้ำเงินเมื่อขาด
     const actualColors = actuals.map((a, i) =>
         a >= tgts[i] ? COLORS.green + 'CC' : COLORS.blue + 'CC'
     );
 
-    const chartH = Math.max(460, labels.length * 38);
-    if (wrap) wrap.style.height = chartH + 'px';
+    // Vertical column chart ใช้ height คงที่ 420px
+    if (wrap) wrap.style.height = '420px';
 
     destroyChart('targetBarChart');
     const ctx = getCtx('targetBarChart'); if (!ctx) return;
 
     charts['targetBarChart'] = new Chart(ctx, {
         type: 'bar',
+        // ไม่ใส่ indexAxis: 'y' → default เป็น vertical column chart
         data: {
             labels,
             datasets: [
@@ -1003,7 +965,7 @@ function drawTargetStackedBar(targets, emps) {
                     label: 'กำลังพลปัจจุบัน',
                     data: actuals,
                     backgroundColor: actualColors,
-                    borderRadius: { topLeft:0, bottomLeft:6, topRight:0, bottomRight:6 },
+                    borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
                     borderSkipped: false,
                     barPercentage: 0.65,
                     categoryPercentage: 0.8,
@@ -1014,8 +976,8 @@ function drawTargetStackedBar(targets, emps) {
                     data: gaps,
                     backgroundColor: COLORS.orange + '33',
                     borderColor: COLORS.orange + '88',
-                    borderWidth: { top:0, right:1.5, bottom:0, left:0 },
-                    borderRadius: { topLeft:0, bottomLeft:0, topRight:6, bottomRight:6 },
+                    borderWidth: { top: 1.5, right: 0, bottom: 0, left: 0 },
+                    borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
                     borderSkipped: false,
                     barPercentage: 0.65,
                     categoryPercentage: 0.8,
@@ -1024,7 +986,6 @@ function drawTargetStackedBar(targets, emps) {
             ]
         },
         options: {
-            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -1037,7 +998,7 @@ function drawTargetStackedBar(targets, emps) {
                             const act = actuals[i];
                             const tgt = tgts[i];
                             const gap = gaps[i];
-                            const pct = tgt > 0 ? ((act/tgt)*100).toFixed(1) : '—';
+                            const pct = tgt > 0 ? ((act / tgt) * 100).toFixed(1) : '—';
                             if (item.datasetIndex === 0) {
                                 return [
                                     ` กำลังพลปัจจุบัน: ${act} คน`,
@@ -1047,25 +1008,41 @@ function drawTargetStackedBar(targets, emps) {
                             } else {
                                 return gap > 0
                                     ? ` ยังขาดอีก: ${gap} คน`
-                                    : ` ✅ เกินเป้า ${Math.abs(act-tgt)} คน`;
+                                    : ` ✅ เกินเป้า ${Math.abs(act - tgt)} คน`;
                             }
                         }
                     },
+                    // ซ่อน tooltip ของ Gap เมื่อค่า = 0
                     filter(item) {
-                        if (item.datasetIndex === 1 && item.parsed.x === 0) return false;
+                        if (item.datasetIndex === 1 && item.parsed.y === 0) return false;
                         return true;
                     }
                 },
             },
             scales: {
                 x: {
-                    stacked: true, beginAtZero: true,
-                    grid: { color: 'rgba(29,111,204,0.07)' },
-                    title: { display: true, text: 'จำนวนพนักงาน (คน)', font: { family: 'Noto Sans Thai', size: 12 } },
-                    ticks: { font: { family: 'Noto Sans Thai', size: 11 } }
+                    stacked: true,
+                    grid: { display: false },
+                    ticks: {
+                        font: { family: 'Noto Sans Thai', size: 11 },
+                        maxRotation: 45,
+                        autoSkip: false,
+                    },
+                    title: {
+                        display: true,
+                        text: 'แผนก',
+                        font: { family: 'Noto Sans Thai', size: 12 }
+                    }
                 },
                 y: {
-                    stacked: true, grid: { display: false },
+                    stacked: true,
+                    beginAtZero: true,
+                    grid: { color: 'rgba(29,111,204,0.07)' },
+                    title: {
+                        display: true,
+                        text: 'จำนวนพนักงาน (คน)',
+                        font: { family: 'Noto Sans Thai', size: 12 }
+                    },
                     ticks: { font: { family: 'Noto Sans Thai', size: 11 } }
                 }
             }
@@ -1073,9 +1050,7 @@ function drawTargetStackedBar(targets, emps) {
     });
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  TAB 2: ATTENDANCE
-// ═══════════════════════════════════════════════════════════════════
+// ─── TAB 2: ATTENDANCE ───────────────────────────────────────────────────────
 function renderAttendance(leaves, mFilter, yFilter) {
     _lastLeavesForAttend = leaves;
 
@@ -1221,10 +1196,8 @@ function setAttView(mode) {
     drawAttTrend(_lastLeavesForAttend, _lastMFilter, _lastYFilter);
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  TAB 3: RESIGN
-// ═══════════════════════════════════════════════════════════════════
-function renderResign(resigns, targets, mFilter, yFilter) {
+// ─── TAB 3: RESIGN ───────────────────────────────────────────────────────────
+function renderResign(resigns, emps, mFilter, yFilter) {
     const filResigns = resigns.filter(r => {
         if (!r['วันที่ลาออก']) return false;
         try {
@@ -1237,14 +1210,12 @@ function renderResign(resigns, targets, mFilter, yFilter) {
         } catch(_) { return false; }
     });
 
-    // headcount = จำนวนพนักงานจริงใน Employees sheet (ที่ถูก filter แล้ว)
-    const headcount = allData.employees ? allData.employees.length : 0;
+    const headcount = emps.length;
     const leavers   = filResigns.length;
     const toRate    = headcount > 0 ? ((leavers/headcount)*100).toFixed(1) : '0.0';
 
-    setText('toRate',      toRate+'%');
-    setText('toHeadcount', headcount);
-    setText('toLeavers',   leavers);
+    setText('toRate',    toRate+'%');
+    setText('toLeavers', leavers);
 
     const toDept={};
     filResigns.forEach(r => { const d=r['แผนก']||'ไม่ระบุ'; toDept[d]=(toDept[d]||0)+1; });
@@ -1306,9 +1277,7 @@ function renderResign(resigns, targets, mFilter, yFilter) {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  CHART HELPERS
-// ═══════════════════════════════════════════════════════════════════
+// ─── CHART HELPERS ───────────────────────────────────────────────────────────
 function destroyChart(id) {
     if (charts[id]) { try{charts[id].destroy();}catch(_){} delete charts[id]; }
 }
@@ -1383,10 +1352,10 @@ function setText(id, val) {
     if (el) el.textContent = val;
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  EVENT LISTENERS + INIT
-// ═══════════════════════════════════════════════════════════════════
+// ─── EVENT LISTENERS + INIT ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+    buildYearFilter();
+
     ['deptFilter','plantFilter','monthFilter','yearFilter'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', updateDashboard);
     });
