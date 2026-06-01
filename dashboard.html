@@ -158,22 +158,6 @@
         }
         .section-label::after { content: ''; flex: 1; height: 1px; background: var(--line2); }
 
-        .target-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: clamp(12px,2vw,18px); margin-bottom: clamp(16px,2.5vw,24px);
-        }
-        .target-card {
-            background: var(--bg2); border: 1px solid var(--line2); border-radius: 14px;
-            padding: 16px 18px; box-shadow: var(--shadow); transition: all 0.2s;
-        }
-        .target-card:hover { transform: translateY(-3px); box-shadow: var(--shadow2); }
-        .target-dept { font-size: 0.78rem; font-weight: 700; color: var(--text2); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .target-bar-wrap { background: var(--bg3); border-radius: 100px; height: 8px; margin-bottom: 6px; overflow: hidden; }
-        .target-bar { height: 100%; border-radius: 100px; transition: width 0.6s ease; }
-        .target-nums { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text3); }
-        .target-nums strong { color: var(--navy); font-family: 'DM Mono', monospace; }
-        .target-rate { font-family: 'DM Mono', monospace; font-size: 0.9rem; font-weight: 700; color: var(--blue2); float: right; margin-top: -22px; }
-
         .to-kpi-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: clamp(16px,2.5vw,24px); margin-bottom: clamp(28px,4vw,40px);
@@ -614,7 +598,7 @@
 <div class="toast-wrap" id="toastContainer"></div>
 
 <script>
-// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+// CONSTANTS
 const COLORS = {
     blue:'#2563EB', blue2:'#3B82F6', cyan:'#0EA5E9', red:'#DC2626',
     yellow:'#EAB308', orange:'#F97316', green:'#10B981', purple:'#8B5CF6',
@@ -631,22 +615,48 @@ let _lastLeavesForAttend = [];
 let _lastMFilter = 'all';
 let _lastYFilter = 'all';
 
-function buildYearFilter() {
+function buildYearFilter(resignsData, leavesData) {
     const sel = document.getElementById('yearFilter');
     if (!sel) return;
     const currentYear = new Date().getFullYear();
+
+    // รวบรวมปีจากข้อมูล
+    const yearsFromData = new Set();
+    (resignsData || []).forEach(r => {
+        if (r['วันที่ลาออก']) {
+            try {
+                const y = new Date(r['วันที่ลาออก']).getFullYear();
+                if (!isNaN(y)) yearsFromData.add(y);
+            } catch(_) {}
+        }
+    });
+    (leavesData || []).forEach(lv => {
+        const y = parseInt(getLeaveYear(lv), 10);
+        if (!isNaN(y) && y > 2000) yearsFromData.add(y);
+    });
+
+    // สร้าง range 
+    const minYear = Math.min(currentYear - 4, ...(yearsFromData.size ? yearsFromData : [currentYear]));
+    const maxYear = Math.max(currentYear + 1, ...(yearsFromData.size ? yearsFromData : [currentYear]));
+
     let html = '<option value="all">ทุกปี</option>';
-    for (let y = currentYear + 1; y >= currentYear - 4; y--) {
+    for (let y = maxYear; y >= minYear; y--) {
         const selected = y === currentYear ? ' selected' : '';
         html += `<option value="${y}"${selected}>${y}</option>`;
     }
     sel.innerHTML = html;
 }
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
 function getGender(emp) {
+    // column เพศ
+    const sexCol = String(emp['เพศ'] || '').trim().toLowerCase();
+    if (sexCol === 'ชาย' || sexCol === 'm' || sexCol === 'male') return 'ชาย';
+    if (sexCol === 'หญิง' || sexCol === 'f' || sexCol === 'female') return 'หญิง';
+
+    // ดูคำนำหน้า
     const prefix = String(emp['คำนำหน้า'] || '').trim();
-    if (prefix === 'นาย') return 'ชาย';
+    const malePrefixes = ['นาย', 'ด.ช.', 'เด็กชาย'];
+    if (malePrefixes.includes(prefix)) return 'ชาย';
     return 'หญิง';
 }
 
@@ -656,22 +666,27 @@ function getDOB(emp) {
 
 function getLeaveMonth(lv) {
     const raw = lv['เดือน (Month)'] ?? lv['เดือน'] ?? '';
-    return String(raw).trim();
+    const n = parseInt(String(raw).trim(), 10);
+    return isNaN(n) ? String(raw).trim() : String(n);
 }
 function getLeaveYear(lv) {
     const raw = lv['ปี (Year)'] ?? lv['ปี'] ?? '';
-    return String(raw).trim();
+    const n = parseInt(String(raw).trim(), 10);
+    return isNaN(n) ? String(raw).trim() : String(n);
 }
 
 function getHours(lv, field) {
-    if (field === 'leave') {
-        const v = lv['จำนวนการลา'];
-        if (v !== undefined && v !== null && v !== '') {
-            const n = parseFloat(v);
-            if (!isNaN(n)) return n;
-        }
-        return 0;
+    function parseHoursValue(v) {
+        if (v === undefined || v === null || v === '') return 0;
+        const clean = String(v).replace(/[^0-9.]/g, '');
+        const n = parseFloat(clean);
+        return isNaN(n) ? 0 : n;
     }
+
+    if (field === 'leave') {
+        return parseHoursValue(lv['จำนวนการลา']);
+    }
+
     const fieldMap = {
         work:   ['ชม.ทำงาน','ชั่วโมงทำงาน','Work Hours','work_hours'],
         ot:     ['ชม.โอที','ชั่วโมงโอที','OT Hours','ot_hours','โอที'],
@@ -679,10 +694,8 @@ function getHours(lv, field) {
         lost:   ['ชม.ศูนย์หาย','ชั่วโมงศูนย์หาย','Lost Hours','lost_hours','ศูนย์หาย'],
     };
     for (const k of (fieldMap[field] || [])) {
-        const v = lv[k];
-        if (v !== undefined && v !== null && v !== '') {
-            const n = parseFloat(v);
-            if (!isNaN(n)) return n;
+        if (lv[k] !== undefined && lv[k] !== null && lv[k] !== '') {
+            return parseHoursValue(lv[k]);
         }
     }
     return 0;
@@ -699,7 +712,7 @@ function getTargetValue(obj) {
     return 0;
 }
 
-// ─── TOAST ───────────────────────────────────────────────────────────────────
+// TOAST
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -713,7 +726,7 @@ function showToast(message, type = 'success') {
     }, 4000);
 }
 
-// ─── TAB ─────────────────────────────────────────────────────────────────────
+// TAB
 function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -723,7 +736,7 @@ function switchTab(tabId) {
     setTimeout(() => Object.values(charts).forEach(c => c?.resize?.()), 200);
 }
 
-// ─── LOADING / SPINNER ───────────────────────────────────────────────────────
+// LOADING / SPINNER
 function showLoading(show) {
     let el = document.querySelector('.spinner-overlay');
     if (show && !el) {
@@ -732,7 +745,7 @@ function showLoading(show) {
     } else if (!show && el) el.remove();
 }
 
-// ─── FETCH DATA ──────────────────────────────────────────────────────────────
+// FETCH DATA
 async function fetchData() {
     showLoading(true);
     try {
@@ -743,6 +756,7 @@ async function fetchData() {
             allData = result.data || { employees:[], leaves:[], resigns:[], targets:[] };
             if (!allData.targets) allData.targets = [];
             window._mpTargets = allData.targets;
+            buildYearFilter(allData.resigns, allData.leaves);
             populateFilters();
             updateDashboard();
             showToast('โหลดข้อมูลสำเร็จ', 'success');
@@ -781,7 +795,7 @@ function populateFilters() {
     }
 }
 
-// ─── MAIN UPDATE ─────────────────────────────────────────────────────────────
+// MAIN UPDATE
 function updateDashboard() {
     const df = document.getElementById('deptFilter')?.value  || 'all';
     const pf = document.getElementById('plantFilter')?.value || 'all';
@@ -793,18 +807,23 @@ function updateDashboard() {
     let resigns = [...(allData.resigns   || [])];
     let targets = [...(allData.targets   || [])];
 
+
+    function matchField(val, filter) {
+        return String(val || '').trim().toLowerCase() === String(filter).trim().toLowerCase();
+    }
+
     if (df !== 'all') {
-        emps    = emps.filter(e    => String(e['แผนก']  || '').trim() === df);
-        leaves  = leaves.filter(l  => String(l['แผนก']  || '').trim() === df);
-        resigns = resigns.filter(r => String(r['แผนก']  || '').trim() === df);
-        targets = targets.filter(t => String(t['แผนก']  || '').trim() === df);
+        emps    = emps.filter(e    => matchField(e['แผนก'],  df));
+        leaves  = leaves.filter(l  => matchField(l['แผนก'],  df));
+        resigns = resigns.filter(r => matchField(r['แผนก'],  df));
+        targets = targets.filter(t => matchField(t['แผนก'],  df));
     }
 
     if (pf !== 'all') {
-        emps    = emps.filter(e    => String(e['Plant']  || '').trim() === pf);
-        leaves  = leaves.filter(l  => String(l['Plant']  || '').trim() === pf);
-        resigns = resigns.filter(r => String(r['Plant']  || '').trim() === pf);
-        targets = targets.filter(t => String(t['Plant']  || '').trim() === pf);
+        emps    = emps.filter(e    => matchField(e['Plant'], pf));
+        leaves  = leaves.filter(l  => matchField(l['Plant'], pf));
+        resigns = resigns.filter(r => matchField(r['Plant'], pf));
+        targets = targets.filter(t => matchField(t['Plant'], pf));
     }
 
     _lastMFilter = mf;
@@ -815,7 +834,7 @@ function updateDashboard() {
     try { renderResign(resigns, emps, mf, yf);       } catch(err){ console.error('Resign error:',err); }
 }
 
-// ─── TAB 1: MANPOWER ─────────────────────────────────────────────────────────
+// TAB 1: MANPOWER
 function renderManpower(emps, targets) {
     const totalActual = emps.length;
     const totalTarget = targets.reduce((s, t) => s + getTargetValue(t), 0);
@@ -858,13 +877,15 @@ function renderManpower(emps, targets) {
 
     drawTargetStackedBar(targets, emps);
 
-    // Age distribution
     const ageGroups={'<25 ปี':0,'25-30 ปี':0,'31-40 ปี':0,'41-50 ปี':0,'51-60 ปี':0,'>60 ปี':0};
     emps.forEach(e => {
         const dob = getDOB(e);
         if (!dob) return;
         try {
-            const age = Math.floor((Date.now()-new Date(dob))/(1000*60*60*24*365.25));
+            const d = new Date(dob);
+            if (isNaN(d.getTime())) return;
+            const age = Math.floor((Date.now() - d) / (1000*60*60*24*365.25));
+            if (age < 0 || age > 120) return;
             if      (age < 25) ageGroups['<25 ปี']++;
             else if (age <= 30) ageGroups['25-30 ปี']++;
             else if (age <= 40) ageGroups['31-40 ปี']++;
@@ -883,7 +904,10 @@ function renderManpower(emps, targets) {
         const sd = e['วันที่เริ่มงาน']||'';
         if (!sd) return;
         try {
-            const yrs=(Date.now()-new Date(sd))/(1000*60*60*24*365.25);
+            const d = new Date(sd);
+            if (isNaN(d.getTime())) return;
+            const yrs = (Date.now() - d) / (1000*60*60*24*365.25);
+            if (yrs < 0) return;
             if      (yrs < 1)  tenureGroups['ไม่ถึง 1 ปี']++;
             else if (yrs < 3)  tenureGroups['1-3 ปี']++;
             else if (yrs < 6)  tenureGroups['3-6 ปี']++;
@@ -915,7 +939,7 @@ function renderManpower(emps, targets) {
     drawStackedBar('wfDeptGender', allDepts, deptMale, deptFemale);
 }
 
-// ─── drawTargetStackedBar (Vertical Stacked Column Chart) ────────────────────
+// drawTargetStackedBar
 function drawTargetStackedBar(targets, emps) {
     const wrap   = document.getElementById('targetChartWrap');
     const noData = document.getElementById('targetNoData');
@@ -934,22 +958,20 @@ function drawTargetStackedBar(targets, emps) {
 
     const deptCount = {};
     (emps || []).forEach(e => {
-        const d = String(e['แผนก'] || 'ไม่ระบุ').trim();
+        const d = String(e['แผนก'] || 'ไม่ระบุ').trim().toLowerCase();
         deptCount[d] = (deptCount[d] || 0) + 1;
     });
 
     const sorted  = [...validTargets].sort((a,b) => getTargetValue(b) - getTargetValue(a));
     const labels  = sorted.map(t => String(t['แผนก']).trim());
-    const actuals = sorted.map(t => deptCount[String(t['แผนก']).trim()] || 0);
+    const actuals = sorted.map(t => deptCount[String(t['แผนก']).trim().toLowerCase()] || 0);
     const tgts    = sorted.map(t => Math.round(getTargetValue(t)));
     const gaps    = actuals.map((a, i) => Math.max(0, tgts[i] - a));
 
-    // แสดงสีเขียวเมื่อกำลังพลเกิน/เท่ากับเป้า สีน้ำเงินเมื่อขาด
     const actualColors = actuals.map((a, i) =>
         a >= tgts[i] ? COLORS.green + 'CC' : COLORS.blue + 'CC'
     );
 
-    // Vertical column chart ใช้ height คงที่ 420px
     if (wrap) wrap.style.height = '420px';
 
     destroyChart('targetBarChart');
@@ -957,7 +979,6 @@ function drawTargetStackedBar(targets, emps) {
 
     charts['targetBarChart'] = new Chart(ctx, {
         type: 'bar',
-        // ไม่ใส่ indexAxis: 'y' → default เป็น vertical column chart
         data: {
             labels,
             datasets: [
@@ -1012,7 +1033,6 @@ function drawTargetStackedBar(targets, emps) {
                             }
                         }
                     },
-                    // ซ่อน tooltip ของ Gap เมื่อค่า = 0
                     filter(item) {
                         if (item.datasetIndex === 1 && item.parsed.y === 0) return false;
                         return true;
@@ -1023,26 +1043,14 @@ function drawTargetStackedBar(targets, emps) {
                 x: {
                     stacked: true,
                     grid: { display: false },
-                    ticks: {
-                        font: { family: 'Noto Sans Thai', size: 11 },
-                        maxRotation: 45,
-                        autoSkip: false,
-                    },
-                    title: {
-                        display: true,
-                        text: 'แผนก',
-                        font: { family: 'Noto Sans Thai', size: 12 }
-                    }
+                    ticks: { font: { family: 'Noto Sans Thai', size: 11 }, maxRotation: 45, autoSkip: false },
+                    title: { display: true, text: 'แผนก', font: { family: 'Noto Sans Thai', size: 12 } }
                 },
                 y: {
                     stacked: true,
                     beginAtZero: true,
                     grid: { color: 'rgba(29,111,204,0.07)' },
-                    title: {
-                        display: true,
-                        text: 'จำนวนพนักงาน (คน)',
-                        font: { family: 'Noto Sans Thai', size: 12 }
-                    },
+                    title: { display: true, text: 'จำนวนพนักงาน (คน)', font: { family: 'Noto Sans Thai', size: 12 } },
                     ticks: { font: { family: 'Noto Sans Thai', size: 11 } }
                 }
             }
@@ -1050,7 +1058,7 @@ function drawTargetStackedBar(targets, emps) {
     });
 }
 
-// ─── TAB 2: ATTENDANCE ───────────────────────────────────────────────────────
+//TAB 2: ATTENDANCE
 function renderAttendance(leaves, mFilter, yFilter) {
     _lastLeavesForAttend = leaves;
 
@@ -1119,7 +1127,8 @@ function drawAttTrend(leaves, mFilter, yFilter) {
 
     leaves.forEach(lv => {
         if (yFilter !== 'all' && getLeaveYear(lv) !== String(yFilter)) return;
-        const m = parseInt(getLeaveMonth(lv)) - 1;
+        const mStr = getLeaveMonth(lv);
+        const m = parseInt(mStr, 10) - 1;
         if (m < 0 || m > 11) return;
         const t   = String(lv['ประเภทรายการ']||'').trim();
         const hrs = getHours(lv, 'leave');
@@ -1196,7 +1205,6 @@ function setAttView(mode) {
     drawAttTrend(_lastLeavesForAttend, _lastMFilter, _lastYFilter);
 }
 
-// ─── TAB 3: RESIGN ───────────────────────────────────────────────────────────
 function renderResign(resigns, emps, mFilter, yFilter) {
     const filResigns = resigns.filter(r => {
         if (!r['วันที่ลาออก']) return false;
@@ -1224,7 +1232,7 @@ function renderResign(resigns, emps, mFilter, yFilter) {
 
     const toReason={};
     filResigns.forEach(r => {
-        const rs=String(r['สาเหตุที่ลาออก']||'ไม่ระบุ').split('(')[0].trim();
+        const rs=String(r['สาเหตุที่ลาออก']||'ไม่ระบุ').trim().split('(')[0].trim();
         toReason[rs]=(toReason[rs]||0)+1;
     });
     drawDonut('toReasonChart', Object.keys(toReason), Object.values(toReason), COLORS.palette);
@@ -1249,7 +1257,7 @@ function renderResign(resigns, emps, mFilter, yFilter) {
             const yr=String(d.getFullYear());
             if (!yearMap[yr]) yearMap[yr]={count:0,reasons:{}};
             yearMap[yr].count++;
-            const rs=String(r['สาเหตุที่ลาออก']||'ไม่ระบุ').split('(')[0].trim();
+            const rs=String(r['สาเหตุที่ลาออก']||'ไม่ระบุ').trim().split('(')[0].trim();
             yearMap[yr].reasons[rs]=(yearMap[yr].reasons[rs]||0)+1;
         } catch(_) {}
     });
@@ -1277,7 +1285,7 @@ function renderResign(resigns, emps, mFilter, yFilter) {
     }
 }
 
-// ─── CHART HELPERS ───────────────────────────────────────────────────────────
+//CHART HELPERS
 function destroyChart(id) {
     if (charts[id]) { try{charts[id].destroy();}catch(_){} delete charts[id]; }
 }
@@ -1288,6 +1296,8 @@ function getCtx(id) {
 }
 
 function drawDonut(id,labels,data,colors){
+    const total = data.reduce((a,b)=>a+b,0);
+    if (total === 0) { destroyChart(id); return; }
     destroyChart(id); const ctx=getCtx(id); if(!ctx)return;
     charts[id]=new Chart(ctx,{type:'doughnut',
         data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:3,borderColor:'#fff'}]},
@@ -1352,9 +1362,9 @@ function setText(id, val) {
     if (el) el.textContent = val;
 }
 
-// ─── EVENT LISTENERS + INIT ──────────────────────────────────────────────────
+//EVENT LISTENERS + INIT
 document.addEventListener('DOMContentLoaded', async () => {
-    buildYearFilter();
+    buildYearFilter([], []);
 
     ['deptFilter','plantFilter','monthFilter','yearFilter'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', updateDashboard);

@@ -37,14 +37,11 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .btn-success{background:var(--green);color:#fff;box-shadow:0 4px 12px rgba(5,150,105,.28)}
 .btn-success:hover:not(:disabled){background:#047857;transform:translateY(-2px)}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
-
-/* FIX BUG #2: เพิ่ม CSS สำหรับ stats bar (มีอยู่แล้ว แต่ขาด HTML elements) */
 .stats{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
 .stat{background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:12px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;flex:1;min-width:140px}
 .stat-icon{font-size:1.5rem;opacity:.7}
 .stat-num{font-family:'DM Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--navy);line-height:1}
 .stat-lbl{font-size:.72rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
-
 .table-card{background:var(--bg2);border:1px solid var(--line2);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;font-size:.855rem;min-width:900px}
@@ -152,38 +149,23 @@ tr:hover td{background:var(--bg3)}
   <div class="stats">
     <div class="stat">
       <span class="stat-icon">👥</span>
-      <div>
-        <div class="stat-num" id="sTot">—</div>
-        <div class="stat-lbl">พนักงานทั้งหมด</div>
-      </div>
+      <div><div class="stat-num" id="sTot">—</div><div class="stat-lbl">พนักงานทั้งหมด</div></div>
     </div>
     <div class="stat">
       <span class="stat-icon">🇹🇭</span>
-      <div>
-        <div class="stat-num" id="sTH">—</div>
-        <div class="stat-lbl">ชาวไทย</div>
-      </div>
+      <div><div class="stat-num" id="sTH">—</div><div class="stat-lbl">ชาวไทย</div></div>
     </div>
     <div class="stat">
       <span class="stat-icon">🇲🇲</span>
-      <div>
-        <div class="stat-num" id="sMM">—</div>
-        <div class="stat-lbl">ชาวพม่า</div>
-      </div>
+      <div><div class="stat-num" id="sMM">—</div><div class="stat-lbl">ชาวพม่า</div></div>
     </div>
     <div class="stat">
       <span class="stat-icon">🏭</span>
-      <div>
-        <div class="stat-num" id="sDept">—</div>
-        <div class="stat-lbl">แผนก</div>
-      </div>
+      <div><div class="stat-num" id="sDept">—</div><div class="stat-lbl">แผนก</div></div>
     </div>
     <div class="stat">
       <span class="stat-icon">🏢</span>
-      <div>
-        <div class="stat-num" id="sPlant">—</div>
-        <div class="stat-lbl">Plant</div>
-      </div>
+      <div><div class="stat-num" id="sPlant">—</div><div class="stat-lbl">Plant</div></div>
     </div>
   </div>
 
@@ -191,7 +173,7 @@ tr:hover td{background:var(--bg3)}
     <div class="table-scroll">
       <table>
         <thead><tr>
-          <th onclick="sortBy('รหัสพนักงาน')"  id="th-รหัสพนักงาน"  style="width:100px">รหัส <span class="sort-ic">↕</span></th>
+          <th onclick="sortBy('รหัสพนักงาน')"  id="th-รหัสพนักงาน"  style="width:110px">รหัส <span class="sort-ic">↕</span></th>
           <th onclick="sortBy('ชื่อ-นามสกุล')" id="th-ชื่อ-นามสกุล">ชื่อ-นามสกุล <span class="sort-ic">↕</span></th>
           <th onclick="sortBy('แผนก')"          id="th-แผนก"          style="width:120px">แผนก <span class="sort-ic">↕</span></th>
           <th onclick="sortBy('ตำแหน่ง')"       id="th-ตำแหน่ง"       style="width:120px">ตำแหน่ง <span class="sort-ic">↕</span></th>
@@ -260,8 +242,10 @@ tr:hover td{background:var(--bg3)}
         </div>
         <div class="field c2">
           <label>วันเกิด</label>
+          <!-- BUG #8 FIX: id renamed to fDob (maps to 'วันเกิด') →
+               Code.gs normalizeEmployeeData() will map it to 'วันเกิด/DOB' header -->
           <input type="date" id="fDob"/>
-          <span class="field-hint">ใช้คำนวณอายุบน Dashboard</span>
+          <span class="field-hint">ใช้คำนวณอายุบน Dashboard (บันทึกลงคอลัมน์ วันเกิด/DOB)</span>
         </div>
         <div class="sec-label c2">💼 ข้อมูลการทำงาน</div>
         <div class="field">
@@ -354,7 +338,6 @@ async function load(){
   }catch(e){console.error(e);toast('ไม่สามารถเชื่อมต่อ API: '+e.message,'err');}
 }
 
-// FIX BUG #2: updateStats ทำงานได้แล้วเพราะมี HTML elements ครบ
 function updateStats(){
   document.getElementById('sTot').textContent=allEmps.length;
   document.getElementById('sTH').textContent=allEmps.filter(e=>e['สัญชาติ']==='ไทย').length;
@@ -393,6 +376,16 @@ function sortBy(key){
   filter();
 }
 
+// BUG #1 FIX: formatEmpId — display รหัสพนักงาน nicely regardless of float/string
+// Code.gs now returns it as string, but keep fallback for safety
+function formatEmpId(val) {
+  if (val === undefined || val === null || val === '') return '—';
+  const s = String(val);
+  // If it looks like a float like '3630169.0', strip decimal
+  if (/^\d+\.0$/.test(s)) return s.replace('.0', '');
+  return s;
+}
+
 function render(){
   const tbody=document.getElementById('tbody');if(!tbody)return;
   const total=filtered.length,pages=Math.max(1,Math.ceil(total/PER));
@@ -406,10 +399,12 @@ function render(){
     const nat=String(e['สัญชาติ']||'').trim();
     const natCls=nat==='ไทย'?'badge-green':nat==='พม่า'?'badge-blue':nat?'badge-orange':'badge-gray';
     const start=e['วันที่เริ่มงาน']?(()=>{try{return new Date(e['วันที่เริ่มงาน']).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'});}catch{return e['วันที่เริ่มงาน'];}})():'—';
+    // BUG #1 FIX: use formatEmpId to display cleanly (no .0 suffix)
+    const empIdDisplay = formatEmpId(e['รหัสพนักงาน']);
     const fullName=`${e['คำนำหน้า']||''}${e['ชื่อ-นามสกุล']||'—'}`;
     const esc=fullName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
     return `<tr>
-      <td><span class="emp-id">${e['รหัสพนักงาน']||'—'}</span></td>
+      <td><span class="emp-id">${empIdDisplay}</span></td>
       <td><div class="emp-name">${fullName}</div>${e['เบอร์โทรศัพท์']?`<small style="color:var(--text3);font-size:.75rem">📞 ${e['เบอร์โทรศัพท์']}</small>`:''}</td>
       <td><span class="badge badge-blue">${e['แผนก']||'—'}</span></td>
       <td>${e['ตำแหน่ง']||'—'}</td>
@@ -461,7 +456,7 @@ function openEdit(rowIndex){
   if(!emp)return toast('ไม่พบข้อมูลพนักงาน','err');
   editRow=rowIndex;clearForm();clearFormErrors();
   document.getElementById('modalTitle').textContent='✏️ แก้ไขข้อมูลพนักงาน';
-  document.getElementById('fId').value=emp['รหัสพนักงาน']||'';
+  document.getElementById('fId').value=formatEmpId(emp['รหัสพนักงาน']); // BUG #1 FIX
   document.getElementById('fId').disabled=true;
   document.getElementById('fPrefix').value=emp['คำนำหน้า']||'';
   document.getElementById('fName').value=emp['ชื่อ-นามสกุล']||'';
@@ -471,7 +466,8 @@ function openEdit(rowIndex){
   document.getElementById('fPos').value=emp['ตำแหน่ง']||'';
   document.getElementById('fPlant').value=emp['Plant']||'';
   document.getElementById('fStart').value=emp['วันที่เริ่มงาน']||'';
-  document.getElementById('fDob').value=emp['วันเกิด']||'';
+  // BUG #8 FIX: read DOB from 'วันเกิด/DOB' (sheet column) or fallback 'วันเกิด'
+  document.getElementById('fDob').value=emp['วันเกิด/DOB']||emp['วันเกิด']||'';
   document.getElementById('formOverlay').classList.add('open');
 }
 
@@ -479,7 +475,7 @@ function copyEmployee(rowIndex){
   const emp=allEmps.find(e=>e._rowIndex===rowIndex);
   if(!emp)return toast('ไม่พบข้อมูลพนักงาน','err');
   editRow=null;clearForm();clearFormErrors();
-  document.getElementById('modalTitle').textContent=`📋 เพิ่มพนักงานใหม่ (คัดลอกจาก ${emp['รหัสพนักงาน']||'—'})`;
+  document.getElementById('modalTitle').textContent=`📋 เพิ่มพนักงานใหม่ (คัดลอกจาก ${formatEmpId(emp['รหัสพนักงาน'])})`;
   document.getElementById('fId').value='';document.getElementById('fId').disabled=false;
   document.getElementById('fPrefix').value=emp['คำนำหน้า']||'';
   document.getElementById('fName').value=emp['ชื่อ-นามสกุล']||'';
@@ -501,12 +497,37 @@ async function saveEmployee(){
   const dep=document.getElementById('fDept').value.trim();
   const pos=document.getElementById('fPos').value.trim();
   let hasErr=false;
-  const checks=[['fId',!id,'กรุณากรอกรหัสพนักงาน'],['fPrefix',!pfx,'กรุณาเลือกคำนำหน้า'],['fName',!nm,'กรุณากรอกชื่อ-นามสกุล'],['fDept',!dep,'กรุณากรอกแผนก'],['fPos',!pos,'กรุณากรอกตำแหน่ง']];
-  checks.forEach(([fid,cond,msg])=>{const ok=setFieldError(fid,cond,msg);if(cond)hasErr=true;});
-  if(!editRow&&id&&allEmps.some(e=>e['รหัสพนักงาน']===id)){setFieldError('fId',true,'รหัสพนักงานนี้มีในระบบแล้ว');hasErr=true;}
+  const checks=[
+    ['fId',!id,'กรุณากรอกรหัสพนักงาน'],
+    ['fPrefix',!pfx,'กรุณาเลือกคำนำหน้า'],
+    ['fName',!nm,'กรุณากรอกชื่อ-นามสกุล'],
+    ['fDept',!dep,'กรุณากรอกแผนก'],
+    ['fPos',!pos,'กรุณากรอกตำแหน่ง']
+  ];
+  checks.forEach(([fid,cond,msg])=>{setFieldError(fid,cond,msg);if(cond)hasErr=true;});
+
+  // BUG #9 FIX: duplicate check — compare as normalized string
+  // allEmps[].รหัสพนักงาน is now returned as string by Code.gs (fixed)
+  // but still guard against float comparison by converting both sides to string
+  if(!editRow&&id&&allEmps.some(e=>String(e['รหัสพนักงาน']||'').replace('.0','')===id)){
+    setFieldError('fId',true,'รหัสพนักงานนี้มีในระบบแล้ว');hasErr=true;
+  }
   if(hasErr){toast('กรุณากรอกข้อมูลที่จำเป็น (*) ให้ครบถ้วน','err');return;}
   isSubmitting=true;setBtnLoading(true);
-  const data={'รหัสพนักงาน':id,'คำนำหน้า':pfx,'ชื่อ-นามสกุล':nm,'สัญชาติ':document.getElementById('fNat').value,'เบอร์โทรศัพท์':document.getElementById('fPhone').value.trim(),'แผนก':dep,'ตำแหน่ง':pos,'Plant':document.getElementById('fPlant').value.trim(),'วันที่เริ่มงาน':document.getElementById('fStart').value,'วันเกิด':document.getElementById('fDob').value};
+
+  // BUG #8 FIX: send 'วันเกิด' key → Code.gs normalizeEmployeeData maps it to 'วันเกิด/DOB'
+  const data={
+    'รหัสพนักงาน':id,
+    'คำนำหน้า':pfx,
+    'ชื่อ-นามสกุล':nm,
+    'สัญชาติ':document.getElementById('fNat').value,
+    'เบอร์โทรศัพท์':document.getElementById('fPhone').value.trim(),
+    'แผนก':dep,
+    'ตำแหน่ง':pos,
+    'Plant':document.getElementById('fPlant').value.trim(),
+    'วันที่เริ่มงาน':document.getElementById('fStart').value,
+    'วันเกิด':document.getElementById('fDob').value  // Code.gs will remap to 'วันเกิด/DOB'
+  };
   const payload=editRow?{action:'updateEmployee',rowIndex:editRow,data}:{action:'addEmployee',data};
   try{
     const res=await fetch(CONFIG.APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}});
@@ -538,10 +559,15 @@ async function confirmDelete(){
 function exportToCSV(){
   const data=filtered.length>0?filtered:allEmps;
   if(!data.length)return toast('ไม่มีข้อมูลที่จะส่งออก','err');
-  const headers=['รหัสพนักงาน','คำนำหน้า','ชื่อ-นามสกุล','สัญชาติ','เบอร์โทรศัพท์','แผนก','ตำแหน่ง','Plant','วันที่เริ่มงาน','วันเกิด'];
+  const headers=['รหัสพนักงาน','คำนำหน้า','ชื่อ-นามสกุล','สัญชาติ','เบอร์โทรศัพท์','แผนก','ตำแหน่ง','Plant','วันที่เริ่มงาน','วันเกิด/DOB'];
   let csv='\uFEFF'+headers.join(',')+'\n';
   data.forEach(emp=>{
-    const row=headers.map(h=>{let v=String(emp[h]||'').replace(/"/g,'""');return(v.includes(',')||v.includes('"')||v.includes('\n'))?`"${v}"`:v;});
+    const row=headers.map(h=>{
+      // BUG #1 FIX: format EmpID for export
+      let v = h==='รหัสพนักงาน' ? formatEmpId(emp[h]) : String(emp[h]||'');
+      v=v.replace(/"/g,'""');
+      return(v.includes(',')||v.includes('"')||v.includes('\n'))?`"${v}"`:v;
+    });
     csv+=row.join(',')+'\n';
   });
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
