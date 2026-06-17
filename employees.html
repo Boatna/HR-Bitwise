@@ -206,7 +206,6 @@ tr:hover td{background:var(--bg3)}
         </div>
         <div class="field c2">
           <label>ชื่อ-นามสกุล <span class="req">*</span></label>
-          <!-- FIX #6: field นี้เก็บเฉพาะชื่อ-นามสกุล ไม่มีคำนำหน้า -->
           <input type="text" id="fName" placeholder="ชื่อ-นามสกุลเต็ม (ไม่ต้องมีคำนำหน้า)"/>
           <span class="field-error-msg">กรุณากรอกชื่อ-นามสกุล</span>
         </div>
@@ -360,7 +359,6 @@ function sortBy(key){
   filter();
 }
 
-// FIX #1: formatEmpId — ป้องกัน float suffix เช่น "3630169.0"
 function formatEmpId(val) {
   if (val === undefined || val === null || val === '') return '—';
   const s = String(val);
@@ -382,7 +380,6 @@ function render(){
     const natCls=nat==='ไทย'?'badge-green':nat==='พม่า'?'badge-blue':nat?'badge-orange':'badge-gray';
     const start=e['วันที่เริ่มงาน']?(()=>{try{return new Date(e['วันที่เริ่มงาน']).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'});}catch{return e['วันที่เริ่มงาน'];}})():'—';
     const empIdDisplay = formatEmpId(e['รหัสพนักงาน']);
-    // FIX #6: แสดงผล = คำนำหน้า + ชื่อ-นามสกุล (ชื่อ-นามสกุลใน sheet ไม่มีคำนำหน้า)
     const fullName=`${e['คำนำหน้า']||''}${e['ชื่อ-นามสกุล']||'—'}`;
     const esc=fullName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
     return `<tr>
@@ -441,7 +438,6 @@ function openEdit(rowIndex){
   document.getElementById('fId').value=formatEmpId(emp['รหัสพนักงาน']);
   document.getElementById('fId').disabled=true;
   document.getElementById('fPrefix').value=emp['คำนำหน้า']||'';
-  // FIX #6: fName เก็บชื่อ-นามสกุลล้วน (ไม่มีคำนำหน้า) ตรงกับ sheet
   document.getElementById('fName').value=emp['ชื่อ-นามสกุล']||'';
   document.getElementById('fNat').value=emp['สัญชาติ']||'';
   document.getElementById('fPhone').value=emp['เบอร์โทรศัพท์']||'';
@@ -460,7 +456,6 @@ function copyEmployee(rowIndex){
   document.getElementById('modalTitle').textContent=`📋 เพิ่มพนักงานใหม่ (คัดลอกจาก ${formatEmpId(emp['รหัสพนักงาน'])})`;
   document.getElementById('fId').value='';document.getElementById('fId').disabled=false;
   document.getElementById('fPrefix').value=emp['คำนำหน้า']||'';
-  // FIX #6: copy ชื่อ-นามสกุลล้วน
   document.getElementById('fName').value=emp['ชื่อ-นามสกุล']||'';
   document.getElementById('fNat').value=emp['สัญชาติ']||'';
   document.getElementById('fPhone').value=emp['เบอร์โทรศัพท์']||'';
@@ -489,29 +484,26 @@ async function saveEmployee(){
   ];
   checks.forEach(([fid,cond,msg])=>{setFieldError(fid,cond,msg);if(cond)hasErr=true;});
 
-  // FIX #1: duplicate check — normalize ทั้ง 2 ฝั่ง
   if(!editRow&&id&&allEmps.some(e=>String(e['รหัสพนักงาน']||'').replace('.0','').trim()===id.trim())){
     setFieldError('fId',true,'รหัสพนักงานนี้มีในระบบแล้ว');hasErr=true;
   }
   if(hasErr){toast('กรุณากรอกข้อมูลที่จำเป็น (*) ให้ครบถ้วน','err');return;}
   isSubmitting=true;setBtnLoading(true);
 
-  // FIX #6: ส่ง ชื่อ-นามสกุล ล้วน ไม่มีคำนำหน้า (GAS เก็บแยก 2 column)
   const data={
     'รหัสพนักงาน'   : id,
     'คำนำหน้า'      : pfx,
-    'ชื่อ-นามสกุล'  : nm,          // ชื่อล้วน ไม่มี prefix ซ้อน
+    'ชื่อ-นามสกุล'  : nm,
     'สัญชาติ'       : document.getElementById('fNat').value,
     'เบอร์โทรศัพท์' : document.getElementById('fPhone').value.trim(),
     'แผนก'          : dep,
     'ตำแหน่ง'       : pos,
     'Plant'          : document.getElementById('fPlant').value.trim(),
     'วันที่เริ่มงาน': document.getElementById('fStart').value,
-    'วันเกิด'       : document.getElementById('fDob').value  // GAS normalizeEmployeeData remaps → วันเกิด/DOB
+    'วันเกิด'       : document.getElementById('fDob').value
   };
   const payload=editRow?{action:'updateEmployee',rowIndex:editRow,data}:{action:'addEmployee',data};
   try{
-    // FIX #3: ทุก POST ต้องมี Content-Type header
     const res=await fetch(CONFIG.APPS_SCRIPT_URL,{
       method:'POST',
       body:JSON.stringify(payload),
@@ -534,7 +526,6 @@ async function confirmDelete(){
   const btn=document.getElementById('delBtn'),orig=btn.innerHTML;
   btn.disabled=true;btn.innerHTML='⏳ กำลังลบ…';
   try{
-    // FIX #3: เพิ่ม Content-Type header
     const res=await fetch(CONFIG.APPS_SCRIPT_URL,{
       method:'POST',
       body:JSON.stringify({action:'deleteEmployee',rowIndex:deleteRow}),

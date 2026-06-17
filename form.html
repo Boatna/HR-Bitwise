@@ -385,9 +385,6 @@ async function submitForm(){
   const leaveType = document.getElementById('leaveType').value;
 
   setSubmitLoading(true);
-
-  // FIX #7: ลบ yearsOfService ออกจาก front-end ให้ GAS คำนวณเองฝั่งเดียว
-  // GAS addResult() จะคำนวณจาก วันที่เริ่มงาน และ วันที่ลาออก โดยอัตโนมัติ
   const payload = {
     action: 'addResult',
     data: {
@@ -402,12 +399,10 @@ async function submitForm(){
       'สาเหตุที่ลาออก'  : reason,
       'การคืนทรัพย์สิน' : '',
       'หมายเหตุ'        : notes,
-      // ไม่ส่ง 'อายุงาน (ปี)' — GAS คำนวณเอง
     }
   };
 
   try {
-    // FIX #3: ทุก POST ต้องมี Content-Type header
     const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{
       method:'POST',
       body:JSON.stringify(payload),
@@ -469,7 +464,6 @@ async function loadRecentResults(){
 async function deleteEntry(rowIndex){
   if (!confirm('ต้องการลบรายการนี้หรือไม่?\nการลบจะไม่สามารถย้อนกลับได้')) return;
   try {
-    // FIX #3: เพิ่ม Content-Type header
     const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{
       method:'POST',
       body:JSON.stringify({action:'deleteResult',rowIndex}),
