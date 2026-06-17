@@ -39,12 +39,7 @@
             --teal:      #14B8A6;
         }
 
-        body {
-            font-family: 'Noto Sans Thai', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
+        body { font-family: 'Noto Sans Thai', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
         body::before {
             content: ''; position: fixed; inset: 0;
@@ -111,10 +106,7 @@
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .kpi-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: clamp(12px,2vw,20px); margin-bottom: clamp(24px,4vw,36px);
-        }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: clamp(12px,2vw,20px); margin-bottom: clamp(24px,4vw,36px); }
         .kpi-card {
             background: var(--bg2); border: 1px solid var(--line2); border-radius: 16px;
             padding: clamp(16px,2.5vw,22px); box-shadow: var(--shadow); transition: all 0.25s;
@@ -158,45 +150,26 @@
         }
         .section-label::after { content: ''; flex: 1; height: 1px; background: var(--line2); }
 
-        .to-kpi-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: clamp(16px,2.5vw,24px); margin-bottom: clamp(28px,4vw,40px);
-        }
-        .to-kpi-card {
-            background: var(--bg2); border: 1px solid var(--line2); border-radius: 16px;
-            overflow: hidden; box-shadow: var(--shadow); transition: all 0.25s;
-        }
+        .to-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: clamp(16px,2.5vw,24px); margin-bottom: clamp(28px,4vw,40px); }
+        .to-kpi-card { background: var(--bg2); border: 1px solid var(--line2); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); transition: all 0.25s; }
         .to-kpi-card:hover { transform: translateY(-4px); box-shadow: var(--shadow2); }
-        .to-kpi-header {
-            background: linear-gradient(135deg, var(--blue2), var(--cyan));
-            padding: 14px; text-align: center; color: #fff; font-weight: 700; font-size: 0.88rem;
-        }
+        .to-kpi-header { background: linear-gradient(135deg, var(--blue2), var(--cyan)); padding: 14px; text-align: center; color: #fff; font-weight: 700; font-size: 0.88rem; }
         .to-kpi-header small { display: block; font-size: 0.7rem; font-weight: 400; opacity: 0.9; margin-top: 2px; }
-        .to-kpi-body {
-            padding: 24px 20px; text-align: center; display: flex;
-            align-items: center; justify-content: center; gap: 12px; min-height: 120px;
-        }
+        .to-kpi-body { padding: 24px 20px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 120px; }
         .to-kpi-icon { font-size: 3rem; }
         .to-kpi-value { font-family: 'DM Mono', monospace; font-size: clamp(2.4rem,4vw,3.2rem); font-weight: 700; color: var(--navy); }
         .to-kpi-value.red { color: var(--red); }
 
         .yearly-table-wrap { overflow-x: auto; }
         .yearly-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 500px; }
-        .yearly-table th {
-            padding: 10px 14px; background: var(--bg3); color: var(--text2); font-weight: 700;
-            text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
-            border-bottom: 1px solid var(--line2);
-        }
+        .yearly-table th { padding: 10px 14px; background: var(--bg3); color: var(--text2); font-weight: 700; text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--line2); }
         .yearly-table td { padding: 10px 14px; border-top: 1px solid var(--line); }
         .yearly-table tr:hover td { background: var(--bg3); }
         .badge { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 0.72rem; font-weight: 700; }
         .badge-red  { background: #FEF2F2; color: var(--red); }
         .badge-blue { background: var(--bg3); color: var(--blue2); }
 
-        .attend-kpi-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: clamp(12px,2vw,18px); margin-bottom: clamp(20px,3vw,28px);
-        }
+        .attend-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: clamp(12px,2vw,18px); margin-bottom: clamp(20px,3vw,28px); }
 
         .sick-detail-card {
             background: linear-gradient(135deg, #FEF2F2 0%, #fff 100%);
@@ -211,9 +184,7 @@
         .sick-detail-sub { font-size: 0.68rem; color: var(--text3); margin-top: 2px; }
         .sick-divider { width: 1px; height: 56px; background: rgba(220,38,38,0.18); }
 
-        .chart-view-toggle {
-            display: flex; gap: 6px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap;
-        }
+        .chart-view-toggle { display: flex; gap: 6px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
         .view-btn {
             padding: 5px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700;
             border: 1.5px solid var(--line2); background: transparent; cursor: pointer;
@@ -222,32 +193,16 @@
         .view-btn.active { background: var(--blue2); color: #fff; border-color: var(--blue2); }
         .view-btn:hover:not(.active) { border-color: rgba(37,99,235,.35); color: var(--blue2); background: var(--bg3); }
 
-        .stacked-legend {
-            display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
-            margin-top: 12px; font-size: 0.78rem; font-weight: 600;
-        }
+        .stacked-legend { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 12px; font-size: 0.78rem; font-weight: 600; }
         .stacked-legend-item { display: flex; align-items: center; gap: 6px; }
         .stacked-legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
 
-        .spinner-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(240,246,255,0.7); display: flex; align-items: center;
-            justify-content: center; z-index: 9999;
-        }
-        .spinner-large {
-            width: 50px; height: 50px; border: 4px solid rgba(37,99,235,0.15);
-            border-top-color: var(--blue2); border-radius: 50%; animation: spin 0.8s linear infinite;
-        }
+        .spinner-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(240,246,255,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .spinner-large { width: 50px; height: 50px; border: 4px solid rgba(37,99,235,0.15); border-top-color: var(--blue2); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .toast-wrap {
-            position: fixed; bottom: 28px; right: 28px; z-index: 9999;
-            display: flex; flex-direction: column; gap: 8px; max-width: min(400px, calc(100vw - 56px));
-        }
-        .toast {
-            padding: 12px 16px; border-radius: 12px; font-size: 0.875rem; font-weight: 600;
-            display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow2); animation: slideIn 0.3s ease;
-        }
+        .toast-wrap { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; max-width: min(400px, calc(100vw - 56px)); }
+        .toast { padding: 12px 16px; border-radius: 12px; font-size: 0.875rem; font-weight: 600; display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow2); animation: slideIn 0.3s ease; }
         .toast-success { background: #ECFDF5; border: 1.5px solid rgba(16,185,129,0.25); color: #065F46; }
         .toast-error   { background: #FEF2F2; border: 1.5px solid rgba(220,38,38,0.25); color: #991B1B; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
@@ -318,7 +273,6 @@
 
     <!-- TAB 1: MANPOWER -->
     <div id="tab1" class="tab-content active">
-
         <div class="section-label">📊 อัตรากำลังพลรวม · Overall Strength</div>
 
         <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 12px;">
@@ -338,7 +292,7 @@
 
         <div style="display:grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; margin-bottom: clamp(24px,4vw,36px);">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 12px;">
-                <div class="kpi-card border-orange" style="border-top-color:#00b1fc;">
+                <div class="kpi-card" style="border-top:4px solid #00b1fc;">
                     <div class="kpi-icon">🇹🇭</div>
                     <div class="kpi-label" style="font-size:0.68rem;">ไทย · ชาย</div>
                     <div class="kpi-value" id="valThaiMale">0</div>
@@ -371,6 +325,10 @@
                     <span style="font-size:0.72rem;font-weight:700;color:#0000ff;">🇹🇭 ไทย <span id="natThaiPct" style="font-family:'DM Mono',monospace;">—</span></span>
                     <span style="font-size:0.72rem;font-weight:700;color:#000000;">🇲🇲 พม่า <span id="natMyanmarPct" style="font-family:'DM Mono',monospace;">—</span></span>
                 </div>
+                <!-- BUG FIX #5: แสดงจำนวนคนที่ระบุเพศไม่ได้ (คำนำหน้าไม่ตรงรูปแบบที่รู้จัก) แทนการเหมาเป็นหญิงเงียบๆ -->
+                <div id="genderUnknownWrap" style="display:none;text-align:center;margin-top:6px;">
+                    <span style="font-size:0.66rem;font-weight:600;color:#94A3B8;">⚠️ ระบุเพศไม่ได้ <span id="valGenderUnknown" style="font-family:'DM Mono',monospace;">0</span> คน (คำนำหน้าไม่ตรงรูปแบบ)</span>
+                </div>
             </div>
         </div>
 
@@ -385,18 +343,9 @@
                 🚧 ยังไม่มีข้อมูลเป้าหมาย — กรุณากรอกข้อมูลใน Sheet <strong>ManpowerTarget</strong>
             </div>
             <div class="stacked-legend" id="stackedLegend" style="display:none;">
-                <div class="stacked-legend-item">
-                    <div class="stacked-legend-dot" style="background:#2563EBCC;"></div>
-                    <span style="color:var(--text2);">กำลังพลปัจจุบัน (Actual)</span>
-                </div>
-                <div class="stacked-legend-item">
-                    <div class="stacked-legend-dot" style="background:#F9731644;border:1.5px solid #F97316;"></div>
-                    <span style="color:var(--text2);">ส่วนที่ยังขาด (Gap)</span>
-                </div>
-                <div class="stacked-legend-item">
-                    <div class="stacked-legend-dot" style="background:#10B981CC;"></div>
-                    <span style="color:var(--text2);">เกินเป้า (Over Target)</span>
-                </div>
+                <div class="stacked-legend-item"><div class="stacked-legend-dot" style="background:#2563EBCC;"></div><span style="color:var(--text2);">กำลังพลปัจจุบัน (Actual)</span></div>
+                <div class="stacked-legend-item"><div class="stacked-legend-dot" style="background:#F9731644;border:1.5px solid #F97316;"></div><span style="color:var(--text2);">ส่วนที่ยังขาด (Gap)</span></div>
+                <div class="stacked-legend-item"><div class="stacked-legend-dot" style="background:#10B981CC;"></div><span style="color:var(--text2);">เกินเป้า (Over Target)</span></div>
             </div>
         </div>
 
@@ -433,88 +382,31 @@
 
     <!-- TAB 2: ATTENDANCE -->
     <div id="tab2" class="tab-content">
-
         <div class="section-label">⏱️ สถิติชั่วโมงการทำงาน · Working Hours Summary</div>
         <div class="attend-kpi-grid">
-            <div class="kpi-card border-blue">
-                <div class="kpi-icon">⏰</div>
-                <div class="kpi-label">ชม. ทำงานรวม</div>
-                <div class="kpi-value-sm" id="attWorkHrs">0</div>
-                <div class="kpi-sub">Work Hours (hrs)</div>
-            </div>
-            <div class="kpi-card border-orange">
-                <div class="kpi-icon">🌙</div>
-                <div class="kpi-label">ชม. โอที</div>
-                <div class="kpi-value-sm" id="attOtHrs">0</div>
-                <div class="kpi-sub">OT Hours (hrs)</div>
-            </div>
-            <div class="kpi-card border-yellow">
-                <div class="kpi-icon">💸</div>
-                <div class="kpi-label">ชม. ที่สูญหาย</div>
-                <div class="kpi-value-sm" id="attLostHrs">0</div>
-                <div class="kpi-sub">Lost Hours (hrs)</div>
-            </div>
+            <div class="kpi-card border-blue"><div class="kpi-icon">⏰</div><div class="kpi-label">ชม. ทำงานรวม</div><div class="kpi-value-sm" id="attWorkHrs">0</div><div class="kpi-sub">Work Hours (hrs)</div></div>
+            <div class="kpi-card border-orange"><div class="kpi-icon">🌙</div><div class="kpi-label">ชม. โอที</div><div class="kpi-value-sm" id="attOtHrs">0</div><div class="kpi-sub">OT Hours (hrs)</div></div>
+            <div class="kpi-card border-yellow"><div class="kpi-icon">💸</div><div class="kpi-label">ชม. ที่สูญหาย</div><div class="kpi-value-sm" id="attLostHrs">0</div><div class="kpi-sub">Lost Hours (hrs)</div></div>
         </div>
 
         <div class="section-label">📋 สถิติการลา · Leave Records</div>
         <div class="attend-kpi-grid">
-            <div class="kpi-card border-red">
-                <div class="kpi-icon">❌</div>
-                <div class="kpi-label">ขาดงาน (ชม.)</div>
-                <div class="kpi-value-sm" id="attAbsent">0</div>
-                <div class="kpi-sub">Absent (hrs)</div>
-            </div>
-            <div class="kpi-card border-yellow">
-                <div class="kpi-icon">⏰</div>
-                <div class="kpi-label">มาสาย (ชม.)</div>
-                <div class="kpi-value-sm" id="attLate">0</div>
-                <div class="kpi-sub">Late (hrs)</div>
-            </div>
-            <div class="kpi-card border-orange">
-                <div class="kpi-icon">🏥</div>
-                <div class="kpi-label">ลาป่วย (ชม.)</div>
-                <div class="kpi-value-sm" id="attSick">0</div>
-                <div class="kpi-sub">Sick Leave (hrs)</div>
-            </div>
-            <div class="kpi-card border-blue">
-                <div class="kpi-icon">🗓️</div>
-                <div class="kpi-label">ลากิจ (ชม.)</div>
-                <div class="kpi-value-sm" id="attPersonal">0</div>
-                <div class="kpi-sub">Personal Leave (hrs)</div>
-            </div>
-            <div class="kpi-card border-purple">
-                <div class="kpi-icon">📊</div>
-                <div class="kpi-label">รวมลา (ชม.)</div>
-                <div class="kpi-value-sm" id="attTotal">0</div>
-                <div class="kpi-sub">Total Leave Hours</div>
-            </div>
+            <div class="kpi-card border-red"><div class="kpi-icon">❌</div><div class="kpi-label">ขาดงาน (ชม.)</div><div class="kpi-value-sm" id="attAbsent">0</div><div class="kpi-sub">Absent (hrs)</div></div>
+            <div class="kpi-card border-yellow"><div class="kpi-icon">⏰</div><div class="kpi-label">มาสาย (ชม.)</div><div class="kpi-value-sm" id="attLate">0</div><div class="kpi-sub">Late (hrs)</div></div>
+            <div class="kpi-card border-orange"><div class="kpi-icon">🏥</div><div class="kpi-label">ลาป่วย (ชม.)</div><div class="kpi-value-sm" id="attSick">0</div><div class="kpi-sub">Sick Leave (hrs)</div></div>
+            <div class="kpi-card border-blue"><div class="kpi-icon">🗓️</div><div class="kpi-label">ลากิจ (ชม.)</div><div class="kpi-value-sm" id="attPersonal">0</div><div class="kpi-sub">Personal Leave (hrs)</div></div>
+            <div class="kpi-card border-purple"><div class="kpi-icon">📊</div><div class="kpi-label">รวมลา (ชม.)</div><div class="kpi-value-sm" id="attTotal">0</div><div class="kpi-sub">Total Leave Hours</div></div>
         </div>
 
         <div class="section-label">🏥 รายละเอียดการลาป่วย · Sick Leave Detail</div>
         <div class="sick-detail-card">
-            <div class="sick-detail-item">
-                <div class="sick-detail-value" id="sickHrsTotal">0</div>
-                <div class="sick-detail-label">ชั่วโมงลาป่วยรวม</div>
-                <div class="sick-detail-sub">Total Sick Hours</div>
-            </div>
+            <div class="sick-detail-item"><div class="sick-detail-value" id="sickHrsTotal">0</div><div class="sick-detail-label">ชั่วโมงลาป่วยรวม</div><div class="sick-detail-sub">Total Sick Hours</div></div>
             <div class="sick-divider"></div>
-            <div class="sick-detail-item">
-                <div class="sick-detail-value" id="sickPersons">0</div>
-                <div class="sick-detail-label">จำนวนพนักงานที่ลาป่วย</div>
-                <div class="sick-detail-sub">Unique Employees</div>
-            </div>
+            <div class="sick-detail-item"><div class="sick-detail-value" id="sickPersons">0</div><div class="sick-detail-label">จำนวนพนักงานที่ลาป่วย</div><div class="sick-detail-sub">Unique Employees</div></div>
             <div class="sick-divider"></div>
-            <div class="sick-detail-item">
-                <div class="sick-detail-value" id="sickAvgHrs">0</div>
-                <div class="sick-detail-label">เฉลี่ยต่อคน (ชม.)</div>
-                <div class="sick-detail-sub">Avg Hrs / Person</div>
-            </div>
+            <div class="sick-detail-item"><div class="sick-detail-value" id="sickAvgHrs">0</div><div class="sick-detail-label">เฉลี่ยต่อคน (ชม.)</div><div class="sick-detail-sub">Avg Hrs / Person</div></div>
             <div class="sick-divider"></div>
-            <div class="sick-detail-item">
-                <div class="sick-detail-value" id="sickTopDept">—</div>
-                <div class="sick-detail-label">แผนกลาป่วยมากสุด</div>
-                <div class="sick-detail-sub">Top Dept (hrs)</div>
-            </div>
+            <div class="sick-detail-item"><div class="sick-detail-value" id="sickTopDept">—</div><div class="sick-detail-label">แผนกลาป่วยมากสุด</div><div class="sick-detail-sub">Top Dept (hrs)</div></div>
         </div>
 
         <div class="charts-grid" style="margin-top: clamp(16px,2.5vw,24px);">
@@ -533,7 +425,6 @@
 
     <!-- TAB 3: RESIGN -->
     <div id="tab3" class="tab-content">
-
         <div class="to-kpi-grid">
             <div class="to-kpi-card">
                 <div class="to-kpi-header">อัตราการลาออก<small>Turnover Rate (ช่วงที่เลือก)</small></div>
@@ -598,7 +489,7 @@
 <div class="toast-wrap" id="toastContainer"></div>
 
 <script>
-// CONSTANTS
+// ─── CONSTANTS ───────────────────────────────────────────────
 const COLORS = {
     blue:'#2563EB', blue2:'#3B82F6', cyan:'#0EA5E9', red:'#DC2626',
     yellow:'#EAB308', orange:'#F97316', green:'#10B981', purple:'#8B5CF6',
@@ -615,19 +506,16 @@ let _lastLeavesForAttend = [];
 let _lastMFilter = 'all';
 let _lastYFilter = 'all';
 
+// ─── YEAR FILTER ─────────────────────────────────────────────
 function buildYearFilter(resignsData, leavesData) {
     const sel = document.getElementById('yearFilter');
     if (!sel) return;
     const currentYear = new Date().getFullYear();
 
-    // รวบรวมปีจากข้อมูล
     const yearsFromData = new Set();
     (resignsData || []).forEach(r => {
         if (r['วันที่ลาออก']) {
-            try {
-                const y = new Date(r['วันที่ลาออก']).getFullYear();
-                if (!isNaN(y)) yearsFromData.add(y);
-            } catch(_) {}
+            try { const y = new Date(r['วันที่ลาออก']).getFullYear(); if (!isNaN(y)) yearsFromData.add(y); } catch(_) {}
         }
     });
     (leavesData || []).forEach(lv => {
@@ -635,9 +523,14 @@ function buildYearFilter(resignsData, leavesData) {
         if (!isNaN(y) && y > 2000) yearsFromData.add(y);
     });
 
-    // สร้าง range 
-    const minYear = Math.min(currentYear - 4, ...(yearsFromData.size ? yearsFromData : [currentYear]));
-    const maxYear = Math.max(currentYear + 1, ...(yearsFromData.size ? yearsFromData : [currentYear]));
+    // BUG FIX #8: เดิมใช้ Math.min(...set)/Math.max(...set) — การ spread Set ขนาดใหญ่
+    // เข้า function arguments อาจทำให้ throw RangeError (call stack overflow) ได้ในบางเบราว์เซอร์
+    // แก้: ใช้ reduce หาค่า min/max แทน ไม่ต้อง spread เข้า arguments เลย
+    const yearsArr = yearsFromData.size ? [...yearsFromData] : [currentYear];
+    const dataMin  = yearsArr.reduce((a, b) => Math.min(a, b), yearsArr[0]);
+    const dataMax  = yearsArr.reduce((a, b) => Math.max(a, b), yearsArr[0]);
+    const minYear  = Math.min(currentYear - 4, dataMin);
+    const maxYear  = Math.max(currentYear + 1, dataMax);
 
     let html = '<option value="all">ทุกปี</option>';
     for (let y = maxYear; y >= minYear; y--) {
@@ -647,23 +540,28 @@ function buildYearFilter(resignsData, leavesData) {
     sel.innerHTML = html;
 }
 
+// ─── GENDER DETECTION ────────────────────────────────────────
+// BUG FIX #6 — getGender
+// ปัญหา: data จริงไม่มี column 'เพศ' เลย → ต้องดูจาก 'คำนำหน้า' เท่านั้น
+// 'นาย' = ชาย, 'นาง' / 'นางสาว' = หญิง
+// BUG FIX #5: เดิม fallback คืน 'หญิง' เสมอเมื่อคำนำหน้าไม่ตรง 'นาย'
+// → พนักงานที่ไม่กรอกคำนำหน้า หรือใช้คำนำหน้าอื่น (Mr./Mrs./ด.ช./ว่าง) ถูกเหมาเป็นหญิงหมด
+// แก้: แยกคำนำหน้าชาย/หญิงที่รู้จักอย่างชัดเจน ถ้าไม่ตรงเลยให้คืน 'ไม่ระบุ' แทนการเดา
 function getGender(emp) {
-    // column เพศ
     const sexCol = String(emp['เพศ'] || '').trim().toLowerCase();
-    if (sexCol === 'ชาย' || sexCol === 'm' || sexCol === 'male') return 'ชาย';
+    if (sexCol === 'ชาย' || sexCol === 'm' || sexCol === 'male')   return 'ชาย';
     if (sexCol === 'หญิง' || sexCol === 'f' || sexCol === 'female') return 'หญิง';
 
-    // ดูคำนำหน้า
     const prefix = String(emp['คำนำหน้า'] || '').trim();
-    const malePrefixes = ['นาย', 'ด.ช.', 'เด็กชาย'];
-    if (malePrefixes.includes(prefix)) return 'ชาย';
-    return 'หญิง';
+    const MALE_PREFIX   = ['นาย', 'ด.ช.', 'เด็กชาย', 'mr', 'mr.'];
+    const FEMALE_PREFIX = ['นาง', 'นางสาว', 'ด.ญ.', 'เด็กหญิง', 'mrs', 'mrs.', 'ms', 'ms.', 'miss'];
+    const pLower = prefix.toLowerCase();
+    if (MALE_PREFIX.includes(prefix)   || MALE_PREFIX.includes(pLower))   return 'ชาย';
+    if (FEMALE_PREFIX.includes(prefix) || FEMALE_PREFIX.includes(pLower)) return 'หญิง';
+    return 'ไม่ระบุ'; // ไม่เดาเพศจากข้อมูลที่ไม่ชัดเจน
 }
 
-function getDOB(emp) {
-    return emp['วันเกิด/DOB'] || emp['วันเกิด'] || '';
-}
-
+// ─── LEAVE HELPERS ───────────────────────────────────────────
 function getLeaveMonth(lv) {
     const raw = lv['เดือน (Month)'] ?? lv['เดือน'] ?? '';
     const n = parseInt(String(raw).trim(), 10);
@@ -675,16 +573,21 @@ function getLeaveYear(lv) {
     return isNaN(n) ? String(raw).trim() : String(n);
 }
 
+// BUG FIX #7 — getHours
+// ปัญหา: 'จำนวนการลา' อาจถูกเก็บเป็น string "8 ชม." หรือ "8.0" หรือ number 8
+//         → ต้องรองรับทุก format
+// ปัญหา: field 'leave' → ใช้ column 'จำนวนการลา' เท่านั้น
 function getHours(lv, field) {
-    function parseHoursValue(v) {
+    function parseNum(v) {
         if (v === undefined || v === null || v === '') return 0;
+        if (typeof v === 'number') return isNaN(v) ? 0 : v;
         const clean = String(v).replace(/[^0-9.]/g, '');
         const n = parseFloat(clean);
         return isNaN(n) ? 0 : n;
     }
 
     if (field === 'leave') {
-        return parseHoursValue(lv['จำนวนการลา']);
+        return parseNum(lv['จำนวนการลา']);
     }
 
     const fieldMap = {
@@ -695,24 +598,27 @@ function getHours(lv, field) {
     };
     for (const k of (fieldMap[field] || [])) {
         if (lv[k] !== undefined && lv[k] !== null && lv[k] !== '') {
-            return parseHoursValue(lv[k]);
+            return parseNum(lv[k]);
         }
     }
     return 0;
 }
 
+// BUG FIX #8 — getTargetValue
+// ปัญหา: ManpowerTarget sheet มี column 'อัตตรากำลังพล' (สะกดแบบนี้จริงๆ ใน sheet)
+//         แต่ getTargetValue เดิมก็รองรับแล้ว → ตรวจสอบให้แน่ใจว่า key ตรง
 function getTargetValue(obj) {
     const keys = ['อัตตรากำลังพล', 'อัตรากำลังพลตามเป้าหมาย', 'อัตรากำลังพลเป้าหมาย', 'เป้าหมาย', 'Target', 'target'];
     for (const k of keys) {
         if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') {
-            const n = parseFloat(obj[k]);
+            const n = parseFloat(String(obj[k]));
             if (!isNaN(n)) return n;
         }
     }
     return 0;
 }
 
-// TOAST
+// ─── TOAST ───────────────────────────────────────────────────
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -726,7 +632,7 @@ function showToast(message, type = 'success') {
     }, 4000);
 }
 
-// TAB
+// ─── TAB ─────────────────────────────────────────────────────
 function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -736,7 +642,7 @@ function switchTab(tabId) {
     setTimeout(() => Object.values(charts).forEach(c => c?.resize?.()), 200);
 }
 
-// LOADING / SPINNER
+// ─── LOADING ─────────────────────────────────────────────────
 function showLoading(show) {
     let el = document.querySelector('.spinner-overlay');
     if (show && !el) {
@@ -745,7 +651,7 @@ function showLoading(show) {
     } else if (!show && el) el.remove();
 }
 
-// FETCH DATA
+// ─── FETCH DATA ──────────────────────────────────────────────
 async function fetchData() {
     showLoading(true);
     try {
@@ -755,7 +661,6 @@ async function fetchData() {
         if (result.status === 'ok') {
             allData = result.data || { employees:[], leaves:[], resigns:[], targets:[] };
             if (!allData.targets) allData.targets = [];
-            window._mpTargets = allData.targets;
             buildYearFilter(allData.resigns, allData.leaves);
             populateFilters();
             updateDashboard();
@@ -769,10 +674,13 @@ async function fetchData() {
     }
 }
 
+// ─── POPULATE FILTERS ────────────────────────────────────────
 function populateFilters() {
     const depts = new Set();
     const plants = new Set();
 
+    // BUG FIX #9 — รวม targets + employees ทั้งคู่ใน populateFilters
+    // ปัญหา: ถ้า targets มีแผนกที่ employees ไม่มี (หรือกลับกัน) dropdown จะหาย
     (allData.targets || []).forEach(t => {
         if (t['แผนก']) depts.add(String(t['แผนก']).trim());
         if (t['Plant']) plants.add(String(t['Plant']).trim());
@@ -795,7 +703,7 @@ function populateFilters() {
     }
 }
 
-// MAIN UPDATE
+// ─── MAIN UPDATE ─────────────────────────────────────────────
 function updateDashboard() {
     const df = document.getElementById('deptFilter')?.value  || 'all';
     const pf = document.getElementById('plantFilter')?.value || 'all';
@@ -806,7 +714,6 @@ function updateDashboard() {
     let leaves  = [...(allData.leaves    || [])];
     let resigns = [...(allData.resigns   || [])];
     let targets = [...(allData.targets   || [])];
-
 
     function matchField(val, filter) {
         return String(val || '').trim().toLowerCase() === String(filter).trim().toLowerCase();
@@ -829,12 +736,12 @@ function updateDashboard() {
     _lastMFilter = mf;
     _lastYFilter = yf;
 
-    try { renderManpower(emps, targets);             } catch(err){ console.error('Manpower error:',err); }
-    try { renderAttendance(leaves, mf, yf);          } catch(err){ console.error('Attendance error:',err); }
-    try { renderResign(resigns, emps, mf, yf);       } catch(err){ console.error('Resign error:',err); }
+    try { renderManpower(emps, targets);       } catch(err){ console.error('Manpower error:',err); }
+    try { renderAttendance(leaves, mf, yf);    } catch(err){ console.error('Attendance error:',err); }
+    try { renderResign(resigns, emps, mf, yf); } catch(err){ console.error('Resign error:',err); }
 }
 
-// TAB 1: MANPOWER
+// ─── TAB 1: MANPOWER ─────────────────────────────────────────
 function renderManpower(emps, targets) {
     const totalActual = emps.length;
     const totalTarget = targets.reduce((s, t) => s + getTargetValue(t), 0);
@@ -843,10 +750,11 @@ function renderManpower(emps, targets) {
     setText('valMpTarget', totalTarget > 0 ? Math.round(totalTarget) : '—');
 
     const empTotal = emps.length;
-    let thaiMale=0, thaiFemale=0, myanmarMale=0, myanmarFemale=0;
+    let thaiMale=0, thaiFemale=0, myanmarMale=0, myanmarFemale=0, genderUnknown=0;
     emps.forEach(e => {
         const gender = getGender(e);
         const nat    = String(e['สัญชาติ'] || 'อื่นๆ').trim();
+        if (gender === 'ไม่ระบุ') { genderUnknown++; return; }
         if (nat === 'ไทย') {
             gender === 'ชาย' ? thaiMale++ : thaiFemale++;
         } else if (nat === 'พม่า') {
@@ -868,40 +776,48 @@ function renderManpower(emps, targets) {
     setText('valMyanmarFemalePct', pct(myanmarFemale));
     setText('natThaiPct',          pct(thais));
     setText('natMyanmarPct',       pct(myanmars));
+    // FIX #5: แสดงจำนวนคนที่เพศไม่ชัดเจน เพื่อไม่ให้ข้อมูลเงียบหายไปจากผู้ใช้
+    setText('valGenderUnknown', genderUnknown);
+    const guWrap = document.getElementById('genderUnknownWrap');
+    if (guWrap) guWrap.style.display = genderUnknown > 0 ? 'block' : 'none';
 
-    drawDonut('wfNatPie',
-        ['🇹🇭 ไทย','🇲🇲 พม่า'],
-        [thais, myanmars],
-        [COLORS.orange, COLORS.purple]
-    );
+    drawDonut('wfNatPie', ['🇹🇭 ไทย','🇲🇲 พม่า'], [thais, myanmars], [COLORS.orange, COLORS.purple]);
 
     drawTargetStackedBar(targets, emps);
 
+    // Age distribution — BUG FIX #10: ข้อมูล DOB ใน sheet นี้ว่างทั้งหมด
+    // ป้องกัน crash โดยแสดง "ไม่มีข้อมูล" แทนการ skip chart
     const ageGroups={'<25 ปี':0,'25-30 ปี':0,'31-40 ปี':0,'41-50 ปี':0,'51-60 ปี':0,'>60 ปี':0};
+    let hasAge = false;
     emps.forEach(e => {
-        const dob = getDOB(e);
+        const dob = e['วันเกิด/DOB'] || e['วันเกิด'] || '';
         if (!dob) return;
         try {
             const d = new Date(dob);
             if (isNaN(d.getTime())) return;
             const age = Math.floor((Date.now() - d) / (1000*60*60*24*365.25));
             if (age < 0 || age > 120) return;
-            if      (age < 25) ageGroups['<25 ปี']++;
+            if      (age < 25)  ageGroups['<25 ปี']++;
             else if (age <= 30) ageGroups['25-30 ปี']++;
             else if (age <= 40) ageGroups['31-40 ปี']++;
             else if (age <= 50) ageGroups['41-50 ปี']++;
             else if (age <= 60) ageGroups['51-60 ปี']++;
             else                ageGroups['>60 ปี']++;
+            hasAge = true;
         } catch(_) {}
     });
-    drawBarH('wfAge', Object.keys(ageGroups), Object.values(ageGroups), COLORS.cyan);
+    if (!hasAge) {
+        // แสดงว่าไม่มีข้อมูล DOB แทน
+        drawBarH('wfAge', ['ยังไม่มีข้อมูลวันเกิด'], [0], COLORS.cyan);
+    } else {
+        drawBarH('wfAge', Object.keys(ageGroups), Object.values(ageGroups), COLORS.cyan);
+    }
 
-    // Tenure distribution
-    const tenureGroups = {
-        'ไม่ถึง 1 ปี':0,'1-3 ปี':0,'3-6 ปี':0,'6-10 ปี':0,'10-20 ปี':0,'20 ปีขึ้นไป':0
-    };
+    // Tenure distribution — BUG FIX #10: วันที่เริ่มงาน ก็ว่างทั้งหมดใน sheet นี้
+    const tenureGroups = {'ไม่ถึง 1 ปี':0,'1-3 ปี':0,'3-6 ปี':0,'6-10 ปี':0,'10-20 ปี':0,'20 ปีขึ้นไป':0};
+    let hasTenure = false;
     emps.forEach(e => {
-        const sd = e['วันที่เริ่มงาน']||'';
+        const sd = e['วันที่เริ่มงาน'] || '';
         if (!sd) return;
         try {
             const d = new Date(sd);
@@ -914,9 +830,14 @@ function renderManpower(emps, targets) {
             else if (yrs < 10) tenureGroups['6-10 ปี']++;
             else if (yrs < 20) tenureGroups['10-20 ปี']++;
             else               tenureGroups['20 ปีขึ้นไป']++;
+            hasTenure = true;
         } catch(_) {}
     });
-    drawBarH('wfTenure', Object.keys(tenureGroups), Object.values(tenureGroups), COLORS.teal);
+    if (!hasTenure) {
+        drawBarH('wfTenure', ['ยังไม่มีข้อมูลวันเริ่มงาน'], [0], COLORS.teal);
+    } else {
+        drawBarH('wfTenure', Object.keys(tenureGroups), Object.values(tenureGroups), COLORS.teal);
+    }
 
     // Dept headcount
     const deptCount = {};
@@ -939,12 +860,16 @@ function renderManpower(emps, targets) {
     drawStackedBar('wfDeptGender', allDepts, deptMale, deptFemale);
 }
 
-// drawTargetStackedBar
+// ─── TARGET STACKED BAR ──────────────────────────────────────
+// BUG FIX #11 — drawTargetStackedBar
+// ปัญหา: ManpowerTarget เก็บ Plant name ไม่ตรงกับ Employees
+//         → การ match dept ต้อง case-insensitive + trim
+// ปัญหา: column 'กำลังพลปัจจุบัน' ใน sheet ว่างทั้งหมด (NaN) → ต้องคำนวณจาก employees จริง
 function drawTargetStackedBar(targets, emps) {
     const wrap   = document.getElementById('targetChartWrap');
     const noData = document.getElementById('targetNoData');
     const legend = document.getElementById('stackedLegend');
-    const validTargets = targets.filter(t => t && t['แผนก']);
+    const validTargets = targets.filter(t => t && t['แผนก'] && getTargetValue(t) > 0);
 
     if (!validTargets.length) {
         if (wrap)   wrap.style.display   = 'none';
@@ -956,6 +881,7 @@ function drawTargetStackedBar(targets, emps) {
     if (noData) noData.style.display = 'none';
     if (legend) legend.style.display = 'flex';
 
+    // นับจาก employees จริง (case-insensitive)
     const deptCount = {};
     (emps || []).forEach(e => {
         const d = String(e['แผนก'] || 'ไม่ระบุ').trim().toLowerCase();
@@ -1058,7 +984,7 @@ function drawTargetStackedBar(targets, emps) {
     });
 }
 
-//TAB 2: ATTENDANCE
+// ─── TAB 2: ATTENDANCE ───────────────────────────────────────
 function renderAttendance(leaves, mFilter, yFilter) {
     _lastLeavesForAttend = leaves;
 
@@ -1205,6 +1131,7 @@ function setAttView(mode) {
     drawAttTrend(_lastLeavesForAttend, _lastMFilter, _lastYFilter);
 }
 
+// ─── TAB 3: RESIGN ───────────────────────────────────────────
 function renderResign(resigns, emps, mFilter, yFilter) {
     const filResigns = resigns.filter(r => {
         if (!r['วันที่ลาออก']) return false;
@@ -1218,7 +1145,23 @@ function renderResign(resigns, emps, mFilter, yFilter) {
         } catch(_) { return false; }
     });
 
-    const headcount = emps.length;
+    // BUG FIX #4: เดิมใช้ emps.length (พนักงานปัจจุบันทั้งหมด) เป็นตัวหารเสมอ
+    // ไม่ว่าจะ filter เดือน/ปีไหนก็ตาม → เวลาเลือกเดือนที่ผ่านมานานแล้ว
+    // อัตราลาออกจะเทียบกับฐานพนักงาน ณ "ปัจจุบัน" ซึ่งไม่ตรงกับฐานพนักงาน ณ ช่วงเวลานั้นจริง
+    // แก้: เมื่อเลือกเฉพาะปี/เดือน ให้ใช้ฐาน = (พนักงานปัจจุบัน + คนที่ลาออกไปแล้วในปีนั้นๆ)
+    // เพื่อประมาณ headcount ณ ช่วงต้นของรอบที่กำลังพิจารณา ไม่ใช้ headcount วันนี้เทียบกับเหตุการณ์ในอดีต
+    let headcount = emps.length;
+    if (yFilter !== 'all') {
+        const leaversBeforeOrDuringPeriod = resigns.filter(r => {
+            if (!r['วันที่ลาออก']) return false;
+            try {
+                const d = new Date(r['วันที่ลาออก']);
+                if (isNaN(d.getTime())) return false;
+                return String(d.getFullYear()) === String(yFilter);
+            } catch(_) { return false; }
+        }).length;
+        headcount = emps.length + leaversBeforeOrDuringPeriod;
+    }
     const leavers   = filResigns.length;
     const toRate    = headcount > 0 ? ((leavers/headcount)*100).toFixed(1) : '0.0';
 
@@ -1285,7 +1228,7 @@ function renderResign(resigns, emps, mFilter, yFilter) {
     }
 }
 
-//CHART HELPERS
+// ─── CHART HELPERS ───────────────────────────────────────────
 function destroyChart(id) {
     if (charts[id]) { try{charts[id].destroy();}catch(_){} delete charts[id]; }
 }
@@ -1362,7 +1305,7 @@ function setText(id, val) {
     if (el) el.textContent = val;
 }
 
-//EVENT LISTENERS + INIT
+// ─── EVENT LISTENERS + INIT ──────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
     buildYearFilter([], []);
 

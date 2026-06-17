@@ -196,10 +196,12 @@ tbody tr:hover td{background:var(--bg3)}
         </div>
         <div class="field" id="fieldLeaveType">
           <label>ประเภทรายการ <span class="req">*</span></label>
+          <!-- FIX #2: เพิ่ม พักร้อน ที่หายไป -->
           <select id="leaveType">
             <option value="">— เลือกประเภท —</option>
             <option value="ลาป่วย">🏥 ลาป่วย</option>
             <option value="ลากิจ">🗓️ ลากิจ</option>
+            <option value="พักร้อน">🌴 พักร้อน</option>
             <option value="ขาดงาน">❌ ขาดงาน</option>
             <option value="มาสาย">⏰ มาสาย</option>
           </select>
@@ -360,6 +362,7 @@ async function submitLeave() {
 
   const leaveDate = document.getElementById('leaveDate').value;
   const leaveType = document.getElementById('leaveType').value;
+  // FIX #1: ส่งเป็น number ล้วน ไม่มี ' ชม.' ต่อท้าย
   const hours     = parseFloat(document.getElementById('leaveHours').value);
   const remark    = document.getElementById('leaveRemark').value.trim();
   const d         = new Date(leaveDate);
@@ -376,7 +379,7 @@ async function submitLeave() {
       'Plant'             : document.getElementById('hidPlant').value,
       'วันที่ลาหยุด'     : leaveDate,
       'ประเภทรายการ'     : leaveType,
-      'จำนวนการลา'       : hours + ' ชม.',
+      'จำนวนการลา'       : hours,          // FIX #1: number ไม่มี unit string
       'เดือน (Month)'    : month,
       'ปี (Year)'        : year,
       'หมายเหตุ (Remark)': remark,
@@ -384,7 +387,12 @@ async function submitLeave() {
   };
 
   try {
-    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
+    // FIX #3: ทุก POST ต้องมี Content-Type header
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{
+      method:'POST',
+      body:JSON.stringify(payload),
+      headers:{'Content-Type':'application/json'}
+    });
     const json = await res.json();
     if (json.status==='ok') {
       showToast('✅ บันทึกข้อมูลสำเร็จ!','success');
@@ -429,7 +437,10 @@ async function loadRecent() {
         : '—';
       const type = r['ประเภทรายการ']||'—';
       const cls  = typeBadge[type]||'badge-blue';
-      const hrs  = r['จำนวนการลา']||'—';
+      // แสดง ชม. สวยงาม (รองรับ number จาก sheet และ string เก่า)
+      const hrsRaw = r['จำนวนการลา'];
+      const hrsNum = parseFloat(String(hrsRaw).replace(/[^0-9.]/g,''));
+      const hrs = isNaN(hrsNum) ? (hrsRaw||'—') : (hrsNum % 1 === 0 ? hrsNum : hrsNum.toFixed(1)) + ' ชม.';
       return `<tr>
         <td><strong>${r['ชื่อ-นามสกุล']||'—'}</strong></td>
         <td><span class="badge badge-blue">${r['แผนก']||'—'}</span></td>
@@ -445,7 +456,12 @@ async function loadRecent() {
 async function deleteRow(rowIndex) {
   if (!confirm('ต้องการลบรายการนี้หรือไม่?')) return;
   try {
-    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteLeave',rowIndex})});
+    // FIX #3: เพิ่ม Content-Type header
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{
+      method:'POST',
+      body:JSON.stringify({action:'deleteLeave',rowIndex}),
+      headers:{'Content-Type':'application/json'}
+    });
     const json = await res.json();
     if (json.status==='ok') { showToast('ลบรายการสำเร็จ','success'); await loadRecent(); }
     else showToast('ลบไม่สำเร็จ: '+(json.message||''),'error');

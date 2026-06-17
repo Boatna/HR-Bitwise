@@ -384,19 +384,10 @@ async function submitForm(){
   const notes     = document.getElementById('notes').value.trim();
   const leaveType = document.getElementById('leaveType').value;
 
-  let yearsOfService='';
-  if (startDate&&leaveDate){
-    const diff=new Date(leaveDate)-new Date(startDate);
-    if (diff>0) yearsOfService=(diff/(1000*60*60*24*365.25)).toFixed(1);
-  }
-
   setSubmitLoading(true);
 
-  // ✅ แก้: fields ตรงกับ Turnover_Data headers จริง:
-  // วันที่บันทึก | รหัสพนักงาน | ชื่อ-นามสกุล | แผนก | Plant
-  // วันที่เริ่มงาน | วันที่ลาออก | ประเภทการลาออก
-  // สาเหตุที่ลาออก | การคืนทรัพย์สิน | หมายเหตุ | อายุงาน (ปี)
-  // หมายเหตุ: ไม่มี column 'ตำแหน่ง' ใน Turnover_Data sheet
+  // FIX #7: ลบ yearsOfService ออกจาก front-end ให้ GAS คำนวณเองฝั่งเดียว
+  // GAS addResult() จะคำนวณจาก วันที่เริ่มงาน และ วันที่ลาออก โดยอัตโนมัติ
   const payload = {
     action: 'addResult',
     data: {
@@ -411,12 +402,17 @@ async function submitForm(){
       'สาเหตุที่ลาออก'  : reason,
       'การคืนทรัพย์สิน' : '',
       'หมายเหตุ'        : notes,
-      'อายุงาน (ปี)'    : yearsOfService,
+      // ไม่ส่ง 'อายุงาน (ปี)' — GAS คำนวณเอง
     }
   };
 
   try {
-    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
+    // FIX #3: ทุก POST ต้องมี Content-Type header
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{
+      method:'POST',
+      body:JSON.stringify(payload),
+      headers:{'Content-Type':'application/json'}
+    });
     const json = await res.json();
     if (json.status==='ok'){
       showToast('✅ บันทึกข้อมูลสำเร็จ!','success');
@@ -473,7 +469,12 @@ async function loadRecentResults(){
 async function deleteEntry(rowIndex){
   if (!confirm('ต้องการลบรายการนี้หรือไม่?\nการลบจะไม่สามารถย้อนกลับได้')) return;
   try {
-    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteResult',rowIndex})});
+    // FIX #3: เพิ่ม Content-Type header
+    const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{
+      method:'POST',
+      body:JSON.stringify({action:'deleteResult',rowIndex}),
+      headers:{'Content-Type':'application/json'}
+    });
     const json = await res.json();
     if (json.status==='ok'){ showToast('ลบรายการสำเร็จ','success'); await loadRecentResults(); }
     else showToast('ลบไม่สำเร็จ: '+(json.message||''),'error');
