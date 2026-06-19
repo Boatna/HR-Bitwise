@@ -121,6 +121,7 @@ tbody tr:hover td{background:var(--bg3)}
 .badge-yellow{background:#FFFBEB;color:#92400E;border-color:rgba(217,119,6,.2)}
 .badge-green{background:#ECFDF5;color:#065F46;border-color:rgba(5,150,105,.2)}
 .badge-orange{background:#FFF7ED;color:#C2410C;border-color:rgba(194,65,12,.2)}
+.badge-purple{background:#FAF5FF;color:#7E22CE;border-color:rgba(126,34,206,.2)}
 .mono{font-family:'DM Mono',monospace;font-size:.82rem;font-weight:600;color:var(--navy)}
 .btn-del{background:none;border:none;cursor:pointer;padding:5px 8px;border-radius:7px;font-size:.85rem;color:var(--text3);transition:all .15s}
 .btn-del:hover{color:var(--red);background:#FEF2F2}
@@ -196,19 +197,19 @@ tbody tr:hover td{background:var(--bg3)}
         </div>
         <div class="field" id="fieldLeaveType">
           <label>ประเภทรายการ <span class="req">*</span></label>
-          <!-- FIX #2: เพิ่ม พักร้อน ที่หายไป -->
-          <select id="leaveType">
+          <select id="leaveType" onchange="onLeaveTypeChange()">
             <option value="">— เลือกประเภท —</option>
             <option value="ลาป่วย">🏥 ลาป่วย</option>
             <option value="ลากิจ">🗓️ ลากิจ</option>
             <option value="พักร้อน">🌴 พักร้อน</option>
             <option value="ขาดงาน">❌ ขาดงาน</option>
             <option value="มาสาย">⏰ มาสาย</option>
+            <option value="โอที">🌙 โอที (OT)</option>
           </select>
           <span class="field-error-msg">กรุณาเลือกประเภท</span>
         </div>
         <div class="field col-span-2" id="fieldHours">
-          <label>จำนวน (ชั่วโมง) <span class="req">*</span></label>
+          <label id="hoursLabel">จำนวน (ชั่วโมง) <span class="req">*</span></label>
           <div class="hours-group">
             <input type="number" id="leaveHours" min="0.5" max="48" step="0.5" placeholder="เช่น 8" autocomplete="off"/>
             <div class="hours-unit">ชม.</div>
@@ -221,7 +222,7 @@ tbody tr:hover td{background:var(--bg3)}
             <button type="button" class="qp-btn" onclick="setHours(4)">4 (ครึ่งวัน)</button>
             <button type="button" class="qp-btn" onclick="setHours(8)">8 (เต็มวัน)</button>
           </div>
-          <span class="field-hint">1 วันทำงาน = 8 ชม. · ครึ่งวัน = 4 ชม.</span>
+          <span class="field-hint" id="hoursHint">1 วันทำงาน = 8 ชม. · ครึ่งวัน = 4 ชม.</span>
           <span class="field-error-msg">กรุณาระบุจำนวนชั่วโมง</span>
         </div>
         <div class="field col-span-2">
@@ -335,6 +336,22 @@ function clearSelection(clearBox=true) {
   document.getElementById('empCard').classList.remove('show');
 }
 
+// เปลี่ยน label/hint ของช่อง "จำนวนชั่วโมง" ตามประเภทที่เลือก
+// เพื่อไม่ให้ HR สับสนระหว่าง "ชั่วโมงลา" กับ "ชั่วโมงโอที" ซึ่งเป็นข้อมูลคนละความหมายกัน
+// (บันทึกลง column 'จำนวนการลา' เดียวกัน แยกด้วย 'ประเภทรายการ' = โอที เพื่อไม่ต้องแก้ schema ของ sheet เดิม)
+function onLeaveTypeChange() {
+  const type  = document.getElementById('leaveType').value;
+  const label = document.getElementById('hoursLabel');
+  const hint  = document.getElementById('hoursHint');
+  if (type === 'โอที') {
+    label.innerHTML = 'จำนวนชั่วโมงโอที <span class="req">*</span>';
+    hint.textContent = 'กรอกชั่วโมงโอทีจริงที่ทำ (ไม่ใช่ชั่วโมงลา)';
+  } else {
+    label.innerHTML = 'จำนวน (ชั่วโมง) <span class="req">*</span>';
+    hint.textContent = '1 วันทำงาน = 8 ชม. · ครึ่งวัน = 4 ชม.';
+  }
+}
+
 function setHours(val) {
   document.getElementById('leaveHours').value = val;
   document.querySelectorAll('.qp-btn').forEach(b=>b.classList.toggle('active',parseFloat(b.textContent)===val));
@@ -362,6 +379,7 @@ async function submitLeave() {
 
   const leaveDate = document.getElementById('leaveDate').value;
   const leaveType = document.getElementById('leaveType').value;
+  // FIX #1: ส่งเป็น number ล้วน ไม่มี ' ชม.' ต่อท้าย
   const hours     = parseFloat(document.getElementById('leaveHours').value);
   const remark    = document.getElementById('leaveRemark').value.trim();
   const d         = new Date(leaveDate);
@@ -378,7 +396,7 @@ async function submitLeave() {
       'Plant'             : document.getElementById('hidPlant').value,
       'วันที่ลาหยุด'     : leaveDate,
       'ประเภทรายการ'     : leaveType,
-      'จำนวนการลา'       : hours,
+      'จำนวนการลา'       : hours,          // FIX #1: number ไม่มี unit string
       'เดือน (Month)'    : month,
       'ปี (Year)'        : year,
       'หมายเหตุ (Remark)': remark,
@@ -386,10 +404,13 @@ async function submitLeave() {
   };
 
   try {
+    // FIX #3 (แก้ใหม่): ใช้ text/plain;charset=utf-8 — ห้ามเปลี่ยนเป็น application/json เด็ดขาด
+    // เพราะจะ trigger CORS preflight (OPTIONS) ที่ Apps Script Web App ตอบรับไม่ได้ → POST จะถูก browser block ทั้งหมด
+    // (Code.gs อ่าน e.postData.contents เหมือนกันทุกกรณี ไม่สนใจ Content-Type ที่ประกาศมา)
     const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{
       method:'POST',
       body:JSON.stringify(payload),
-      headers:{'Content-Type':'application/json'}
+      headers:{'Content-Type':'text/plain;charset=utf-8'}
     });
     const json = await res.json();
     if (json.status==='ok') {
@@ -414,6 +435,7 @@ function resetForm() {
   document.getElementById('leaveType').value = '';
   document.getElementById('leaveHours').value = '';
   document.getElementById('leaveRemark').value = '';
+  onLeaveTypeChange(); // sync label/hint กลับเป็นค่าเริ่มต้น ไม่ให้ค้างคำว่า "ชั่วโมงโอที"
   document.querySelectorAll('.qp-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.field.error').forEach(f=>f.classList.remove('error'));
 }
@@ -428,13 +450,14 @@ async function loadRecent() {
       tbody.innerHTML='<tr class="empty-row"><td colspan="6">ยังไม่มีรายการ</td></tr>'; return;
     }
     const rows=[...json.data].reverse().slice(0,10);
-    const typeBadge={'ลาป่วย':'badge-blue','ลากิจ':'badge-orange','พักร้อน':'badge-green','ขาดงาน':'badge-red','มาสาย':'badge-yellow'};
+    const typeBadge={'ลาป่วย':'badge-blue','ลากิจ':'badge-orange','พักร้อน':'badge-green','ขาดงาน':'badge-red','มาสาย':'badge-yellow','โอที':'badge-purple'};
     tbody.innerHTML=rows.map(r=>{
       const dateStr = r['วันที่ลาหยุด']
         ? (()=>{try{return new Date(r['วันที่ลาหยุด']).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'});}catch{return r['วันที่ลาหยุด'];}})()
         : '—';
       const type = r['ประเภทรายการ']||'—';
       const cls  = typeBadge[type]||'badge-blue';
+      // แสดง ชม. สวยงาม (รองรับ number จาก sheet และ string เก่า)
       const hrsRaw = r['จำนวนการลา'];
       const hrsNum = parseFloat(String(hrsRaw).replace(/[^0-9.]/g,''));
       const hrs = isNaN(hrsNum) ? (hrsRaw||'—') : (hrsNum % 1 === 0 ? hrsNum : hrsNum.toFixed(1)) + ' ชม.';
@@ -453,10 +476,11 @@ async function loadRecent() {
 async function deleteRow(rowIndex) {
   if (!confirm('ต้องการลบรายการนี้หรือไม่?')) return;
   try {
+    // FIX #3 (แก้ใหม่): text/plain;charset=utf-8 เท่านั้น — ห้ามใช้ application/json (จะโดน CORS preflight บล็อก)
     const res  = await fetch(CONFIG.APPS_SCRIPT_URL,{
       method:'POST',
       body:JSON.stringify({action:'deleteLeave',rowIndex}),
-      headers:{'Content-Type':'application/json'}
+      headers:{'Content-Type':'text/plain;charset=utf-8'}
     });
     const json = await res.json();
     if (json.status==='ok') { showToast('ลบรายการสำเร็จ','success'); await loadRecent(); }

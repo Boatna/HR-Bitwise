@@ -377,11 +377,10 @@
 
     <!-- TAB 2: ATTENDANCE -->
     <div id="tab2" class="tab-content">
-        <div class="section-label">⏱️ สถิติชั่วโมงการทำงาน · Working Hours Summary</div>
+        <div class="section-label">⏱️ ชั่วโมงโอที & ชั่วโมงสูญหาย · OT & Lost Hours</div>
         <div class="attend-kpi-grid">
-            <div class="kpi-card border-blue"><div class="kpi-icon">⏰</div><div class="kpi-label">ชม. ทำงานรวม</div><div class="kpi-value-sm" id="attWorkHrs">0</div><div class="kpi-sub">Work Hours (hrs)</div></div>
-            <div class="kpi-card border-orange"><div class="kpi-icon">🌙</div><div class="kpi-label">ชม. โอที</div><div class="kpi-value-sm" id="attOtHrs">0</div><div class="kpi-sub">OT Hours (hrs)</div></div>
-            <div class="kpi-card border-yellow"><div class="kpi-icon">💸</div><div class="kpi-label">ชม. ที่สูญหาย</div><div class="kpi-value-sm" id="attLostHrs">0</div><div class="kpi-sub">Lost Hours (hrs)</div></div>
+            <div class="kpi-card border-purple"><div class="kpi-icon">🌙</div><div class="kpi-label">ชม. โอที (จริง)</div><div class="kpi-value-sm" id="attOtHrs">0</div><div class="kpi-sub">OT Hours — Actual</div></div>
+            <div class="kpi-card border-yellow"><div class="kpi-icon">💸</div><div class="kpi-label">ชม. ที่สูญหาย</div><div class="kpi-value-sm" id="attLostHrs">0</div><div class="kpi-sub">Lost Hours = ขาดงาน+มาสาย</div></div>
         </div>
 
         <div class="section-label">📋 สถิติการลา · Leave Records</div>
@@ -391,6 +390,17 @@
             <div class="kpi-card border-orange"><div class="kpi-icon">🏥</div><div class="kpi-label">ลาป่วย (ชม.)</div><div class="kpi-value-sm" id="attSick">0</div><div class="kpi-sub">Sick Leave (hrs)</div></div>
             <div class="kpi-card border-blue"><div class="kpi-icon">🗓️</div><div class="kpi-label">ลากิจ (ชม.)</div><div class="kpi-value-sm" id="attPersonal">0</div><div class="kpi-sub">Personal Leave (hrs)</div></div>
             <div class="kpi-card border-purple"><div class="kpi-icon">📊</div><div class="kpi-label">รวมลา (ชม.)</div><div class="kpi-value-sm" id="attTotal">0</div><div class="kpi-sub">Total Leave Hours</div></div>
+        </div>
+
+        <div class="section-label">📐 เฉลี่ยต่อคนต่อเดือน · Average per Employee/Month</div>
+        <div class="sick-detail-card">
+            <div class="sick-detail-item"><div class="sick-detail-value" id="avgLeavePerEmp">—</div><div class="sick-detail-label">ชม.ลาเฉลี่ย/คน/เดือน</div><div class="sick-detail-sub">Avg Leave Hrs / Employee / Month</div></div>
+            <div class="sick-divider"></div>
+            <div class="sick-detail-item"><div class="sick-detail-value" id="avgLeavePctStd">—</div><div class="sick-detail-label">% ของชม.งานมาตรฐาน</div><div class="sick-detail-sub">% of 176 hrs/month (8hr×22day)</div></div>
+            <div class="sick-divider"></div>
+            <div class="sick-detail-item"><div class="sick-detail-value" id="avgLeaveNumEmps">0</div><div class="sick-detail-label">จำนวนพนักงาน (ฐานคำนวณ)</div><div class="sick-detail-sub">Employees in Denominator</div></div>
+            <div class="sick-divider"></div>
+            <div class="sick-detail-item"><div class="sick-detail-value" id="avgLeaveNumMonths">0</div><div class="sick-detail-label">จำนวนเดือนที่มีข้อมูล</div><div class="sick-detail-sub">Months with Data</div></div>
         </div>
 
         <div class="section-label">🏥 รายละเอียดการลาป่วย · Sick Leave Detail</div>
@@ -732,7 +742,7 @@ function updateDashboard() {
     _lastYFilter = yf;
 
     try { renderManpower(emps, targets);       } catch(err){ console.error('Manpower error:',err); }
-    try { renderAttendance(leaves, mf, yf);    } catch(err){ console.error('Attendance error:',err); }
+    try { renderAttendance(leaves, mf, yf, emps); } catch(err){ console.error('Attendance error:',err); }
     try { renderResign(resigns, emps, mf, yf); } catch(err){ console.error('Resign error:',err); }
 }
 
@@ -983,7 +993,7 @@ function drawTargetStackedBar(targets, emps) {
 }
 
 // ─── TAB 2: ATTENDANCE ───────────────────────────────────────
-function renderAttendance(leaves, mFilter, yFilter) {
+function renderAttendance(leaves, mFilter, yFilter, emps) {
     _lastLeavesForAttend = leaves;
 
     const filLeaves = leaves.filter(lv => {
@@ -992,7 +1002,7 @@ function renderAttendance(leaves, mFilter, yFilter) {
         return matchM && matchY;
     });
 
-    let absentHrs=0, lateHrs=0, sickHrs=0, personalHrs=0, annualHrs=0;
+    let absentHrs=0, lateHrs=0, sickHrs=0, personalHrs=0, annualHrs=0, otHrs=0;
     const sickPersonSet = new Set();
     const sickDeptHrs = {};
 
@@ -1010,28 +1020,30 @@ function renderAttendance(leaves, mFilter, yFilter) {
         }
         else if (t === 'ลากิจ')   personalHrs += hrs;
         else if (t === 'พักร้อน') annualHrs   += hrs;
+        // FIX: เพิ่มประเภท "โอที" — เก็บข้อมูลจริงจาก leave.html (BUG FIX รอบใหม่)
+        // ก่อนหน้านี้ getHours(lv,'ot') พยายามอ่าน column ที่ไม่มีอยู่จริงใน sheet → ได้ 0 เสมอ
+        else if (t === 'โอที')    otHrs       += hrs;
     });
 
-    let workHrs=0, otHrs=0, lostHrs=0;
-    filLeaves.forEach(lv => {
-        workHrs += getHours(lv, 'work');
-        otHrs   += getHours(lv, 'ot');
-        lostHrs += getHours(lv, 'lost');
-    });
+    // FIX: เดิม "ชม.ทำงานรวม" และ "ชม.ที่สูญหาย" อ่านจาก getHours(lv,'work')/getHours(lv,'lost')
+    // ซึ่งหา column 'ชม.ทำงาน'/'ชม.ศูนย์หาย' ที่ไม่มีอยู่จริงใน Leave_Records sheet เลย → ได้ 0 เสมอ
+    // แก้: ตัด "ชม.ทำงานรวม" ออก (ต้องมีระบบลงเวลาเข้า-ออกจริงถึงจะคำนวณได้ ไม่ใช่ scope ของระบบลานี้)
+    //      "ชม.ที่สูญหาย" เปลี่ยนเป็นค่าคำนวณจริง = ขาดงาน + มาสาย (นิยามมาตรฐาน HR: ชั่วโมงที่ตารางงานคาดว่าจะมีคนแต่ไม่มี)
+    const lostHrs = absentHrs + lateHrs;
 
     const fmt = v => {
         if (!Number.isFinite(v) || v === 0) return '0';
         return v % 1 === 0 ? String(v) : v.toFixed(1);
     };
 
-    setText('attWorkHrs',  fmt(workHrs));
     setText('attOtHrs',    fmt(otHrs));
     setText('attLostHrs',  fmt(lostHrs));
     setText('attAbsent',   fmt(absentHrs));
     setText('attLate',     fmt(lateHrs));
     setText('attSick',     fmt(sickHrs));
     setText('attPersonal', fmt(personalHrs));
-    setText('attTotal',    fmt(absentHrs+lateHrs+sickHrs+personalHrs+annualHrs));
+    const totalLeaveHrs = absentHrs+lateHrs+sickHrs+personalHrs+annualHrs;
+    setText('attTotal',    fmt(totalLeaveHrs));
 
     const sickPersons  = sickPersonSet.size;
     const sickAvg      = sickPersons > 0 ? (sickHrs / sickPersons) : 0;
@@ -1040,6 +1052,21 @@ function renderAttendance(leaves, mFilter, yFilter) {
     setText('sickPersons',  sickPersons);
     setText('sickAvgHrs',   fmt(sickAvg));
     setText('sickTopDept',  topDeptEntry ? topDeptEntry[0] : '—');
+
+    // NEW: ชม.ลาเฉลี่ยต่อคนต่อเดือน เทียบ % ของชั่วโมงงานมาตรฐาน
+    // จำนวนเดือน = นับเฉพาะเดือนที่ "มีข้อมูลจริง" ในช่วงที่ filter ไว้ (ไม่ใช่เหมาทุกเดือนของปี
+    // เผื่อข้อมูลบางเดือนยังไม่ได้กรอก ซึ่งจะทำให้ค่าเฉลี่ยต่ำกว่าความจริงถ้าหารด้วย 12 เสมอ)
+    const monthYearSet = new Set();
+    filLeaves.forEach(lv => monthYearSet.add(getLeaveMonth(lv) + '-' + getLeaveYear(lv)));
+    const numMonths    = monthYearSet.size || 1;
+    const numEmps       = (emps && emps.length) ? emps.length : 0;
+    const STANDARD_HRS_PER_MONTH = 176; // สมมติฐาน: 8 ชม./วัน × ~22 วันทำงาน/เดือน (ปรับได้ตามปฏิทินจริงของบริษัท)
+    const avgLeavePerEmpMonth = (numEmps > 0) ? (totalLeaveHrs / numEmps / numMonths) : 0;
+    const avgLeavePctOfStandard = (avgLeavePerEmpMonth / STANDARD_HRS_PER_MONTH) * 100;
+    setText('avgLeavePerEmp',    numEmps > 0 ? fmt(avgLeavePerEmpMonth) : '—');
+    setText('avgLeavePctStd',    numEmps > 0 ? avgLeavePctOfStandard.toFixed(1)+'%' : '—');
+    setText('avgLeaveNumEmps',   numEmps);
+    setText('avgLeaveNumMonths', numMonths);
 
     drawAttTrend(leaves, mFilter, yFilter);
 }
