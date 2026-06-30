@@ -436,12 +436,28 @@ async function apiGet(action) {
   return json.data;
 }
 
+// ════════════════════════════════════════════════════════════
+// FIX: CORS Preflight กับ Google Apps Script Web App
+// เดิมใช้ header "Content-Type: application/json" ซึ่งเข้าเงื่อนไข
+// "non-simple request" ตาม CORS spec ทำให้เบราว์เซอร์ต้องส่ง OPTIONS
+// (preflight) ไปก่อนเสมอ แต่ GAS Web App ไม่สามารถแนบ CORS header
+// (Access-Control-Allow-Origin ฯลฯ) ใน doOptions ได้ตามมาตรฐาน REST
+// ทั่วไป ทำให้ preflight ล้มเหลวและเบราว์เซอร์บล็อก request จริงไป
+// เลยก่อนจะถึงปลายทางด้วยซ้ำ -> fetch โยน "Failed to fetch"
+// (สังเกตได้ชัดเจนเมื่อรันหน้าเว็บผ่าน origin อื่น เช่น
+// http://localhost:5500 ของ Live Server ซึ่งคนละ origin กับ
+// https://script.google.com)
+// แก้โดยเปลี่ยน Content-Type เป็น "text/plain" ซึ่งจัดเป็น
+// "simple request" ไม่ต้อง preflight เลย ตัวเนื้อหา body ยังคงเป็น
+// JSON string เหมือนเดิม ฝั่ง GAS (doPost) ยัง JSON.parse ได้ปกติ
+// เพราะ GAS ไม่ได้สนใจ Content-Type header ที่ส่งมาจริงๆ
+// ════════════════════════════════════════════════════════════
 async function apiPost(action, data) {
   let res;
   try {
     res = await fetch(GAS_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ action, data }),
       redirect: 'follow'
     });
@@ -460,9 +476,24 @@ async function apiPost(action, data) {
   return json.message;
 }
 
+// ════════════════════════════════════════════════════════════
+// FIX BUG #3: parseDateString
+// เดิม regex รองรับเฉพาะ "yyyy-MM-dd" แบบเป๊ะ ถ้า backend (หรือ
+// กรณีฉุกเฉินใดๆ) ส่งมาเป็น ISO string ที่มี "T" ต่อท้าย เช่น
+// "2026-05-07T00:00:00.000Z" จะไม่ match เงื่อนไขใดเลย แล้วตกไป
+// fallback `new Date(s)` ซึ่งตีความตาม timezone ของเครื่อง/เบราว์เซอร์
+// ผู้ใช้ ไม่ใช่ Asia/Bangkok ทำให้วันที่อาจเพี้ยนไป 1 วันสำหรับคนที่
+// เปิดเว็บจาก timezone อื่น
+// แก้โดยตัดส่วน "T..." ออกก่อนเช็ค pattern yyyy-MM-dd และ split
+// ค่าด้วยตัวเองแทนการพึ่ง `new Date()` แปลง timezone อัตโนมัติ
+// ════════════════════════════════════════════════════════════
 function parseDateString(dateStr) {
   if (!dateStr) return null;
-  const s = dateStr.trim();
+  let s = dateStr.trim();
+
+  // ตัดส่วนเวลา/ISO suffix ออกก่อน เช่น "2026-05-07T00:00:00.000Z" → "2026-05-07"
+  if (s.includes('T')) s = s.split('T')[0];
+  if (s.includes(' ') && /^\d{4}-\d{2}-\d{2}/.test(s)) s = s.split(' ')[0];
 
   // รูปแบบ dd/MM/yyyy (รูปแบบหลักที่ GAS ส่งมา)
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
@@ -471,14 +502,15 @@ function parseDateString(dateStr) {
     return isNaN(d.getTime()) ? null : d;
   }
 
-  // รูปแบบ yyyy-MM-dd (ISO)
+  // รูปแบบ yyyy-MM-dd (ISO, รวมถึงกรณีที่เพิ่งตัด "T..." ออกไปแล้วด้านบน)
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
     const [yyyy, mm, dd] = s.split('-').map(Number);
     const d = new Date(yyyy, mm - 1, dd);
     return isNaN(d.getTime()) ? null : d;
   }
 
-  // fallback (ไม่ควรเกิดในทางปฏิบัติหลัง GAS fix)
+  // fallback สุดท้าย (ไม่ควรเกิดในทางปฏิบัติ) — เตือนใน console เพื่อ debug ง่ายขึ้น
+  console.warn('[parseDateString] รูปแบบวันที่ไม่รู้จัก ใช้ fallback new Date():', dateStr);
   const d = new Date(s);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -696,9 +728,6 @@ function checkEmployee(foundEmp) {
   }
 }
 
-// ════════════════════════════════════════════════════════════
-// submitForm (คงเดิม — ไม่มี bug ใหม่)
-// ════════════════════════════════════════════════════════════
 function submitForm() {
   if (isSubmitting) {
     Swal.fire({
@@ -817,9 +846,6 @@ function submitForm() {
   }
 }
 
-// ════════════════════════════════════════════════════════════
-// Add Employee Modal
-// ════════════════════════════════════════════════════════════
 function autoFullName() {
   var prefix = document.getElementById('newPrefix').value;
   var fname = document.getElementById('newFirstName').value.trim();
@@ -913,7 +939,7 @@ async function loadDashboard() {
     var data = await apiGet('getRecords');
     dashboardRawData = data;
 
-    populateExportFilterDropdowns(data);
+    populateExportFilterDropdowns();
 
     populateFilterDropdowns('dash', data);
     applyDashboardFilters();
@@ -942,7 +968,6 @@ function getAvailableMonthYears(data) {
   const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   const map = new Map();
   data.forEach(row => {
-    // FIX Bug 4 — ใช้ parseDateString ที่แก้แล้ว (parse dd/MM/yyyy ถูกต้อง)
     const dateObj = parseDateString((row[5] || '').trim());
     if (!dateObj) return;
     const mm = dateObj.getMonth(); // 0-indexed
@@ -1087,7 +1112,6 @@ function processDashboard(data) {
       const m = dateObj.getMonth();
       const d = dateObj.getDate();
 
-      // เปรียบเทียบแบบ numeric ไม่ขึ้นกับ string format
       if (y === todayY && m === todayM && d === todayD) countToday++;
       if (y === todayY && m === todayM) countMonth++;
     }
@@ -1161,8 +1185,6 @@ var globalData = [];
 async function loadDataTable() {
   $('#tableBody').html('<tr><td colspan="8" class="text-center"><div class="spinner-border text-primary my-3"></div><br>กำลังโหลดข้อมูล...</td></tr>');
 
-  // FIX Bug 2 — destroy DataTable ก่อน clear tbody เสมอ
-  // เพื่อให้ DataTable ปล่อย reference เก่าออกก่อนที่ jQuery จะ render ใหม่
   if (dataTableInstance) {
     dataTableInstance.destroy();
     dataTableInstance = null;
@@ -1172,8 +1194,7 @@ async function loadDataTable() {
     var data = await apiGet('getRecords');
     globalData = data;
 
-    // FIX Bug 1 — sync Export dropdown ทุกครั้งที่ได้ข้อมูลใหม่
-    populateExportFilterDropdowns(data);
+    populateExportFilterDropdowns();
     populateFilterDropdowns('data', data);
     applyDataFilters();
     dataLoaded = true;
@@ -1217,15 +1238,37 @@ function applyDataFilters() {
   renderDataTable(filtered);
 }
 
-function populateExportFilterDropdowns(data) {
+// ════════════════════════════════════════════════════════════
+// FIX BUG #4: populateExportFilterDropdowns
+// เดิมรับ "data" ของหน้าที่เพิ่งโหลดเพียงอย่างเดียว (globalData หรือ
+// dashboardRawData แยกกัน) ถ้าผู้ใช้ยังไม่เคยเปิดอีกหน้าหนึ่งเลย
+// ตัวเลือก Plant/แผนกใน export modal จะไม่ครบ เพราะข้อมูลอีกชุดยังไม่
+// เคยถูกโหลดมา ทำให้ filter dropdown ใน export modal ไม่ sync กับข้อมูล
+// จริงทั้งหมดในระบบ
+// แก้โดยรวม (union) ข้อมูลจาก globalData และ dashboardRawData เข้า
+// ด้วยกันก่อน populate dropdown เสมอ ไม่ว่าจะถูกเรียกจากหน้าไหน
+// ════════════════════════════════════════════════════════════
+function populateExportFilterDropdowns() {
   const plantSel = document.getElementById('exportFilterPlant');
   const deptSel  = document.getElementById('exportFilterDept');
-  const plants = getUniqueSorted(data, 4);
-  const depts  = getUniqueSorted(data, 2);
+
+  const currentPlant = plantSel.value;
+  const currentDept  = deptSel.value;
+
+  // รวมข้อมูลจากทั้งสองแหล่งเพื่อให้ dropdown ครบเสมอ ไม่ขึ้นกับว่า
+  // ผู้ใช้เปิดหน้าไหนมาก่อน
+  const combinedData = [...globalData, ...dashboardRawData];
+
+  const plants = getUniqueSorted(combinedData, 4);
+  const depts  = getUniqueSorted(combinedData, 2);
+
   plantSel.innerHTML = '<option value="">ทั้งหมด</option>' +
     plants.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
   deptSel.innerHTML = '<option value="">ทั้งหมด</option>' +
     depts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+
+  if (plants.includes(currentPlant)) plantSel.value = currentPlant;
+  if (depts.includes(currentDept)) deptSel.value = currentDept;
 }
 
 function renderDataTable(data) {
@@ -1275,6 +1318,15 @@ function renderDataTable(data) {
   });
 }
 
+// ════════════════════════════════════════════════════════════
+// FIX BUG #5: downloadExcel
+// เดิม ถ้าแถวไหน parse วันที่ไม่ได้ (ข้อมูลเก่าเสีย/format แปลก) และ
+// ผู้ใช้ตั้งช่วงวันที่กรองไว้ แถวนั้นจะถูกข้ามไปเงียบๆ โดยไม่มีการ
+// แจ้งเตือน ทำให้จำนวนแถวที่ export ไม่ตรงกับที่คาดไว้ และผู้ใช้ไม่รู้
+// ว่ามีข้อมูลตกหล่น
+// แก้โดยนับจำนวนแถวที่ถูกข้ามเพราะ parse วันที่ไม่ได้ แล้วแจ้งเตือน
+// ผู้ใช้ผ่าน Swal หลัง export เสร็จ (ไม่บล็อกการ export แต่ให้รู้ตัว)
+// ════════════════════════════════════════════════════════════
 function downloadExcel() {
   var startDateStr = document.getElementById("exportStartDate").value;
   var endDateStr   = document.getElementById("exportEndDate").value;
@@ -1288,8 +1340,9 @@ function downloadExcel() {
   if (endDate) endDate.setHours(23, 59, 59, 999);
 
   var exportData = [["รหัสพนักงาน","ชื่อ-นามสกุล","แผนก","ตำแหน่ง","Plant","วันที่","เวลา","Latitude","Longitude"]];
+  var skippedDueToBadDate = 0; // FIX BUG #5: นับแถวที่ถูกตัดออกเพราะ parse วันที่ไม่ได้
 
-  // FIX Bug 1 — ถ้า globalData ว่าง (ยังไม่เคยโหลดหน้า "ข้อมูล") ให้ใช้ dashboardRawData แทน
+  // ถ้า globalData ว่าง (ยังไม่เคยโหลดหน้า "ข้อมูล") ให้ใช้ dashboardRawData แทน
   const sourceData = globalData.length > 0 ? globalData : dashboardRawData;
 
   sourceData.forEach(function (row) {
@@ -1302,6 +1355,10 @@ function downloadExcel() {
     if (!dateObj) {
       if (!startDate && !endDate) {
         exportData.push(row);
+      } else {
+        // มีการตั้งช่วงวันที่ไว้ แต่แถวนี้ไม่มีวันที่ที่ parse ได้
+        // จึงไม่สามารถรู้ได้ว่าอยู่ในช่วงหรือไม่ -> ข้าม และนับไว้แจ้งเตือน
+        skippedDueToBadDate++;
       }
       return;
     }
@@ -1328,12 +1385,24 @@ function downloadExcel() {
   XLSX.writeFile(wb, "ประวัติลืมบัตรพนักงาน_" + new Date().getTime() + ".xlsx");
 
   bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
-  Swal.fire({ title: 'Export สำเร็จ!', icon: 'success', timer: 2000, showConfirmButton: false });
+
+  if (skippedDueToBadDate > 0) {
+    // FIX BUG #5: แจ้งเตือนผู้ใช้ว่ามีแถวที่ถูกข้ามเพราะวันที่อ่านไม่ได้
+    Swal.fire({
+      title: 'Export สำเร็จ (มีข้อมูลบางส่วนถูกข้าม)',
+      html: `ดาวน์โหลดไฟล์เรียบร้อยแล้ว<br>
+             <small class="text-warning">
+               พบ ${skippedDueToBadDate} รายการที่มีข้อมูลวันที่ผิดปกติ
+               และไม่ถูกรวมในไฟล์ (เพราะกรองตามช่วงวันที่ไม่ได้)
+             </small>`,
+      icon: 'warning',
+      confirmButtonText: 'รับทราบ'
+    });
+  } else {
+    Swal.fire({ title: 'Export สำเร็จ!', icon: 'success', timer: 2000, showConfirmButton: false });
+  }
 }
 
-// ════════════════════════════════════════════════════════════
-// Keyboard Shortcut (Enter)
-// ════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
@@ -1349,9 +1418,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// ════════════════════════════════════════════════════════════
-// Auto refresh
-// ════════════════════════════════════════════════════════════
 function refreshAllData() {
   console.log("🔄 Refreshing all data...");
   dataLoaded = false;
