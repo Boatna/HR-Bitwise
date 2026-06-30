@@ -494,7 +494,6 @@
 <div class="toast-wrap" id="toastContainer"></div>
 
 <script>
-// ─── CONSTANTS ───────────────────────────────────────────────
 const COLORS = {
     blue:'#2563EB', blue2:'#3B82F6', cyan:'#0EA5E9', red:'#DC2626',
     yellow:'#EAB308', orange:'#F97316', green:'#10B981', purple:'#8B5CF6',
@@ -511,7 +510,6 @@ let _lastLeavesForAttend = [];
 let _lastMFilter = 'all';
 let _lastYFilter = 'all';
 
-// ─── YEAR FILTER ─────────────────────────────────────────────
 function buildYearFilter(resignsData, leavesData) {
     const sel = document.getElementById('yearFilter');
     if (!sel) return;
@@ -527,10 +525,6 @@ function buildYearFilter(resignsData, leavesData) {
         const y = parseInt(getLeaveYear(lv), 10);
         if (!isNaN(y) && y > 2000) yearsFromData.add(y);
     });
-
-    // BUG FIX #8: เดิมใช้ Math.min(...set)/Math.max(...set) — การ spread Set ขนาดใหญ่
-    // เข้า function arguments อาจทำให้ throw RangeError (call stack overflow) ได้ในบางเบราว์เซอร์
-    // แก้: ใช้ reduce หาค่า min/max แทน ไม่ต้อง spread เข้า arguments เลย
     const yearsArr = yearsFromData.size ? [...yearsFromData] : [currentYear];
     const dataMin  = yearsArr.reduce((a, b) => Math.min(a, b), yearsArr[0]);
     const dataMax  = yearsArr.reduce((a, b) => Math.max(a, b), yearsArr[0]);
@@ -545,13 +539,6 @@ function buildYearFilter(resignsData, leavesData) {
     sel.innerHTML = html;
 }
 
-// ─── GENDER DETECTION ────────────────────────────────────────
-// BUG FIX #6 — getGender
-// ปัญหา: data จริงไม่มี column 'เพศ' เลย → ต้องดูจาก 'คำนำหน้า' เท่านั้น
-// 'นาย' = ชาย, 'นาง' / 'นางสาว' = หญิง
-// BUG FIX #5: เดิม fallback คืน 'หญิง' เสมอเมื่อคำนำหน้าไม่ตรง 'นาย'
-// → พนักงานที่ไม่กรอกคำนำหน้า หรือใช้คำนำหน้าอื่น (Mr./Mrs./ด.ช./ว่าง) ถูกเหมาเป็นหญิงหมด
-// แก้: แยกคำนำหน้าชาย/หญิงที่รู้จักอย่างชัดเจน ถ้าไม่ตรงเลยให้คืน 'ไม่ระบุ' แทนการเดา
 function getGender(emp) {
     const sexCol = String(emp['เพศ'] || '').trim().toLowerCase();
     if (sexCol === 'ชาย' || sexCol === 'm' || sexCol === 'male')   return 'ชาย';
@@ -563,10 +550,9 @@ function getGender(emp) {
     const pLower = prefix.toLowerCase();
     if (MALE_PREFIX.includes(prefix)   || MALE_PREFIX.includes(pLower))   return 'ชาย';
     if (FEMALE_PREFIX.includes(prefix) || FEMALE_PREFIX.includes(pLower)) return 'หญิง';
-    return 'ไม่ระบุ'; // ไม่เดาเพศจากข้อมูลที่ไม่ชัดเจน
+    return 'ไม่ระบุ';
 }
 
-// ─── LEAVE HELPERS ───────────────────────────────────────────
 function getLeaveMonth(lv) {
     const raw = lv['เดือน (Month)'] ?? lv['เดือน'] ?? '';
     const n = parseInt(String(raw).trim(), 10);
@@ -578,10 +564,6 @@ function getLeaveYear(lv) {
     return isNaN(n) ? String(raw).trim() : String(n);
 }
 
-// BUG FIX #7 — getHours
-// ปัญหา: 'จำนวนการลา' อาจถูกเก็บเป็น string "8 ชม." หรือ "8.0" หรือ number 8
-//         → ต้องรองรับทุก format
-// ปัญหา: field 'leave' → ใช้ column 'จำนวนการลา' เท่านั้น
 function getHours(lv, field) {
     function parseNum(v) {
         if (v === undefined || v === null || v === '') return 0;
@@ -609,9 +591,6 @@ function getHours(lv, field) {
     return 0;
 }
 
-// BUG FIX #8 — getTargetValue
-// ปัญหา: ManpowerTarget sheet มี column 'อัตตรากำลังพล' (สะกดแบบนี้จริงๆ ใน sheet)
-//         แต่ getTargetValue เดิมก็รองรับแล้ว → ตรวจสอบให้แน่ใจว่า key ตรง
 function getTargetValue(obj) {
     const keys = ['อัตตรากำลังพล', 'อัตรากำลังพลตามเป้าหมาย', 'อัตรากำลังพลเป้าหมาย', 'เป้าหมาย', 'Target', 'target'];
     for (const k of keys) {
@@ -623,7 +602,6 @@ function getTargetValue(obj) {
     return 0;
 }
 
-// ─── TOAST ───────────────────────────────────────────────────
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -637,7 +615,6 @@ function showToast(message, type = 'success') {
     }, 4000);
 }
 
-// ─── TAB ─────────────────────────────────────────────────────
 function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -647,7 +624,6 @@ function switchTab(tabId) {
     setTimeout(() => Object.values(charts).forEach(c => c?.resize?.()), 200);
 }
 
-// ─── LOADING ─────────────────────────────────────────────────
 function showLoading(show) {
     let el = document.querySelector('.spinner-overlay');
     if (show && !el) {
@@ -656,7 +632,6 @@ function showLoading(show) {
     } else if (!show && el) el.remove();
 }
 
-// ─── FETCH DATA ──────────────────────────────────────────────
 async function fetchData() {
     showLoading(true);
     try {
@@ -679,13 +654,9 @@ async function fetchData() {
     }
 }
 
-// ─── POPULATE FILTERS ────────────────────────────────────────
 function populateFilters() {
     const depts = new Set();
     const plants = new Set();
-
-    // BUG FIX #9 — รวม targets + employees ทั้งคู่ใน populateFilters
-    // ปัญหา: ถ้า targets มีแผนกที่ employees ไม่มี (หรือกลับกัน) dropdown จะหาย
     (allData.targets || []).forEach(t => {
         if (t['แผนก']) depts.add(String(t['แผนก']).trim());
         if (t['Plant']) plants.add(String(t['Plant']).trim());
@@ -708,7 +679,6 @@ function populateFilters() {
     }
 }
 
-// ─── MAIN UPDATE ─────────────────────────────────────────────
 function updateDashboard() {
     const df = document.getElementById('deptFilter')?.value  || 'all';
     const pf = document.getElementById('plantFilter')?.value || 'all';
@@ -746,7 +716,6 @@ function updateDashboard() {
     try { renderResign(resigns, emps, mf, yf); } catch(err){ console.error('Resign error:',err); }
 }
 
-// ─── TAB 1: MANPOWER ─────────────────────────────────────────
 function renderManpower(emps, targets) {
     const totalActual = emps.length;
     const totalTarget = targets.reduce((s, t) => s + getTargetValue(t), 0);
@@ -781,7 +750,6 @@ function renderManpower(emps, targets) {
     setText('valMyanmarFemalePct', pct(myanmarFemale));
     setText('natThaiPct',          pct(thais));
     setText('natMyanmarPct',       pct(myanmars));
-    // FIX #5: แสดงจำนวนคนที่เพศไม่ชัดเจน เพื่อไม่ให้ข้อมูลเงียบหายไปจากผู้ใช้
     setText('valGenderUnknown', genderUnknown);
     const guWrap = document.getElementById('genderUnknownWrap');
     if (guWrap) guWrap.style.display = genderUnknown > 0 ? 'block' : 'none';
@@ -790,8 +758,6 @@ function renderManpower(emps, targets) {
 
     drawTargetStackedBar(targets, emps);
 
-    // Age distribution — BUG FIX #10: ข้อมูล DOB ใน sheet นี้ว่างทั้งหมด
-    // ป้องกัน crash โดยแสดง "ไม่มีข้อมูล" แทนการ skip chart
     const ageGroups={'18-25 ปี':0,'26-30 ปี':0,'31-40 ปี':0,'41-50 ปี':0,'51-60 ปี':0,'60 ปีขึ้นไป':0};
     let hasAge = false;
     emps.forEach(e => {
@@ -802,8 +768,6 @@ function renderManpower(emps, targets) {
             if (isNaN(d.getTime())) return;
             const age = Math.floor((Date.now() - d) / (1000*60*60*24*365.25));
             if (age < 0 || age > 120) return;
-            // ปรับช่วงอายุตามที่ระบุ: 18-25, 26-30, 31-40, 41-50, 51-60, 60 ปีขึ้นไป
-            // อายุต่ำกว่า 18 (กรณีข้อมูลคลาดเคลื่อน) จะรวมอยู่ในกลุ่ม 18-25 ไม่ตัดทิ้ง
             if      (age <= 25) ageGroups['18-25 ปี']++;
             else if (age <= 30) ageGroups['26-30 ปี']++;
             else if (age <= 40) ageGroups['31-40 ปี']++;
@@ -814,13 +778,11 @@ function renderManpower(emps, targets) {
         } catch(_) {}
     });
     if (!hasAge) {
-        // แสดงว่าไม่มีข้อมูล DOB แทน
         drawBarH('wfAge', ['ยังไม่มีข้อมูลวันเกิด'], [0], COLORS.cyan);
     } else {
         drawBarH('wfAge', Object.keys(ageGroups), Object.values(ageGroups), COLORS.cyan);
     }
 
-    // Tenure distribution — BUG FIX #10: วันที่เริ่มงาน ก็ว่างทั้งหมดใน sheet นี้
     const tenureGroups = {'น้อยกว่า 4 เดือน':0,'4 เดือน - ไม่ถึง 1 ปี':0,'1 ปี - ไม่ถึง 3 ปี':0,'3 ปี - ไม่ถึง 6 ปี':0,'6 ปีขึ้นไป':0};
     let hasTenure = false;
     emps.forEach(e => {
@@ -829,10 +791,9 @@ function renderManpower(emps, targets) {
         try {
             const d = new Date(sd);
             if (isNaN(d.getTime())) return;
-            // คำนวณเป็น "เดือน" เพื่อแบ่งช่วงระดับเดือนได้แม่นยำ (เดิมคำนวณเป็นปีอย่างเดียว หยาบเกินไปสำหรับขอบ 4 เดือน)
             const days   = (Date.now() - d) / (1000*60*60*24);
             if (days < 0) return;
-            const months = days / 30.4375; // ใช้ค่าเฉลี่ยจำนวนวันต่อเดือนแบบเดียวกับ 365.25 วัน/ปีที่ใช้ทั้งไฟล์
+            const months = days / 30.4375;
             if      (months < 4)  tenureGroups['น้อยกว่า 4 เดือน']++;
             else if (months < 12) tenureGroups['4 เดือน - ไม่ถึง 1 ปี']++;
             else if (months < 36) tenureGroups['1 ปี - ไม่ถึง 3 ปี']++;
@@ -847,13 +808,9 @@ function renderManpower(emps, targets) {
         drawBarH('wfTenure', Object.keys(tenureGroups), Object.values(tenureGroups), COLORS.teal);
     }
 
-    // Dept headcount — ใช้คำนวณ sortedDept ต่อให้กราฟ "อัตรากำลังพลแยกชาย-หญิง" ด้านล่าง
-    // (เอากราฟ wfDept เดี่ยวๆ ออกตามคำขอ แต่ deptCount/sortedDept ยังต้องใช้ต่อ ห้ามลบ)
     const deptCount = {};
     emps.forEach(e => { const d = e['แผนก']||'ไม่ระบุ'; deptCount[d]=(deptCount[d]||0)+1; });
     const sortedDept = Object.entries(deptCount).sort((a,b)=>b[1]-a[1]);
-
-    // Stacked bar dept × gender
     const allDepts = sortedDept.map(i=>i[0]);
     const deptMale=[], deptFemale=[];
     allDepts.forEach(dept => {
@@ -868,11 +825,6 @@ function renderManpower(emps, targets) {
     drawStackedBar('wfDeptGender', allDepts, deptMale, deptFemale);
 }
 
-// ─── TARGET STACKED BAR ──────────────────────────────────────
-// BUG FIX #11 — drawTargetStackedBar
-// ปัญหา: ManpowerTarget เก็บ Plant name ไม่ตรงกับ Employees
-//         → การ match dept ต้อง case-insensitive + trim
-// ปัญหา: column 'กำลังพลปัจจุบัน' ใน sheet ว่างทั้งหมด (NaN) → ต้องคำนวณจาก employees จริง
 function drawTargetStackedBar(targets, emps) {
     const wrap   = document.getElementById('targetChartWrap');
     const noData = document.getElementById('targetNoData');
@@ -889,7 +841,6 @@ function drawTargetStackedBar(targets, emps) {
     if (noData) noData.style.display = 'none';
     if (legend) legend.style.display = 'flex';
 
-    // นับจาก employees จริง (case-insensitive)
     const deptCount = {};
     (emps || []).forEach(e => {
         const d = String(e['แผนก'] || 'ไม่ระบุ').trim().toLowerCase();
@@ -992,7 +943,6 @@ function drawTargetStackedBar(targets, emps) {
     });
 }
 
-// ─── TAB 2: ATTENDANCE ───────────────────────────────────────
 function renderAttendance(leaves, mFilter, yFilter, emps) {
     _lastLeavesForAttend = leaves;
 
@@ -1024,11 +974,6 @@ function renderAttendance(leaves, mFilter, yFilter, emps) {
         // ก่อนหน้านี้ getHours(lv,'ot') พยายามอ่าน column ที่ไม่มีอยู่จริงใน sheet → ได้ 0 เสมอ
         else if (t === 'โอที')    otHrs       += hrs;
     });
-
-    // FIX: เดิม "ชม.ทำงานรวม" และ "ชม.ที่สูญหาย" อ่านจาก getHours(lv,'work')/getHours(lv,'lost')
-    // ซึ่งหา column 'ชม.ทำงาน'/'ชม.ศูนย์หาย' ที่ไม่มีอยู่จริงใน Leave_Records sheet เลย → ได้ 0 เสมอ
-    // แก้: ตัด "ชม.ทำงานรวม" ออก (ต้องมีระบบลงเวลาเข้า-ออกจริงถึงจะคำนวณได้ ไม่ใช่ scope ของระบบลานี้)
-    //      "ชม.ที่สูญหาย" เปลี่ยนเป็นค่าคำนวณจริง = ขาดงาน + มาสาย (นิยามมาตรฐาน HR: ชั่วโมงที่ตารางงานคาดว่าจะมีคนแต่ไม่มี)
     const lostHrs = absentHrs + lateHrs;
 
     const fmt = v => {
@@ -1052,15 +997,11 @@ function renderAttendance(leaves, mFilter, yFilter, emps) {
     setText('sickPersons',  sickPersons);
     setText('sickAvgHrs',   fmt(sickAvg));
     setText('sickTopDept',  topDeptEntry ? topDeptEntry[0] : '—');
-
-    // NEW: ชม.ลาเฉลี่ยต่อคนต่อเดือน เทียบ % ของชั่วโมงงานมาตรฐาน
-    // จำนวนเดือน = นับเฉพาะเดือนที่ "มีข้อมูลจริง" ในช่วงที่ filter ไว้ (ไม่ใช่เหมาทุกเดือนของปี
-    // เผื่อข้อมูลบางเดือนยังไม่ได้กรอก ซึ่งจะทำให้ค่าเฉลี่ยต่ำกว่าความจริงถ้าหารด้วย 12 เสมอ)
     const monthYearSet = new Set();
     filLeaves.forEach(lv => monthYearSet.add(getLeaveMonth(lv) + '-' + getLeaveYear(lv)));
     const numMonths    = monthYearSet.size || 1;
     const numEmps       = (emps && emps.length) ? emps.length : 0;
-    const STANDARD_HRS_PER_MONTH = 176; // สมมติฐาน: 8 ชม./วัน × ~22 วันทำงาน/เดือน (ปรับได้ตามปฏิทินจริงของบริษัท)
+    const STANDARD_HRS_PER_MONTH = 176;
     const avgLeavePerEmpMonth = (numEmps > 0) ? (totalLeaveHrs / numEmps / numMonths) : 0;
     const avgLeavePctOfStandard = (avgLeavePerEmpMonth / STANDARD_HRS_PER_MONTH) * 100;
     setText('avgLeavePerEmp',    numEmps > 0 ? fmt(avgLeavePerEmpMonth) : '—');
@@ -1169,12 +1110,6 @@ function renderResign(resigns, emps, mFilter, yFilter) {
                    (yFilter==='all' || ry===String(yFilter));
         } catch(_) { return false; }
     });
-
-    // BUG FIX #4: เดิมใช้ emps.length (พนักงานปัจจุบันทั้งหมด) เป็นตัวหารเสมอ
-    // ไม่ว่าจะ filter เดือน/ปีไหนก็ตาม → เวลาเลือกเดือนที่ผ่านมานานแล้ว
-    // อัตราลาออกจะเทียบกับฐานพนักงาน ณ "ปัจจุบัน" ซึ่งไม่ตรงกับฐานพนักงาน ณ ช่วงเวลานั้นจริง
-    // แก้: เมื่อเลือกเฉพาะปี/เดือน ให้ใช้ฐาน = (พนักงานปัจจุบัน + คนที่ลาออกไปแล้วในปีนั้นๆ)
-    // เพื่อประมาณ headcount ณ ช่วงต้นของรอบที่กำลังพิจารณา ไม่ใช้ headcount วันนี้เทียบกับเหตุการณ์ในอดีต
     let headcount = emps.length;
     if (yFilter !== 'all') {
         const leaversBeforeOrDuringPeriod = resigns.filter(r => {

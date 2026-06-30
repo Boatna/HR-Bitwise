@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>บันทึกคนลืมบัตรพนักงาน</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    /* ─── Global ─────────────────────────────────────────────────── */
+    body { font-family: 'Prompt', sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; }
+
+    /* ─── Bottom Nav ─────────────────────────────────────────────── */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; background: white; border-top: 1px solid #dee2e6; display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.08); }
+    .bottom-nav button { flex: 1; border: none; background: transparent; padding: 10px 0 8px; font-family: 'Prompt', sans-serif; font-size: 0.72rem; color: #6c757d; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: color 0.2s; }
+    .bottom-nav button i { font-size: 1.2rem; }
+    .bottom-nav button.active { color: #0d6efd; font-weight: 600; }
+    .bottom-nav button.active i { color: #0d6efd; }
+
+    /* ─── Page wrapper ───────────────────────────────────────────── */
+    .page { display: none; padding: 20px 10px 80px; }
+    .page.active { display: block; }
+
+    /* ─── Form page ──────────────────────────────────────────────── */
+    .main-card { max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.95); padding: 30px; border-radius: 20px; box-shadow: 0 15px 30px rgba(0,0,0,0.1); border-top: 5px solid #0d6efd; }
+    #employeeCard { opacity: 0; display: none; transition: opacity 0.5s ease-in-out; background: #f8f9fa; padding: 20px; border-radius: 15px; border: 1px dashed #ced4da; }
+    .clock { font-size: 1rem; font-weight: 500; background: #e9ecef; padding: 5px 15px; border-radius: 20px; display: inline-block; }
+    .autocomplete-results { position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; max-height: 250px; overflow-y: auto; display: none; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border-radius: 0 0 10px 10px; background: white; border: 1px solid #dee2e6; border-top: none; }
+    .autocomplete-results .list-group-item { cursor: pointer; border-left: none; border-right: none; }
+    .autocomplete-results .list-group-item:hover { background-color: #e9ecef; color: #0d6efd; }
+
+    /* ─── Dashboard page ─────────────────────────────────────────── */
+    .stat-card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
+    .stat-card:hover { transform: translateY(-5px); }
+    .chart-container { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); height: 100%; }
+    .icon-bg { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    #dashboardPage { background: #f4f7fa; }
+
+    /* ─── Filter bar (Dashboard + Data pages) ──────────────────────── */
+    .filter-card { background: white; border-radius: 15px; padding: 16px 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 4px solid #0d6efd; }
+
+    /* ─── Data page ──────────────────────────────────────────────── */
+    .data-card { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+    .table thead th { background-color: #212529; color: white; white-space: nowrap; }
+    .table tbody td { white-space: nowrap; vertical-align: middle; }
+
+    @media (max-width: 576px) {
+      .main-card { padding: 20px; border-radius: 15px; }
+      .icon-bg { width: 50px; height: 50px; font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="formPage" class="page active">
+    <div class="main-card">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0 fw-bold text-primary"><i class="fa-solid fa-id-badge me-2"></i>บันทึกลืมบัตร</h5>
+      </div>
+
+      <div class="text-center mb-4">
+        <div class="clock" id="clockDisplay"><i class="fa-regular fa-clock me-1"></i>--:--:--</div>
+      </div>
+
+      <div class="mb-4 position-relative">
+        <div class="d-flex justify-content-between align-items-end mb-2">
+          <label class="form-label fw-bold mb-0">ค้นหาพนักงาน</label>
+          <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#addEmpModal">
+            <i class="fa-solid fa-user-plus"></i> เพิ่มพนักงานใหม่
+          </button>
+        </div>
+        <div class="input-group input-group-lg shadow-sm rounded">
+          <span class="input-group-text bg-light text-primary"><i class="fa-solid fa-magnifying-glass"></i></span>
+          <input type="text" id="searchInput" class="form-control" oninput="onSearchInput()" placeholder="พิมพ์รหัส หรือ ชื่อ-สกุล..." autocomplete="off" disabled>
+        </div>
+        <div id="autocompleteResults" class="list-group autocomplete-results"></div>
+        <div id="searchStatus" class="form-text text-warning mt-2">
+          <div class="spinner-border spinner-border-sm me-1"></div> กำลังโหลดฐานข้อมูล...
+        </div>
+      </div>
+
+      <div id="employeeCard" class="mb-4 shadow-sm">
+        <div class="row g-2">
+          <div class="col-6"><label class="small text-muted">รหัส</label><input type="text" id="empId" class="form-control form-control-sm bg-white" readonly></div>
+          <div class="col-6"><label class="small text-muted">ชื่อ-สกุล</label><input type="text" id="empName" class="form-control form-control-sm bg-white" readonly></div>
+          <div class="col-6"><label class="small text-muted">แผนก</label><input type="text" id="empDept" class="form-control form-control-sm bg-white" readonly></div>
+          <div class="col-6"><label class="small text-muted">ตำแหน่ง</label><input type="text" id="empPos" class="form-control form-control-sm bg-white" readonly></div>
+          <div class="col-12"><label class="small text-muted">Plant</label><input type="text" id="empPlant" class="form-control form-control-sm bg-white" readonly></div>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow" id="submitBtn" disabled onclick="submitForm()" title="กรุณาเลือกพนักงานก่อนบันทึก">
+        <i class="fa-solid fa-floppy-disk me-2"></i>บันทึกข้อมูลลืมบัตร
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════ PAGE: DASHBOARD ══════ -->
+  <div id="dashboardPage" class="page">
+    <div class="container-fluid" style="max-width:1200px; margin:0 auto;">
+
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <h5 class="fw-bold mb-0"><i class="fa-solid fa-chart-pie text-primary me-2"></i>สถิติการลืมบัตร</h5>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="loadDashboard()">
+          <i class="fa-solid fa-rotate-right"></i> รีเฟรช
+        </button>
+      </div>
+
+      <!-- ══════ FILTER BAR: Dashboard ══════ -->
+      <div class="filter-card mb-4">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3 col-6">
+            <label class="form-label small fw-bold mb-1">Plant</label>
+            <select id="dashFilterPlant" class="form-select form-select-sm" onchange="applyDashboardFilters()">
+              <option value="">ทั้งหมด</option>
+            </select>
+          </div>
+          <div class="col-md-3 col-6">
+            <label class="form-label small fw-bold mb-1">แผนก</label>
+            <select id="dashFilterDept" class="form-select form-select-sm" onchange="applyDashboardFilters()">
+              <option value="">ทั้งหมด</option>
+            </select>
+          </div>
+          <div class="col-md-3 col-6">
+            <label class="form-label small fw-bold mb-1">เดือน/ปี (เลือกเร็ว)</label>
+            <select id="dashFilterMonthYear" class="form-select form-select-sm" onchange="onDashQuickMonthChange()">
+              <option value="">ทั้งหมด</option>
+            </select>
+          </div>
+          <div class="col-md-3 col-6">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="resetDashboardFilters()">
+              <i class="fa-solid fa-filter-circle-xmark"></i> ล้างตัวกรอง
+            </button>
+          </div>
+          <div class="col-md-4 col-6 mt-2">
+            <label class="form-label small fw-bold mb-1 text-muted">หรือระบุช่วงวันที่เอง — ตั้งแต่</label>
+            <input type="date" id="dashFilterStartDate" class="form-control form-control-sm" onchange="onDashCustomRangeChange()">
+          </div>
+          <div class="col-md-4 col-6 mt-2">
+            <label class="form-label small fw-bold mb-1 text-muted">ถึงวันที่</label>
+            <input type="date" id="dashFilterEndDate" class="form-control form-control-sm" onchange="onDashCustomRangeChange()">
+          </div>
+          <div class="col-md-4 mt-2">
+            <div class="small text-muted" id="dashFilterSummary">แสดงข้อมูลทั้งหมด</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="card stat-card bg-white h-100">
+            <div class="card-body d-flex align-items-center">
+              <div class="icon-bg bg-primary text-white bg-opacity-75 me-3"><i class="fa-solid fa-users"></i></div>
+              <div><h6 class="text-muted mb-1">ลืมบัตรทั้งหมด</h6><h3 class="fw-bold mb-0 text-dark" id="totalCount">-</h3></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card stat-card bg-white h-100">
+            <div class="card-body d-flex align-items-center">
+              <div class="icon-bg bg-warning text-dark bg-opacity-75 me-3"><i class="fa-solid fa-calendar-day"></i></div>
+              <div><h6 class="text-muted mb-1">ลืมบัตรวันนี้</h6><h3 class="fw-bold mb-0 text-dark" id="todayCount">-</h3></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card stat-card bg-white h-100">
+            <div class="card-body d-flex align-items-center">
+              <div class="icon-bg bg-success text-white bg-opacity-75 me-3"><i class="fa-solid fa-calendar-days"></i></div>
+              <div><h6 class="text-muted mb-1">ลืมบัตรเดือนนี้</h6><h3 class="fw-bold mb-0 text-dark" id="monthCount">-</h3></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+          <div class="chart-container">
+            <h6 class="fw-bold text-muted mb-3"><i class="fa-solid fa-chart-bar me-2"></i>Top 5 แผนกที่ลืมบัตรมากที่สุด</h6>
+            <canvas id="deptChart" height="100"></canvas>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="chart-container">
+            <h6 class="fw-bold text-muted mb-3"><i class="fa-solid fa-industry me-2"></i>สัดส่วนแยกตาม Plant</h6>
+            <canvas id="plantChart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-12">
+          <div class="chart-container">
+            <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-trophy me-2"></i>Top 5 พนักงานที่ลืมบัตรบ่อยที่สุด</h6>
+            <ul class="list-group list-group-flush" id="topEmployeesList">
+              <li class="list-group-item text-center text-muted">กดรีเฟรชเพื่อโหลดข้อมูล</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════ PAGE: DATA ══════ -->
+  <div id="dataPage" class="page">
+    <div class="data-card">
+      <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-2">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clipboard-list text-primary me-2"></i>ประวัติคนลืมบัตร</h5>
+        <button class="btn btn-success rounded-pill px-3 shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#exportModal">
+          <i class="fa-solid fa-file-excel me-1"></i> Export
+        </button>
+      </div>
+
+      <!-- ══════ FILTER BAR: Data ══════ -->
+      <div class="filter-card mb-3">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3 col-6">
+            <label class="form-label small fw-bold mb-1">Plant</label>
+            <select id="dataFilterPlant" class="form-select form-select-sm" onchange="applyDataFilters()">
+              <option value="">ทั้งหมด</option>
+            </select>
+          </div>
+          <div class="col-md-3 col-6">
+            <label class="form-label small fw-bold mb-1">แผนก</label>
+            <select id="dataFilterDept" class="form-select form-select-sm" onchange="applyDataFilters()">
+              <option value="">ทั้งหมด</option>
+            </select>
+          </div>
+          <div class="col-md-3 col-6">
+            <label class="form-label small fw-bold mb-1">เดือน/ปี (เลือกเร็ว)</label>
+            <select id="dataFilterMonthYear" class="form-select form-select-sm" onchange="onDataQuickMonthChange()">
+              <option value="">ทั้งหมด</option>
+            </select>
+          </div>
+          <div class="col-md-3 col-6">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="resetDataFilters()">
+              <i class="fa-solid fa-filter-circle-xmark"></i> ล้างตัวกรอง
+            </button>
+          </div>
+          <div class="col-md-4 col-6 mt-2">
+            <label class="form-label small fw-bold mb-1 text-muted">หรือระบุช่วงวันที่เอง — ตั้งแต่</label>
+            <input type="date" id="dataFilterStartDate" class="form-control form-control-sm" onchange="onDataCustomRangeChange()">
+          </div>
+          <div class="col-md-4 col-6 mt-2">
+            <label class="form-label small fw-bold mb-1 text-muted">ถึงวันที่</label>
+            <input type="date" id="dataFilterEndDate" class="form-control form-control-sm" onchange="onDataCustomRangeChange()">
+          </div>
+          <div class="col-md-4 mt-2">
+            <div class="small text-muted" id="dataFilterSummary">แสดงข้อมูลทั้งหมด</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table id="dataTable" class="table table-striped table-hover table-bordered" style="width:100%">
+          <thead>
+            <tr>
+              <th>รหัส</th><th>ชื่อ-นามสกุล</th><th>แผนก</th><th>ตำแหน่ง</th>
+              <th>Plant</th><th>วันที่</th><th>เวลา</th><th>พิกัดบันทึก</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="8" class="text-center text-muted">กดแท็บ "ข้อมูล" เพื่อโหลด</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ BOTTOM NAV ══════ -->
+  <nav class="bottom-nav">
+    <button onclick="switchPage('form')" id="navForm" class="active">
+      <i class="fa-solid fa-pen-to-square"></i> ฟอร์ม
+    </button>
+    <button onclick="switchPage('dashboard')" id="navDashboard">
+      <i class="fa-solid fa-chart-pie"></i> สถิติ
+    </button>
+    <button onclick="switchPage('data')" id="navData">
+      <i class="fa-solid fa-table-list"></i> ข้อมูล
+    </button>
+  </nav>
+
+  <!-- ══════ MODAL: เพิ่มพนักงานใหม่ ══════ -->
+  <div class="modal fade" id="addEmpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus me-2"></i>เพิ่มพนักงานใหม่</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body bg-light">
+          <div class="row g-2">
+            <div class="col-12">
+              <label class="form-label small fw-bold mb-1">1. รหัสพนักงาน <span class="text-muted fw-normal">(ถ้าไม่ทราบ เว้นว่างได้)</span></label>
+              <input type="text" id="newEmpId" class="form-control" placeholder="เช่น 1673231">
+            </div>
+            <div class="col-4 mt-3">
+              <label class="form-label small fw-bold mb-1 text-danger">6. คำนำหน้า*</label>
+              <select id="newPrefix" class="form-select" required onchange="autoFullName()">
+                <option value="">เลือก</option>
+                <option value="นาย">นาย</option>
+                <option value="นาง">นาง</option>
+                <option value="นางสาว">นางสาว</option>
+              </select>
+            </div>
+            <div class="col-4 mt-3">
+              <label class="form-label small fw-bold mb-1 text-danger">7. ชื่อ</label>
+              <input type="text" id="newFirstName" class="form-control" required oninput="autoFullName()" placeholder="ชื่อจริง">
+            </div>
+            <div class="col-4 mt-3">
+              <label class="form-label small fw-bold mb-1 text-danger">8. นามสกุล</label>
+              <input type="text" id="newLastName" class="form-control" required oninput="autoFullName()" placeholder="นามสกุล">
+            </div>
+            <div class="col-12 mt-3">
+              <label class="form-label small fw-bold mb-1 text-primary">2. ชื่อ-นามสกุล (สร้างอัตโนมัติ)</label>
+              <input type="text" id="newFullName" class="form-control bg-white" required readonly placeholder="ระบบจะรวมชื่อให้ตรงนี้">
+            </div>
+            <div class="col-6 mt-3">
+              <label class="form-label small fw-bold mb-1">3. แผนก</label>
+              <input type="text" id="newDept" class="form-control" placeholder="">
+            </div>
+            <div class="col-6 mt-3">
+              <label class="form-label small fw-bold mb-1">4. ตำแหน่ง</label>
+              <input type="text" id="newPos" class="form-control" placeholder="">
+            </div>
+            <div class="col-12 mt-3 mb-2">
+              <label class="form-label small fw-bold mb-1 text-danger">5. Plant</label>
+              <select id="newPlant" class="form-select" required>
+                <option value="">-- เลือก Plant --</option>
+                <option value="Bitwise (thailand) co. ltd">Bitwise (thailand) co. ltd</option>
+                <option value="Bitwise heat exchanger co. ltd">Bitwise heat exchanger co. ltd</option>
+                <option value="Thai tasaki engineering co. ltd">Thai tasaki engineering co. ltd</option>
+              </select>
+            </div>
+          </div>
+          <hr>
+          <div class="text-end">
+            <button type="button" class="btn btn-secondary me-1" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="button" class="btn btn-primary" id="saveNewEmpBtn" onclick="submitNewEmp()">
+              <i class="fa-solid fa-save me-1"></i> บันทึกลงฐานข้อมูล
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ MODAL: Export Excel ══════ -->
+  <div class="modal fade" id="exportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-file-excel me-2"></i>Export เป็น Excel</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">ตั้งแต่วันที่</label>
+              <input type="date" id="exportStartDate" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">ถึงวันที่</label>
+              <input type="date" id="exportEndDate" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Plant</label>
+              <select id="exportFilterPlant" class="form-select">
+                <option value="">ทั้งหมด</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">แผนก</label>
+              <select id="exportFilterDept" class="form-select">
+                <option value="">ทั้งหมด</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-3 text-muted small"><i class="fa-solid fa-circle-info text-primary me-1"></i> หากไม่ระบุ ระบบจะ Export ข้อมูลทั้งหมด (ตัวกรองนี้แยกจากตัวกรองในหน้า "ข้อมูล")</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-success" onclick="downloadExcel()"><i class="fa-solid fa-download me-1"></i> ดาวน์โหลด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ Scripts ══════ -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+  <script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyc4DlR0NvS_LBl3upZ_HmtdrPryUIINt9aIm6LL8YG9wOvCTP8rkOyyg5OF8rQKyy4/exec";
+
+async function apiGet(action) {
+  let res;
+  try {
+    res = await fetch(`${GAS_URL}?action=${action}`, {
+      method: 'GET',
+      redirect: 'follow'
+    });
+  } catch (networkErr) {
+    throw new Error("เชื่อมต่อ server ไม่ได้: " + networkErr.message);
+  }
+
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json") && !contentType.includes("text/plain")) {
+    const text = await res.text();
+    if (text.trim().startsWith("<")) {
+      throw new Error("GAS ส่ง HTML กลับมาแทน JSON — อาจเกิดจาก:\n• Script ยังไม่ได้ Deploy เป็น Web App\n• Deploy ใหม่แล้วยังไม่ได้กด Re-deploy\n• Script ถูก redirect ไปหน้า Login (ต้องเปลี่ยน 'Who has access' เป็น Anyone)");
+    }
+  }
+
+  let json;
+  try {
+    json = await res.json();
+  } catch (parseErr) {
+    const text = await res.clone().text().catch(() => "(อ่านไม่ได้)");
+    throw new Error("Server ตอบกลับมาไม่ใช่ JSON:\n" + text.substring(0, 200));
+  }
+
+  if (json.status !== "ok") {
+    const errMsg = json.message || "Unknown error";
+    const stackInfo = json.stack ? "\n\n[Stack]\n" + json.stack.substring(0, 300) : "";
+    throw new Error(errMsg + stackInfo);
+  }
+  return json.data;
+}
+
+async function apiPost(action, data) {
+  let res;
+  try {
+    res = await fetch(GAS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, data }),
+      redirect: 'follow'
+    });
+  } catch (networkErr) {
+    throw new Error("เชื่อมต่อ server ไม่ได้: " + networkErr.message);
+  }
+
+  let json;
+  try {
+    json = await res.json();
+  } catch (parseErr) {
+    throw new Error("Server ตอบกลับมาไม่ใช่ JSON");
+  }
+
+  if (json.status !== "ok") throw new Error(json.message || "Unknown error");
+  return json.message;
+}
+
+function parseDateString(dateStr) {
+  if (!dateStr) return null;
+  const s = dateStr.trim();
+
+  // รูปแบบ dd/MM/yyyy (รูปแบบหลักที่ GAS ส่งมา)
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+    const [dd, mm, yyyy] = s.split('/').map(Number);
+    const d = new Date(yyyy, mm - 1, dd);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // รูปแบบ yyyy-MM-dd (ISO)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [yyyy, mm, dd] = s.split('-').map(Number);
+    const d = new Date(yyyy, mm - 1, dd);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // fallback (ไม่ควรเกิดในทางปฏิบัติหลัง GAS fix)
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatDateToDMY(date) {
+  if (!date || isNaN(date.getTime())) return '';
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yyyy = date.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+function formatDateToYMD(date) {
+  if (!date || isNaN(date.getTime())) return '';
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yyyy = date.getFullYear();
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+var dataTableInstance = null;
+var dataLoaded = false;
+var dashboardLoaded = false;
+var deptChartInstance = null;
+var plantChartInstance = null;
+
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
+
+  if (page === 'form') {
+    document.getElementById('formPage').classList.add('active');
+    document.getElementById('navForm').classList.add('active');
+  } else if (page === 'dashboard') {
+    document.getElementById('dashboardPage').classList.add('active');
+    document.getElementById('navDashboard').classList.add('active');
+    loadDashboard();
+  } else if (page === 'data') {
+    document.getElementById('dataPage').classList.add('active');
+    document.getElementById('navData').classList.add('active');
+    loadDataTable();
+  }
+}
+
+setInterval(() => {
+  const now = new Date();
+  document.getElementById('clockDisplay').innerHTML =
+    `<i class="fa-regular fa-clock me-1"></i>${now.toLocaleDateString('th-TH')} ${now.toLocaleTimeString('th-TH')}`;
+}, 1000);
+
+var employeeData = [];
+let isSubmitting = false;
+
+async function checkConnection() {
+  try {
+    const data = await apiGet('ping');
+    console.log('✅ Connection OK:', data);
+    document.getElementById('searchStatus').innerHTML =
+      '<i class="fa-solid fa-circle-check text-success"></i> เชื่อมต่อสำเร็จ พร้อมใช้งาน';
+    document.getElementById('searchStatus').className = "form-text text-success mt-1";
+    return true;
+  } catch (err) {
+    console.error('❌ Connection failed:', err);
+    document.getElementById('searchStatus').innerHTML =
+      `<i class="fa-solid fa-circle-xmark text-danger"></i>
+       ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์<br>
+       <small class="text-danger">${escapeHtml(err.message)}</small>
+       <br><button class="btn btn-sm btn-warning mt-1" onclick="checkConnection()">
+         <i class="fa-solid fa-rotate-right"></i> ลองใหม่
+       </button>`;
+    document.getElementById('searchStatus').className = "form-text text-danger mt-1";
+    return false;
+  }
+}
+
+window.onload = function () {
+  checkConnection().then(connected => {
+    if (connected) {
+      loadEmployees();
+    }
+  });
+};
+
+async function loadEmployees() {
+  try {
+    employeeData = await apiGet('getEmployees');
+    document.getElementById('searchInput').disabled = false;
+    document.getElementById('searchStatus').innerHTML = "<i class='fa-solid fa-circle-check'></i> โหลดสำเร็จ พร้อมใช้งาน";
+    document.getElementById('searchStatus').className = "form-text text-success mt-1";
+  } catch (err) {
+    const errText = err.message || String(err);
+    document.getElementById('searchStatus').innerHTML =
+      `<i class='fa-solid fa-circle-xmark text-danger'></i> โหลดข้อมูลไม่สำเร็จ
+       <br><small class='text-danger' style='white-space:pre-wrap;word-break:break-all'>${escapeHtml(errText)}</small>
+       <br><button class='btn btn-sm btn-outline-warning mt-1' onclick='loadEmployees()'>
+         <i class='fa-solid fa-rotate-right'></i> ลองใหม่
+       </button>`;
+    document.getElementById('searchStatus').className = "form-text mt-1";
+    console.error("[loadEmployees]", err);
+  }
+}
+
+let searchDebounceTimer = null;
+
+function onSearchInput() {
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(filterEmployees, 200);
+}
+
+function filterEmployees() {
+  var inputVal = document.getElementById('searchInput').value.trim().toLowerCase();
+  var resultsContainer = document.getElementById('autocompleteResults');
+  resultsContainer.innerHTML = '';
+
+  if (!inputVal) {
+    resultsContainer.style.display = 'none';
+    checkEmployee(false);
+    return;
+  }
+
+  if (!employeeData || employeeData.length === 0) {
+    resultsContainer.style.display = 'block';
+    resultsContainer.innerHTML = `<div class="list-group-item text-center py-3 text-warning">
+      <i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังโหลดข้อมูล...
+    </div>`;
+    return;
+  }
+
+  var filteredData = employeeData.filter(emp => {
+    const searchText = (emp.id + " " + emp.name + " " + emp.dept + " " + emp.plant).toLowerCase();
+    return searchText.includes(inputVal);
+  });
+
+  if (filteredData.length > 0) {
+    filteredData.slice(0, 10).forEach(emp => {
+      var item = document.createElement('div');
+      item.className = 'list-group-item p-2 d-flex justify-content-between align-items-center';
+      item.innerHTML = `
+        <span>
+          <strong>${escapeHtml(emp.id)}</strong> - ${escapeHtml(emp.name)}
+          <br><small class="text-muted">${escapeHtml(emp.dept)} | ${escapeHtml(emp.plant)}</small>
+        </span>
+        <i class="fa-solid fa-chevron-right text-primary"></i>
+      `;
+      item.style.cursor = 'pointer';
+      item.onmouseover = function() { this.style.backgroundColor = '#e9ecef'; };
+      item.onmouseout = function() { this.style.backgroundColor = ''; };
+      item.onclick = function () {
+        document.getElementById('searchInput').value = emp.id + " " + emp.name;
+        resultsContainer.style.display = 'none';
+        checkEmployee(emp);
+      };
+      resultsContainer.appendChild(item);
+    });
+  } else {
+    var noMatch = document.createElement('div');
+    noMatch.className = 'list-group-item text-center py-3';
+    noMatch.innerHTML = `
+      <i class="fa-solid fa-circle-xmark text-danger me-2"></i>
+      ไม่พบข้อมูล "${escapeHtml(inputVal)}" ในระบบ<br>
+      <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="openAddEmpModal()">
+        <i class="fa-solid fa-user-plus"></i> เพิ่มพนักงานใหม่
+      </button>
+    `;
+    resultsContainer.appendChild(noMatch);
+  }
+  resultsContainer.style.display = 'block';
+}
+
+function openAddEmpModal() {
+  document.getElementById('autocompleteResults').style.display = 'none';
+  var modal = new bootstrap.Modal(document.getElementById('addEmpModal'));
+  modal.show();
+}
+
+document.addEventListener('click', function (event) {
+  var searchInput = document.getElementById('searchInput');
+  var resultsContainer = document.getElementById('autocompleteResults');
+  if (event.target !== searchInput && !resultsContainer.contains(event.target)) {
+    resultsContainer.style.display = 'none';
+  }
+});
+
+function checkEmployee(foundEmp) {
+  var card = document.getElementById('employeeCard');
+  var submitBtn = document.getElementById('submitBtn');
+
+  if (foundEmp && foundEmp.id && foundEmp.id !== "-" && foundEmp.name) {
+    document.getElementById('empId').value = foundEmp.id || "";
+    document.getElementById('empName').value = foundEmp.name || "";
+    document.getElementById('empDept').value = foundEmp.dept || "-";
+    document.getElementById('empPos').value = foundEmp.pos || "-";
+    document.getElementById('empPlant').value = foundEmp.plant || "-";
+
+    card.style.display = 'block';
+    setTimeout(() => card.style.opacity = 1, 10);
+    submitBtn.disabled = false;
+    submitBtn.title = "คลิกเพื่อบันทึกข้อมูล";
+  } else {
+    card.style.opacity = 0;
+    setTimeout(() => card.style.display = 'none', 300);
+    submitBtn.disabled = true;
+    submitBtn.title = "กรุณาเลือกพนักงานก่อนบันทึก";
+    ['empId','empName','empDept','empPos','empPlant'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// submitForm (คงเดิม — ไม่มี bug ใหม่)
+// ════════════════════════════════════════════════════════════
+function submitForm() {
+  if (isSubmitting) {
+    Swal.fire({
+      title: '⏳ กำลังบันทึก',
+      text: 'กรุณารอสักครู่...',
+      icon: 'info',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  const empName = document.getElementById("empName").value.trim();
+  const empId = document.getElementById("empId").value.trim();
+
+  if (!empName || !empId || empId === "-") {
+    Swal.fire({
+      title: '⚠️ กรุณาเลือกพนักงาน',
+      text: 'ค้นหาและเลือกพนักงานจากรายการก่อนบันทึก',
+      icon: 'warning',
+      confirmButtonText: 'ตกลง',
+      confirmButtonColor: '#f59e0b'
+    });
+    return;
+  }
+
+  isSubmitting = true;
+  var btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังระบุตำแหน่ง...';
+
+  var hasSubmitted = false;
+
+  function doSubmit(lat, lng) {
+    if (hasSubmitted) return;
+    hasSubmitted = true;
+
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังบันทึก...';
+
+    var formObject = {
+      empId: empId,
+      empName: empName,
+      empDept: document.getElementById("empDept").value || "",
+      empPos: document.getElementById("empPos").value || "",
+      empPlant: document.getElementById("empPlant").value || "",
+      lat: lat || "",
+      lng: lng || ""
+    };
+
+    console.log("📤 Sending data:", formObject);
+
+    apiPost('saveRecord', formObject)
+      .then(function (msg) {
+        Swal.fire({
+          title: '✅ บันทึกสำเร็จ!',
+          html: `ข้อมูลของ <b>${escapeHtml(formObject.empName)}</b><br>ถูกบันทึกเรียบร้อยแล้ว`,
+          icon: 'success',
+          confirmButtonText: 'รับทราบ',
+          confirmButtonColor: '#0d6efd',
+          timer: 5000,
+          timerProgressBar: true,
+        });
+
+        document.getElementById("searchInput").value = "";
+        checkEmployee(false);
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-2"></i>บันทึกข้อมูลลืมบัตร';
+        btn.disabled = false;
+        isSubmitting = false;
+
+        dataLoaded = false;
+        dashboardLoaded = false;
+
+        const activePage = document.querySelector('.page.active');
+        if (activePage) {
+          const pageId = activePage.id;
+          if (pageId === 'dataPage') loadDataTable();
+          else if (pageId === 'dashboardPage') loadDashboard();
+        }
+      })
+      .catch(function (err) {
+        console.error("❌ Error:", err);
+        Swal.fire({
+          title: 'เกิดข้อผิดพลาด!',
+          html: 'ไม่สามารถบันทึกข้อมูลได้<br><small class="text-muted">' + escapeHtml(err.message) + '</small>',
+          icon: 'error',
+          confirmButtonText: 'ตกลง',
+          confirmButtonColor: '#dc3545'
+        });
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-2"></i>บันทึกข้อมูลลืมบัตร';
+        isSubmitting = false;
+      });
+  }
+
+  var fallbackTimer = setTimeout(function () {
+    console.warn("⚠️ Geolocation ไม่ตอบสนองภายในเวลาที่กำหนด ดำเนินการบันทึกโดยไม่มีพิกัด");
+    doSubmit("", "");
+  }, 12000);
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        clearTimeout(fallbackTimer);
+        doSubmit(position.coords.latitude, position.coords.longitude);
+      },
+      function (error) {
+        clearTimeout(fallbackTimer);
+        console.warn("⚠️ Geolocation error:", error.message);
+        doSubmit("", "");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  } else {
+    clearTimeout(fallbackTimer);
+    doSubmit("", "");
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// Add Employee Modal
+// ════════════════════════════════════════════════════════════
+function autoFullName() {
+  var prefix = document.getElementById('newPrefix').value;
+  var fname = document.getElementById('newFirstName').value.trim();
+  var lname = document.getElementById('newLastName').value.trim();
+  var fullName = "";
+  if (prefix) fullName += prefix + " ";
+  if (fname) fullName += fname;
+  if (lname) fullName += " " + lname;
+  document.getElementById('newFullName').value = fullName;
+}
+
+async function submitNewEmp() {
+  var btn = document.getElementById('saveNewEmpBtn');
+  var prefix    = document.getElementById('newPrefix').value;
+  var firstName = document.getElementById('newFirstName').value.trim();
+  var lastName  = document.getElementById('newLastName').value.trim();
+  var plant     = document.getElementById('newPlant').value;
+  var fullName  = document.getElementById('newFullName').value.trim();
+  var empId     = document.getElementById('newEmpId').value.trim() || "-";
+
+  if (!prefix || !firstName || !lastName || !plant) {
+    Swal.fire('กรุณากรอกข้อมูลให้ครบ', 'ต้องระบุ คำนำหน้า / ชื่อ / นามสกุล / Plant', 'warning');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังบันทึก...';
+
+  var newEmpData = {
+    empId: empId,
+    fullName: fullName,
+    dept: document.getElementById('newDept').value.trim() || "-",
+    pos: document.getElementById('newPos').value.trim() || "-",
+    plant: plant,
+    prefix: prefix,
+    firstName: firstName,
+    lastName: lastName
+  };
+
+  console.log("📤 Saving employee:", newEmpData);
+
+  try {
+    await apiPost('saveEmployee', newEmpData);
+    bootstrap.Modal.getInstance(document.getElementById('addEmpModal')).hide();
+    Swal.fire('สำเร็จ!', 'เพิ่มพนักงานใหม่เรียบร้อยแล้ว', 'success');
+
+    ['newEmpId','newPrefix','newFirstName','newLastName','newFullName','newDept','newPos','newPlant']
+      .forEach(id => { document.getElementById(id).value = ''; });
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> บันทึกลงฐานข้อมูล';
+
+    document.getElementById('searchStatus').innerHTML = "<div class='spinner-border spinner-border-sm me-1'></div> อัปเดตฐานข้อมูลใหม่...";
+    document.getElementById('searchStatus').className = "form-text text-warning mt-1";
+
+    employeeData = await apiGet('getEmployees');
+
+    document.getElementById('searchStatus').innerHTML = "<i class='fa-solid fa-circle-check'></i> ฐานข้อมูลอัปเดตแล้ว";
+    document.getElementById('searchStatus').className = "form-text text-success mt-1";
+
+    document.getElementById('searchInput').value = newEmpData.empId + " " + newEmpData.fullName;
+    checkEmployee({
+      id: newEmpData.empId,
+      name: newEmpData.fullName,
+      dept: newEmpData.dept,
+      pos: newEmpData.pos,
+      plant: newEmpData.plant
+    });
+
+    dataLoaded = false;
+    dashboardLoaded = false;
+
+  } catch (err) {
+    console.error("❌ Error:", err);
+    Swal.fire('เกิดข้อผิดพลาด!', escapeHtml(err.message) || 'บันทึกไม่สำเร็จ', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> บันทึกลงฐานข้อมูล';
+  }
+}
+
+var dashboardRawData = [];
+
+async function loadDashboard() {
+  document.getElementById('totalCount').innerText = '...';
+  document.getElementById('todayCount').innerText = '...';
+  document.getElementById('monthCount').innerText = '...';
+  document.getElementById('topEmployeesList').innerHTML =
+    '<li class="list-group-item text-center text-muted"><div class="spinner-border spinner-border-sm me-2"></div>กำลังโหลด...</li>';
+
+  try {
+    var data = await apiGet('getRecords');
+    dashboardRawData = data;
+
+    populateExportFilterDropdowns(data);
+
+    populateFilterDropdowns('dash', data);
+    applyDashboardFilters();
+    dashboardLoaded = true;
+  } catch (err) {
+    document.getElementById('topEmployeesList').innerHTML =
+      `<li class="list-group-item text-center text-danger">
+        โหลดข้อมูลไม่สำเร็จ<br>
+        <small style="white-space:pre-wrap">${escapeHtml(err.message)}</small>
+      </li>`;
+    console.error("❌ loadDashboard Error:", err);
+  }
+}
+
+// ── Filter Utilities ─────────────────────────────────────────
+function getUniqueSorted(data, colIndex) {
+  const set = new Set();
+  data.forEach(row => {
+    const val = (row[colIndex] || '').trim();
+    if (val && val !== '-') set.add(val);
+  });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'th'));
+}
+
+function getAvailableMonthYears(data) {
+  const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const map = new Map();
+  data.forEach(row => {
+    // FIX Bug 4 — ใช้ parseDateString ที่แก้แล้ว (parse dd/MM/yyyy ถูกต้อง)
+    const dateObj = parseDateString((row[5] || '').trim());
+    if (!dateObj) return;
+    const mm = dateObj.getMonth(); // 0-indexed
+    const yyyy = dateObj.getFullYear();
+    const value = `${String(mm + 1).padStart(2, '0')}/${yyyy}`;
+    if (!map.has(value)) {
+      map.set(value, { value, sortKey: yyyy * 100 + (mm + 1), label: `${thMonths[mm]} ${yyyy}` });
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => b.sortKey - a.sortKey);
+}
+
+function populateFilterDropdowns(prefix, data) {
+  const plantSel = document.getElementById(`${prefix}FilterPlant`);
+  const deptSel  = document.getElementById(`${prefix}FilterDept`);
+  const myearSel = document.getElementById(`${prefix}FilterMonthYear`);
+
+  const currentPlant = plantSel.value;
+  const currentDept  = deptSel.value;
+  const currentMyear = myearSel.value;
+
+  const plants = getUniqueSorted(data, 4);
+  const depts  = getUniqueSorted(data, 2);
+  const myears = getAvailableMonthYears(data);
+
+  plantSel.innerHTML = '<option value="">ทั้งหมด</option>' +
+    plants.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+  deptSel.innerHTML = '<option value="">ทั้งหมด</option>' +
+    depts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+  myearSel.innerHTML = '<option value="">ทั้งหมด</option>' +
+    myears.map(m => `<option value="${m.value}">${escapeHtml(m.label)}</option>`).join('');
+
+  if (plants.includes(currentPlant)) plantSel.value = currentPlant;
+  if (depts.includes(currentDept)) deptSel.value = currentDept;
+  if (myears.some(m => m.value === currentMyear)) myearSel.value = currentMyear;
+}
+
+function filterRecords(data, { plant, dept, startDate, endDate }) {
+  return data.filter(row => {
+    if (plant && (row[4] || '').trim() !== plant) return false;
+    if (dept && (row[2] || '').trim() !== dept) return false;
+
+    if (startDate || endDate) {
+      const dateObj = parseDateString((row[5] || '').trim());
+      if (!dateObj) return false;
+      const t = dateObj.getTime();
+      if (startDate && t < startDate.getTime()) return false;
+      if (endDate && t > endDate.getTime()) return false;
+    }
+    return true;
+  });
+}
+
+function readFilterState(prefix) {
+  const plant = document.getElementById(`${prefix}FilterPlant`).value;
+  const dept  = document.getElementById(`${prefix}FilterDept`).value;
+  const startStr = document.getElementById(`${prefix}FilterStartDate`).value;
+  const endStr   = document.getElementById(`${prefix}FilterEndDate`).value;
+
+  let startDate = startStr ? new Date(startStr) : null;
+  let endDate   = endStr   ? new Date(endStr)   : null;
+  if (startDate) startDate.setHours(0, 0, 0, 0);
+  if (endDate) endDate.setHours(23, 59, 59, 999);
+
+  return { plant, dept, startDate, endDate };
+}
+
+function buildFilterSummary({ plant, dept, startDate, endDate }, totalCount) {
+  const parts = [];
+  if (plant) parts.push(`Plant: ${plant}`);
+  if (dept) parts.push(`แผนก: ${dept}`);
+  if (startDate || endDate) {
+    const s = startDate ? formatDateToDMY(startDate) : '…';
+    const e = endDate ? formatDateToDMY(endDate) : '…';
+    parts.push(`ช่วงวันที่: ${s} - ${e}`);
+  }
+  if (parts.length === 0) return `แสดงข้อมูลทั้งหมด (${totalCount} รายการ)`;
+  return `กรองโดย ${parts.join(' | ')} (${totalCount} รายการ)`;
+}
+
+function applyQuickMonthToRange(prefix) {
+  const myearSel = document.getElementById(`${prefix}FilterMonthYear`);
+  const startInput = document.getElementById(`${prefix}FilterStartDate`);
+  const endInput = document.getElementById(`${prefix}FilterEndDate`);
+
+  if (!myearSel.value) {
+    startInput.value = '';
+    endInput.value = '';
+    return;
+  }
+
+  const [mmStr, yyyyStr] = myearSel.value.split('/');
+  const mm = parseInt(mmStr, 10);
+  const yyyy = parseInt(yyyyStr, 10);
+  const firstDay = new Date(yyyy, mm - 1, 1);
+  const lastDay = new Date(yyyy, mm, 0);
+
+  startInput.value = formatDateToYMD(firstDay);
+  endInput.value = formatDateToYMD(lastDay);
+}
+
+function onDashQuickMonthChange() {
+  applyQuickMonthToRange('dash');
+  applyDashboardFilters();
+}
+
+function onDashCustomRangeChange() {
+  document.getElementById('dashFilterMonthYear').value = '';
+  applyDashboardFilters();
+}
+
+function resetDashboardFilters() {
+  document.getElementById('dashFilterPlant').value = '';
+  document.getElementById('dashFilterDept').value = '';
+  document.getElementById('dashFilterMonthYear').value = '';
+  document.getElementById('dashFilterStartDate').value = '';
+  document.getElementById('dashFilterEndDate').value = '';
+  applyDashboardFilters();
+}
+
+function applyDashboardFilters() {
+  const filterState = readFilterState('dash');
+  const filtered = filterRecords(dashboardRawData, filterState);
+  document.getElementById('dashFilterSummary').innerText = buildFilterSummary(filterState, filtered.length);
+  processDashboard(filtered);
+}
+
+function processDashboard(data) {
+  const now = new Date();
+  const todayY = now.getFullYear();
+  const todayM = now.getMonth();
+  const todayD = now.getDate();
+
+  let total = data.length, countToday = 0, countMonth = 0;
+  let deptCounts = {}, plantCounts = {}, empCounts = {};
+
+  data.forEach(row => {
+    const dateObj = parseDateString((row[5] || '').trim());
+
+    if (dateObj) {
+      const y = dateObj.getFullYear();
+      const m = dateObj.getMonth();
+      const d = dateObj.getDate();
+
+      // เปรียบเทียบแบบ numeric ไม่ขึ้นกับ string format
+      if (y === todayY && m === todayM && d === todayD) countToday++;
+      if (y === todayY && m === todayM) countMonth++;
+    }
+
+    const dept = (row[2] || 'ไม่ระบุ').trim();
+    deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+
+    const plant = (row[4] || 'ไม่ระบุ').trim();
+    plantCounts[plant] = (plantCounts[plant] || 0) + 1;
+
+    const empKey = (row[0] || '-') + " - " + (row[1] || '-');
+    empCounts[empKey] = (empCounts[empKey] || 0) + 1;
+  });
+
+  document.getElementById('totalCount').innerText = total;
+  document.getElementById('todayCount').innerText = countToday;
+  document.getElementById('monthCount').innerText = countMonth;
+
+  if (deptChartInstance)  { deptChartInstance.destroy();  deptChartInstance  = null; }
+  if (plantChartInstance) { plantChartInstance.destroy(); plantChartInstance = null; }
+
+  let sortedDepts = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  deptChartInstance = new Chart(document.getElementById('deptChart'), {
+    type: 'bar',
+    data: {
+      labels: sortedDepts.map(d => d[0]),
+      datasets: [{
+        label: 'จำนวนครั้ง',
+        data: sortedDepts.map(d => d[1]),
+        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1,
+        borderRadius: 5
+      }]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+  });
+
+  plantChartInstance = new Chart(document.getElementById('plantChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(plantCounts),
+      datasets: [{
+        data: Object.values(plantCounts),
+        backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#4bc0c0']
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  let sortedEmps = Object.entries(empCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  let empListHtml = '';
+  if (sortedEmps.length === 0) {
+    empListHtml = '<li class="list-group-item text-center">ไม่พบข้อมูลตามตัวกรองที่เลือก</li>';
+  } else {
+    const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+    sortedEmps.forEach((emp, index) => {
+      empListHtml += `<li class="list-group-item d-flex justify-content-between align-items-center px-0">
+        <span><span class="fs-5 me-2">${medals[index] || ''}</span>${escapeHtml(emp[0])}</span>
+        <span class="badge bg-danger rounded-pill">${emp[1]} ครั้ง</span></li>`;
+    });
+  }
+  document.getElementById('topEmployeesList').innerHTML = empListHtml;
+}
+
+// ════════════════════════════════════════════════════════════
+// Data Page
+// ════════════════════════════════════════════════════════════
+var globalData = [];
+
+async function loadDataTable() {
+  $('#tableBody').html('<tr><td colspan="8" class="text-center"><div class="spinner-border text-primary my-3"></div><br>กำลังโหลดข้อมูล...</td></tr>');
+
+  // FIX Bug 2 — destroy DataTable ก่อน clear tbody เสมอ
+  // เพื่อให้ DataTable ปล่อย reference เก่าออกก่อนที่ jQuery จะ render ใหม่
+  if (dataTableInstance) {
+    dataTableInstance.destroy();
+    dataTableInstance = null;
+  }
+
+  try {
+    var data = await apiGet('getRecords');
+    globalData = data;
+
+    // FIX Bug 1 — sync Export dropdown ทุกครั้งที่ได้ข้อมูลใหม่
+    populateExportFilterDropdowns(data);
+    populateFilterDropdowns('data', data);
+    applyDataFilters();
+    dataLoaded = true;
+  } catch (err) {
+    $('#tableBody').html(
+      `<tr><td colspan="8" class="text-center text-danger">
+        โหลดข้อมูลไม่สำเร็จ<br>
+        <small style="white-space:pre-wrap">${escapeHtml(err.message)}</small><br>
+        <button class='btn btn-sm btn-outline-danger mt-2' onclick='loadDataTable()'>
+          <i class='fa-solid fa-rotate-right'></i> ลองใหม่
+        </button>
+      </td></tr>`
+    );
+    console.error("❌ loadDataTable Error:", err);
+  }
+}
+
+function onDataQuickMonthChange() {
+  applyQuickMonthToRange('data');
+  applyDataFilters();
+}
+
+function onDataCustomRangeChange() {
+  document.getElementById('dataFilterMonthYear').value = '';
+  applyDataFilters();
+}
+
+function resetDataFilters() {
+  document.getElementById('dataFilterPlant').value = '';
+  document.getElementById('dataFilterDept').value = '';
+  document.getElementById('dataFilterMonthYear').value = '';
+  document.getElementById('dataFilterStartDate').value = '';
+  document.getElementById('dataFilterEndDate').value = '';
+  applyDataFilters();
+}
+
+function applyDataFilters() {
+  const filterState = readFilterState('data');
+  const filtered = filterRecords(globalData, filterState);
+  document.getElementById('dataFilterSummary').innerText = buildFilterSummary(filterState, filtered.length);
+  renderDataTable(filtered);
+}
+
+function populateExportFilterDropdowns(data) {
+  const plantSel = document.getElementById('exportFilterPlant');
+  const deptSel  = document.getElementById('exportFilterDept');
+  const plants = getUniqueSorted(data, 4);
+  const depts  = getUniqueSorted(data, 2);
+  plantSel.innerHTML = '<option value="">ทั้งหมด</option>' +
+    plants.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+  deptSel.innerHTML = '<option value="">ทั้งหมด</option>' +
+    depts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+}
+
+function renderDataTable(data) {
+  if (dataTableInstance) {
+    try { dataTableInstance.destroy(); } catch(e) { console.warn('DataTable destroy warn:', e); }
+    dataTableInstance = null;
+  }
+
+  var tbody = "";
+
+  if (data.length === 0) {
+    tbody = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่พบข้อมูลตามตัวกรองที่เลือก</td></tr>`;
+    $('#tableBody').html(tbody);
+    return;
+  }
+
+  for (var i = data.length - 1; i >= 0; i--) {
+    var row = data[i];
+    tbody += "<tr>";
+    tbody += `<td>${escapeHtml(row[0] || '-')}</td>`;
+    tbody += `<td>${escapeHtml(row[1] || '-')}</td>`;
+    tbody += `<td>${escapeHtml(row[2] || '-')}</td>`;
+    tbody += `<td>${escapeHtml(row[3] || '-')}</td>`;
+    tbody += `<td>${escapeHtml(row[4] || '-')}</td>`;
+    tbody += `<td>${escapeHtml(row[5] || '-')}</td>`;
+    tbody += `<td>${escapeHtml(row[6] || '-')}</td>`;
+    if (row[7] && row[8]) {
+      var mapsLink = `https://www.google.com/maps?q=${encodeURIComponent(row[7])},${encodeURIComponent(row[8])}`;
+      tbody += `<td><a href="${mapsLink}" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill"><i class="fa-solid fa-map-location-dot"></i> แผนที่</a></td>`;
+    } else {
+      tbody += `<td class="text-muted small">ไม่มีพิกัด</td>`;
+    }
+    tbody += "</tr>";
+  }
+
+  $('#tableBody').html(tbody);
+
+  dataTableInstance = $('#dataTable').DataTable({
+    order: [],
+    responsive: true,
+    language: {
+      search: "ค้นหา:",
+      lengthMenu: "แสดง _MENU_ รายการ",
+      info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
+      paginate: { first: "แรก", last: "สุดท้าย", next: "ถัดไป", previous: "ก่อน" }
+    }
+  });
+}
+
+function downloadExcel() {
+  var startDateStr = document.getElementById("exportStartDate").value;
+  var endDateStr   = document.getElementById("exportEndDate").value;
+  var plantFilter  = document.getElementById("exportFilterPlant").value;
+  var deptFilter   = document.getElementById("exportFilterDept").value;
+
+  var startDate = startDateStr ? new Date(startDateStr) : null;
+  var endDate   = endDateStr   ? new Date(endDateStr)   : null;
+
+  if (startDate) startDate.setHours(0, 0, 0, 0);
+  if (endDate) endDate.setHours(23, 59, 59, 999);
+
+  var exportData = [["รหัสพนักงาน","ชื่อ-นามสกุล","แผนก","ตำแหน่ง","Plant","วันที่","เวลา","Latitude","Longitude"]];
+
+  // FIX Bug 1 — ถ้า globalData ว่าง (ยังไม่เคยโหลดหน้า "ข้อมูล") ให้ใช้ dashboardRawData แทน
+  const sourceData = globalData.length > 0 ? globalData : dashboardRawData;
+
+  sourceData.forEach(function (row) {
+    if (plantFilter && (row[4] || '').trim() !== plantFilter) return;
+    if (deptFilter && (row[2] || '').trim() !== deptFilter) return;
+
+    var rowDateStr = row[5] || "";
+    var dateObj = parseDateString(rowDateStr);
+
+    if (!dateObj) {
+      if (!startDate && !endDate) {
+        exportData.push(row);
+      }
+      return;
+    }
+
+    var rowTime = dateObj.getTime();
+    var passStart = startDate ? (rowTime >= startDate.getTime()) : true;
+    var passEnd   = endDate   ? (rowTime <= endDate.getTime())   : true;
+
+    if (passStart && passEnd) {
+      var rowCopy = [...row];
+      rowCopy[5] = formatDateToDMY(dateObj);
+      exportData.push(rowCopy);
+    }
+  });
+
+  if (exportData.length <= 1) {
+    Swal.fire('ไม่พบข้อมูล', 'ไม่มีข้อมูลตรงกับตัวกรองที่คุณเลือก', 'warning');
+    return;
+  }
+
+  var ws = XLSX.utils.aoa_to_sheet(exportData);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "History");
+  XLSX.writeFile(wb, "ประวัติลืมบัตรพนักงาน_" + new Date().getTime() + ".xlsx");
+
+  bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
+  Swal.fire({ title: 'Export สำเร็จ!', icon: 'success', timer: 2000, showConfirmButton: false });
+}
+
+// ════════════════════════════════════════════════════════════
+// Keyboard Shortcut (Enter)
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const results = document.querySelectorAll('.autocomplete-results .list-group-item');
+        if (results.length > 0 && results[0].onclick) {
+          results[0].click();
+        }
+      }
+    });
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+// Auto refresh
+// ════════════════════════════════════════════════════════════
+function refreshAllData() {
+  console.log("🔄 Refreshing all data...");
+  dataLoaded = false;
+  dashboardLoaded = false;
+
+  const activePage = document.querySelector('.page.active');
+  if (activePage) {
+    const pageId = activePage.id;
+    if (pageId === 'dataPage') loadDataTable();
+    else if (pageId === 'dashboardPage') loadDashboard();
+  }
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    refreshAllData();
+  }
+});
+
+  </script>
+</body>
+</html>

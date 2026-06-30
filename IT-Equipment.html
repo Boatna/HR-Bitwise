@@ -345,6 +345,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 .badge-returned { background: var(--success-lt); color: var(--success); }
 .badge-overdue  { background: var(--danger-lt);  color: var(--danger); }
 .badge-req      { background: var(--teal-lt);    color: var(--teal-dk); }
+.badge-win      { background: var(--accent-lt);  color: var(--accent-dk); }
 
 /* return button */
 .btn-return {
@@ -421,6 +422,25 @@ select.field-input { padding-right: 32px; cursor: pointer; }
   line-height: 1.6;
 }
 
+/* ── Windows version field with manual entry toggle ── */
+.win-input-row { display: flex; gap: 8px; }
+.win-input-row select { flex: 1; }
+.win-input-row input { flex: 1; display: none; }
+.win-input-row.manual select { display: none; }
+.win-input-row.manual input { display: block; }
+.win-toggle-btn {
+  flex-shrink: 0;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 12px;
+  color: var(--text-sub);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.win-toggle-btn:hover { border-color: var(--teal); color: var(--teal-dk); }
+
 /* ════════════════════════════════════════════════
    RESPONSIVE — iPad / แท็บเล็ต (≤ 820px)
    ════════════════════════════════════════════════ */
@@ -482,6 +502,9 @@ select.field-input { padding-right: 32px; cursor: pointer; }
     left: 12px; right: 12px; bottom: 16px;
     min-width: 0; max-width: none;
   }
+
+  .win-input-row { flex-direction: column; }
+  .win-toggle-btn { width: 100%; }
 }
 
 /* จอเล็กมากๆ (เช่น iPhone SE แนวตั้ง) */
@@ -677,6 +700,27 @@ select.field-input { padding-right: 32px; cursor: pointer; }
           </div>
         </div>
 
+        <!-- NEW: Windows Version field -->
+        <div class="field">
+          <label class="field-label" for="reqWinVersionSelect">เวอร์ชั่น Windows <span style="font-weight:400;color:var(--text-muted)">(เฉพาะ PC / โน๊ตบุ๊ค)</span></label>
+          <div class="win-input-row" id="winInputRow">
+            <div class="select-wrapper" style="flex:1">
+              <select id="reqWinVersionSelect" class="field-input teal-focus">
+                <option value="">— ไม่ระบุ —</option>
+                <option value="Windows 11 Pro">Windows 11 Pro</option>
+                <option value="Windows 11 Home">Windows 11 Home</option>
+                <option value="Windows 10 Pro">Windows 10 Pro</option>
+                <option value="Windows 10 Home">Windows 10 Home</option>
+                <option value="Windows Server 2022">Windows Server 2022</option>
+                <option value="Windows Server 2019">Windows Server 2019</option>
+                <option value="other">อื่น ๆ (พิมพ์เอง)</option>
+              </select>
+            </div>
+            <input type="text" id="reqWinVersionInput" class="field-input mono teal-focus" placeholder="ระบุเวอร์ชั่น Windows" />
+            <button type="button" class="win-toggle-btn" id="winToggleBtn">พิมพ์เอง</button>
+          </div>
+        </div>
+
         <div class="field">
           <label class="field-label" for="reqDate">วันที่เบิก</label>
           <input type="date" id="reqDate" class="field-input mono teal-focus" />
@@ -770,7 +814,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 // ====================================================
 //  ⚠️  ใส่ URL ของ Web App ตรงนี้ (หลัง Deploy GAS)
 // ====================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvT8F7q5Tgt4fUFnP5BxdQTPv1qRURts5HbgfpOfuOlywf14xx_9NUeZkb2ziLH2y9Fg/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwX5Ng9LXMHBXXJx6uO9vT5KGV6oGzMB3i2a9jX_67mCUbO6gXdeiClpAaWte_iKODYuA/exec';
 // ====================================================
 
 /* ─── State ─── */
@@ -827,6 +871,12 @@ const eqListReq         = $('eqListReq');
 const statReqToday      = $('statReqToday');
 const statReqMonth      = $('statReqMonth');
 
+// NEW: Windows version field refs
+const winInputRow        = $('winInputRow');
+const reqWinVersionSelect= $('reqWinVersionSelect');
+const reqWinVersionInput = $('reqWinVersionInput');
+const winToggleBtn       = $('winToggleBtn');
+
 // History
 const borrowTableWrap  = $('borrowTableWrap');
 const reqTableWrap     = $('reqTableWrap');
@@ -851,6 +901,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEmpAutocomplete();
   setupFormSubmits();
   setupModal();
+  setupWindowsVersionField();
 });
 
 /* ─── Tabs ─── */
@@ -881,6 +932,46 @@ function toLocalDate(d) {
   return d.getFullYear() + '-' +
     String(d.getMonth() + 1).padStart(2, '0') + '-' +
     String(d.getDate()).padStart(2, '0');
+}
+
+/* ─── NEW: Windows Version field (dropdown + manual entry toggle) ─── */
+function setupWindowsVersionField() {
+  // เลือก "อื่น ๆ (พิมพ์เอง)" จาก dropdown → สลับเป็นช่องพิมพ์เองอัตโนมัติ
+  reqWinVersionSelect.addEventListener('change', () => {
+    if (reqWinVersionSelect.value === 'other') {
+      switchToManualWinInput();
+    }
+  });
+
+  winToggleBtn.addEventListener('click', () => {
+    if (winInputRow.classList.contains('manual')) {
+      switchToDropdownWinInput();
+    } else {
+      switchToManualWinInput();
+    }
+  });
+}
+function switchToManualWinInput() {
+  winInputRow.classList.add('manual');
+  winToggleBtn.textContent = 'เลือกจากรายการ';
+  reqWinVersionInput.value = '';
+  reqWinVersionInput.focus();
+}
+function switchToDropdownWinInput() {
+  winInputRow.classList.remove('manual');
+  winToggleBtn.textContent = 'พิมพ์เอง';
+  reqWinVersionSelect.value = '';
+}
+function getSelectedWindowsVersion() {
+  if (winInputRow.classList.contains('manual')) {
+    return reqWinVersionInput.value.trim();
+  }
+  return reqWinVersionSelect.value === 'other' ? '' : reqWinVersionSelect.value.trim();
+}
+function resetWindowsVersionField() {
+  reqWinVersionSelect.value = '';
+  reqWinVersionInput.value = '';
+  switchToDropdownWinInput();
 }
 
 /* ─── Load dropdowns ─── */
@@ -1131,6 +1222,7 @@ function setupFormSubmits() {
     const eq     = reqEqSelect.value;
     const serial = reqSerialNo.value.trim();
     const rd     = reqDate.value;
+    const winVer = getSelectedWindowsVersion(); // NEW
 
     if (!empId)  { showToast('กรุณาค้นหาและเลือกพนักงาน', 'error'); reqEmpSearchInput.focus(); return; }
     if (!name)   { showToast('ไม่พบข้อมูลพนักงาน', 'error'); reqEmpSearchInput.focus(); return; }
@@ -1152,7 +1244,8 @@ function setupFormSubmits() {
         reqDate:    rd,
         department: emp.department || '',
         position:   emp.position   || '',
-        plant:      emp.plant      || ''
+        plant:      emp.plant      || '',
+        windowsVersion: winVer  // NEW
       });
       if (res.status === 'success') {
         showToast('✅ บันทึกการเบิกเรียบร้อยแล้ว!', 'teal');
@@ -1259,7 +1352,7 @@ function renderReqTable(rows) {
     <table class="borrow-table">
       <thead><tr>
         <th>#</th><th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>แผนก</th>
-        <th>ประเภทอุปกรณ์</th><th>Serial No.</th><th>Asset No.</th><th>วันที่เบิก</th><th>สถานะ</th>
+        <th>ประเภทอุปกรณ์</th><th>Serial No.</th><th>Asset No.</th><th>Windows</th><th>วันที่เบิก</th><th>สถานะ</th>
       </tr></thead>
       <tbody>
         ${rows.map((r, i) => `<tr>
@@ -1270,6 +1363,7 @@ function renderReqTable(rows) {
           <td>${esc(r.equipment) || '<span style="color:var(--text-muted)">—</span>'}</td>
           <td class="td-mono">${esc(r.serialNo)}</td>
           <td class="td-mono">${esc(r.assetNo) || '—'}</td>
+          <td>${r.windowsVersion ? `<span class="badge badge-win">🪟 ${esc(r.windowsVersion)}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
           <td class="td-date">${formatDate(r.reqDate)}</td>
           <td><span class="badge badge-req">📦 เบิกแล้ว</span></td>
         </tr>`).join('')}
@@ -1301,7 +1395,8 @@ function setupSearchFilters() {
       (r.serialNo   || '').toLowerCase().includes(q) ||
       (r.assetNo    || '').toLowerCase().includes(q) ||
       (r.equipment  || '').toLowerCase().includes(q) ||
-      (r.department || '').toLowerCase().includes(q)
+      (r.department || '').toLowerCase().includes(q) ||
+      (r.windowsVersion || '').toLowerCase().includes(q)
     );
     renderReqTable(filteredReq);
   });
@@ -1360,6 +1455,7 @@ function resetReqForm() {
   reqEqSelect.value = '';
   reqSerialNo.value = '';
   reqAssetNo.value  = '';
+  resetWindowsVersionField(); // NEW
   reqDate.value = toLocalDate(new Date());
 }
 
