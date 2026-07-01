@@ -731,6 +731,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
           <div class="field half">
             <label class="field-label" for="reqSerialNo">หมายเลขเครื่อง (Serial No.)</label>
             <input type="text" id="reqSerialNo" class="field-input mono teal-focus" placeholder="เช่น IE-IT-PC-N400" />
+            <span class="field-hint" id="reqSerialWarn" style="display:none;color:var(--danger);font-weight:500;margin-top:4px"></span>
           </div>
           <div class="field half">
             <label class="field-label" for="reqAssetNo">Asset No. <span style="font-weight:400;color:var(--text-muted)">(ถ้ามี)</span></label>
@@ -931,6 +932,7 @@ const reqInfoDept       = $('reqInfoDept');
 const reqInfoPosition   = $('reqInfoPosition');
 const reqEqSelect       = $('reqEquipment');
 const reqSerialNo       = $('reqSerialNo');
+const reqSerialWarn     = $('reqSerialWarn');
 const reqAssetNo        = $('reqAssetNo');
 const reqDate           = $('reqDate');
 const submitReqBtn      = $('submitReqBtn');
@@ -988,6 +990,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupModal();
   setupWindowsVersionField();
   setupExport();
+  setupSerialDuplicateCheck();
 });
 
 /* ─── Tabs ─── */
@@ -1316,6 +1319,13 @@ function setupFormSubmits() {
     if (!serial) { showToast('กรุณากรอกหมายเลขเครื่อง (Serial No.)', 'error'); reqSerialNo.focus(); return; }
     if (!rd)     { showToast('กรุณาเลือกวันที่เบิก', 'error'); reqDate.focus(); return; }
 
+    const dupSerial = findDuplicateSerial(serial);
+    if (dupSerial) {
+      showToast(`❌ Serial No. "${serial}" ถูกเบิกไปแล้วโดย ${dupSerial.name || dupSerial.empId}`, 'error');
+      reqSerialNo.focus();
+      return;
+    }
+
     const emp = selectedReqEmp || allEmployees.find(e => e.empId === empId) || {};
 
     setBtnLoading(submitReqBtn, true);
@@ -1441,6 +1451,27 @@ function populateReqWindowsFilter() {
     filterReqWindows.appendChild(opt);
   });
   if (current === '__none__' || versions.includes(current)) filterReqWindows.value = current;
+}
+
+/* ─── NEW: กันกรอก Serial No. ซ้ำ ─── */
+function findDuplicateSerial(serial) {
+  const s = String(serial || '').trim().toLowerCase();
+  if (!s) return null;
+  return reqHistory.find(r => String(r.serialNo || '').trim().toLowerCase() === s) || null;
+}
+
+function setupSerialDuplicateCheck() {
+  reqSerialNo.addEventListener('input', () => {
+    const dup = findDuplicateSerial(reqSerialNo.value);
+    if (dup) {
+      reqSerialWarn.textContent = `⚠ หมายเลขนี้ถูกเบิกไปแล้วโดย ${dup.name || dup.empId} (${formatDate(dup.reqDate)})`;
+      reqSerialWarn.style.display = 'block';
+      reqSerialNo.style.borderColor = 'var(--danger)';
+    } else {
+      reqSerialWarn.style.display = 'none';
+      reqSerialNo.style.borderColor = '';
+    }
+  });
 }
 
 function renderReqStats() {
@@ -1698,6 +1729,8 @@ function resetReqForm() {
   selectedReqEmp = null;
   reqEqSelect.value = '';
   reqSerialNo.value = '';
+  reqSerialWarn.style.display = 'none';
+  reqSerialNo.style.borderColor = '';
   reqAssetNo.value  = '';
   resetWindowsVersionField(); // NEW
   reqDate.value = toLocalDate(new Date());
