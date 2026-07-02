@@ -203,7 +203,7 @@ textarea.field-input { resize: vertical; min-height: 80px; }
   box-shadow: var(--shadow);
   max-height: 220px;
   overflow-y: auto;
-  z-index: 50;
+  z-index: 250;
   display: none;
 }
 .autocomplete-list.open { display: block; }
@@ -352,6 +352,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 .td-mono { font-family: var(--font-mono); font-size: 12px; color: var(--text-sub); }
 .td-date { font-family: var(--font-mono); font-size: 12px; }
 .td-note { white-space: normal; max-width: 220px; font-size: 12.5px; color: var(--text-sub); }
+.td-actions { display: flex; gap: 6px; }
 
 /* badges */
 .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
@@ -360,6 +361,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 .badge-overdue  { background: var(--danger-lt);  color: var(--danger); }
 .badge-req      { background: var(--teal-lt);    color: var(--teal-dk); }
 .badge-win      { background: var(--accent-lt);  color: var(--accent-dk); }
+.badge-edited   { background: var(--warn-lt);    color: var(--warn); }
 
 /* return button */
 .btn-return {
@@ -376,7 +378,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 }
 .btn-return:hover { background: var(--accent); color: #fff; }
 
-/* NEW: edit button (used in machine list table) */
+/* edit button (used in machine list table & req history table) */
 .btn-edit {
   padding: 4px 10px;
   border: 1.5px solid var(--teal);
@@ -395,7 +397,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
 .empty-state-msg { font-size: 14px; }
 
-/* ── PAGINATION (NEW) ── */
+/* ── PAGINATION ── */
 .pagination-bar {
   display: flex;
   align-items: center;
@@ -459,6 +461,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
   z-index: 200;
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
+  overflow-y: auto;
 }
 .modal-backdrop[hidden] { display: none !important; }
 .modal-box {
@@ -468,6 +471,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
   max-width: 380px; width: 90%;
   box-shadow: 0 20px 40px rgba(29,111,204,.18);
   text-align: center;
+  margin: auto;
 }
 .modal-icon { font-size: 36px; margin-bottom: 12px; }
 .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 10px; }
@@ -506,7 +510,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 }
 .win-toggle-btn:hover { border-color: var(--teal); color: var(--teal-dk); }
 
-/* ── FILTER BAR (NEW) ── */
+/* ── FILTER BAR ── */
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
@@ -558,6 +562,17 @@ select.field-input { padding-right: 32px; cursor: pointer; }
   color: var(--text-muted);
   padding: 0 24px 10px;
 }
+
+/* ── EDIT MODAL (wide) ── */
+.modal-box.wide { max-width: 560px; text-align: left; }
+.modal-box.wide .modal-icon,
+.modal-box.wide .modal-title,
+.modal-box.wide .modal-desc { text-align: center; }
+.modal-box.wide .field,
+.modal-box.wide .field-group,
+.modal-box.wide .info-row { padding: 0; }
+.modal-box.wide .field { margin-bottom: 14px; }
+.modal-box.wide .field-group { margin-bottom: 14px; }
 
 @media (max-width: 820px) {
   .form-layout { grid-template-columns: 1fr; }
@@ -751,7 +766,9 @@ select.field-input { padding-right: 32px; cursor: pointer; }
         <div class="card-label teal">ฟอร์มบันทึกการเบิก</div>
 
         <div class="req-notice">
-          📦 การเบิกอุปกรณ์ = ได้รับอุปกรณ์ไปโดยไม่ต้องคืน (เช่น โน๊ตบุ๊ค, PC, เมาส์, แป้นพิม, อุปกรณ์สิ้นเปลือง)
+          📦 การเบิกอุปกรณ์ = ได้รับอุปกรณ์ไปโดยไม่ต้องคืน (เช่น โน๊ตบุ๊ค, PC, เมาส์, แป้นพิม, อุปกรณ์สิ้นเปลือง)<br />
+          🔁 หากอุปกรณ์ตัวเดิม (Serial No./Asset No. เดิม) เปลี่ยนมือไปยังพนักงานคนใหม่ (เช่น พนักงานคนเดิมลาออก)
+          <b>ไม่ต้องเบิกใหม่</b> — ให้ไปที่แท็บ "ประวัติการเบิก" แล้วกดปุ่ม "แก้ไข" ที่รายการเดิมแทน
         </div>
 
         <div class="field">
@@ -1059,24 +1076,122 @@ select.field-input { padding-right: 32px; cursor: pointer; }
   </div>
 </div>
 
+<!-- ── EDIT REQUISITION MODAL (NEW) ──────────────────────────────────
+     ใช้แก้ไขรายการเบิกเดิม เช่น เปลี่ยนผู้ถือครองอุปกรณ์เมื่อพนักงาน
+     คนเดิมลาออกแล้วมีพนักงานใหม่มารับเครื่องต่อ (Serial/Asset เดิม) -->
+<div id="editReqModal" class="modal-backdrop" hidden>
+  <div class="modal-box wide">
+    <div class="modal-icon">✏️</div>
+    <h2 class="modal-title">แก้ไขข้อมูลการเบิก</h2>
+    <p class="modal-desc">ใช้สำหรับกรณีเปลี่ยนผู้ถือครองอุปกรณ์ (เช่น พนักงานคนเดิมลาออกแล้วมีคนใหม่รับเครื่องต่อ) หรือแก้ไขรายละเอียดอื่น ๆ ของรายการเบิกนี้</p>
+
+    <div class="field">
+      <label class="field-label" for="editReqEmpSearch">ค้นหาพนักงาน (ผู้ถือครองอุปกรณ์)</label>
+      <span class="field-hint">พิมพ์รหัสพนักงาน หรือ ชื่อ-นามสกุล เพื่อเปลี่ยนผู้ถือครอง</span>
+      <div class="autocomplete-wrap">
+        <div class="input-wrapper">
+          <input type="text" id="editReqEmpSearch" class="field-input teal-focus"
+            placeholder="เช่น 3630169 หรือ สมชาย..." autocomplete="off" />
+          <span class="input-status" id="editReqEmpStatus"></span>
+        </div>
+        <div class="autocomplete-list" id="editReqEmpDropdown"></div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field half">
+        <label class="field-label">รหัสพนักงาน</label>
+        <input type="text" id="editReqEmpId" class="field-input mono" readonly placeholder="— อัตโนมัติ —" />
+      </div>
+      <div class="field half">
+        <label class="field-label">ชื่อ-นามสกุล</label>
+        <input type="text" id="editReqEmpName" class="field-input" readonly placeholder="— อัตโนมัติ —" />
+      </div>
+    </div>
+
+    <div class="field-group info-row" id="editReqEmpInfo" style="display:none">
+      <div class="info-chip teal" id="editReqInfoPlant"></div>
+      <div class="info-chip teal" id="editReqInfoDept"></div>
+      <div class="info-chip teal" id="editReqInfoPosition"></div>
+    </div>
+
+    <div class="field-divider" style="margin:6px 0 18px"></div>
+
+    <div class="field">
+      <label class="field-label" for="editReqEquipment">ประเภทอุปกรณ์</label>
+      <div class="select-wrapper">
+        <select id="editReqEquipment" class="field-input teal-focus"></select>
+      </div>
+    </div>
+
+    <div class="field-group" id="editSerialAssetGroup" style="display:none">
+      <div class="field half">
+        <label class="field-label" for="editReqSerialNo">Serial No.</label>
+        <input type="text" id="editReqSerialNo" class="field-input mono teal-focus" />
+        <span class="field-hint" id="editReqSerialWarn" style="display:none;color:var(--danger);font-weight:500;margin-top:4px"></span>
+      </div>
+      <div class="field half">
+        <label class="field-label" for="editReqAssetNo">Asset No.</label>
+        <input type="text" id="editReqAssetNo" class="field-input mono teal-focus" />
+      </div>
+    </div>
+
+    <div class="field" id="editWinVersionField" style="display:none">
+      <label class="field-label" for="editReqWinVersionSelect">เวอร์ชั่น Windows</label>
+      <div class="win-input-row" id="editWinInputRow">
+        <div class="select-wrapper" style="flex:1">
+          <select id="editReqWinVersionSelect" class="field-input teal-focus">
+            <option value="">— ไม่ระบุ —</option>
+            <option value="Windows 11 Pro">Windows 11 Pro</option>
+            <option value="Windows 11 Home">Windows 11 Home</option>
+            <option value="Windows 10 Pro">Windows 10 Pro</option>
+            <option value="Windows 10 Home">Windows 10 Home</option>
+            <option value="Windows 7">Windows 7</option>
+            <option value="Windows xp">Windows xp</option>
+            <option value="other">อื่น ๆ (พิมพ์เอง)</option>
+          </select>
+        </div>
+        <input type="text" id="editReqWinVersionInput" class="field-input mono teal-focus" placeholder="ระบุเวอร์ชั่น Windows" />
+        <button type="button" class="win-toggle-btn" id="editWinToggleBtn">พิมพ์เอง</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="editReqDate">วันที่เบิก</label>
+      <input type="date" id="editReqDate" class="field-input mono teal-focus" />
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="editReqNote">คำอธิบายเพิ่มเติม</label>
+      <textarea id="editReqNote" class="field-input teal-focus" rows="3" placeholder="เช่น เปลี่ยนผู้ถือครองจาก... เนื่องจากลาออกเมื่อ..."></textarea>
+    </div>
+
+    <div class="modal-actions" style="margin-top:6px">
+      <button id="editReqCancel" class="btn-outline" type="button">ยกเลิก</button>
+      <button id="editReqSave" class="btn-primary teal-btn" type="button" style="margin:0;width:auto;padding:10px 24px">
+        <span class="btn-text">บันทึกการแก้ไข</span>
+        <span class="btn-spinner" hidden>⏳</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwnH5Le2bexBotPhDsHPI6VwfFbx80xAtEkVDE_tZ06i9D4l7d8QtGWRQhcTJIG2utAWA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaPItomL0NZmtxjaGDpzcuuSZwZEqhqO0ov6_5d57B_sRt8Xlppwz_LzTLWtbYPUtODA/exec';
 
-// NEW: ตั้งค่าจำนวนรายการต่อหน้าในตารางประวัติ
 const PAGE_SIZE = 10;
 let borrowPage = 1;
 let reqPage    = 1;
-let machinePage = 1; // NEW
+let machinePage = 1; 
 
-// NEW: ประเภทอุปกรณ์ที่ต้องกรอก Serial No. / Asset No. (ชื่อต้องตรงกับค่าในชีต Equipment)
 const SERIAL_REQUIRED_EQUIPMENT = ['Notebook', 'PC/All In One', 'หน้าจอคอมพิวเตอร์'];
 function equipmentNeedsSerial(eqName) {
   const norm = s => String(s || '').trim().toLowerCase();
   return SERIAL_REQUIRED_EQUIPMENT.some(name => norm(name) === norm(eqName));
 }
 
-// NEW: ประเภทอุปกรณ์ที่ต้องแสดงช่องเวอร์ชั่น Windows (เฉพาะ PC / โน๊ตบุ๊ค ไม่รวมจอมอนิเตอร์)
+// ประเภทอุปกรณ์ที่ต้องแสดงช่องเวอร์ชั่น Windows 
 const WINDOWS_REQUIRED_EQUIPMENT = ['Notebook', 'PC/All In One'];
 function equipmentNeedsWindows(eqName) {
   const norm = s => String(s || '').trim().toLowerCase();
@@ -1091,10 +1206,14 @@ let reqHistory        = [];
 let filteredReq       = [];
 let pendingReturnRow  = null;
 
-// NEW: state สำหรับแท็บคอมพิวเตอร์เครื่องจักร
+// state สำหรับแท็บคอมพิวเตอร์เครื่องจักร
 let machineList        = [];
 let filteredMachine     = [];
-let editingMachineRow   = null; // rowIndex ที่กำลังแก้ไขอยู่ (null = โหมดเพิ่มใหม่)
+let editingMachineRow   = null;
+
+// state สำหรับแก้ไขประวัติการเบิก (NEW)
+let editingReqRowIndex  = null;
+let selectedEditReqEmp  = null;
 
 let selectedBorrowEmp = null;
 let selectedReqEmp    = null;
@@ -1130,19 +1249,19 @@ const reqInfoPlant      = $('reqInfoPlant');
 const reqInfoDept       = $('reqInfoDept');
 const reqInfoPosition   = $('reqInfoPosition');
 const reqEqSelect       = $('reqEquipment');
-const serialAssetGroup  = $('serialAssetGroup'); // NEW
+const serialAssetGroup  = $('serialAssetGroup');
 const reqSerialNo       = $('reqSerialNo');
 const reqSerialWarn     = $('reqSerialWarn');
 const reqAssetNo        = $('reqAssetNo');
 const reqDate           = $('reqDate');
-const reqNoteInput      = $('reqNote'); // NEW: คำอธิบายเพิ่มเติม
+const reqNoteInput      = $('reqNote'); 
 const submitReqBtn      = $('submitReqBtn');
 const eqListReq         = $('eqListReq');
 const statReqToday      = $('statReqToday');
 const statReqMonth      = $('statReqMonth');
 
-// NEW: Windows version field refs
-const winVersionField     = $('winVersionField'); // NEW
+// Windows version field refs
+const winVersionField     = $('winVersionField'); 
 const winInputRow        = $('winInputRow');
 const reqWinVersionSelect= $('reqWinVersionSelect');
 const reqWinVersionInput = $('reqWinVersionInput');
@@ -1156,7 +1275,7 @@ const searchReq        = $('searchReq');
 const refreshBorrowBtn = $('refreshBorrowBtn');
 const refreshReqBtn    = $('refreshReqBtn');
 
-// NEW: Filters & Export
+// Filters & Export
 const filterBorrowStatus    = $('filterBorrowStatus');
 const filterBorrowEquipment = $('filterBorrowEquipment');
 const filterBorrowFrom      = $('filterBorrowFrom');
@@ -1174,7 +1293,7 @@ const clearFilterReqBtn  = $('clearFilterReqBtn');
 const filterCountReq     = $('filterCountReq');
 const exportReqBtn       = $('exportReqBtn');
 
-// NEW: Machine tab elements
+// Machine tab elements
 const mcName              = $('mcName');
 const mcWinInputRow       = $('mcWinInputRow');
 const mcWinVersionSelect  = $('mcWinVersionSelect');
@@ -1199,7 +1318,33 @@ const filterMachineWindows = $('filterMachineWindows');
 const clearFilterMachineBtn= $('clearFilterMachineBtn');
 const filterCountMachine   = $('filterCountMachine');
 
-// Modal
+// Edit Requisition modal elements (NEW)
+const editReqModal          = $('editReqModal');
+const editReqEmpSearchInput = $('editReqEmpSearch');
+const editReqEmpDropdown    = $('editReqEmpDropdown');
+const editReqEmpIdDisplay   = $('editReqEmpId');
+const editReqEmpNameDisplay = $('editReqEmpName');
+const editReqEmpStatus      = $('editReqEmpStatus');
+const editReqEmpInfo        = $('editReqEmpInfo');
+const editReqInfoPlant      = $('editReqInfoPlant');
+const editReqInfoDept       = $('editReqInfoDept');
+const editReqInfoPosition   = $('editReqInfoPosition');
+const editReqEquipment      = $('editReqEquipment');
+const editSerialAssetGroup  = $('editSerialAssetGroup');
+const editReqSerialNo       = $('editReqSerialNo');
+const editReqSerialWarn     = $('editReqSerialWarn');
+const editReqAssetNo        = $('editReqAssetNo');
+const editWinVersionField   = $('editWinVersionField');
+const editWinInputRow       = $('editWinInputRow');
+const editReqWinVersionSelect = $('editReqWinVersionSelect');
+const editReqWinVersionInput  = $('editReqWinVersionInput');
+const editWinToggleBtn      = $('editWinToggleBtn');
+const editReqDate           = $('editReqDate');
+const editReqNote           = $('editReqNote');
+const editReqCancelBtn      = $('editReqCancel');
+const editReqSaveBtn        = $('editReqSave');
+
+// Modal (return equipment)
 const modal       = $('modal');
 const modalDesc   = $('modalDesc');
 const modalCancel = $('modalCancel');
@@ -1218,15 +1363,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupWindowsVersionField();
   setupExport();
   setupSerialDuplicateCheck();
-  setupSerialAssetVisibility(); // NEW
-  updateSerialAssetVisibility(); // NEW: ตั้งสถานะเริ่มต้นให้ตรงกับค่าเริ่มต้นของ select
+  setupSerialAssetVisibility();
+  updateSerialAssetVisibility();
 
-  // NEW: เริ่มต้นระบบแท็บคอมพิวเตอร์เครื่องจักร (เดิมแท็บนี้ไม่มีการเชื่อมต่อ
-  // ฝั่ง JS เลย ทำให้ค้างที่ "กำลังโหลดข้อมูล..." ตลอดไป)
   setupMachineWindowsVersionField();
   setupMachineForm();
   setupMachineFilters();
   setupMachineIpDuplicateCheck();
+
+  setupEditReqModal();
 });
 
 /* ─── Tabs ─── */
@@ -1240,7 +1385,7 @@ function setupTabSwitching() {
       $(`tab-${target}`).classList.add('active');
       if (target === 'borrow-history') loadBorrowHistory();
       if (target === 'req-history')    loadReqHistory();
-      if (target === 'machine')        loadMachineList(); // NEW
+      if (target === 'machine')        loadMachineList();
     });
   });
 }
@@ -1260,7 +1405,6 @@ function toLocalDate(d) {
     String(d.getDate()).padStart(2, '0');
 }
 
-/* ─── NEW: แสดง/ซ่อนช่อง Serial No. / Asset No. และเวอร์ชั่น Windows ตามประเภทอุปกรณ์ ─── */
 function setupSerialAssetVisibility() {
   reqEqSelect.addEventListener('change', updateSerialAssetVisibility);
 }
@@ -1268,7 +1412,6 @@ function updateSerialAssetVisibility() {
   const showSerial = equipmentNeedsSerial(reqEqSelect.value);
   serialAssetGroup.style.display = showSerial ? 'flex' : 'none';
   if (!showSerial) {
-    // เคลียร์ค่าที่กรอกไว้เมื่อซ่อนช่อง เพื่อไม่ให้ส่งข้อมูลเก่าติดไปโดยไม่ตั้งใจ
     reqSerialNo.value = '';
     reqAssetNo.value  = '';
     reqSerialWarn.style.display = 'none';
@@ -1278,14 +1421,11 @@ function updateSerialAssetVisibility() {
   const showWin = equipmentNeedsWindows(reqEqSelect.value);
   winVersionField.style.display = showWin ? 'block' : 'none';
   if (!showWin) {
-    // เคลียร์ค่าเวอร์ชั่น Windows เมื่อซ่อนช่อง
     resetWindowsVersionField();
   }
 }
 
-/* ─── NEW: Windows Version field (dropdown + manual entry toggle) ─── */
 function setupWindowsVersionField() {
-  // เลือก "อื่น ๆ (พิมพ์เอง)" จาก dropdown → สลับเป็นช่องพิมพ์เองอัตโนมัติ
   reqWinVersionSelect.addEventListener('change', () => {
     if (reqWinVersionSelect.value === 'other') {
       switchToManualWinInput();
@@ -1323,7 +1463,55 @@ function resetWindowsVersionField() {
   switchToDropdownWinInput();
 }
 
-/* ─── NEW: Windows Version field สำหรับแท็บคอมพิวเตอร์เครื่องจักร (โครงสร้างเดียวกับด้านบน) ─── */
+/* ─── Windows version field: EDIT REQ MODAL (NEW) ─── */
+function setupEditWinVersionField() {
+  editReqWinVersionSelect.addEventListener('change', () => {
+    if (editReqWinVersionSelect.value === 'other') {
+      switchToManualEditWinInput();
+    }
+  });
+  editWinToggleBtn.addEventListener('click', () => {
+    if (editWinInputRow.classList.contains('manual')) {
+      switchToDropdownEditWinInput();
+    } else {
+      switchToManualEditWinInput();
+    }
+  });
+}
+function switchToManualEditWinInput() {
+  editWinInputRow.classList.add('manual');
+  editWinToggleBtn.textContent = 'เลือกจากรายการ';
+  editReqWinVersionInput.focus();
+}
+function switchToDropdownEditWinInput() {
+  editWinInputRow.classList.remove('manual');
+  editWinToggleBtn.textContent = 'พิมพ์เอง';
+  editReqWinVersionSelect.value = '';
+}
+function getSelectedEditWindowsVersion() {
+  if (editWinInputRow.classList.contains('manual')) {
+    return editReqWinVersionInput.value.trim();
+  }
+  return editReqWinVersionSelect.value === 'other' ? '' : editReqWinVersionSelect.value.trim();
+}
+function setEditWindowsVersionValue(v) {
+  const val = String(v || '').trim();
+  if (!val) {
+    editReqWinVersionSelect.value = '';
+    editReqWinVersionInput.value = '';
+    switchToDropdownEditWinInput();
+    return;
+  }
+  const options = Array.from(editReqWinVersionSelect.options).map(o => o.value);
+  if (options.includes(val)) {
+    switchToDropdownEditWinInput();
+    editReqWinVersionSelect.value = val;
+  } else {
+    switchToManualEditWinInput();
+    editReqWinVersionInput.value = val;
+  }
+}
+
 function setupMachineWindowsVersionField() {
   mcWinVersionSelect.addEventListener('change', () => {
     if (mcWinVersionSelect.value === 'other') {
@@ -1361,7 +1549,6 @@ function resetMcWindowsVersionField() {
   switchToDropdownMcWinInput();
 }
 
-/* ─── Load dropdowns ─── */
 async function loadDropdownData() {
   try {
     const [eqRes, empRes] = await Promise.all([
@@ -1372,7 +1559,8 @@ async function loadDropdownData() {
     allEquipment = Array.isArray(eqRes) ? eqRes : [];
     allEmployees = Array.isArray(empRes) ? empRes : [];
 
-    [eqSelect, reqEqSelect].forEach(sel => {
+    // NEW: เพิ่ม editReqEquipment เข้าไปในกลุ่ม select ที่โหลดประเภทอุปกรณ์ด้วย
+    [eqSelect, reqEqSelect, editReqEquipment].forEach(sel => {
       sel.innerHTML = '<option value="">— เลือกประเภทอุปกรณ์ —</option>';
       allEquipment.forEach(item => {
         const opt = document.createElement('option');
@@ -1394,7 +1582,6 @@ async function loadDropdownData() {
       });
     });
 
-    // NEW: เติมตัวเลือกอุปกรณ์ในแถบตัวกรองประวัติ
     [filterBorrowEquipment, filterReqEquipment].forEach(sel => {
       const placeholder = sel.options[0];
       sel.innerHTML = '';
@@ -1409,7 +1596,7 @@ async function loadDropdownData() {
   } catch (err) {
     console.error(err);
     showToast('ไม่สามารถโหลดข้อมูลได้ ตรวจสอบ SCRIPT_URL', 'error');
-    [eqSelect, reqEqSelect].forEach(s => s.innerHTML = '<option value="">โหลดไม่สำเร็จ</option>');
+    [eqSelect, reqEqSelect, editReqEquipment].forEach(s => s.innerHTML = '<option value="">โหลดไม่สำเร็จ</option>');
     [eqList, eqListReq].forEach(u => u.innerHTML = '<li style="color:var(--danger)">โหลดไม่สำเร็จ</li>');
   }
 }
@@ -1441,6 +1628,21 @@ function setupEmpAutocomplete() {
     posEl:        reqInfoPosition,
     isTeal:       true,
     onSelect:     emp => { selectedReqEmp = emp; }
+  });
+
+  // NEW: autocomplete พนักงานสำหรับ modal แก้ไขประวัติการเบิก
+  makeAutocomplete({
+    searchInput:  editReqEmpSearchInput,
+    dropdown:     editReqEmpDropdown,
+    statusEl:     editReqEmpStatus,
+    idDisplay:    editReqEmpIdDisplay,
+    nameDisplay:  editReqEmpNameDisplay,
+    infoEl:       editReqEmpInfo,
+    plantEl:      editReqInfoPlant,
+    deptEl:       editReqInfoDept,
+    posEl:        editReqInfoPosition,
+    isTeal:       true,
+    onSelect:     emp => { selectedEditReqEmp = emp; }
   });
 }
 
@@ -1565,6 +1767,11 @@ function makeAutocomplete({ searchInput, dropdown, statusEl, idDisplay, nameDisp
       if (results.length) renderDropdown(results, q);
     }
   });
+
+  // เผยฟังก์ชัน selectEmployee ออกไปให้เรียกจากภายนอกได้ (ใช้ตอนเปิด modal แก้ไข
+  // เพื่อพรีฟิลชื่อพนักงานเดิมของรายการที่กำลังแก้ไข)
+  searchInput._selectEmployeeProgrammatically = selectEmployee;
+  searchInput._clearSelectionProgrammatically = clearSelection;
 }
 
 function setupFormSubmits() {
@@ -1609,10 +1816,10 @@ function setupFormSubmits() {
     const eq     = reqEqSelect.value;
     const serial = reqSerialNo.value.trim();
     const rd     = reqDate.value;
-    const winVer = getSelectedWindowsVersion(); // NEW
-    const note   = reqNoteInput.value.trim();   // NEW: คำอธิบายเพิ่มเติม
+    const winVer = getSelectedWindowsVersion();
+    const note   = reqNoteInput.value.trim();
 
-    const serialRequired = equipmentNeedsSerial(eq); // NEW: บังคับกรอก Serial เฉพาะบางประเภทอุปกรณ์
+    const serialRequired = equipmentNeedsSerial(eq);
 
     if (!empId)  { showToast('กรุณาค้นหาและเลือกพนักงาน', 'error'); reqEmpSearchInput.focus(); return; }
     if (!name)   { showToast('ไม่พบข้อมูลพนักงาน', 'error'); reqEmpSearchInput.focus(); return; }
@@ -1622,7 +1829,7 @@ function setupFormSubmits() {
 
     const dupSerial = serial ? findDuplicateSerial(serial) : null;
     if (dupSerial) {
-      showToast(`❌ Serial No. "${serial}" ถูกเบิกไปแล้วโดย ${dupSerial.name || dupSerial.empId}`, 'error');
+      showToast(`❌ Serial No. "${serial}" ถูกเบิกไปแล้วโดย ${dupSerial.name || dupSerial.empId} — หากเป็นการเปลี่ยนผู้ถือครอง กรุณาแก้ไขที่ประวัติการเบิกแทน`, 'error');
       reqSerialNo.focus();
       return;
     }
@@ -1643,7 +1850,7 @@ function setupFormSubmits() {
         position:   emp.position   || '',
         plant:      emp.plant      || '',
         windowsVersion: winVer,
-        note: note // NEW: คำอธิบายเพิ่มเติม
+        note: note
       });
       if (res.status === 'success') {
         showToast('✅ บันทึกการเบิกเรียบร้อยแล้ว!', 'teal');
@@ -1676,7 +1883,6 @@ function renderBorrowStats() {
   statPending.textContent = borrowHistory.filter(r => r.status === 'รอดำเนินการ').length;
 }
 
-/* ─── NEW: ตารางประวัติการยืม พร้อมแบ่งหน้า (pagination) แสดง PAGE_SIZE รายการต่อหน้า ─── */
 function renderBorrowTable(rows, page) {
   if (!rows.length) {
     borrowTableWrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📂</div><div class="empty-state-msg">ไม่พบรายการ</div></div>`;
@@ -1699,9 +1905,8 @@ function renderBorrowTable(rows, page) {
       </tr></thead>
       <tbody>
         ${pageRows.map((r, j) => {
-          const i = start + j; // ตำแหน่งจริงในอาเรย์ที่กรองแล้วทั้งหมด (สำหรับเลขลำดับ)
+          const i = start + j;
           const isOverdue = r.status === 'รอดำเนินการ' && r.returnDate && r.returnDate < today;
-          // NEW: แสดง tooltip วันที่คืนจริง (บันทึกไว้แล้วในชีตแต่เดิมไม่เคยถูกใช้)
           const returnedTitle = r.actualReturnDate ? ` title="คืนจริงเมื่อ ${esc(formatDate(r.actualReturnDate))}"` : '';
           const badge = r.status === 'คืนแล้ว'
             ? `<span class="badge badge-returned"${returnedTitle}>✓ คืนแล้ว</span>`
@@ -1770,11 +1975,15 @@ function populateReqWindowsFilter() {
   if (current === '__none__' || versions.includes(current)) filterReqWindows.value = current;
 }
 
-/* ─── NEW: กันกรอก Serial No. ซ้ำ ─── */
-function findDuplicateSerial(serial) {
+// NEW: เพิ่มพารามิเตอร์ excludeRowIndex เพื่อไม่นับรายการที่กำลังแก้ไขอยู่เอง
+// ว่าเป็น "ข้อมูลซ้ำ" กับตัวมันเอง
+function findDuplicateSerial(serial, excludeRowIndex) {
   const s = String(serial || '').trim().toLowerCase();
   if (!s) return null;
-  return reqHistory.find(r => String(r.serialNo || '').trim().toLowerCase() === s) || null;
+  return reqHistory.find(r =>
+    r.rowIndex !== excludeRowIndex &&
+    String(r.serialNo || '').trim().toLowerCase() === s
+  ) || null;
 }
 
 function setupSerialDuplicateCheck() {
@@ -1798,7 +2007,6 @@ function renderReqStats() {
   statReqMonth.textContent = reqHistory.filter(r => (r.reqDate || '').startsWith(thisMonth)).length;
 }
 
-/* ─── NEW: ตารางประวัติการเบิก พร้อมแบ่งหน้า (pagination) แสดง PAGE_SIZE รายการต่อหน้า ─── */
 function renderReqTable(rows, page) {
   if (!rows.length) {
     reqTableWrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📂</div><div class="empty-state-msg">ไม่พบรายการ</div></div>`;
@@ -1816,15 +2024,16 @@ function renderReqTable(rows, page) {
     <table class="borrow-table">
       <thead><tr>
         <th>#</th><th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>แผนก</th>
-        <th>ประเภทอุปกรณ์</th><th>Serial No.</th><th>Asset No.</th><th>Windows</th><th>วันที่เบิก</th><th>คำอธิบายเพิ่มเติม</th><th>สถานะ</th>
+        <th>ประเภทอุปกรณ์</th><th>Serial No.</th><th>Asset No.</th><th>Windows</th><th>วันที่เบิก</th><th>คำอธิบายเพิ่มเติม</th><th>สถานะ</th><th></th>
       </tr></thead>
       <tbody>
         ${pageRows.map((r, j) => {
           const i = start + j;
+          const editedBadge = r.lastEditedNote ? `<div style="margin-top:3px"><span class="badge badge-edited" title="${esc(r.lastEditedNote)}">✎ เคยแก้ไข</span></div>` : '';
           return `<tr>
           <td class="td-mono">${rows.length - i}</td>
           <td class="td-mono">${esc(r.empId)}</td>
-          <td>${esc(r.name)}</td>
+          <td>${esc(r.name)}${editedBadge}</td>
           <td style="font-size:12px;color:var(--text-sub)">${esc(r.department)}</td>
           <td>${esc(r.equipment) || '<span style="color:var(--text-muted)">—</span>'}</td>
           <td class="td-mono">${esc(r.serialNo)}</td>
@@ -1833,16 +2042,19 @@ function renderReqTable(rows, page) {
           <td class="td-date">${formatDate(r.reqDate)}</td>
           <td class="td-note">${esc(r.note) || '<span style="color:var(--text-muted)">—</span>'}</td>
           <td><span class="badge badge-req">📦 เบิกแล้ว</span></td>
+          <td><button class="btn-edit" data-row="${esc(String(r.rowIndex))}">แก้ไข</button></td>
         </tr>`;
         }).join('')}
       </tbody>
     </table>
     ${paginationBarHTML(page, totalPages, true)}`;
 
+  reqTableWrap.querySelectorAll('.btn-edit').forEach(btn =>
+    btn.addEventListener('click', () => openEditReqModal(Number(btn.dataset.row)))
+  );
   bindPaginationEvents(reqTableWrap, p => renderReqTable(filteredReq, p));
 }
 
-/* ─── NEW: สร้าง HTML แถบแบ่งหน้า (pagination bar) ─── */
 function paginationBarHTML(page, totalPages, isTeal) {
   if (totalPages <= 1) return '';
 
@@ -1865,7 +2077,6 @@ function paginationBarHTML(page, totalPages, isTeal) {
     </div>`;
 }
 
-/* ─── NEW: ผูก event ปุ่มเปลี่ยนหน้า ─── */
 function bindPaginationEvents(wrapEl, onGoToPage) {
   wrapEl.querySelectorAll('.page-nav-btn, .page-num-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1873,13 +2084,11 @@ function bindPaginationEvents(wrapEl, onGoToPage) {
       const p = Number(btn.dataset.page);
       if (!p || isNaN(p)) return;
       onGoToPage(p);
-      // เลื่อนขึ้นไปบนตารางเล็กน้อยเพื่อ UX ที่ดีขึ้นเมื่อเปลี่ยนหน้า
       wrapEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   });
 }
 
-/* ─── Combined search + filter logic ─── */
 function applyBorrowFilters() {
   const q      = searchBorrow.value.toLowerCase().trim();
   const status = filterBorrowStatus.value;
@@ -1907,7 +2116,6 @@ function applyBorrowFilters() {
   });
 
   updateFilterCount(filterCountBorrow, filteredBorrow.length, borrowHistory.length);
-  // NEW: กลับไปหน้า 1 ทุกครั้งที่ผลการกรอง/ค้นหาเปลี่ยน
   borrowPage = 1;
   renderBorrowTable(filteredBorrow, borrowPage);
 }
@@ -1945,7 +2153,6 @@ function applyReqFilters() {
   });
 
   updateFilterCount(filterCountReq, filteredReq.length, reqHistory.length);
-  // NEW: กลับไปหน้า 1 ทุกครั้งที่ผลการกรอง/ค้นหาเปลี่ยน
   reqPage = 1;
   renderReqTable(filteredReq, reqPage);
 }
@@ -1994,10 +2201,6 @@ function setupSearchFilters() {
   });
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   NEW: โมดูลคอมพิวเตอร์เครื่องจักร (แท็บนี้เดิมไม่มีโค้ด JS เชื่อมต่อเลย)
-   ══════════════════════════════════════════════════════════════════ */
-
 async function loadMachineList() {
   machineTableWrap.innerHTML = '<div class="table-loading">กำลังโหลดข้อมูล...</div>';
   try {
@@ -2022,8 +2225,6 @@ function populateMachineDeptFilter() {
     filterMachineDept.appendChild(opt);
   });
   if (depts.includes(current)) filterMachineDept.value = current;
-
-  // เติม datalist สำหรับช่องกรอกแผนกในฟอร์ม เพื่อช่วยพิมพ์ให้สะกดตรงกัน
   mcDeptList.innerHTML = depts.map(d => `<option value="${esc(d)}"></option>`).join('');
 }
 
@@ -2236,7 +2437,149 @@ function setupMachineForm() {
   });
 }
 
-/* ─── NEW: Export to Excel (SheetJS) ─── */
+/* ─── EDIT REQUISITION MODAL (NEW) ────────────────────────────────
+   เปิด modal พร้อมข้อมูลเดิมของแถวที่เลือก ใช้เปลี่ยนผู้ถือครองอุปกรณ์
+   (เช่น พนักงานลาออก มีคนใหม่รับเครื่องต่อ) หรือแก้ไขรายละเอียดอื่น ๆ */
+function setupEditReqModal() {
+  setupEditWinVersionField();
+
+  editReqEquipment.addEventListener('change', updateEditSerialAssetVisibility);
+
+  editReqSerialNo.addEventListener('input', () => {
+    const dup = findDuplicateSerial(editReqSerialNo.value, editingReqRowIndex);
+    if (dup) {
+      editReqSerialWarn.textContent = `⚠ หมายเลขนี้ถูกใช้งานโดยรายการอื่นอยู่แล้ว: ${dup.name || dup.empId} (${formatDate(dup.reqDate)})`;
+      editReqSerialWarn.style.display = 'block';
+      editReqSerialNo.style.borderColor = 'var(--danger)';
+    } else {
+      editReqSerialWarn.style.display = 'none';
+      editReqSerialNo.style.borderColor = '';
+    }
+  });
+
+  editReqCancelBtn.addEventListener('click', closeEditReqModal);
+  editReqModal.addEventListener('click', e => {
+    if (e.target === editReqModal) closeEditReqModal();
+  });
+
+  editReqSaveBtn.addEventListener('click', saveEditRequisition);
+}
+
+function updateEditSerialAssetVisibility() {
+  const showSerial = equipmentNeedsSerial(editReqEquipment.value);
+  editSerialAssetGroup.style.display = showSerial ? 'flex' : 'none';
+
+  const showWin = equipmentNeedsWindows(editReqEquipment.value);
+  editWinVersionField.style.display = showWin ? 'block' : 'none';
+}
+
+function openEditReqModal(rowIndex) {
+  const item = reqHistory.find(r => r.rowIndex === rowIndex);
+  if (!item) { showToast('ไม่พบรายการที่ต้องการแก้ไข', 'error'); return; }
+
+  editingReqRowIndex = rowIndex;
+
+  // พรีฟิลชื่อพนักงานเดิมของรายการนี้ในช่องค้นหา (ผู้ใช้สามารถพิมพ์ค้นหา
+  // เปลี่ยนเป็นพนักงานคนใหม่ได้ทันทีถ้าต้องการเปลี่ยนผู้ถือครอง)
+  const existingEmp = allEmployees.find(e => e.empId === item.empId);
+  if (existingEmp && editReqEmpSearchInput._selectEmployeeProgrammatically) {
+    editReqEmpSearchInput._selectEmployeeProgrammatically(existingEmp);
+  } else {
+    // ถ้าหารหัสพนักงานไม่เจอในรายชื่อปัจจุบัน (เช่นถูกลบออกแล้วเพราะลาออก)
+    // ให้แสดงข้อมูลเดิมแบบ read-only ไว้ก่อน แล้วให้ผู้ใช้ค้นหาคนใหม่แทน
+    editReqEmpSearchInput.value = item.empId ? `${item.empId}  —  ${item.name}` : '';
+    editReqEmpIdDisplay.value   = item.empId;
+    editReqEmpNameDisplay.value = item.name;
+    editReqEmpStatus.textContent = existingEmp ? '✅' : '⚠️';
+    editReqInfoPlant.textContent    = item.plant      || '';
+    editReqInfoDept.textContent     = item.department || '';
+    editReqInfoPosition.textContent = item.position   || '';
+    editReqEmpInfo.style.display = 'flex';
+    selectedEditReqEmp = existingEmp || {
+      empId: item.empId, name: item.name,
+      department: item.department, position: item.position, plant: item.plant
+    };
+  }
+
+  editReqEquipment.value = item.equipment || '';
+  updateEditSerialAssetVisibility();
+
+  editReqSerialNo.value = item.serialNo || '';
+  editReqAssetNo.value  = item.assetNo  || '';
+  editReqSerialWarn.style.display = 'none';
+  editReqSerialNo.style.borderColor = '';
+
+  setEditWindowsVersionValue(item.windowsVersion || '');
+
+  editReqDate.value = item.reqDate || toLocalDate(new Date());
+  editReqNote.value = item.note || '';
+
+  editReqModal.hidden = false;
+}
+
+function closeEditReqModal() {
+  editReqModal.hidden = true;
+  editingReqRowIndex = null;
+  selectedEditReqEmp = null;
+  if (editReqEmpSearchInput._clearSelectionProgrammatically) {
+    editReqEmpSearchInput._clearSelectionProgrammatically();
+  }
+  editReqEmpSearchInput.value = '';
+}
+
+async function saveEditRequisition() {
+  if (!editingReqRowIndex) { closeEditReqModal(); return; }
+
+  const empId = editReqEmpIdDisplay.value.trim();
+  const name  = editReqEmpNameDisplay.value.trim();
+  const eq    = editReqEquipment.value;
+  const serial = editReqSerialNo.value.trim();
+  const rd    = editReqDate.value;
+
+  if (!empId) { showToast('กรุณาค้นหาและเลือกพนักงาน', 'error'); editReqEmpSearchInput.focus(); return; }
+  if (!name)  { showToast('ไม่พบข้อมูลพนักงาน', 'error'); editReqEmpSearchInput.focus(); return; }
+  if (!eq)    { showToast('กรุณาเลือกประเภทอุปกรณ์', 'error'); editReqEquipment.focus(); return; }
+  if (equipmentNeedsSerial(eq) && !serial) { showToast('กรุณากรอกหมายเลขเครื่อง (Serial No.)', 'error'); editReqSerialNo.focus(); return; }
+  if (!rd)    { showToast('กรุณาเลือกวันที่เบิก', 'error'); editReqDate.focus(); return; }
+
+  const dupSerial = serial ? findDuplicateSerial(serial, editingReqRowIndex) : null;
+  if (dupSerial) {
+    showToast(`❌ Serial No. "${serial}" ถูกใช้งานโดยรายการอื่นอยู่แล้ว (${dupSerial.name || dupSerial.empId})`, 'error');
+    editReqSerialNo.focus();
+    return;
+  }
+
+  const emp = selectedEditReqEmp || allEmployees.find(e => e.empId === empId) || {};
+
+  setBtnLoading(editReqSaveBtn, true);
+  try {
+    const res = await apiPost({
+      action: 'updateRequisition',
+      rowIndex: editingReqRowIndex,
+      empId,
+      empName: name,
+      equipment: eq,
+      serialNo: serial,
+      assetNo: editReqAssetNo.value.trim(),
+      reqDate: rd,
+      department: emp.department || '',
+      position:   emp.position   || '',
+      plant:      emp.plant      || '',
+      windowsVersion: getSelectedEditWindowsVersion(),
+      note: editReqNote.value.trim()
+    });
+    if (res.status === 'success') {
+      showToast('✅ แก้ไขข้อมูลการเบิกเรียบร้อยแล้ว!', 'success');
+      closeEditReqModal();
+      loadReqHistory();
+    } else throw new Error(res.message || 'บันทึกไม่สำเร็จ');
+  } catch (err) {
+    showToast('❌ ' + (err.message || 'เกิดข้อผิดพลาด'), 'error');
+  } finally {
+    setBtnLoading(editReqSaveBtn, false);
+  }
+}
+
 function setupExport() {
   exportBorrowBtn.addEventListener('click', () => {
     if (!filteredBorrow.length) { showToast('ไม่มีข้อมูลให้ส่งออก', 'error'); return; }
@@ -2278,7 +2621,6 @@ function setupExport() {
     exportRowsToExcel(rows, 'ประวัติการเบิก', `ประวัติการเบิก_${today}.xlsx`);
   });
 
-  // NEW: ส่งออกรายการคอมพิวเตอร์เครื่องจักรเป็น Excel
   exportMachineBtn.addEventListener('click', () => {
     if (!filteredMachine.length) { showToast('ไม่มีข้อมูลให้ส่งออก', 'error'); return; }
     const today = toLocalDate(new Date());
@@ -2297,7 +2639,6 @@ function setupExport() {
 function exportRowsToExcel(rows, sheetName, filename) {
   try {
     const ws = XLSX.utils.json_to_sheet(rows);
-    // ปรับความกว้างคอลัมน์อัตโนมัติแบบคร่าวๆ
     const colWidths = Object.keys(rows[0]).map(key => {
       const maxLen = Math.max(
         key.length,
@@ -2366,10 +2707,10 @@ function resetReqForm() {
   reqSerialWarn.style.display = 'none';
   reqSerialNo.style.borderColor = '';
   reqAssetNo.value  = '';
-  resetWindowsVersionField(); // NEW
-  reqNoteInput.value = ''; // NEW: คำอธิบายเพิ่มเติม
+  resetWindowsVersionField();
+  reqNoteInput.value = '';
   reqDate.value = toLocalDate(new Date());
-  updateSerialAssetVisibility(); // NEW: ซ่อน/แสดงช่อง Serial-Asset ให้ตรงกับ select ที่ถูกรีเซ็ต
+  updateSerialAssetVisibility();
 }
 
 async function apiFetch(action) {
