@@ -455,14 +455,10 @@
   <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
   <script>
-// ════════════════════════════════════════════════════════════
 // CONFIG - เปลี่ยน URL นี้เป็น Web App URL ของคุณ
-// ════════════════════════════════════════════════════════════
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwDzXg_PN3kd424yZWYm81JgN0NZal32-gZONxBtOshX_F_7_JAfidGITeG2kA7m9wd/exec";
 
-// ════════════════════════════════════════════════════════════
 // API Functions
-// ════════════════════════════════════════════════════════════
 async function apiGet(action, params = {}) {
   const queryString = new URLSearchParams({ action, ...params }).toString();
   let res;
@@ -516,9 +512,7 @@ async function apiPost(action, data) {
   return json.message;
 }
 
-// ════════════════════════════════════════════════════════════
 // Utility Functions
-// ════════════════════════════════════════════════════════════
 function parseDateString(dateStr) {
   if (!dateStr) return null;
   let s = dateStr.trim();
@@ -566,9 +560,7 @@ function escapeHtml(str) {
     .replace(/"/g,'&quot;');
 }
 
-// ════════════════════════════════════════════════════════════
 // Global Variables
-// ════════════════════════════════════════════════════════════
 var dataTableInstance = null;
 var dataLoaded = false;
 var dashboardLoaded = false;
@@ -579,9 +571,7 @@ var dashboardRawData = [];
 var globalData = [];
 let isSubmitting = false;
 
-// ════════════════════════════════════════════════════════════
 // Page Navigation
-// ════════════════════════════════════════════════════════════
 function switchPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
@@ -600,18 +590,14 @@ function switchPage(page) {
   }
 }
 
-// ════════════════════════════════════════════════════════════
 // Clock
-// ════════════════════════════════════════════════════════════
 setInterval(() => {
   const now = new Date();
   document.getElementById('clockDisplay').innerHTML =
     `<i class="fa-regular fa-clock me-1"></i>${now.toLocaleDateString('th-TH')} ${now.toLocaleTimeString('th-TH')}`;
 }, 1000);
 
-// ════════════════════════════════════════════════════════════
 // Connection Check & Employee Loading
-// ════════════════════════════════════════════════════════════
 async function checkConnection() {
   try {
     const data = await apiGet('ping');
@@ -657,9 +643,7 @@ async function loadEmployees() {
   }
 }
 
-// ════════════════════════════════════════════════════════════
 // Employee Search & Autocomplete
-// ════════════════════════════════════════════════════════════
 let searchDebounceTimer = null;
 
 function onSearchInput() {
@@ -741,9 +725,7 @@ document.addEventListener('click', function (event) {
   }
 });
 
-// ════════════════════════════════════════════════════════════
 // Today Status Check
-// ════════════════════════════════════════════════════════════
 async function checkTodayStatus(empId) {
   if (!empId || empId === "-") {
     updateButtonStates(false, false);
@@ -792,9 +774,7 @@ function updateButtonStates(morningDone, eveningDone) {
   }
 }
 
-// ════════════════════════════════════════════════════════════
 // Employee Card Display
-// ════════════════════════════════════════════════════════════
 function checkEmployee(foundEmp) {
   var card = document.getElementById('employeeCard');
 
@@ -833,9 +813,7 @@ function resetButtons() {
   document.getElementById('eveningBtn').className = 'btn btn-evening w-100 py-3 rounded-pill shadow';
 }
 
-// ════════════════════════════════════════════════════════════
 // Form Submission
-// ════════════════════════════════════════════════════════════
 function submitForm(period) {
   if (isSubmitting) {
     Swal.fire({
@@ -954,9 +932,6 @@ function submitForm(period) {
   }
 }
 
-// ════════════════════════════════════════════════════════════
-// New Employee Functions
-// ════════════════════════════════════════════════════════════
 function autoFullName() {
   var prefix = document.getElementById('newPrefix').value;
   var fname = document.getElementById('newFirstName').value.trim();
@@ -1035,9 +1010,6 @@ async function submitNewEmp() {
   }
 }
 
-// ════════════════════════════════════════════════════════════
-// Dashboard Functions
-// ════════════════════════════════════════════════════════════
 async function loadDashboard() {
   document.getElementById('totalCount').innerText = '...';
   document.getElementById('todayCount').innerText = '...';
@@ -1283,9 +1255,6 @@ function processDashboard(data) {
   document.getElementById('topEmployeesList').innerHTML = empListHtml;
 }
 
-// ════════════════════════════════════════════════════════════
-// Data Table Functions
-// ════════════════════════════════════════════════════════════
 async function loadDataTable() {
   $('#tableBody').html('<tr><td colspan="9" class="text-center"><div class="spinner-border text-primary my-3"></div><br>กำลังโหลดข้อมูล...</td></tr>');
 
