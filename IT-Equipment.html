@@ -351,6 +351,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 
 .td-mono { font-family: var(--font-mono); font-size: 12px; color: var(--text-sub); }
 .td-date { font-family: var(--font-mono); font-size: 12px; }
+.td-note { white-space: normal; max-width: 220px; font-size: 12.5px; color: var(--text-sub); }
 
 /* badges */
 .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
@@ -374,6 +375,21 @@ select.field-input { padding-right: 32px; cursor: pointer; }
   white-space: nowrap;
 }
 .btn-return:hover { background: var(--accent); color: #fff; }
+
+/* NEW: edit button (used in machine list table) */
+.btn-edit {
+  padding: 4px 10px;
+  border: 1.5px solid var(--teal);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--teal-dk);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.btn-edit:hover { background: var(--teal); color: #fff; }
 
 .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
 .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
@@ -630,6 +646,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
       <button class="tab-btn teal-tab" data-tab="requisition">บันทึกการเบิก</button>
       <button class="tab-btn" data-tab="borrow-history">ประวัติการยืม</button>
       <button class="tab-btn teal-tab" data-tab="req-history">ประวัติการเบิก</button>
+      <button class="tab-btn" data-tab="machine">คอมพิวเตอร์เครื่องจักร</button>
     </nav>
     <a href="index.html" class="back-home-btn">← <span class="back-home-text">กลับหน้าหลัก</span></a>
   </div>
@@ -779,7 +796,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
           </div>
         </div>
 
-        <div class="field-group">
+        <div class="field-group" id="serialAssetGroup" style="display:none">
           <div class="field half">
             <label class="field-label" for="reqSerialNo">หมายเลขเครื่อง (Serial No.)</label>
             <input type="text" id="reqSerialNo" class="field-input mono teal-focus" placeholder="เช่น IE-IT-PC-N400" />
@@ -791,7 +808,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
           </div>
         </div>
 
-        <div class="field">
+        <div class="field" id="winVersionField" style="display:none">
           <label class="field-label" for="reqWinVersionSelect">เวอร์ชั่น Windows <span style="font-weight:400;color:var(--text-muted)">(เฉพาะ PC / โน๊ตบุ๊ค)</span></label>
           <div class="win-input-row" id="winInputRow">
             <div class="select-wrapper" style="flex:1">
@@ -801,8 +818,8 @@ select.field-input { padding-right: 32px; cursor: pointer; }
                 <option value="Windows 11 Home">Windows 11 Home</option>
                 <option value="Windows 10 Pro">Windows 10 Pro</option>
                 <option value="Windows 10 Home">Windows 10 Home</option>
-                <option value="Windows Server 2022">Windows Server 2022</option>
-                <option value="Windows Server 2019">Windows Server 2019</option>
+                <option value="Windows 7">Windows 7</option>
+                <option value="Windows xp">Windows xp</option>
                 <option value="other">อื่น ๆ (พิมพ์เอง)</option>
               </select>
             </div>
@@ -814,6 +831,11 @@ select.field-input { padding-right: 32px; cursor: pointer; }
         <div class="field">
           <label class="field-label" for="reqDate">วันที่เบิก</label>
           <input type="date" id="reqDate" class="field-input mono teal-focus" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="reqNote">คำอธิบายเพิ่มเติม <span style="font-weight:400;color:var(--text-muted)">(ถ้ามี)</span></label>
+          <textarea id="reqNote" class="field-input teal-focus" rows="3" placeholder="ระบุรายละเอียด / หมายเหตุเพิ่มเติมเกี่ยวกับการเบิก (ถ้ามี)"></textarea>
         </div>
 
         <button id="submitReqBtn" class="btn-primary teal-btn" type="button">
@@ -920,6 +942,106 @@ select.field-input { padding-right: 32px; cursor: pointer; }
       </div>
     </div>
   </section>
+  <section id="tab-machine" class="tab-panel">
+    <div class="form-layout">
+      <div class="card form-card">
+        <div class="card-label" id="machineFormLabel">ฟอร์มบันทึกข้อมูลคอมพิวเตอร์เครื่องจักร</div>
+
+        <div class="field">
+          <label class="field-label" for="mcName">ชื่อเครื่องจักร</label>
+          <input type="text" id="mcName" class="field-input" placeholder="เช่น CNC-LINE1-01" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="mcWinVersionSelect">เวอร์ชั่น Windows</label>
+          <div class="win-input-row" id="mcWinInputRow">
+            <div class="select-wrapper" style="flex:1">
+              <select id="mcWinVersionSelect" class="field-input">
+                <option value="">— ไม่ระบุ —</option>
+                <option value="Windows 11 Pro">Windows 11 Pro</option>
+                <option value="Windows 11 Home">Windows 11 Home</option>
+                <option value="Windows 10 Pro">Windows 10 Pro</option>
+                <option value="Windows 10 Home">Windows 10 Home</option>
+                <option value="Windows 7">Windows 7</option>
+                <option value="Windows xp">Windows xp</option>
+                <option value="other">อื่น ๆ (พิมพ์เอง)</option>
+              </select>
+            </div>
+            <input type="text" id="mcWinVersionInput" class="field-input mono" placeholder="ระบุเวอร์ชั่น Windows" />
+            <button type="button" class="win-toggle-btn" id="mcWinToggleBtn">พิมพ์เอง</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="mcIp">IP Address</label>
+          <input type="text" id="mcIp" class="field-input mono" placeholder="เช่น 192.168.1.100" />
+          <span class="field-hint" id="mcIpWarn" style="display:none;color:var(--danger);font-weight:500;margin-top:4px"></span>
+        </div>
+
+        <div class="field-group">
+          <div class="field half">
+            <label class="field-label" for="mcDept">แผนก / ไลน์ผลิต</label>
+            <input type="text" id="mcDept" class="field-input" list="mcDeptList" placeholder="เช่น Production Line 1" />
+            <datalist id="mcDeptList"></datalist>
+          </div>
+          <div class="field half">
+            <label class="field-label" for="mcOwner">ผู้ดูแล</label>
+            <input type="text" id="mcOwner" class="field-input" placeholder="ชื่อผู้ดูแลเครื่อง" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="mcNote">หมายเหตุ</label>
+          <textarea id="mcNote" class="field-input" rows="3" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
+        </div>
+
+        <button id="mcSubmitBtn" class="btn-primary" type="button">
+          <span class="btn-text">บันทึกข้อมูลเครื่องจักร</span>
+          <span class="btn-spinner" hidden>⏳</span>
+        </button>
+        <button id="mcCancelEditBtn" class="btn-outline" type="button" style="display:none;margin:10px 24px 0;width:calc(100% - 48px)">ยกเลิกการแก้ไข</button>
+      </div>
+
+      <aside class="side-info">
+        <div class="card info-card stats-card">
+          <div class="card-label">สถิติ</div>
+          <div class="stat-row">
+            <span class="stat-label">จำนวนเครื่องทั้งหมด</span>
+            <span class="stat-num" id="statMachineTotal">—</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="card history-card" style="margin-top:20px">
+      <div class="history-toolbar">
+        <div class="card-label" style="padding:0;margin:0">รายการคอมพิวเตอร์เครื่องจักรทั้งหมด</div>
+        <div class="toolbar-right">
+          <input type="text" id="searchMachine" class="search-input" placeholder="ค้นหา ชื่อเครื่อง / IP / แผนก..." />
+          <button id="exportMachineBtn" class="btn-export" title="ส่งออก Excel">⬇️ Excel</button>
+          <button id="refreshMachineBtn" class="btn-refresh" title="รีเฟรช">↻</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="select-wrapper">
+          <select id="filterMachineDept" class="field-input">
+            <option value="">แผนก: ทั้งหมด</option>
+          </select>
+        </div>
+        <div class="select-wrapper">
+          <select id="filterMachineWindows" class="field-input">
+            <option value="">Windows: ทั้งหมด</option>
+            <option value="__none__">— ไม่ระบุ —</option>
+          </select>
+        </div>
+        <button id="clearFilterMachineBtn" class="btn-filter-clear" type="button">✕ ล้างตัวกรอง</button>
+      </div>
+      <div class="filter-count" id="filterCountMachine"></div>
+      <div class="table-wrap" id="machineTableWrap">
+        <div class="table-loading">กำลังโหลดข้อมูล...</div>
+      </div>
+    </div>
+  </section>
 
 </main>
 
@@ -939,12 +1061,27 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHeK9IPhETSzqBFjtY4dglCi_9rXp2Ts1-jNY_2VS2xnltVeb3uCDLPtirMt-TCeD-XA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwnH5Le2bexBotPhDsHPI6VwfFbx80xAtEkVDE_tZ06i9D4l7d8QtGWRQhcTJIG2utAWA/exec';
 
 // NEW: ตั้งค่าจำนวนรายการต่อหน้าในตารางประวัติ
 const PAGE_SIZE = 10;
 let borrowPage = 1;
 let reqPage    = 1;
+let machinePage = 1; // NEW
+
+// NEW: ประเภทอุปกรณ์ที่ต้องกรอก Serial No. / Asset No. (ชื่อต้องตรงกับค่าในชีต Equipment)
+const SERIAL_REQUIRED_EQUIPMENT = ['Notebook', 'PC/All In One', 'หน้าจอคอมพิวเตอร์'];
+function equipmentNeedsSerial(eqName) {
+  const norm = s => String(s || '').trim().toLowerCase();
+  return SERIAL_REQUIRED_EQUIPMENT.some(name => norm(name) === norm(eqName));
+}
+
+// NEW: ประเภทอุปกรณ์ที่ต้องแสดงช่องเวอร์ชั่น Windows (เฉพาะ PC / โน๊ตบุ๊ค ไม่รวมจอมอนิเตอร์)
+const WINDOWS_REQUIRED_EQUIPMENT = ['Notebook', 'PC/All In One'];
+function equipmentNeedsWindows(eqName) {
+  const norm = s => String(s || '').trim().toLowerCase();
+  return WINDOWS_REQUIRED_EQUIPMENT.some(name => norm(name) === norm(eqName));
+}
 
 let allEmployees      = [];
 let allEquipment      = [];
@@ -953,6 +1090,11 @@ let filteredBorrow    = [];
 let reqHistory        = [];
 let filteredReq       = [];
 let pendingReturnRow  = null;
+
+// NEW: state สำหรับแท็บคอมพิวเตอร์เครื่องจักร
+let machineList        = [];
+let filteredMachine     = [];
+let editingMachineRow   = null; // rowIndex ที่กำลังแก้ไขอยู่ (null = โหมดเพิ่มใหม่)
 
 let selectedBorrowEmp = null;
 let selectedReqEmp    = null;
@@ -988,16 +1130,19 @@ const reqInfoPlant      = $('reqInfoPlant');
 const reqInfoDept       = $('reqInfoDept');
 const reqInfoPosition   = $('reqInfoPosition');
 const reqEqSelect       = $('reqEquipment');
+const serialAssetGroup  = $('serialAssetGroup'); // NEW
 const reqSerialNo       = $('reqSerialNo');
 const reqSerialWarn     = $('reqSerialWarn');
 const reqAssetNo        = $('reqAssetNo');
 const reqDate           = $('reqDate');
+const reqNoteInput      = $('reqNote'); // NEW: คำอธิบายเพิ่มเติม
 const submitReqBtn      = $('submitReqBtn');
 const eqListReq         = $('eqListReq');
 const statReqToday      = $('statReqToday');
 const statReqMonth      = $('statReqMonth');
 
 // NEW: Windows version field refs
+const winVersionField     = $('winVersionField'); // NEW
 const winInputRow        = $('winInputRow');
 const reqWinVersionSelect= $('reqWinVersionSelect');
 const reqWinVersionInput = $('reqWinVersionInput');
@@ -1029,6 +1174,31 @@ const clearFilterReqBtn  = $('clearFilterReqBtn');
 const filterCountReq     = $('filterCountReq');
 const exportReqBtn       = $('exportReqBtn');
 
+// NEW: Machine tab elements
+const mcName              = $('mcName');
+const mcWinInputRow       = $('mcWinInputRow');
+const mcWinVersionSelect  = $('mcWinVersionSelect');
+const mcWinVersionInput   = $('mcWinVersionInput');
+const mcWinToggleBtn      = $('mcWinToggleBtn');
+const mcIp                = $('mcIp');
+const mcIpWarn            = $('mcIpWarn');
+const mcDept              = $('mcDept');
+const mcDeptList          = $('mcDeptList');
+const mcOwner             = $('mcOwner');
+const mcNote              = $('mcNote');
+const mcSubmitBtn         = $('mcSubmitBtn');
+const mcCancelEditBtn     = $('mcCancelEditBtn');
+const machineFormLabel    = $('machineFormLabel');
+const statMachineTotal    = $('statMachineTotal');
+const machineTableWrap    = $('machineTableWrap');
+const searchMachine       = $('searchMachine');
+const refreshMachineBtn   = $('refreshMachineBtn');
+const exportMachineBtn    = $('exportMachineBtn');
+const filterMachineDept    = $('filterMachineDept');
+const filterMachineWindows = $('filterMachineWindows');
+const clearFilterMachineBtn= $('clearFilterMachineBtn');
+const filterCountMachine   = $('filterCountMachine');
+
 // Modal
 const modal       = $('modal');
 const modalDesc   = $('modalDesc');
@@ -1048,6 +1218,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupWindowsVersionField();
   setupExport();
   setupSerialDuplicateCheck();
+  setupSerialAssetVisibility(); // NEW
+  updateSerialAssetVisibility(); // NEW: ตั้งสถานะเริ่มต้นให้ตรงกับค่าเริ่มต้นของ select
+
+  // NEW: เริ่มต้นระบบแท็บคอมพิวเตอร์เครื่องจักร (เดิมแท็บนี้ไม่มีการเชื่อมต่อ
+  // ฝั่ง JS เลย ทำให้ค้างที่ "กำลังโหลดข้อมูล..." ตลอดไป)
+  setupMachineWindowsVersionField();
+  setupMachineForm();
+  setupMachineFilters();
+  setupMachineIpDuplicateCheck();
 });
 
 /* ─── Tabs ─── */
@@ -1061,6 +1240,7 @@ function setupTabSwitching() {
       $(`tab-${target}`).classList.add('active');
       if (target === 'borrow-history') loadBorrowHistory();
       if (target === 'req-history')    loadReqHistory();
+      if (target === 'machine')        loadMachineList(); // NEW
     });
   });
 }
@@ -1078,6 +1258,29 @@ function toLocalDate(d) {
   return d.getFullYear() + '-' +
     String(d.getMonth() + 1).padStart(2, '0') + '-' +
     String(d.getDate()).padStart(2, '0');
+}
+
+/* ─── NEW: แสดง/ซ่อนช่อง Serial No. / Asset No. และเวอร์ชั่น Windows ตามประเภทอุปกรณ์ ─── */
+function setupSerialAssetVisibility() {
+  reqEqSelect.addEventListener('change', updateSerialAssetVisibility);
+}
+function updateSerialAssetVisibility() {
+  const showSerial = equipmentNeedsSerial(reqEqSelect.value);
+  serialAssetGroup.style.display = showSerial ? 'flex' : 'none';
+  if (!showSerial) {
+    // เคลียร์ค่าที่กรอกไว้เมื่อซ่อนช่อง เพื่อไม่ให้ส่งข้อมูลเก่าติดไปโดยไม่ตั้งใจ
+    reqSerialNo.value = '';
+    reqAssetNo.value  = '';
+    reqSerialWarn.style.display = 'none';
+    reqSerialNo.style.borderColor = '';
+  }
+
+  const showWin = equipmentNeedsWindows(reqEqSelect.value);
+  winVersionField.style.display = showWin ? 'block' : 'none';
+  if (!showWin) {
+    // เคลียร์ค่าเวอร์ชั่น Windows เมื่อซ่อนช่อง
+    resetWindowsVersionField();
+  }
 }
 
 /* ─── NEW: Windows Version field (dropdown + manual entry toggle) ─── */
@@ -1118,6 +1321,44 @@ function resetWindowsVersionField() {
   reqWinVersionSelect.value = '';
   reqWinVersionInput.value = '';
   switchToDropdownWinInput();
+}
+
+/* ─── NEW: Windows Version field สำหรับแท็บคอมพิวเตอร์เครื่องจักร (โครงสร้างเดียวกับด้านบน) ─── */
+function setupMachineWindowsVersionField() {
+  mcWinVersionSelect.addEventListener('change', () => {
+    if (mcWinVersionSelect.value === 'other') {
+      switchToManualMcWinInput();
+    }
+  });
+  mcWinToggleBtn.addEventListener('click', () => {
+    if (mcWinInputRow.classList.contains('manual')) {
+      switchToDropdownMcWinInput();
+    } else {
+      switchToManualMcWinInput();
+    }
+  });
+}
+function switchToManualMcWinInput() {
+  mcWinInputRow.classList.add('manual');
+  mcWinToggleBtn.textContent = 'เลือกจากรายการ';
+  mcWinVersionInput.value = '';
+  mcWinVersionInput.focus();
+}
+function switchToDropdownMcWinInput() {
+  mcWinInputRow.classList.remove('manual');
+  mcWinToggleBtn.textContent = 'พิมพ์เอง';
+  mcWinVersionSelect.value = '';
+}
+function getSelectedMcWindowsVersion() {
+  if (mcWinInputRow.classList.contains('manual')) {
+    return mcWinVersionInput.value.trim();
+  }
+  return mcWinVersionSelect.value === 'other' ? '' : mcWinVersionSelect.value.trim();
+}
+function resetMcWindowsVersionField() {
+  mcWinVersionSelect.value = '';
+  mcWinVersionInput.value = '';
+  switchToDropdownMcWinInput();
 }
 
 /* ─── Load dropdowns ─── */
@@ -1369,14 +1610,17 @@ function setupFormSubmits() {
     const serial = reqSerialNo.value.trim();
     const rd     = reqDate.value;
     const winVer = getSelectedWindowsVersion(); // NEW
+    const note   = reqNoteInput.value.trim();   // NEW: คำอธิบายเพิ่มเติม
+
+    const serialRequired = equipmentNeedsSerial(eq); // NEW: บังคับกรอก Serial เฉพาะบางประเภทอุปกรณ์
 
     if (!empId)  { showToast('กรุณาค้นหาและเลือกพนักงาน', 'error'); reqEmpSearchInput.focus(); return; }
     if (!name)   { showToast('ไม่พบข้อมูลพนักงาน', 'error'); reqEmpSearchInput.focus(); return; }
     if (!eq)     { showToast('กรุณาเลือกประเภทอุปกรณ์', 'error'); reqEqSelect.focus(); return; }
-    if (!serial) { showToast('กรุณากรอกหมายเลขเครื่อง (Serial No.)', 'error'); reqSerialNo.focus(); return; }
+    if (serialRequired && !serial) { showToast('กรุณากรอกหมายเลขเครื่อง (Serial No.)', 'error'); reqSerialNo.focus(); return; }
     if (!rd)     { showToast('กรุณาเลือกวันที่เบิก', 'error'); reqDate.focus(); return; }
 
-    const dupSerial = findDuplicateSerial(serial);
+    const dupSerial = serial ? findDuplicateSerial(serial) : null;
     if (dupSerial) {
       showToast(`❌ Serial No. "${serial}" ถูกเบิกไปแล้วโดย ${dupSerial.name || dupSerial.empId}`, 'error');
       reqSerialNo.focus();
@@ -1398,7 +1642,8 @@ function setupFormSubmits() {
         department: emp.department || '',
         position:   emp.position   || '',
         plant:      emp.plant      || '',
-        windowsVersion: winVer
+        windowsVersion: winVer,
+        note: note // NEW: คำอธิบายเพิ่มเติม
       });
       if (res.status === 'success') {
         showToast('✅ บันทึกการเบิกเรียบร้อยแล้ว!', 'teal');
@@ -1456,8 +1701,10 @@ function renderBorrowTable(rows, page) {
         ${pageRows.map((r, j) => {
           const i = start + j; // ตำแหน่งจริงในอาเรย์ที่กรองแล้วทั้งหมด (สำหรับเลขลำดับ)
           const isOverdue = r.status === 'รอดำเนินการ' && r.returnDate && r.returnDate < today;
+          // NEW: แสดง tooltip วันที่คืนจริง (บันทึกไว้แล้วในชีตแต่เดิมไม่เคยถูกใช้)
+          const returnedTitle = r.actualReturnDate ? ` title="คืนจริงเมื่อ ${esc(formatDate(r.actualReturnDate))}"` : '';
           const badge = r.status === 'คืนแล้ว'
-            ? `<span class="badge badge-returned">✓ คืนแล้ว</span>`
+            ? `<span class="badge badge-returned"${returnedTitle}>✓ คืนแล้ว</span>`
             : isOverdue
               ? `<span class="badge badge-overdue">⚠ เกินกำหนด</span>`
               : `<span class="badge badge-pending">⏳ รอดำเนินการ</span>`;
@@ -1569,7 +1816,7 @@ function renderReqTable(rows, page) {
     <table class="borrow-table">
       <thead><tr>
         <th>#</th><th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>แผนก</th>
-        <th>ประเภทอุปกรณ์</th><th>Serial No.</th><th>Asset No.</th><th>Windows</th><th>วันที่เบิก</th><th>สถานะ</th>
+        <th>ประเภทอุปกรณ์</th><th>Serial No.</th><th>Asset No.</th><th>Windows</th><th>วันที่เบิก</th><th>คำอธิบายเพิ่มเติม</th><th>สถานะ</th>
       </tr></thead>
       <tbody>
         ${pageRows.map((r, j) => {
@@ -1584,6 +1831,7 @@ function renderReqTable(rows, page) {
           <td class="td-mono">${esc(r.assetNo) || '—'}</td>
           <td>${r.windowsVersion ? `<span class="badge badge-win">🪟 ${esc(r.windowsVersion)}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
           <td class="td-date">${formatDate(r.reqDate)}</td>
+          <td class="td-note">${esc(r.note) || '<span style="color:var(--text-muted)">—</span>'}</td>
           <td><span class="badge badge-req">📦 เบิกแล้ว</span></td>
         </tr>`;
         }).join('')}
@@ -1680,7 +1928,8 @@ function applyReqFilters() {
                   (r.assetNo    || '').toLowerCase().includes(q) ||
                   (r.equipment  || '').toLowerCase().includes(q) ||
                   (r.department || '').toLowerCase().includes(q) ||
-                  (r.windowsVersion || '').toLowerCase().includes(q);
+                  (r.windowsVersion || '').toLowerCase().includes(q) ||
+                  (r.note       || '').toLowerCase().includes(q);
       if (!hit) return false;
     }
     if (eq   && r.equipment  !== eq)   return false;
@@ -1745,6 +1994,248 @@ function setupSearchFilters() {
   });
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   NEW: โมดูลคอมพิวเตอร์เครื่องจักร (แท็บนี้เดิมไม่มีโค้ด JS เชื่อมต่อเลย)
+   ══════════════════════════════════════════════════════════════════ */
+
+async function loadMachineList() {
+  machineTableWrap.innerHTML = '<div class="table-loading">กำลังโหลดข้อมูล...</div>';
+  try {
+    const data = await apiFetch('getMachines');
+    machineList = Array.isArray(data) ? data : [];
+    statMachineTotal.textContent = machineList.length;
+    populateMachineDeptFilter();
+    populateMachineWindowsFilter();
+    applyMachineFilters();
+  } catch {
+    machineTableWrap.innerHTML = '<div class="table-loading" style="color:var(--danger)">โหลดข้อมูลไม่สำเร็จ</div>';
+  }
+}
+
+function populateMachineDeptFilter() {
+  const depts = [...new Set(machineList.map(r => (r.dept || '').trim()).filter(Boolean))].sort();
+  const current = filterMachineDept.value;
+  filterMachineDept.innerHTML = '<option value="">แผนก: ทั้งหมด</option>';
+  depts.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = d;
+    filterMachineDept.appendChild(opt);
+  });
+  if (depts.includes(current)) filterMachineDept.value = current;
+
+  // เติม datalist สำหรับช่องกรอกแผนกในฟอร์ม เพื่อช่วยพิมพ์ให้สะกดตรงกัน
+  mcDeptList.innerHTML = depts.map(d => `<option value="${esc(d)}"></option>`).join('');
+}
+
+function populateMachineWindowsFilter() {
+  const versions = [...new Set(machineList.map(r => (r.windowsVersion || '').trim()).filter(Boolean))].sort();
+  const current = filterMachineWindows.value;
+  filterMachineWindows.innerHTML = '<option value="">Windows: ทั้งหมด</option><option value="__none__">— ไม่ระบุ —</option>';
+  versions.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    filterMachineWindows.appendChild(opt);
+  });
+  if (current === '__none__' || versions.includes(current)) filterMachineWindows.value = current;
+}
+
+function applyMachineFilters() {
+  const q    = searchMachine.value.toLowerCase().trim();
+  const dept = filterMachineDept.value;
+  const win  = filterMachineWindows.value;
+
+  filteredMachine = machineList.filter(r => {
+    if (q) {
+      const hit = (r.name  || '').toLowerCase().includes(q) ||
+                  (r.ip    || '').toLowerCase().includes(q) ||
+                  (r.dept  || '').toLowerCase().includes(q) ||
+                  (r.owner || '').toLowerCase().includes(q);
+      if (!hit) return false;
+    }
+    if (dept && r.dept !== dept) return false;
+    if (win) {
+      const rowWin = (r.windowsVersion || '').trim();
+      if (win === '__none__') { if (rowWin) return false; }
+      else if (rowWin !== win) return false;
+    }
+    return true;
+  });
+
+  updateFilterCount(filterCountMachine, filteredMachine.length, machineList.length);
+  machinePage = 1;
+  renderMachineTable(filteredMachine, machinePage);
+}
+
+function renderMachineTable(rows, page) {
+  if (!rows.length) {
+    machineTableWrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🖥️</div><div class="empty-state-msg">ไม่พบรายการ</div></div>`;
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  page = Math.min(Math.max(1, page || 1), totalPages);
+  machinePage = page;
+
+  const start = (page - 1) * PAGE_SIZE;
+  const pageRows = rows.slice(start, start + PAGE_SIZE);
+
+  machineTableWrap.innerHTML = `
+    <table class="borrow-table">
+      <thead><tr>
+        <th>#</th><th>ชื่อเครื่องจักร</th><th>Windows</th><th>IP Address</th>
+        <th>แผนก/ไลน์ผลิต</th><th>ผู้ดูแล</th><th>หมายเหตุ</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${pageRows.map((r, j) => {
+          const i = start + j;
+          return `<tr>
+          <td class="td-mono">${rows.length - i}</td>
+          <td>${esc(r.name)}</td>
+          <td>${r.windowsVersion ? `<span class="badge badge-win">🪟 ${esc(r.windowsVersion)}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+          <td class="td-mono">${esc(r.ip) || '—'}</td>
+          <td style="font-size:12px;color:var(--text-sub)">${esc(r.dept) || '—'}</td>
+          <td>${esc(r.owner) || '—'}</td>
+          <td class="td-note">${esc(r.note) || '<span style="color:var(--text-muted)">—</span>'}</td>
+          <td><button class="btn-edit" data-row="${esc(String(r.rowIndex))}">แก้ไข</button></td>
+        </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    ${paginationBarHTML(page, totalPages, false)}`;
+
+  machineTableWrap.querySelectorAll('.btn-edit').forEach(btn =>
+    btn.addEventListener('click', () => startEditMachine(Number(btn.dataset.row)))
+  );
+  bindPaginationEvents(machineTableWrap, p => renderMachineTable(filteredMachine, p));
+}
+
+function setupMachineFilters() {
+  searchMachine.addEventListener('input', applyMachineFilters);
+  filterMachineDept.addEventListener('change', applyMachineFilters);
+  filterMachineWindows.addEventListener('change', applyMachineFilters);
+  clearFilterMachineBtn.addEventListener('click', () => {
+    searchMachine.value = '';
+    filterMachineDept.value = '';
+    filterMachineWindows.value = '';
+    applyMachineFilters();
+  });
+  refreshMachineBtn.addEventListener('click', () => loadMachineList());
+}
+
+function findDuplicateIp(ip, excludeRowIndex) {
+  const v = String(ip || '').trim().toLowerCase();
+  if (!v) return null;
+  return machineList.find(r => r.rowIndex !== excludeRowIndex && String(r.ip || '').trim().toLowerCase() === v) || null;
+}
+
+function setupMachineIpDuplicateCheck() {
+  mcIp.addEventListener('input', () => {
+    const dup = findDuplicateIp(mcIp.value, editingMachineRow);
+    if (dup) {
+      mcIpWarn.textContent = `⚠ IP นี้ถูกใช้งานแล้วโดยเครื่อง "${dup.name}"`;
+      mcIpWarn.style.display = 'block';
+      mcIp.style.borderColor = 'var(--danger)';
+    } else {
+      mcIpWarn.style.display = 'none';
+      mcIp.style.borderColor = '';
+    }
+  });
+}
+
+function startEditMachine(rowIndex) {
+  const item = machineList.find(r => r.rowIndex === rowIndex);
+  if (!item) return;
+
+  editingMachineRow = rowIndex;
+  mcName.value  = item.name;
+  mcIp.value    = item.ip;
+  mcDept.value  = item.dept;
+  mcOwner.value = item.owner;
+  mcNote.value  = item.note;
+
+  if (item.windowsVersion) {
+    const options = Array.from(mcWinVersionSelect.options).map(o => o.value);
+    if (options.includes(item.windowsVersion)) {
+      switchToDropdownMcWinInput();
+      mcWinVersionSelect.value = item.windowsVersion;
+    } else {
+      switchToManualMcWinInput();
+      mcWinVersionInput.value = item.windowsVersion;
+    }
+  } else {
+    resetMcWindowsVersionField();
+  }
+
+  mcIpWarn.style.display = 'none';
+  mcIp.style.borderColor = '';
+
+  machineFormLabel.textContent = `แก้ไขข้อมูลเครื่องจักร: ${item.name}`;
+  mcSubmitBtn.querySelector('.btn-text').textContent = 'อัปเดตข้อมูลเครื่องจักร';
+  mcCancelEditBtn.style.display = 'block';
+
+  $('tab-machine').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelEditMachine() {
+  editingMachineRow = null;
+  resetMachineForm();
+  machineFormLabel.textContent = 'ฟอร์มบันทึกข้อมูลคอมพิวเตอร์เครื่องจักร';
+  mcSubmitBtn.querySelector('.btn-text').textContent = 'บันทึกข้อมูลเครื่องจักร';
+  mcCancelEditBtn.style.display = 'none';
+}
+
+function resetMachineForm() {
+  mcName.value  = '';
+  mcIp.value    = '';
+  mcDept.value  = '';
+  mcOwner.value = '';
+  mcNote.value  = '';
+  mcIpWarn.style.display = 'none';
+  mcIp.style.borderColor = '';
+  resetMcWindowsVersionField();
+}
+
+function setupMachineForm() {
+  mcCancelEditBtn.addEventListener('click', cancelEditMachine);
+
+  mcSubmitBtn.addEventListener('click', async () => {
+    const name = mcName.value.trim();
+    const ip   = mcIp.value.trim();
+
+    if (!name) { showToast('กรุณาระบุชื่อเครื่องจักร', 'error'); mcName.focus(); return; }
+
+    const dup = findDuplicateIp(ip, editingMachineRow);
+    if (dup) {
+      showToast(`❌ IP Address "${ip}" ถูกใช้งานแล้วโดยเครื่อง "${dup.name}"`, 'error');
+      mcIp.focus();
+      return;
+    }
+
+    setBtnLoading(mcSubmitBtn, true);
+    try {
+      const res = await apiPost({
+        action: 'saveMachine',
+        rowIndex: editingMachineRow || undefined,
+        name,
+        windowsVersion: getSelectedMcWindowsVersion(),
+        ip,
+        dept: mcDept.value.trim(),
+        owner: mcOwner.value.trim(),
+        note: mcNote.value.trim()
+      });
+      if (res.status === 'success') {
+        showToast(editingMachineRow ? '✅ แก้ไขข้อมูลเครื่องจักรเรียบร้อยแล้ว!' : '✅ บันทึกข้อมูลเครื่องจักรเรียบร้อยแล้ว!', 'success');
+        cancelEditMachine();
+        loadMachineList();
+      } else throw new Error(res.message || 'บันทึกไม่สำเร็จ');
+    } catch (err) {
+      showToast('❌ ' + (err.message || 'เกิดข้อผิดพลาด'), 'error');
+    } finally {
+      setBtnLoading(mcSubmitBtn, false);
+    }
+  });
+}
+
 /* ─── NEW: Export to Excel (SheetJS) ─── */
 function setupExport() {
   exportBorrowBtn.addEventListener('click', () => {
@@ -1758,7 +2249,8 @@ function setupExport() {
         'ชื่อ-นามสกุล': r.name,
         'อุปกรณ์': r.equipment,
         'วันที่ยืม': formatDate(r.borrowDate),
-        'วันที่คืน': formatDate(r.returnDate),
+        'วันที่คืน (คาดการณ์)': formatDate(r.returnDate),
+        'วันที่คืนจริง': r.actualReturnDate ? formatDate(r.actualReturnDate) : '',
         'สถานะ': statusTxt,
         'หมายเหตุ': r.reason || ''
       };
@@ -1780,9 +2272,25 @@ function setupExport() {
       'Asset No.': r.assetNo,
       'Windows Version': r.windowsVersion,
       'วันที่เบิก': formatDate(r.reqDate),
+      'คำอธิบายเพิ่มเติม': r.note || '',
       'สถานะ': 'เบิกแล้ว'
     }));
     exportRowsToExcel(rows, 'ประวัติการเบิก', `ประวัติการเบิก_${today}.xlsx`);
+  });
+
+  // NEW: ส่งออกรายการคอมพิวเตอร์เครื่องจักรเป็น Excel
+  exportMachineBtn.addEventListener('click', () => {
+    if (!filteredMachine.length) { showToast('ไม่มีข้อมูลให้ส่งออก', 'error'); return; }
+    const today = toLocalDate(new Date());
+    const rows = filteredMachine.map(r => ({
+      'ชื่อเครื่องจักร': r.name,
+      'Windows Version': r.windowsVersion,
+      'IP Address': r.ip,
+      'แผนก/ไลน์ผลิต': r.dept,
+      'ผู้ดูแล': r.owner,
+      'หมายเหตุ': r.note
+    }));
+    exportRowsToExcel(rows, 'คอมพิวเตอร์เครื่องจักร', `คอมพิวเตอร์เครื่องจักร_${today}.xlsx`);
   });
 }
 
@@ -1859,7 +2367,9 @@ function resetReqForm() {
   reqSerialNo.style.borderColor = '';
   reqAssetNo.value  = '';
   resetWindowsVersionField(); // NEW
+  reqNoteInput.value = ''; // NEW: คำอธิบายเพิ่มเติม
   reqDate.value = toLocalDate(new Date());
+  updateSerialAssetVisibility(); // NEW: ซ่อน/แสดงช่อง Serial-Asset ให้ตรงกับ select ที่ถูกรีเซ็ต
 }
 
 async function apiFetch(action) {
