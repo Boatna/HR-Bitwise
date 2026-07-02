@@ -5,23 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>ระบบยืม-คืน / เบิกอุปกรณ์ IT</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
 :root {
-  --bg:        #F0F2F7;
+  --bg:        #F0F6FF;
   --surface:   #FFFFFF;
-  --border:    #E2E6EF;
-  --text-main: #1A1F36;
-  --text-sub:  #6B7280;
-  --text-muted:#A0A8B8;
+  --border:    rgba(29,111,204,0.16);
+  --text-main: #0F2744;
+  --text-sub:  #4A7CB5;
+  --text-muted:#93B8DC;
 
-  --accent:    #4F46E5;
-  --accent-lt: #EEF2FF;
-  --accent-dk: #3730A3;
+  --accent:    #2563EB;
+  --accent-lt: #EBF3FF;
+  --accent-dk: #1D6FCC;
 
-  --teal:      #0D9488;
-  --teal-lt:   #CCFBF1;
-  --teal-dk:   #0F766E;
+  --teal:      #0EA5E9;
+  --teal-lt:   #E0F2FE;
+  --teal-dk:   #0369A1;
 
   --success:   #059669;
   --success-lt:#D1FAE5;
@@ -30,18 +31,18 @@
   --danger:    #DC2626;
   --danger-lt: #FEE2E2;
 
-  --header-bg: #1A1F36;
-  --header-txt:#F0F2F7;
+  --header-bg: rgba(255,255,255,0.88);
+  --header-txt:#1E3A5F;
 
   --radius-sm: 6px;
   --radius:    10px;
   --radius-lg: 16px;
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-  --shadow:    0 4px 12px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.06);
+  --shadow-sm: 0 1px 3px rgba(29,111,204,.08), 0 1px 2px rgba(29,111,204,.06);
+  --shadow:    0 4px 12px rgba(29,111,204,.10), 0 1px 3px rgba(29,111,204,.06);
 
-  --font-body: 'IBM Plex Sans Thai', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  --font-body: 'Noto Sans Thai', 'Outfit', sans-serif;
+  --font-mono: 'DM Mono', 'Courier New', monospace;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -58,10 +59,12 @@ body {
 /* ── HEADER ── */
 .site-header {
   background: var(--header-bg);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  box-shadow: 0 1px 12px rgba(29,111,204,.07);
 }
 .header-inner {
   max-width: 1160px;
@@ -74,10 +77,20 @@ body {
   gap: 16px;
   flex-wrap: wrap;
 }
-.logo-block { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-.logo-icon { font-size: 22px; }
+.logo-block { display: flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none; }
+.logo-icon { height: 26px; display: flex; align-items: center; }
+.logo-icon img { height: 26px; width: auto; display: block; }
 .logo-eyebrow { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); line-height: 1; }
 .logo-title { font-size: 15px; font-weight: 600; color: var(--header-txt); line-height: 1.3; }
+.back-home-btn {
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  padding: 7px 14px; margin-left: auto;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  text-decoration: none; color: var(--text-sub);
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 600;
+  transition: all .2s; white-space: nowrap;
+}
+.back-home-btn:hover { border-color: rgba(37,99,235,.35); color: var(--accent-dk); background: var(--accent-lt); }
 
 /* ── TAB NAV ── */
 .tab-nav {
@@ -96,7 +109,7 @@ body {
   border-radius: var(--radius-sm);
   border: none;
   background: transparent;
-  color: #9CA3AF;
+  color: var(--text-sub);
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
@@ -105,7 +118,7 @@ body {
   white-space: nowrap;
   flex-shrink: 0;
 }
-.tab-btn:hover { background: rgba(255,255,255,.08); color: #fff; }
+.tab-btn:hover { background: rgba(29,111,204,.08); color: var(--accent-dk); }
 .tab-btn.active { background: var(--accent); color: #fff; }
 .tab-btn.active.teal-tab { background: var(--teal); }
 
@@ -171,7 +184,7 @@ body {
 }
 .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,.15); background: #fff; }
 .field-input.teal-focus:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(13,148,136,.15); }
-.field-input[readonly] { background: #F8F9FB; color: var(--text-sub); cursor: default; }
+.field-input[readonly] { background: #F3F8FF; color: var(--text-sub); cursor: default; }
 .field-input.mono { font-family: var(--font-mono); font-size: 13px; }
 textarea.field-input { resize: vertical; min-height: 80px; }
 
@@ -280,7 +293,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 .eq-list li::before { content: '▸'; color: var(--accent); font-size: 11px; flex-shrink: 0; }
 .eq-list.teal li::before { color: var(--teal); }
 
-.eq-skeleton { height: 14px; background: linear-gradient(90deg, var(--border) 25%, #f0f2f7 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; width: 70%; }
+.eq-skeleton { height: 14px; background: linear-gradient(90deg, var(--border) 25%, #F0F6FF 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; width: 70%; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 .stats-card { padding-bottom: 4px; }
@@ -334,7 +347,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 }
 .borrow-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text-main); vertical-align: middle; white-space: nowrap; }
 .borrow-table tr:last-child td { border-bottom: none; }
-.borrow-table tr:hover td { background: #FAFBFF; }
+.borrow-table tr:hover td { background: var(--accent-lt); }
 
 .td-mono { font-family: var(--font-mono); font-size: 12px; color: var(--text-sub); }
 .td-date { font-family: var(--font-mono); font-size: 12px; }
@@ -366,6 +379,42 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
 .empty-state-msg { font-size: 14px; }
 
+/* ── PAGINATION (NEW) ── */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 16px 24px 20px;
+}
+.page-nav-btn, .page-num-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-sub);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.page-nav-btn:hover:not(:disabled), .page-num-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+.page-nav-btn:disabled { opacity: .4; cursor: not-allowed; }
+.page-num-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; cursor: default; }
+.pagination-bar.teal-pagination .page-num-btn.active { background: var(--teal); border-color: var(--teal); }
+.pagination-bar.teal-pagination .page-nav-btn:hover:not(:disabled), .pagination-bar.teal-pagination .page-num-btn:hover:not(.active) { border-color: var(--teal); color: var(--teal-dk); }
+.page-info { font-size: 12px; color: var(--text-muted); margin-left: 6px; white-space: nowrap; }
+
+@media (max-width: 480px) {
+  .pagination-bar { padding: 14px 16px 18px; gap: 5px; }
+  .page-nav-btn, .page-num-btn { min-width: 28px; height: 28px; padding: 0 8px; font-size: 12px; }
+  .page-info { width: 100%; text-align: center; margin: 4px 0 0; }
+}
+
 /* ── TOAST ── */
 .toast {
   position: fixed; bottom: 28px; right: 28px;
@@ -389,7 +438,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 /* ── MODAL ── */
 .modal-backdrop {
   position: fixed; inset: 0;
-  background: rgba(26,31,54,.5);
+  background: rgba(15,39,68,.45);
   backdrop-filter: blur(3px);
   z-index: 200;
   display: flex; align-items: center; justify-content: center;
@@ -401,7 +450,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
   border-radius: var(--radius-lg);
   padding: 36px 32px 28px;
   max-width: 380px; width: 90%;
-  box-shadow: 0 20px 40px rgba(0,0,0,.18);
+  box-shadow: 0 20px 40px rgba(29,111,204,.18);
   text-align: center;
 }
 .modal-icon { font-size: 36px; margin-bottom: 12px; }
@@ -508,7 +557,9 @@ select.field-input { padding-right: 32px; cursor: pointer; }
   .header-inner { padding: 10px 14px; gap: 10px; }
   .logo-title { font-size: 13px; }
   .logo-eyebrow { font-size: 9px; }
-  .logo-icon { font-size: 19px; }
+  .logo-icon, .logo-icon img { height: 21px; }
+  .back-home-text { display: none; }
+  .back-home-btn { padding: 7px 10px; }
   .tab-nav { width: 100%; justify-content: flex-start; }
   .tab-btn { padding: 7px 11px; font-size: 12px; }
 
@@ -567,19 +618,20 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 <body>
 <header class="site-header">
   <div class="header-inner">
-    <div class="logo-block">
-      <span class="logo-icon">💻</span>
+    <a href="index.html" class="logo-block">
+      <span class="logo-icon"><img src="Bitwise-BW.png" alt="Bitwise Group" /></span>
       <div>
         <p class="logo-eyebrow">IT Department</p>
         <h1 class="logo-title">ระบบยืม-คืน / เบิกอุปกรณ์</h1>
       </div>
-    </div>
+    </a>
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="borrow">บันทึกการยืม</button>
       <button class="tab-btn teal-tab" data-tab="requisition">บันทึกการเบิก</button>
       <button class="tab-btn" data-tab="borrow-history">ประวัติการยืม</button>
       <button class="tab-btn teal-tab" data-tab="req-history">ประวัติการเบิก</button>
     </nav>
+    <a href="index.html" class="back-home-btn">← <span class="back-home-text">กลับหน้าหลัก</span></a>
   </div>
 </header>
 
@@ -887,7 +939,12 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzp7u90NW1FlMa2JfQPEErybkp2LIeYRiUdjsqHMj-_QBwFQcokUAXF8H0xmKvBtqmQjQ/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHeK9IPhETSzqBFjtY4dglCi_9rXp2Ts1-jNY_2VS2xnltVeb3uCDLPtirMt-TCeD-XA/exec';
+
+// NEW: ตั้งค่าจำนวนรายการต่อหน้าในตารางประวัติ
+const PAGE_SIZE = 10;
+let borrowPage = 1;
+let reqPage    = 1;
 
 let allEmployees      = [];
 let allEquipment      = [];
@@ -1374,11 +1431,20 @@ function renderBorrowStats() {
   statPending.textContent = borrowHistory.filter(r => r.status === 'รอดำเนินการ').length;
 }
 
-function renderBorrowTable(rows) {
+/* ─── NEW: ตารางประวัติการยืม พร้อมแบ่งหน้า (pagination) แสดง PAGE_SIZE รายการต่อหน้า ─── */
+function renderBorrowTable(rows, page) {
   if (!rows.length) {
     borrowTableWrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📂</div><div class="empty-state-msg">ไม่พบรายการ</div></div>`;
     return;
   }
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  page = Math.min(Math.max(1, page || 1), totalPages);
+  borrowPage = page;
+
+  const start = (page - 1) * PAGE_SIZE;
+  const pageRows = rows.slice(start, start + PAGE_SIZE);
+
   const today = toLocalDate(new Date());
   borrowTableWrap.innerHTML = `
     <table class="borrow-table">
@@ -1387,7 +1453,8 @@ function renderBorrowTable(rows) {
         <th>วันที่ยืม</th><th>วันที่คืน</th><th>สถานะ</th><th></th>
       </tr></thead>
       <tbody>
-        ${rows.map((r, i) => {
+        ${pageRows.map((r, j) => {
+          const i = start + j; // ตำแหน่งจริงในอาเรย์ที่กรองแล้วทั้งหมด (สำหรับเลขลำดับ)
           const isOverdue = r.status === 'รอดำเนินการ' && r.returnDate && r.returnDate < today;
           const badge = r.status === 'คืนแล้ว'
             ? `<span class="badge badge-returned">✓ คืนแล้ว</span>`
@@ -1409,10 +1476,13 @@ function renderBorrowTable(rows) {
           </tr>`;
         }).join('')}
       </tbody>
-    </table>`;
+    </table>
+    ${paginationBarHTML(page, totalPages, false)}`;
+
   borrowTableWrap.querySelectorAll('.btn-return').forEach(btn =>
     btn.addEventListener('click', () => openReturnModal(btn))
   );
+  bindPaginationEvents(borrowTableWrap, p => renderBorrowTable(filteredBorrow, p));
 }
 
 async function loadReqHistory() {
@@ -1481,11 +1551,20 @@ function renderReqStats() {
   statReqMonth.textContent = reqHistory.filter(r => (r.reqDate || '').startsWith(thisMonth)).length;
 }
 
-function renderReqTable(rows) {
+/* ─── NEW: ตารางประวัติการเบิก พร้อมแบ่งหน้า (pagination) แสดง PAGE_SIZE รายการต่อหน้า ─── */
+function renderReqTable(rows, page) {
   if (!rows.length) {
     reqTableWrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📂</div><div class="empty-state-msg">ไม่พบรายการ</div></div>`;
     return;
   }
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  page = Math.min(Math.max(1, page || 1), totalPages);
+  reqPage = page;
+
+  const start = (page - 1) * PAGE_SIZE;
+  const pageRows = rows.slice(start, start + PAGE_SIZE);
+
   reqTableWrap.innerHTML = `
     <table class="borrow-table">
       <thead><tr>
@@ -1493,7 +1572,9 @@ function renderReqTable(rows) {
         <th>ประเภทอุปกรณ์</th><th>Serial No.</th><th>Asset No.</th><th>Windows</th><th>วันที่เบิก</th><th>สถานะ</th>
       </tr></thead>
       <tbody>
-        ${rows.map((r, i) => `<tr>
+        ${pageRows.map((r, j) => {
+          const i = start + j;
+          return `<tr>
           <td class="td-mono">${rows.length - i}</td>
           <td class="td-mono">${esc(r.empId)}</td>
           <td>${esc(r.name)}</td>
@@ -1504,12 +1585,53 @@ function renderReqTable(rows) {
           <td>${r.windowsVersion ? `<span class="badge badge-win">🪟 ${esc(r.windowsVersion)}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
           <td class="td-date">${formatDate(r.reqDate)}</td>
           <td><span class="badge badge-req">📦 เบิกแล้ว</span></td>
-        </tr>`).join('')}
+        </tr>`;
+        }).join('')}
       </tbody>
-    </table>`;
+    </table>
+    ${paginationBarHTML(page, totalPages, true)}`;
+
+  bindPaginationEvents(reqTableWrap, p => renderReqTable(filteredReq, p));
 }
 
-/* ─── NEW: Combined search + filter logic ─── */
+/* ─── NEW: สร้าง HTML แถบแบ่งหน้า (pagination bar) ─── */
+function paginationBarHTML(page, totalPages, isTeal) {
+  if (totalPages <= 1) return '';
+
+  const maxButtons = 5;
+  let startPage = Math.max(1, page - 2);
+  let endPage   = Math.min(totalPages, startPage + maxButtons - 1);
+  startPage = Math.max(1, endPage - maxButtons + 1);
+
+  let numberBtns = '';
+  for (let p = startPage; p <= endPage; p++) {
+    numberBtns += `<button type="button" class="page-num-btn${p === page ? ' active' : ''}" data-page="${p}">${p}</button>`;
+  }
+
+  return `
+    <div class="pagination-bar${isTeal ? ' teal-pagination' : ''}">
+      <button type="button" class="page-nav-btn" data-page="${page - 1}" ${page <= 1 ? 'disabled' : ''}>‹ ก่อนหน้า</button>
+      ${numberBtns}
+      <button type="button" class="page-nav-btn" data-page="${page + 1}" ${page >= totalPages ? 'disabled' : ''}>ถัดไป ›</button>
+      <span class="page-info">หน้า ${page} / ${totalPages}</span>
+    </div>`;
+}
+
+/* ─── NEW: ผูก event ปุ่มเปลี่ยนหน้า ─── */
+function bindPaginationEvents(wrapEl, onGoToPage) {
+  wrapEl.querySelectorAll('.page-nav-btn, .page-num-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      const p = Number(btn.dataset.page);
+      if (!p || isNaN(p)) return;
+      onGoToPage(p);
+      // เลื่อนขึ้นไปบนตารางเล็กน้อยเพื่อ UX ที่ดีขึ้นเมื่อเปลี่ยนหน้า
+      wrapEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
+}
+
+/* ─── Combined search + filter logic ─── */
 function applyBorrowFilters() {
   const q      = searchBorrow.value.toLowerCase().trim();
   const status = filterBorrowStatus.value;
@@ -1537,7 +1659,9 @@ function applyBorrowFilters() {
   });
 
   updateFilterCount(filterCountBorrow, filteredBorrow.length, borrowHistory.length);
-  renderBorrowTable(filteredBorrow);
+  // NEW: กลับไปหน้า 1 ทุกครั้งที่ผลการกรอง/ค้นหาเปลี่ยน
+  borrowPage = 1;
+  renderBorrowTable(filteredBorrow, borrowPage);
 }
 
 function applyReqFilters() {
@@ -1572,7 +1696,9 @@ function applyReqFilters() {
   });
 
   updateFilterCount(filterCountReq, filteredReq.length, reqHistory.length);
-  renderReqTable(filteredReq);
+  // NEW: กลับไปหน้า 1 ทุกครั้งที่ผลการกรอง/ค้นหาเปลี่ยน
+  reqPage = 1;
+  renderReqTable(filteredReq, reqPage);
 }
 
 function updateFilterCount(el, shown, total) {
