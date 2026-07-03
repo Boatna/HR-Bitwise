@@ -1572,7 +1572,6 @@ async function loadLegal() {
       return;
     }
 
-    // Build donut summary from status
     const norm = (s) => {
       const v = (s || "").toLowerCase();
       if (v.includes("ปกติ") || v === "good") return "good";
