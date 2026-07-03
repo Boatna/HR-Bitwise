@@ -1,26 +1,6 @@
-// ==========================================
-// config.js — HR Dashboard · Bitwise Group
-// ==========================================
-
 const CONFIG = {
-  // ⚠️ นำ URL ของ Web App ที่คุณ Deploy แล้วมาใส่ตรงนี้
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbz88CDRWN587TPvtdfUTc3RiCtemSZL91yHEXDCsBqP2IAKM6PZTc5fpIdksgUeGg_o/exec",
-
-  // ── Employees Sheet columns ──────────────────────────────────────
-  // รหัสพนักงาน | ชื่อ-นามสกุล | แผนก | ตำแหน่ง | Plant
-  // คำนำหน้า   | ชื่อ          | นามสกุล | สัญชาติ | เบอร์โทรศัพท์
-  // วันที่เริ่มงาน | วันเกิด/DOB
-  EMP_DOB_FIELD: 'วันเกิด/DOB',          // ✅ ชื่อ column จริงใน sheet
-
-  // ── Leave_Records Sheet columns ──────────────────────────────────
-  // รหัสพนักงาน | ชื่อ-นามสกุล | แผนก | Plant
-  // วันที่ลาหยุด | ประเภทรายการ | จำนวนการลา
-  // เดือน (Month) | ปี (Year) | หมายเหตุ (Remark)
-
-  // ── Turnover_Data Sheet columns ───────────────────────────────────
-  // วันที่บันทึก | รหัสพนักงาน | ชื่อ-นามสกุล | แผนก | Plant
-  // วันที่เริ่มงาน | วันที่ลาออก | ประเภทการลาออก
-  // สาเหตุที่ลาออก | การคืนทรัพย์สิน | หมายเหตุ | อายุงาน (ปี)
+  EMP_DOB_FIELD: 'วันเกิด/DOB',
 
   LEAVE_REASONS: [
     "ได้งานใหม่",
