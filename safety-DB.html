@@ -9,7 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <style>
 :root {
-  /* === Bitwise Blue Theme (matched to index.html) === */
   --navy:        #1E3A5F;
   --navy-2:      #2D5080;
   --navy-deep:   #0F2744;
@@ -19,7 +18,6 @@
   --blue4:       #60A5FA;
   --cyan:        #0EA5E9;
   --blue-light:  #EBF3FF;
-  /* Status colours (kept for dashboard logic) */
   --green:       #2E8B57;
   --green-light: #E6F4EA;
   --green-dark:  #1F6E42;
@@ -28,7 +26,6 @@
   --red:         #C23B3B;
   --red-light:   #FBEAEA;
   --purple:      #7B61FF;
-  /* Layout */
   --bg:          #F0F6FF;
   --card:        #FFFFFF;
   --border:      rgba(29,111,204,0.15);
@@ -52,7 +49,6 @@ body {
 
 h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 
-/* ============ TOP HERO BAR ============ */
 .topbar {
   background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 55%, var(--navy-2) 100%);
   color: white;
@@ -153,7 +149,6 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .btn-danger { background: var(--red); color: white; }
 .btn-danger:hover { background: #a83232; }
 
-/* value pillars row */
 .pillars {
   background: rgba(0,0,0,0.18);
   border-top: 1px solid rgba(96,165,250,0.12);
@@ -170,7 +165,6 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .view { display: none; }
 .view.active { display: block; }
 
-/* ============ SECTION HEADER WITH NUMBER BADGE ============ */
 .section-block { margin-bottom: 22px; }
 .section-head {
   display: flex; align-items: center; gap: 12px;
@@ -223,7 +217,6 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 }
 .filter-summary b { color: var(--navy); }
 
-/* ============ KPI CARDS (round icon style like poster) ============ */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -273,7 +266,6 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .kpi-change.positive { color: var(--green-dark); }
 .kpi-change.negative { color: var(--red); }
 
-/* ============ PANELS / CHARTS ============ */
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
@@ -335,7 +327,6 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .bar-fill.purple { background: linear-gradient(90deg, #9A85FF, var(--purple)); }
 .bar-value { font-size: 14px; font-weight: 700; min-width: 40px; text-align: right; color: var(--navy); }
 
-/* Donut chart */
 .donut-wrap { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; justify-content: center; }
 .donut-center-label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
 .donut-center-value { font-size: 28px; font-weight: 800; color: var(--navy-deep); font-family: 'DM Mono', monospace; }
@@ -344,7 +335,6 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .donut-legend-item .sw { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
 .donut-legend-item b { color: var(--navy); margin-left: 4px; }
 
-/* Gauge */
 .gauge-wrap { display: flex; flex-direction: column; align-items: center; }
 .gauge-value { font-size: 30px; font-weight: 800; color: var(--green-dark); margin-top: -6px; font-family: 'DM Mono', monospace; }
 .gauge-target { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
@@ -352,14 +342,12 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .gauge-card { flex: 1; min-width: 190px; text-align: center; }
 .gauge-card-label { font-size: 13px; font-weight: 700; color: var(--navy); margin-top: 4px; }
 
-/* Trend line chart */
 .trend-legend { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
 .trend-legend-item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-muted); font-weight: 600; }
 .trend-legend-item .ln { width: 16px; height: 0; border-top: 3px solid; border-radius: 2px; }
 .trend-legend-item .ln.dashed { border-top-style: dashed; }
 .trend-wrap { width: 100%; overflow-x: auto; }
 
-/* Monthly mini bar-trend (grouped bars across months) */
 .minibar-chart { display: flex; align-items: flex-end; gap: 14px; height: 170px; padding: 0 4px 0 4px; overflow-x: auto; }
 .minibar-group { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 54px; flex-shrink: 0; }
 .minibar-bars { display: flex; align-items: flex-end; gap: 3px; height: 130px; }
@@ -431,20 +419,60 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .cell-truncate { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cell-truncate:hover { white-space: normal; overflow: visible; }
 
-/* ---- Registration_Laws_and_Safety table: compact, fits one screen width ---- */
-#regTable { table-layout: fixed; font-size: 12.5px; }
-#regTable th, #regTable td { padding: 8px 10px; }
+#regTable { table-layout: fixed; font-size: 12.5px; border-collapse: separate; border-spacing: 0; }
+#regTable th, #regTable td { padding: 10px 12px; }
+#regTable thead th {
+  position: sticky; top: 0; z-index: 2;
+  box-shadow: 0 2px 6px rgba(29,111,204,0.10);
+}
+#regTable tbody tr { transition: background 0.15s; cursor: pointer; }
+#regTable tbody tr:nth-child(even) { background: #F7FAFF; }
+#regTable tbody tr:hover { background: var(--blue-light); }
 #regTable td.reg-truncate {
-  max-width: 0; /* forces table-layout:fixed cell to respect column width */
+  max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-#regTable .row-actions { display: flex; gap: 4px; flex-wrap: wrap; }
-#regTable .row-actions button { padding: 4px 8px; font-size: 12px; }
+#regTable .row-actions { display: flex; gap: 4px; flex-wrap: wrap; cursor: default; }
+#regTable .row-actions button { padding: 5px 9px; font-size: 12px; border-radius: 6px; }
 #regTable .view-btn { color: var(--navy-2); }
+#regTable .seq-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 30px; padding: 3px 9px;
+  background: var(--navy-deep); color: white;
+  border-radius: 999px; font-weight: 800; font-size: 11.5px;
+  font-family: 'DM Mono', monospace;
+}
+.ministry-chip {
+  display: inline-block; padding: 4px 11px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 700; background: var(--blue-light); color: var(--blue);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+.reg-search-wrap { position: relative; flex: 1; min-width: 220px; max-width: 340px; }
+.reg-search-wrap input {
+  width: 100%; padding: 10px 16px 10px 38px;
+  border: 1px solid var(--border); border-radius: 999px;
+  font-size: 13.5px; font-family: inherit; background: var(--bg);
+  transition: all 0.2s;
+}
+.reg-search-wrap input:focus {
+  outline: none; border-color: var(--blue); background: white;
+  box-shadow: 0 0 0 3px rgba(30,111,217,0.12);
+}
+.reg-search-wrap .search-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; pointer-events: none; opacity: 0.6;
+}
+.reg-table-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 16px;
+}
+.reg-empty-state {
+  text-align: center; padding: 40px 20px; color: var(--text-muted);
+}
+.reg-empty-state .emoji { font-size: 34px; display: block; margin-bottom: 10px; }
 
-/* ---- Detail modal for a registration row ---- */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(15,39,68,0.55);
   display: none; align-items: center; justify-content: center;
@@ -453,9 +481,9 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .modal-overlay.show { display: flex; }
 .modal-card {
   background: var(--card); border-radius: var(--radius);
-  max-width: 640px; width: 100%; max-height: 85vh; overflow-y: auto;
+  max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto;
   box-shadow: var(--shadow-hover); border-top: 4px solid var(--blue2);
-  padding: 24px 26px;
+  padding: 28px 30px;
 }
 .modal-card h3 { margin: 0 0 16px 0; font-size: 16.5px; color: var(--navy-deep); display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .modal-card .modal-close { border: none; background: var(--bg); color: var(--text-muted); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 15px; flex-shrink:0; }
@@ -464,6 +492,109 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .modal-row:last-child { border-bottom: none; }
 .modal-row .modal-label { font-size: 11.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
 .modal-row .modal-value { font-size: 14px; color: var(--text); white-space: pre-wrap; line-height: 1.6; }
+
+/* --- Registration Detail Modal --- */
+.law-header {
+  display: flex;
+  gap: 20px;
+  padding: 16px;
+  background: var(--blue-light);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  align-items: flex-start;
+}
+.law-code {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--blue2);
+  background: white;
+  padding: 8px 16px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(29,111,204,0.15);
+  font-family: 'DM Mono', monospace;
+  white-space: nowrap;
+}
+.law-info {
+  flex: 1;
+}
+.law-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy-deep);
+  line-height: 1.5;
+}
+.law-requirements {
+  margin-top: 20px;
+}
+.law-requirements h4 {
+  font-size: 15px;
+  color: var(--navy);
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+.requirement-item {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  background: #FAFBFC;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--blue2);
+  transition: all 0.2s;
+}
+.requirement-item:hover {
+  background: var(--bg);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.req-number {
+  width: 32px;
+  height: 32px;
+  background: var(--blue2);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.req-content {
+  flex: 1;
+}
+.req-detail {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+}
+.req-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+}
+.req-meta-item {
+  background: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.req-note {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #FFF9E6;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #8B6914;
+  border-left: 3px solid var(--amber);
+}
 
 .page-footer {
   text-align: center; padding: 28px;
@@ -486,6 +617,10 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   .filter-field { min-width: 100%; }
   .filter-actions { margin-left: 0; width: 100%; }
   .pillars-inner { gap: 14px; }
+  .law-header { flex-direction: column; gap: 12px; }
+  .law-code { font-size: 20px; align-self: flex-start; }
+  .requirement-item { flex-direction: column; gap: 8px; }
+  .req-meta { flex-direction: column; gap: 6px; }
 }
 @media (max-width: 480px) {
   .kpi-grid { grid-template-columns: 1fr 1fr; }
@@ -716,6 +851,10 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
         <label for="regFilterOwner">ผู้รับผิดชอบ</label>
         <select id="regFilterOwner"><option value="">ทุกผู้รับผิดชอบ</option></select>
       </div>
+      <div class="filter-field">
+        <label for="regFilterSeq">ลำดับ</label>
+        <select id="regFilterSeq"><option value="">ทุกลำดับ</option></select>
+      </div>
       <div class="filter-actions">
         <button class="btn btn-outline" id="regClearFilterBtn">↩️ ล้างตัวกรอง</button>
       </div>
@@ -827,7 +966,7 @@ const CONFIG = {
 const MONTH_NAMES_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const filterState = { year: "", month: "", plant: "" };
 const editFilterState = { year: "", month: "", plant: "" };
-const regFilterState = { ministry: "", result: "", owner: "" };
+const regFilterState = { ministry: "", result: "", owner: "", seq: "" };
 
 function formatNum(v) {
   if (v === undefined || v === null || v === "") return "-";
@@ -838,7 +977,6 @@ function formatNum(v) {
 function formatDateThai(value) {
   if (!value && value !== 0) return "-";
   let dateObj = null;
-
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
     const [y, m, d] = value.split('-').map(Number);
     dateObj = new Date(Date.UTC(y, m - 1, d));
@@ -849,9 +987,7 @@ function formatDateThai(value) {
       dateObj = new Date(excelEpoch + num * 86400000);
     }
   }
-
   if (!dateObj || isNaN(dateObj.getTime())) return String(value);
-
   const d = dateObj.getUTCDate();
   const m = dateObj.getUTCMonth();
   const y = dateObj.getUTCFullYear() + 543;
@@ -1013,18 +1149,15 @@ function initFilterBar() {
   const yearSel  = document.getElementById("filterYear");
   const monthSel = document.getElementById("filterMonth");
   const plantSel = document.getElementById("filterPlant");
-
   populateYearOptions(yearSel, now.getFullYear());
   populateMonthOptions(monthSel);
   populatePlantOptions(plantSel);
-
   yearSel.value  = "";
   monthSel.value = "";
   plantSel.value = "";
   filterState.year  = "";
   filterState.month = "";
   filterState.plant = "";
-
   yearSel.addEventListener("change", onFilterChange);
   monthSel.addEventListener("change", onFilterChange);
   plantSel.addEventListener("change", onFilterChange);
@@ -1032,19 +1165,26 @@ function initFilterBar() {
     yearSel.value = ""; monthSel.value = ""; plantSel.value = "";
     onFilterChange();
   });
-
   updateFilterSummary();
 }
 
 function onFilterChange() {
-  const year  = document.getElementById("filterYear").value;
-  const month = document.getElementById("filterMonth").value;
-  const plant = document.getElementById("filterPlant").value;
-
+  const yearSel  = document.getElementById("filterYear");
+  const monthSel = document.getElementById("filterMonth");
+  const plantSel = document.getElementById("filterPlant");
+  let year  = yearSel.value;
+  const month = monthSel.value;
+  const plant = plantSel.value;
+  // BUG FIX: เดิมถ้าเลือก "เดือน" โดยไม่ได้เลือก "ปี" ก่อน ตัวกรองเดือนจะไม่ถูกใช้เลย
+  // (เพราะเงื่อนไข year && month เป็นเท็จ) ทำให้ผู้ใช้กดเลือกเดือนแล้วเหมือนไม่มีอะไรเกิดขึ้น
+  // จึงเติมปีปัจจุบันให้อัตโนมัติเมื่อเลือกเดือนโดยยังไม่ได้เลือกปี
+  if (month && !year) {
+    year = String(new Date().getFullYear());
+    yearSel.value = year;
+  }
   filterState.year  = year;
   filterState.month = (year && month) ? `${year}-${month}` : "";
   filterState.plant = plant;
-
   updateFilterSummary();
   loadAllDashboardData();
 }
@@ -1092,7 +1232,6 @@ function renderGauge(value, max, target) {
   const needleY = cy - r * 0.72 * Math.cos(rad);
   const greenEnd = Math.min((t / max) * 180 - 90, 90);
   const amberEnd = Math.min((t * 1.5 / max) * 180 - 90, 90);
-
   function arcPath(startAngle, endAngle, radius) {
     const sRad = (startAngle * Math.PI) / 180;
     const eRad = (endAngle * Math.PI) / 180;
@@ -1102,7 +1241,6 @@ function renderGauge(value, max, target) {
     const y2 = cy - radius * Math.cos(eRad);
     return `M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`;
   }
-
   return `
   <svg viewBox="0 0 200 122" width="100%" style="max-width:220px;display:block;margin:0 auto;">
     <path d="${arcPath(-90, greenEnd, 78)}" stroke="#2E8B57" stroke-width="16" fill="none" stroke-linecap="round"/>
@@ -1128,7 +1266,6 @@ function renderDonut(segments, centerLabel, centerValue) {
     offset += dash;
     return circle;
   }).join("");
-
   return `
   <svg viewBox="0 0 128 128" width="148" height="148">
     ${circles}
@@ -1143,11 +1280,9 @@ function renderLineChart(labels, seriesList) {
   const h = 220;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
-
   const allVals = seriesList.flatMap(s => s.values).filter(v => v !== null && v !== undefined && !isNaN(v));
   const maxVal = Math.max(...allVals, 1);
   const niceMax = Math.ceil(maxVal * 1.15 / 5) * 5 || 5;
-
   const stepX = labels.length > 1 ? plotW / (labels.length - 1) : 0;
   const xAt = (i) => padL + stepX * i;
   const yAt = (v) => padT + plotH - (Math.max(0, Number(v) || 0) / niceMax) * plotH;
@@ -1158,11 +1293,9 @@ function renderLineChart(labels, seriesList) {
     gridLines.push(`<line x1="${padL}" y1="${gy}" x2="${w - padR}" y2="${gy}" stroke="#E1E5EB" stroke-width="1"/>`);
     gridLines.push(`<text x="${padL - 8}" y="${gy + 4}" font-size="10.5" fill="#647187" text-anchor="end" font-family="Sarabun">${Math.round(gv)}</text>`);
   }
-
   const xLabels = labels.map((lab, i) =>
     `<text x="${xAt(i)}" y="${h - 6}" font-size="10.5" fill="#647187" text-anchor="middle" font-family="Sarabun">${lab}</text>`
   ).join("");
-
   const seriesSvg = seriesList.map(s => {
     const pts = s.values.map((v, i) => `${xAt(i)},${yAt(v)}`).join(" ");
     const dash = s.dashed ? `stroke-dasharray="6 5"` : "";
@@ -1173,7 +1306,6 @@ function renderLineChart(labels, seriesList) {
     ).join("");
     return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2.5" ${dash} stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
   }).join("");
-
   return `
   <svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="display:block;min-width:${w}px;">
     ${gridLines.join("")}
@@ -1187,7 +1319,6 @@ function renderMiniBarTrend(monthLabels, series) {
   const allVals = series.flatMap(s => s.values);
   const maxVal = Math.max(...allVals, 1);
   const colorClass = { blue: "#1E6FD9", green: "#2E8B57", amber: "#E0A106", red: "#C23B3B", purple: "#7B61FF" };
-
   return monthLabels.map((label, i) => `
     <div class="minibar-group">
       <div class="minibar-bars">
@@ -1203,28 +1334,88 @@ function renderMiniBarTrend(monthLabels, series) {
   `).join("");
 }
 
+function groupKpiRows(rows) {
+  const byMonth = {};
+  rows.forEach(r => {
+    const m = rowMonthValue(r);
+    if (!m) return;
+    if (!byMonth[m]) {
+      byMonth[m] = {
+        month: m,
+        total_incidents: 0, target_incidents: 0,
+        lti: 0, target_lti: 0,
+        near_miss: 0, target_near_miss: 0,
+        days_no_incident: 0,
+        ltifr_sum: 0, ltifr_n: 0,
+        target_ltifr_sum: 0, target_ltifr_n: 0,
+        trir_sum: 0, trir_n: 0,
+        target_trir_sum: 0, target_trir_n: 0,
+      };
+    }
+    const g = byMonth[m];
+    g.total_incidents  += Number(r.total_incidents)  || 0;
+    g.target_incidents += Number(r.target_incidents) || 0;
+    g.lti               += Number(r.lti)              || 0;
+    g.target_lti         += Number(r.target_lti)        || 0;
+    g.near_miss           += Number(r.near_miss)          || 0;
+    g.target_near_miss     += Number(r.target_near_miss)    || 0;
+    g.days_no_incident      = Math.max(g.days_no_incident, Number(r.days_no_incident) || 0);
+    if (r.ltifr !== undefined && r.ltifr !== '') { g.ltifr_sum += Number(r.ltifr) || 0; g.ltifr_n++; }
+    if (r.target_ltifr !== undefined && r.target_ltifr !== '') { g.target_ltifr_sum += Number(r.target_ltifr) || 0; g.target_ltifr_n++; }
+    if (r.trir !== undefined && r.trir !== '') { g.trir_sum += Number(r.trir) || 0; g.trir_n++; }
+    if (r.target_trir !== undefined && r.target_trir !== '') { g.target_trir_sum += Number(r.target_trir) || 0; g.target_trir_n++; }
+  });
+  return Object.values(byMonth)
+    .map(g => ({
+      month: g.month,
+      total_incidents: g.total_incidents,
+      target_incidents: g.target_incidents,
+      lti: g.lti,
+      target_lti: g.target_lti,
+      near_miss: g.near_miss,
+      target_near_miss: g.target_near_miss,
+      days_no_incident: g.days_no_incident,
+      ltifr: g.ltifr_n ? g.ltifr_sum / g.ltifr_n : 0,
+      target_ltifr: g.target_ltifr_n ? g.target_ltifr_sum / g.target_ltifr_n : 0,
+      trir: g.trir_n ? g.trir_sum / g.trir_n : 0,
+      target_trir: g.target_trir_n ? g.target_trir_sum / g.target_trir_n : 0,
+    }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+}
 
+function pickKpiIndex(grouped) {
+  if (!grouped.length) return -1;
+  if (filterState.month) {
+    return grouped.findIndex(g => g.month === filterState.month);
+  }
+  if (filterState.year) {
+    let lastIdx = -1;
+    grouped.forEach((g, i) => { if (g.month.slice(0, 4) === filterState.year) lastIdx = i; });
+    return lastIdx;
+  }
+  return grouped.length - 1;
+}
 
 async function loadKpi() {
   const grid = document.getElementById("kpiGrid");
   showLoading(grid);
   try {
     const allRows = await fetchSheetData(CONFIG.SHEETS.KPI);
-    const rows = applyClientFilter(allRows);
-    if (!rows.length) {
+    // กรองเฉพาะ Plant ที่นี่ (ไม่กรองเดือน) แล้วค่อยรวมยอดตามเดือนใน groupKpiRows
+    // เพื่อให้ตอนเลือก "ทุก Plant" ค่าของทุกโรงงานถูกรวมกันอย่างถูกต้อง แทนที่จะสุ่มหยิบ
+    // แถวใดแถวหนึ่งมาแสดง และเพื่อให้หา "เดือนก่อนหน้า" ได้ถูกต้องแม้ตอนกรองเหลือเดือนเดียว
+    let baseRows = allRows;
+    if (filterState.plant) baseRows = baseRows.filter(r => samePlant(r.plant, filterState.plant));
+    const grouped = groupKpiRows(baseRows);
+    const idx = pickKpiIndex(grouped);
+    if (idx === -1) {
       grid.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูล KPI ตามตัวกรองที่เลือก</div>`;
       document.getElementById("dataDate").textContent = `📅 ข้อมูล ณ —`;
       return;
     }
-    const sorted = [...rows].sort((a, b) => (rowMonthValue(a) || "").localeCompare(rowMonthValue(b) || ""));
-    const latest = sorted[sorted.length - 1];
-    const prev   = sorted[sorted.length - 2] || latest;
-
-    const isoDate = rowMonthValue(latest);
-    document.getElementById("dataDate").textContent = isoDate
-      ? `📅 ข้อมูล ณ เดือน ${formatMonthThai(isoDate)}`
-      : `📅 ข้อมูล ณ —`;
-
+    const latest = grouped[idx];
+    const prev   = grouped[idx - 1] || latest;
+    document.getElementById("dataDate").textContent = `📅 ข้อมูล ณ เดือน ${formatMonthThai(latest.month)}`;
     function calcChange(current, previous) {
       const c = Number(current) || 0;
       const p = Number(previous) || 0;
@@ -1232,7 +1423,6 @@ async function loadKpi() {
       const diff = c - p;
       return { value: diff, percent: (diff / p) * 100 };
     }
-
     function changeHTML(change, goodWhenNegative = false) {
       if (change.value === 0) return `<span class="kpi-change">➖ ไม่เปลี่ยนแปลง</span>`;
       const isGood = goodWhenNegative ? change.value < 0 : change.value > 0;
@@ -1241,34 +1431,28 @@ async function loadKpi() {
       const sign   = change.value > 0 ? '+' : '';
       return `<span class="kpi-change ${cls}">${arrow} ${sign}${change.value.toFixed(1)} (${sign}${change.percent.toFixed(1)}%)</span>`;
     }
-
     const cards = [
       { label: "อุบัติเหตุทั้งหมด", value: latest.total_incidents,
         target: `เป้าหมาย ≤ ${latest.target_incidents ?? "-"}`,
         status: numStatus(latest.total_incidents, latest.target_incidents, "max"),
         icon: "⚠️", change: changeHTML(calcChange(latest.total_incidents, prev.total_incidents), true) },
-
       { label: "อุบัติเหตุหยุดงาน (LTI)", value: latest.lti,
         target: `เป้าหมาย = ${latest.target_lti ?? "0"}`,
         status: numStatus(latest.lti, latest.target_lti, "max"),
         icon: "🩹", change: changeHTML(calcChange(latest.lti, prev.lti), true) },
-
       { label: "Near Miss รายงาน", value: latest.near_miss,
         target: `เป้าหมาย ≥ ${latest.target_near_miss ?? "-"}`,
         status: numStatus(latest.near_miss, latest.target_near_miss, "min"),
         icon: "🔍", change: changeHTML(calcChange(latest.near_miss, prev.near_miss), false) },
-
       { label: "วันปลอดอุบัติเหตุ", value: latest.days_no_incident,
         target: "เพิ่มขึ้นต่อเนื่อง",
         status: "good",
         icon: "🏆", change: changeHTML(calcChange(latest.days_no_incident, prev.days_no_incident), false) },
-
       { label: "LTIFR", value: latest.ltifr,
         target: `เป้าหมาย < ${latest.target_ltifr ?? "1.00"}`,
         status: numStatus(latest.ltifr, latest.target_ltifr, "max"),
         icon: "📊", change: changeHTML(calcChange(latest.ltifr, prev.ltifr), true) },
     ];
-
     grid.innerHTML = cards.map(c => `
       <div class="kpi-card status-${c.status}">
         <div class="kpi-icon">${c.icon}</div>
@@ -1291,35 +1475,25 @@ async function loadTrendChart() {
     const allRows = await fetchSheetData(CONFIG.SHEETS.KPI);
     let rows = allRows;
     const yearScope = filterState.year || String(new Date().getFullYear());
-    rows = rows.filter(r => {
-      const m = rowMonthValue(r);
-      return m && m.slice(0, 4) === yearScope;
-    });
     if (filterState.plant) rows = rows.filter(r => samePlant(r.plant, filterState.plant));
-
+    // รวมยอดของทุก Plant ที่ตรงกับเดือนเดียวกันเข้าด้วยกันก่อน (groupKpiRows)
+    // ป้องกันไม่ให้กราฟสะสมนับซ้ำ/แสดงจุดเดือนเดิมหลายจุดตอนเลือก "ทุก Plant"
+    const grouped = groupKpiRows(rows).filter(g => g.month.slice(0, 4) === yearScope);
     if (scopeLabel) scopeLabel.textContent = `ปี ${Number(yearScope) + 543}`;
-
-    if (!rows.length) {
+    if (!grouped.length) {
       el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`;
       return;
     }
-
-    const sorted = [...rows].sort((a, b) => (rowMonthValue(a) || "").localeCompare(rowMonthValue(b) || ""));
-    const labels = sorted.map(r => {
-      const m = rowMonthValue(r);
-      return m ? MONTH_NAMES_TH[Number(m.slice(5, 7)) - 1] : "-";
-    });
-
+    const labels = grouped.map(g => MONTH_NAMES_TH[Number(g.month.slice(5, 7)) - 1]);
     let cumActual = 0, cumTarget = 0;
     const actualCum = [];
     const targetCum = [];
-    sorted.forEach(r => {
-      cumActual += Number(r.total_incidents) || 0;
-      cumTarget += Number(r.target_incidents) || 0;
+    grouped.forEach(g => {
+      cumActual += g.total_incidents;
+      cumTarget += g.target_incidents;
       actualCum.push(cumActual);
       targetCum.push(cumTarget || null);
     });
-
     el.innerHTML = renderLineChart(labels, [
       { values: actualCum, color: "#1E6FD9" },
       { values: targetCum, color: "#C23B3B", dashed: true }
@@ -1334,21 +1508,18 @@ async function loadGauges() {
   showLoading(el);
   try {
     const allRows = await fetchSheetData(CONFIG.SHEETS.KPI);
-    const rows = applyClientFilter(allRows);
-    if (!rows.length) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`; return; }
-
-    const sorted = [...rows].sort((a, b) => (rowMonthValue(a) || "").localeCompare(rowMonthValue(b) || ""));
-    const latest = sorted[sorted.length - 1];
-
+    let baseRows = allRows;
+    if (filterState.plant) baseRows = baseRows.filter(r => samePlant(r.plant, filterState.plant));
+    const grouped = groupKpiRows(baseRows);
+    const idx = pickKpiIndex(grouped);
+    if (idx === -1) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`; return; }
+    const latest = grouped[idx];
     const ltifr = Number(latest.ltifr) || 0;
     const ltifrTarget = Number(latest.target_ltifr) || 1;
     const ltifrMax = Math.max(3, Math.ceil(ltifrTarget * 3));
-
-    // TRIR isn't in the sheet schema; approximate from total_incidents/target as a severity proxy if not present
-    const trir = latest.trir !== undefined && latest.trir !== "" ? Number(latest.trir) : ltifr;
-    const trirTarget = latest.target_trir !== undefined && latest.target_trir !== "" ? Number(latest.target_trir) : 2;
+    const trir = latest.trir || ltifr;
+    const trirTarget = latest.target_trir || 2;
     const trirMax = Math.max(3, Math.ceil(trirTarget * 1.5));
-
     el.innerHTML = `
       <div class="gauge-card">
         ${renderGauge(trir, trirMax, trirTarget)}
@@ -1375,7 +1546,6 @@ async function loadInspectionChart() {
     const allRows = await fetchSheetData(CONFIG.SHEETS.INSPECTION);
     const rows = applyClientFilter(allRows);
     if (!rows.length) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`; return; }
-
     const sum = (key) => rows.reduce((s, r) => s + (Number(r[key]) || 0), 0);
     const items = [
       { label: "Safety Inspection", value: sum('safety_inspection'), color: "blue" },
@@ -1383,7 +1553,6 @@ async function loadInspectionChart() {
       { label: "BBS Observation",   value: sum('bbs_observation'),   color: "amber" },
     ];
     const maxVal = Math.max(...items.map(i => i.value), 1);
-
     el.innerHTML = items.map(i => `
       <div class="bar-item">
         <span class="bar-label">${i.label}</span>
@@ -1413,10 +1582,7 @@ async function loadInspectionMiniTrend() {
     });
     if (filterState.plant) rows = rows.filter(r => samePlant(r.plant, filterState.plant));
     if (label) label.textContent = `ปี ${Number(yearScope) + 543}`;
-
     if (!rows.length) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูล</div>`; return; }
-
-    // group by month, sum each metric
     const byMonth = {};
     rows.forEach(r => {
       const m = rowMonthValue(r);
@@ -1428,7 +1594,6 @@ async function loadInspectionMiniTrend() {
     });
     const months = Object.keys(byMonth).sort();
     const labels = months.map(m => MONTH_NAMES_TH[Number(m.slice(5,7)) - 1]);
-
     el.innerHTML = renderMiniBarTrend(labels, [
       { label: "Safety Inspection", color: "blue",  values: months.map(m => byMonth[m].safety_inspection) },
       { label: "Internal Audit",    color: "green", values: months.map(m => byMonth[m].internal_audit) },
@@ -1448,18 +1613,15 @@ async function loadCarChart() {
     const rows = applyClientFilter(allRows);
     if (scopeLabel) scopeLabel.textContent = `${rows.length} แผนก/เดือน`;
     if (!rows.length) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`; return; }
-
     const totOpen    = rows.reduce((s, r) => s + (Number(r.open)    || 0), 0);
     const totClosed  = rows.reduce((s, r) => s + (Number(r.closed)  || 0), 0);
     const totOverdue = rows.reduce((s, r) => s + (Number(r.overdue) || 0), 0);
     const maxVal = Math.max(totOpen, totClosed, totOverdue, 1);
-
     const items = [
       { label: "เปิด",     value: totOpen,    color: "blue" },
       { label: "ปิดแล้ว", value: totClosed,  color: "green" },
       { label: "ค้าง",    value: totOverdue, color: "red" },
     ];
-
     el.innerHTML = items.map(i => `
       <div class="bar-item">
         <span class="bar-label">${i.label}</span>
@@ -1489,9 +1651,7 @@ async function loadCarMiniTrend() {
     });
     if (filterState.plant) rows = rows.filter(r => samePlant(r.plant, filterState.plant));
     if (label) label.textContent = `ปี ${Number(yearScope) + 543}`;
-
     if (!rows.length) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูล</div>`; return; }
-
     const byMonth = {};
     rows.forEach(r => {
       const m = rowMonthValue(r);
@@ -1503,7 +1663,6 @@ async function loadCarMiniTrend() {
     });
     const months = Object.keys(byMonth).sort();
     const labels = months.map(m => MONTH_NAMES_TH[Number(m.slice(5,7)) - 1]);
-
     el.innerHTML = renderMiniBarTrend(labels, [
       { label: "เปิด",     color: "blue",  values: months.map(m => byMonth[m].open) },
       { label: "ปิดแล้ว",  color: "green", values: months.map(m => byMonth[m].closed) },
@@ -1522,23 +1681,19 @@ async function loadTrainingChart() {
     const allRows = await fetchSheetData(CONFIG.SHEETS.TRAINING);
     const rows = applyClientFilter(allRows);
     if (!rows.length) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`; return; }
-
     const types = [
       { key: "orientation", label: "Orientation",  color: "blue" },
       { key: "fire_drill",  label: "Fire Drill",   color: "amber" },
       { key: "safety",      label: "Safety",       color: "green" },
       { key: "competency",  label: "Competency",   color: "purple" },
     ];
-
     const deptCount = rows.length;
     if (countEl) countEl.textContent = `${deptCount} แผนก/เดือน`;
-
     const items = types.map(t => {
       const vals = rows.map(r => Number(r[t.key]) || 0).filter(v => v > 0);
       const avg  = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
       return { ...t, avg: Math.round(avg * 10) / 10 };
     });
-
     el.innerHTML = items.map(i => `
       <div class="bar-item">
         <span class="bar-label">${i.label}</span>
@@ -1571,7 +1726,6 @@ async function loadLegal() {
       if (donutEl) donutEl.innerHTML = "";
       return;
     }
-
     const norm = (s) => {
       const v = (s || "").toLowerCase();
       if (v.includes("ปกติ") || v === "good") return "good";
@@ -1582,7 +1736,6 @@ async function loadLegal() {
     const counts = { good: 0, warn: 0, bad: 0 };
     rows.forEach(r => counts[norm(r.status)]++);
     const total = rows.length;
-
     if (donutEl) {
       donutEl.innerHTML = `
         <div class="donut-wrap">
@@ -1599,7 +1752,6 @@ async function loadLegal() {
         </div>
       `;
     }
-
     tbody.innerHTML = rows.map(r => `
       <tr>
         <td>${r.item ?? "-"}</td>
@@ -1803,12 +1955,11 @@ function initEditFilterBar() {
   const yearSel  = document.getElementById("editFilterYear");
   const monthSel = document.getElementById("editFilterMonth");
   const plantSel = document.getElementById("editFilterPlant");
-
   populateYearOptions(yearSel, now.getFullYear());
   populateMonthOptions(monthSel);
   populatePlantOptions(plantSel);
-
   [yearSel, monthSel, plantSel].forEach(sel => sel.addEventListener("change", () => {
+    if (monthSel.value && !yearSel.value) yearSel.value = String(now.getFullYear());
     editFilterState.year  = yearSel.value;
     editFilterState.month = (yearSel.value && monthSel.value) ? `${yearSel.value}-${monthSel.value}` : "";
     editFilterState.plant = plantSel.value;
@@ -1900,7 +2051,6 @@ async function loadTableData() {
   const tbody  = document.querySelector("#dataTable tbody");
   thead.innerHTML = `<tr>${schema.fields.map(f => `<th>${f.label}</th>`).join("")}<th>จัดการ</th></tr>`;
   tbody.innerHTML = `<tr><td colspan="${schema.fields.length + 1}" class="skeleton-row">⏳ กำลังโหลด...</td></tr>`;
-
   try {
     const allRows = await fetchSheetData(schema.sheet);
     let rows = allRows;
@@ -1912,12 +2062,10 @@ async function loadTableData() {
     if (editFilterState.plant) {
       rows = rows.filter(r => samePlant(r.plant, editFilterState.plant));
     }
-
     if (!rows.length) {
       tbody.innerHTML = `<tr><td colspan="${schema.fields.length + 1}" class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</td></tr>`;
       return;
     }
-
     tbody.innerHTML = rows.map(row => `
       <tr>
         ${schema.fields.map(f => {
@@ -1934,7 +2082,6 @@ async function loadTableData() {
         </td>
       </tr>
     `).join("");
-
     tbody.querySelectorAll(".edit-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         const rowIndex = Number(btn.dataset.row);
@@ -1955,7 +2102,6 @@ function startEdit(row) {
   editingRowIndex = row._rowIndex;
   document.getElementById("formTitle").textContent      = "✏️ แก้ไขข้อมูล";
   document.getElementById("cancelEditBtn").style.display = "inline-block";
-
   schema.fields.forEach(f => {
     const el = document.getElementById(`f_${f.key}`);
     if (!el) return;
@@ -2017,7 +2163,6 @@ async function handleDelete(rowIndex) {
   }
 }
 
-// ============ Registration_Laws_and_Safety view logic ============
 let regInitialized = false;
 let regRowsCache = [];
 
@@ -2031,12 +2176,13 @@ function initRegistrationView() {
     document.getElementById("regFilterMinistry").value = "";
     document.getElementById("regFilterResult").value = "";
     document.getElementById("regFilterOwner").value = "";
-    regFilterState.ministry = ""; regFilterState.result = ""; regFilterState.owner = "";
+    document.getElementById("regFilterSeq").value = "";
+    regFilterState.ministry = ""; regFilterState.result = ""; regFilterState.owner = ""; regFilterState.seq = "";
     renderRegTable();
   });
-  ["regFilterMinistry", "regFilterResult", "regFilterOwner"].forEach(id => {
+  ["regFilterMinistry", "regFilterResult", "regFilterOwner", "regFilterSeq"].forEach(id => {
     document.getElementById(id).addEventListener("change", (e) => {
-      const map = { regFilterMinistry: "ministry", regFilterResult: "result", regFilterOwner: "owner" };
+      const map = { regFilterMinistry: "ministry", regFilterResult: "result", regFilterOwner: "owner", regFilterSeq: "seq" };
       regFilterState[map[id]] = e.target.value;
       renderRegTable();
     });
@@ -2160,16 +2306,24 @@ async function handleRegDelete(rowIndex) {
 function populateRegFilterOptions(rows) {
   const ministries = [...new Set(rows.map(r => (r["กระทรวง"] || "").trim()).filter(Boolean))].sort();
   const owners     = [...new Set(rows.map(r => (r["ผู้รับผิดชอบ"] || "").trim()).filter(Boolean))].sort();
-
+  const sequences  = [...new Set(rows.map(r => (r["ลำดับ"] || "").toString().trim()).filter(Boolean))].sort((a, b) => {
+    const numA = parseInt(a);
+    const numB = parseInt(b);
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    return a.localeCompare(b);
+  });
   const ministrySel = document.getElementById("regFilterMinistry");
   const currentMinistry = ministrySel.value;
   ministrySel.innerHTML = `<option value="">ทุกกระทรวง</option>` + ministries.map(m => `<option value="${m}">${m}</option>`).join("");
   ministrySel.value = currentMinistry;
-
   const ownerSel = document.getElementById("regFilterOwner");
   const currentOwner = ownerSel.value;
   ownerSel.innerHTML = `<option value="">ทุกผู้รับผิดชอบ</option>` + owners.map(o => `<option value="${o}">${o}</option>`).join("");
   ownerSel.value = currentOwner;
+  const seqSel = document.getElementById("regFilterSeq");
+  const currentSeq = seqSel.value;
+  seqSel.innerHTML = `<option value="">ทุกลำดับ</option>` + sequences.map(s => `<option value="${s}">${s}</option>`).join("");
+  seqSel.value = currentSeq;
 }
 
 function applyRegFilter(rows) {
@@ -2177,6 +2331,7 @@ function applyRegFilter(rows) {
   if (regFilterState.ministry) result = result.filter(r => (r["กระทรวง"] || "").trim() === regFilterState.ministry);
   if (regFilterState.owner)    result = result.filter(r => (r["ผู้รับผิดชอบ"] || "").trim() === regFilterState.owner);
   if (regFilterState.result)   result = result.filter(r => String(r["ผลการประเมิน"] || "").trim().toLowerCase() === regFilterState.result.toLowerCase());
+  if (regFilterState.seq)      result = result.filter(r => (r["ลำดับ"] || "").toString().trim() === regFilterState.seq);
   return result;
 }
 
@@ -2200,18 +2355,14 @@ function renderRegSummary(rows) {
   const donutEl   = document.getElementById("regDonut");
   const donutTot  = document.getElementById("regDonutTotal");
   const ministryEl = document.getElementById("regMinistryChart");
-
   if (!rows.length) {
     kpiGrid.innerHTML = `<div class="skeleton-row">❌ ยังไม่มีข้อมูลในทะเบียนกฎหมาย</div>`;
     donutEl.innerHTML = "";
     ministryEl.innerHTML = "";
     return;
   }
-
   const total = rows.length;
-  // unique law items counted by ลำดับ (a single law can have multiple requirement rows sharing the same ลำดับ)
   const uniqueLaws = new Set(rows.map(r => (r["ลำดับ"] || "").toString().trim()).filter(Boolean)).size || total;
-
   const normResult = (v) => {
     const s = String(v || "").trim().toLowerCase();
     if (s === "yes" || s.includes("ผ่าน")) return "yes";
@@ -2221,9 +2372,7 @@ function renderRegSummary(rows) {
   const counts = { yes: 0, no: 0, unknown: 0 };
   rows.forEach(r => counts[normResult(r["ผลการประเมิน"])]++);
   const compliancePct = total ? Math.round((counts.yes / total) * 100) : 0;
-
   const ministrySet = new Set(rows.map(r => (r["กระทรวง"] || "").trim()).filter(Boolean));
-
   const cards = [
     { label: "รายการข้อกำหนดทั้งหมด", value: total, icon: "📜", status: "good" },
     { label: "จำนวนกฎหมาย (ไม่ซ้ำ)", value: uniqueLaws, icon: "📚", status: "good" },
@@ -2232,7 +2381,6 @@ function renderRegSummary(rows) {
     { label: "อัตราความสอดคล้อง", value: `${compliancePct}%`, icon: "📊", status: compliancePct >= 90 ? "good" : (compliancePct >= 70 ? "warn" : "bad") },
     { label: "จำนวนกระทรวงที่เกี่ยวข้อง", value: ministrySet.size, icon: "🏛️", status: "good" },
   ];
-
   kpiGrid.innerHTML = cards.map(c => `
     <div class="kpi-card status-${c.status}">
       <div class="kpi-icon">${c.icon}</div>
@@ -2240,7 +2388,6 @@ function renderRegSummary(rows) {
       <div class="kpi-value">${formatNum(c.value)}</div>
     </div>
   `).join("");
-
   if (donutTot) donutTot.textContent = `${total} รายการ`;
   donutEl.innerHTML = `
     <div class="donut-wrap">
@@ -2256,8 +2403,6 @@ function renderRegSummary(rows) {
       </div>
     </div>
   `;
-
-  // Count by ministry
   const byMinistry = {};
   rows.forEach(r => {
     const m = (r["กระทรวง"] || "ไม่ระบุ").trim() || "ไม่ระบุ";
@@ -2281,13 +2426,10 @@ function renderRegTable() {
   const thead = document.querySelector("#regTable thead");
   const tbody = document.querySelector("#regTable tbody");
   const countEl = document.getElementById("regTableCount");
-
   const rows = applyRegFilter(regRowsCache);
   if (countEl) countEl.textContent = `${rows.length} รายการ`;
-
   const tableFields = REG_SCHEMA.fields.filter(f => f.showInTable);
   const actionsWidth = "19%";
-
   thead.innerHTML = `
     <colgroup>
       ${tableFields.map(f => `<col style="width:${f.width}">`).join("")}
@@ -2295,12 +2437,10 @@ function renderRegTable() {
     </colgroup>
     <tr>${tableFields.map(f => `<th>${f.label}</th>`).join("")}<th>จัดการ</th></tr>
   `;
-
   if (!rows.length) {
     tbody.innerHTML = `<tr><td colspan="${tableFields.length + 1}" class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</td></tr>`;
     return;
   }
-
   tbody.innerHTML = rows.map(row => `
     <tr>
       ${tableFields.map(f => {
@@ -2317,7 +2457,6 @@ function renderRegTable() {
       </td>
     </tr>
   `).join("");
-
   tbody.querySelectorAll(".view-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const rowIndex = Number(btn.dataset.row);
@@ -2339,23 +2478,70 @@ function renderRegTable() {
 
 function openRegDetailModal(row) {
   const card = document.getElementById("regDetailModalCard");
-  const rowsHtml = REG_SCHEMA.fields.map(f => {
-    let val = row[f.key];
-    if (val === undefined || val === null || val === "") val = "-";
-    else if (f.type === 'date') val = formatDateThai(val);
-    else if (f.key === "ผลการประเมิน") val = evalBadge(val);
-    return `
-      <div class="modal-row">
-        <div class="modal-label">${f.label}</div>
-        <div class="modal-value">${val}</div>
+  const mainSeq = row["ลำดับ"] || "";
+  const relatedRows = regRowsCache.filter(r =>
+    (r["ลำดับ"] || "").toString().trim() === mainSeq.toString().trim()
+  );
+  relatedRows.sort((a, b) => {
+    const seqA = (a["ลำดับ"] || "").toString().trim();
+    const seqB = (b["ลำดับ"] || "").toString().trim();
+    return seqA.localeCompare(seqB);
+  });
+  const mainRow = relatedRows[0];
+  const html = `
+    <h3>
+      📜 รายละเอียดกฎหมาย
+      <button class="modal-close" id="regDetailCloseBtn">✕</button>
+    </h3>
+    <div class="law-header">
+      <div class="law-code">${mainSeq}</div>
+      <div class="law-info">
+        <div class="modal-row">
+          <div class="modal-label">กระทรวง</div>
+          <div class="modal-value">${mainRow["กระทรวง"] || "-"}</div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-label">ชื่อกฎหมาย</div>
+          <div class="modal-value law-title">${mainRow["ชื่อกฎหมาย"] || "-"}</div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-label">วันที่ประกาศ</div>
+          <div class="modal-value">${formatDateThai(mainRow["วันที่ประกาศ"])}</div>
+        </div>
       </div>
-    `;
-  }).join("");
-
-  card.innerHTML = `
-    <h3>📜 รายละเอียดรายการกฎหมาย <button class="modal-close" id="regDetailCloseBtn">✕</button></h3>
-    ${rowsHtml}
+    </div>
+    <div class="law-requirements">
+      <h4>📋 รายการข้อกำหนด (${relatedRows.length} รายการ)</h4>
+      ${relatedRows.map((r, index) => `
+        <div class="requirement-item">
+          <div class="req-number">${index + 1}</div>
+          <div class="req-content">
+            <div class="req-detail">${r["รายละเอียดข้อกำหนดกฎหมาย"] || "-"}</div>
+            <div class="req-meta">
+              <span class="req-meta-item">
+                <strong>ความถี่:</strong> ${r["ความถี่"] || "-"}
+              </span>
+              <span class="req-meta-item">
+                <strong>กำหนดการ:</strong> ${r["กำหนดการ"] || "-"}
+              </span>
+              <span class="req-meta-item">
+                <strong>ผลการประเมิน:</strong> ${evalBadge(r["ผลการประเมิน"])}
+              </span>
+              <span class="req-meta-item">
+                <strong>ผู้รับผิดชอบ:</strong> ${r["ผู้รับผิดชอบ"] || "-"}
+              </span>
+            </div>
+            ${r["หมายเหตุ"] ? `
+              <div class="req-note">
+                <strong>หมายเหตุ:</strong> ${r["หมายเหตุ"]}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `).join("")}
+    </div>
   `;
+  card.innerHTML = html;
   document.getElementById("regDetailCloseBtn").addEventListener("click", closeRegDetailModal);
   document.getElementById("regDetailModal").classList.add("show");
 }
@@ -2368,11 +2554,9 @@ function switchView(view) {
   document.getElementById("dashboardView").classList.toggle("active", view === "dashboard");
   document.getElementById("registrationView").classList.toggle("active", view === "registration");
   document.getElementById("editView").classList.toggle("active", view === "edit");
-
   document.getElementById("toEditBtn").style.display         = view === "edit" ? "none" : "inline-block";
   document.getElementById("toRegistrationBtn").style.display = view === "registration" ? "none" : "inline-block";
   document.getElementById("toDashboardBtn").style.display    = view === "dashboard" ? "none" : "inline-block";
-
   if (view === "edit") { initEditView(); }
   else if (view === "registration") { initRegistrationView(); }
   else { loadAllDashboardData(); }
