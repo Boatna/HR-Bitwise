@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ทะเบียนกฎหมายความปลอดภัย · Bitwise Safety</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --navy:        #1E3A5F;
+  --navy-2:      #2D5080;
+  --navy-deep:   #0F2744;
+  --blue:        #1D6FCC;
+  --blue2:       #2563EB;
+  --blue3:       #3B82F6;
+  --blue4:       #60A5FA;
+  --cyan:        #0EA5E9;
+  --blue-light:  #EBF3FF;
+  --green:       #2E8B57;
+  --green-light: #E6F4EA;
+  --green-dark:  #1F6E42;
+  --amber:       #E0A106;
+  --amber-light: #FCF1D8;
+  --red:         #C23B3B;
+  --red-light:   #FBEAEA;
+  --purple:      #7B61FF;
+  --bg:          #F0F6FF;
+  --card:        #FFFFFF;
+  --border:      rgba(29,111,204,0.15);
+  --text:        #0F2744;
+  --text-muted:  #4A7CB5;
+  --radius:      16px;
+  --radius-sm:   10px;
+  --shadow:      0 2px 16px rgba(29,111,204,0.10);
+  --shadow-hover:0 8px 32px rgba(29,111,204,0.18);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Noto Sans Thai', 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+}
+
+h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
+
+/* ============ Topbar (shared theme) ============ */
+.topbar {
+  background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 55%, var(--navy-2) 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 4px solid var(--blue3);
+  z-index: 10;
+}
+.topbar::before {
+  content: "";
+  position: absolute;
+  top: -60%; right: -10%;
+  width: 480px; height: 480px;
+  background: radial-gradient(circle, rgba(29,111,204,0.28), transparent 70%);
+  pointer-events: none;
+}
+.topbar-inner {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 22px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  position: relative;
+  z-index: 1;
+}
+.brand { display: flex; align-items: center; gap: 16px; }
+.brand-badge {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.brand h1 {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 0.4px;
+}
+.brand h1 span { color: var(--blue4); }
+.brand .subtitle {
+  font-size: 13.5px;
+  color: #AEC0DA;
+  margin: 3px 0 0 0;
+  font-weight: 400;
+}
+.topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 999px;
+  font-size: 13.5px; font-weight: 600; cursor: pointer;
+  border: none; font-family: inherit; transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--blue2); color: white; box-shadow: 0 3px 10px rgba(37,99,235,0.30); }
+.btn-primary:hover { background: var(--blue); transform: translateY(-1px); }
+.btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.22); }
+.btn-secondary:hover { background: rgba(255,255,255,0.2); }
+.btn-home {
+  padding: 9px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
+  border: 1.5px solid rgba(96,165,250,0.5); background: rgba(37,99,235,0.25); color: white;
+}
+.btn-home:hover { background: rgba(37,99,235,0.55); border-color: var(--blue4); transform: translateY(-1px); }
+.btn-outline { background: transparent; color: var(--blue2); border: 2px solid var(--blue2); }
+.btn-outline:hover { background: var(--blue2); color: white; }
+
+.pillars { background: rgba(0,0,0,0.18); border-top: 1px solid rgba(96,165,250,0.12); position: relative; z-index: 1; }
+.pillars-inner { max-width: 1320px; margin: 0 auto; padding: 12px 28px; display: flex; gap: 26px; flex-wrap: wrap; justify-content: center; }
+.pillar { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #B8D4F5; font-weight: 600; }
+.pillar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue4); }
+
+.container { max-width: 1320px; margin: 0 auto; padding: 26px 28px; }
+
+.section-block { margin-bottom: 22px; }
+.section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.section-num {
+  width: 34px; height: 34px; border-radius: 10px; background: var(--blue2); color: white;
+  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px;
+  flex-shrink: 0; box-shadow: 0 3px 8px rgba(37,99,235,0.30);
+}
+.section-head h2 { font-size: 18px; font-weight: 700; color: var(--navy-deep); margin: 0; }
+.section-head p { color: var(--text-muted); margin: 2px 0 0 0; font-size: 13.5px; }
+.section-head .head-text { display: flex; flex-direction: column; }
+
+/* ============ KPI ============ */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 22px; }
+.kpi-card { background: var(--card); border-radius: var(--radius); padding: 20px 18px; box-shadow: var(--shadow); text-align: center; transition: all 0.25s; }
+.kpi-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+.kpi-icon { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 10px auto; }
+.kpi-card.status-good .kpi-icon { background: var(--green-light); }
+.kpi-card.status-warn .kpi-icon { background: var(--amber-light); }
+.kpi-card.status-bad  .kpi-icon { background: var(--red-light); }
+.kpi-label { font-size: 12.5px; color: var(--text-muted); font-weight: 600; }
+.kpi-value { font-size: 34px; font-weight: 800; color: var(--navy-deep); line-height: 1.15; margin: 2px 0 4px 0; font-family: 'DM Mono', monospace; }
+.kpi-card.status-good .kpi-value { color: var(--green-dark); }
+.kpi-card.status-warn .kpi-value { color: var(--amber); }
+.kpi-card.status-bad  .kpi-value { color: var(--red); }
+.kpi-meta { font-size: 12px; color: var(--text-muted); }
+.kpi-meta .target { background: var(--bg); padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; margin-bottom: 22px; }
+.panel { background: var(--card); border-radius: var(--radius); padding: 22px 24px; box-shadow: var(--shadow); }
+.panel h3 { font-size: 15.5px; font-weight: 700; color: var(--navy-deep); margin: 0 0 16px 0; display: flex; align-items: center; gap: 10px; }
+.panel h3 .badge-count { background: var(--blue-light); color: var(--blue); font-size: 11.5px; padding: 3px 11px; border-radius: 999px; font-weight: 700; }
+
+.bar-chart { display: flex; flex-direction: column; gap: 11px; }
+.bar-item { display: flex; align-items: center; gap: 12px; }
+.bar-label { min-width: 150px; font-size: 13px; color: var(--text); font-weight: 500; }
+.bar-track { flex: 1; height: 26px; background: var(--bg); border-radius: 7px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 7px; transition: width 0.8s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11.5px; font-weight: 700; color: white; min-width: 2px; }
+.bar-fill.blue   { background: linear-gradient(90deg, #4A8DE8, var(--blue)); }
+.bar-fill.green  { background: linear-gradient(90deg, #3DA56C, var(--green-dark)); }
+.bar-fill.amber  { background: linear-gradient(90deg, #F0B838, var(--amber)); }
+.bar-fill.purple { background: linear-gradient(90deg, #9A85FF, var(--purple)); }
+.bar-fill.red    { background: linear-gradient(90deg, #D65C5C, var(--red)); }
+.bar-value { font-size: 14px; font-weight: 700; min-width: 40px; text-align: right; color: var(--navy); }
+
+.donut-wrap { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; justify-content: center; }
+.donut-legend { display: flex; flex-direction: column; gap: 10px; }
+.donut-legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.donut-legend-item .sw { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.donut-legend-item b { color: var(--navy); margin-left: 4px; }
+
+.skeleton-row { color: var(--text-muted); font-size: 14px; padding: 14px; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.toast {
+  position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: white;
+  padding: 13px 22px; border-radius: 10px; font-size: 14px; font-weight: 500;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.2); opacity: 0; transform: translateY(10px);
+  transition: all 0.25s ease; pointer-events: none; z-index: 999;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { background: var(--red); }
+
+/* ============ Filter bar ============ */
+.filter-bar {
+  display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap;
+  background: var(--card); border-radius: var(--radius); padding: 16px 22px;
+  box-shadow: var(--shadow); margin-bottom: 22px; border-top: 3px solid var(--blue2);
+}
+.filter-field { display: flex; flex-direction: column; gap: 4px; min-width: 170px; }
+.filter-field label { font-size: 11.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
+.filter-field select { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; background: white; color: var(--text); cursor: pointer; }
+.filter-field select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,111,217,0.12); }
+.filter-actions { display: flex; gap: 8px; margin-left: auto; }
+
+/* ============ Ministry filter chips ============ */
+.ministry-filter-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.ministry-filter-group .filter-chip {
+  padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border); background: white;
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--text-muted); font-family: inherit;
+}
+.ministry-filter-group .filter-chip:hover { background: var(--blue-light); border-color: var(--blue); }
+.ministry-filter-group .filter-chip.active { background: var(--blue2); color: white; border-color: var(--blue2); }
+.ministry-filter-group .filter-chip .chip-count { background: rgba(255,255,255,0.3); padding: 0 7px; border-radius: 999px; font-size: 10.5px; margin-left: 5px; }
+.ministry-filter-group .filter-chip.active .chip-count { background: rgba(255,255,255,0.22); }
+
+/* ============ Quick search / row count ============ */
+.reg-quick-search { display: flex; gap: 10px; align-items: center; flex: 1; max-width: 420px; }
+.reg-quick-search input { flex: 1; padding: 10px 16px; border: 1px solid var(--border); border-radius: 999px; font-size: 13.5px; font-family: inherit; min-width: 200px; background: white; }
+.reg-quick-search input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,111,217,0.12); }
+.reg-row-count { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); flex-wrap: wrap; }
+.reg-row-count .count-badge { background: var(--blue-light); color: var(--blue); padding: 3px 11px; border-radius: 999px; font-weight: 700; font-size: 12px; }
+
+/* ============ Form card ============ */
+.form-card { background: var(--card); border-radius: var(--radius); padding: 24px; margin-bottom: 22px; box-shadow: var(--shadow); border-top: 3px solid var(--blue2); }
+.field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px; }
+.field label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; font-weight: 600; }
+.field input, .field select, .field textarea { width: 100%; padding: 10px 13px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color 0.2s; }
+.field textarea { resize: vertical; min-height: 72px; line-height: 1.6; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,111,217,0.12); }
+.field input.error, .field select.error, .field textarea.error { border-color: var(--red); }
+.field .error-msg { color: var(--red); font-size: 12px; margin-top: 4px; display: none; }
+.field.wide { grid-column: 1 / -1; }
+.form-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ============ Badges ============ */
+.badge { display: inline-block; padding: 4px 13px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.result-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.result-badge.yes { background: var(--green-light); color: var(--green-dark); }
+.result-badge.no  { background: var(--red-light); color: var(--red); }
+.result-badge.na  { background: #F0F0F0; color: #888; }
+
+.ministry-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.ministry-pill.ministry-แรงงาน { background: #EBF3FF; color: #1D6FCC; }
+.ministry-pill.ministry-อุตสาหกรรม { background: #E6F4EA; color: #2E8B57; }
+.ministry-pill.ministry-สาธารณสุข { background: #FBEAEA; color: #C23B3B; }
+.ministry-pill.ministry-พลังงาน { background: #FCF1D8; color: #E0A106; }
+.ministry-pill.ministry-มหาดไทย { background: #F0EBFF; color: #7B61FF; }
+.ministry-pill.ministry-ไม่ระบุ { background: #F0F0F0; color: #888; }
+
+/* ============ Legal registry table (classic register style, like the printed form) ============ */
+.reg-table-wrap {
+  overflow-x: auto;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.reg-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 1180px;
+}
+.reg-table th, .reg-table td {
+  border: 1px solid var(--border);
+  padding: 11px 13px;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.65;
+}
+.reg-table thead th {
+  background: var(--blue-light);
+  color: var(--navy-2);
+  font-weight: 700;
+  font-size: 12.5px;
+  text-align: center;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.reg-table td.center { text-align: center; vertical-align: middle; }
+.reg-table tbody tr.reg-group-row:hover { background: var(--bg); }
+.reg-table tbody tr.reg-group-first { border-top: 3px solid var(--blue2); }
+.reg-table td .law-name-cell { font-weight: 700; color: var(--navy-deep); }
+
+.law-seq-badge {
+  font-family: 'DM Mono', monospace;
+  font-weight: 800;
+  font-size: 14px;
+  color: white;
+  background: linear-gradient(160deg, var(--blue2), var(--blue));
+  padding: 6px 14px;
+  border-radius: 10px;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+}
+
+.law-group-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.law-group-actions .group-btns { display: flex; gap: 5px; }
+.table-actions { display: flex; gap: 5px; justify-content: center; }
+
+.icon-btn {
+  border: none; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600;
+  padding: 6px 10px; border-radius: 8px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;
+  white-space: nowrap;
+}
+.icon-btn.edit { background: var(--blue-light); color: var(--blue); }
+.icon-btn.edit:hover { background: var(--blue2); color: white; }
+.icon-btn.delete { background: var(--red-light); color: var(--red); }
+.icon-btn.delete:hover { background: var(--red); color: white; }
+
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--text-muted);
+}
+.empty-state .icon { font-size: 44px; margin-bottom: 12px; }
+
+.page-footer {
+  text-align: center; padding: 28px; color: #B8D4F5; font-size: 14px; font-weight: 600;
+  background: linear-gradient(135deg, var(--navy-deep), var(--navy)); margin-top: 30px; border-top: 4px solid var(--blue3);
+}
+.page-footer .foot-row { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; margin-top: 10px; font-size: 12.5px; color: #D7E1EE; }
+.page-footer .foot-row span { display: inline-flex; align-items: center; gap: 6px; }
+
+@media (max-width: 768px) {
+  .topbar-inner { flex-direction: column; align-items: center; text-align: center; }
+  .brand h1 { font-size: 20px; }
+  .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .chart-grid { grid-template-columns: 1fr; }
+  .kpi-value { font-size: 27px; }
+  .container { padding: 16px; }
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .filter-field { min-width: 100%; }
+  .filter-actions { margin-left: 0; width: 100%; }
+  .reg-table { font-size: 12px; }
+  .reg-table th, .reg-table td { padding: 7px 9px; }
+}
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-badge">
+        <img src="Bitwise-BW.png" alt="Bitwise Group" style="height:32px;width:auto;filter:brightness(0) invert(1);display:block;" onerror="this.style.display='none';this.parentNode.innerHTML='📜';" />
+      </div>
+      <div>
+        <h1><span>Bitwise </span>ทะเบียนกฎหมายความปลอดภัย</h1>
+        <p class="subtitle">Registration Laws and Safety · Bitwise Group</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <a href="safety-DB.html" class="btn btn-home">← กลับสู่ Dashboard</a>
+      <button class="btn btn-secondary" id="refreshBtn" title="รีเฟรช">🔄 รีเฟรช</button>
+    </div>
+  </div>
+  <div class="pillars">
+    <div class="pillars-inner">
+      <div class="pillar"><span class="dot"></span>🎯 VISION: Zero Accident</div>
+      <div class="pillar"><span class="dot"></span>🛡️ COMPLIANCE: To Standards</div>
+      <div class="pillar"><span class="dot"></span>📈 CONTINUOUS: Improvement</div>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <div class="section-block">
+    <div class="section-head">
+      <div class="section-num">📜</div>
+      <div class="head-text">
+        <h2>ทะเบียนกฎหมายความปลอดภัย (Registration Laws and Safety)</h2>
+        <p>ขึ้นทะเบียนกฎหมาย ข้อกำหนด และผลการประเมินความสอดคล้อง — เพิ่ม/แก้ไข/ลบได้โดยตรง</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="kpi-grid" id="regKpiGrid">
+    <div class="skeleton-row">⏳ กำลังโหลดข้อมูล...</div>
+  </section>
+
+  <div class="chart-grid">
+    <div class="panel">
+      <h3>⚖️ สรุปผลการประเมิน <span class="badge-count" id="regDonutTotal">—</span></h3>
+      <div id="regDonut"></div>
+    </div>
+    <div class="panel">
+      <h3>🏛️ จำนวนรายการตามกระทรวง</h3>
+      <div id="regMinistryChart" class="bar-chart"></div>
+    </div>
+  </div>
+
+  <!-- Ministry filter chips -->
+  <div id="regMinistryFilterContainer"></div>
+
+  <div class="filter-bar">
+    <div class="filter-field">
+      <label for="regFilterMinistry">กระทรวง</label>
+      <select id="regFilterMinistry"><option value="">ทุกกระทรวง</option></select>
+    </div>
+    <div class="filter-field">
+      <label for="regFilterResult">ผลการประเมิน</label>
+      <select id="regFilterResult">
+        <option value="">ทุกผล</option>
+        <option value="Yes">Yes (ผ่าน)</option>
+        <option value="No">No (ไม่ผ่าน)</option>
+        <option value="NA">NA (ไม่ระบุ)</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="regFilterOwner">ผู้รับผิดชอบ</label>
+      <select id="regFilterOwner"><option value="">ทุกผู้รับผิดชอบ</option></select>
+    </div>
+    <div class="filter-field">
+      <label for="regFilterSeq">ลำดับ</label>
+      <select id="regFilterSeq"><option value="">ทุกลำดับ</option></select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-outline" id="regClearFilterBtn">↩️ ล้างตัวกรอง</button>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3 id="regFormTitle" style="margin-top:0;">➕ เพิ่มรายการกฎหมายใหม่</h3>
+    <div class="field-grid" id="regFieldGrid"></div>
+    <div class="form-actions">
+      <button class="btn btn-primary" id="regSaveBtn">💾 บันทึก</button>
+      <button class="btn btn-outline" id="regCancelEditBtn" style="display:none">↩️ ยกเลิก</button>
+    </div>
+  </div>
+
+  <div class="section-block">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:16px;">
+      <div id="regTableCount">
+        <div class="reg-row-count"><span class="count-badge">—</span></div>
+      </div>
+      <div class="reg-quick-search">
+        <input
+          type="text"
+          id="regQuickSearch"
+          placeholder="🔍 ค้นหาด่วน (ชื่อกฎหมาย, กระทรวง, ผู้รับผิดชอบ...)"
+          autocomplete="off"
+        />
+        <button class="btn btn-outline" id="regClearSearchBtn" style="padding:9px 16px;font-size:12.5px;white-space:nowrap;">✕ ล้าง</button>
+      </div>
+    </div>
+
+    <div class="reg-table-wrap">
+      <table class="reg-table">
+        <thead>
+          <tr>
+            <th style="width:70px">ลำดับ</th>
+            <th style="width:120px">กระทรวง</th>
+            <th style="min-width:200px">ชื่อกฎหมาย</th>
+            <th style="width:110px">วันที่ประกาศ</th>
+            <th style="min-width:280px">รายละเอียดข้อกำหนดกฎหมาย</th>
+            <th style="width:90px">ความถี่</th>
+            <th style="width:90px">กำหนดการ</th>
+            <th style="width:110px">ผลการประเมิน</th>
+            <th style="width:120px">ผู้รับผิดชอบ</th>
+            <th style="min-width:140px">หมายเหตุ</th>
+            <th style="width:90px">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="regList">
+          <tr><td colspan="11" class="skeleton-row">⏳ กำลังโหลดข้อมูล...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<footer class="page-footer">
+  <p style="margin:0;font-size:16px;">"ร่วมกันสร้างวัฒนธรรมความปลอดภัย อย่างยั่งยืน"</p>
+  <div class="foot-row">
+    <span>📜 LEGAL REGISTRY</span>
+    <span>⚖️ COMPLIANCE TRACKING</span>
+    <span>🎯 ZERO VIOLATION</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CONFIG = {
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycby7PMOtaMTaRbLnNb1F8dtAbG6oeKRFpkw8hsJAReqM0B2SASDQ3JQp6O2ygU83JKfJ/exec",
+  SHEET: "Registration_Laws_and_Safety",
+  TIMEOUT: 30000,
+  RETRY: 3
+};
+
+const regFilterState = { ministry: "", result: "", owner: "", seq: "" };
+let regRowsCache = [];
+let regEditingRowIndex = null;
+
+const REG_SCHEMA = {
+  fields: [
+    { key: "ลำดับ",                    label: "ลำดับ (รหัส)",              type: "text",     required: true },
+    { key: "กระทรวง",                  label: "กระทรวง",                   type: "text" },
+    { key: "ชื่อกฎหมาย",               label: "ชื่อกฎหมาย",                type: "text",     required: true, wide: true },
+    { key: "วันที่ประกาศ",             label: "วันที่ประกาศ",              type: "date" },
+    { key: "รายละเอียดข้อกำหนดกฎหมาย", label: "รายละเอียดข้อกำหนดกฎหมาย",  type: "textarea", wide: true },
+    { key: "ความถี่",                  label: "ความถี่",                   type: "text" },
+    { key: "กำหนดการ",                 label: "กำหนดการ",                  type: "text" },
+    { key: "ผลการประเมิน",             label: "ผลการประเมิน",              type: "select",   options: ["Yes","No","NA"] },
+    { key: "ผู้รับผิดชอบ",             label: "ผู้รับผิดชอบ",              type: "text" },
+    { key: "หมายเหตุ",                 label: "หมายเหตุ",                  type: "text" },
+  ],
+};
+
+// ============ Helpers ============
+function escapeHtml(value) {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function formatNum(v) {
+  if (v === undefined || v === null || v === "") return "-";
+  const n = Number(v);
+  return isNaN(n) ? v : n.toLocaleString("th-TH");
+}
+
+const MONTH_NAMES_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+function formatDateThai(value) {
+  if (!value && value !== 0) return "-";
+  let dateObj = null;
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-').map(Number);
+    dateObj = new Date(Date.UTC(y, m - 1, d));
+  } else {
+    const num = Number(value);
+    if (!isNaN(num) && num > 1000) {
+      const excelEpoch = Date.UTC(1899, 11, 30);
+      dateObj = new Date(excelEpoch + num * 86400000);
+    }
+  }
+  if (!dateObj || isNaN(dateObj.getTime())) return String(value);
+  const d = dateObj.getUTCDate();
+  const m = dateObj.getUTCMonth();
+  const y = dateObj.getUTCFullYear() + 543;
+  return `${d} ${MONTH_NAMES_TH[m]} ${y}`;
+}
+
+function toISODateString(value) {
+  if (!value && value !== 0) return null;
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const num = Number(value);
+  if (!isNaN(num) && num > 1000) {
+    const excelEpoch = Date.UTC(1899, 11, 30);
+    const d = new Date(excelEpoch + num * 86400000);
+    const year  = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day   = String(d.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return null;
+}
+
+function showToast(msg, isError = false) {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.className = `toast show ${isError ? "error" : ""}`;
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => { toast.className = "toast"; }, 3000);
+}
+
+function showLoading(el) { el.innerHTML = `<div class="skeleton-row">⏳ กำลังโหลด...</div>`; }
+
+function evalBadge(result) {
+  const s = String(result || "").trim().toLowerCase();
+  if (s === "yes" || s.includes("ผ่าน")) return `<span class="result-badge yes">✅ Yes</span>`;
+  if (s === "no"  || s.includes("ไม่ผ่าน")) return `<span class="result-badge no">❌ No</span>`;
+  return `<span class="result-badge na">NA</span>`;
+}
+
+function getMinistryIcon(ministry) {
+  const icons = { 'แรงงาน': '⚙️', 'อุตสาหกรรม': '🏭', 'สาธารณสุข': '🏥', 'พลังงาน': '⚡', 'มหาดไทย': '🏛️' };
+  return icons[ministry] || '📋';
+}
+function getMinistryClass(ministry) {
+  const map = {
+    'แรงงาน': 'ministry-แรงงาน', 'อุตสาหกรรม': 'ministry-อุตสาหกรรม', 'สาธารณสุข': 'ministry-สาธารณสุข',
+    'พลังงาน': 'ministry-พลังงาน', 'มหาดไทย': 'ministry-มหาดไทย'
+  };
+  return map[ministry] || 'ministry-ไม่ระบุ';
+}
+
+function renderDonut(segments, centerLabel, centerValue) {
+  const total = segments.reduce((s, x) => s + x.value, 0) || 1;
+  const r = 54, cx = 64, cy = 64, circumference = 2 * Math.PI * r;
+  let offset = 0;
+  const circles = segments.map(seg => {
+    const frac = seg.value / total;
+    const dash = frac * circumference;
+    const gap = circumference - dash;
+    const circle = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="18"
+      stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += dash;
+    return circle;
+  }).join("");
+  return `
+  <svg viewBox="0 0 128 128" width="148" height="148">
+    ${circles}
+    <text x="64" y="60" text-anchor="middle" font-size="22" font-weight="800" fill="#0B2545" font-family="Kanit,Sarabun">${centerValue}</text>
+    <text x="64" y="78" text-anchor="middle" font-size="10.5" fill="#647187" font-family="Sarabun">${centerLabel}</text>
+  </svg>`;
+}
+
+// ============ API ============
+async function fetchWithRetry(url, options = {}, retries = CONFIG.RETRY) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeout);
+      return response;
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+    }
+  }
+}
+
+async function fetchSheetData(sheetName) {
+  const qs = new URLSearchParams({ sheet: sheetName });
+  const url = `${CONFIG.APPS_SCRIPT_URL}?${qs.toString()}`;
+  const response = await fetchWithRetry(url);
+  const text = await response.text();
+  let json;
+  try { json = JSON.parse(text); } catch { throw new Error(`Server error: ${text.slice(0, 100)}`); }
+  if (json.error) throw new Error(json.error);
+  return json.rows || [];
+}
+
+async function postToSheet(payload) {
+  try {
+    const response = await fetchWithRetry(CONFIG.APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload)
+    });
+    const text = await response.text();
+    let json;
+    try { json = JSON.parse(text); } catch { throw new Error(`Server error: ${text.slice(0, 100)}`); }
+    if (json.error) throw new Error(json.error);
+    return json;
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('เชื่อมต่อ timeout');
+    throw err;
+  }
+}
+
+const addSheetRow    = (data)             => postToSheet({ action: "add",    sheet: CONFIG.SHEET, data });
+const updateSheetRow = (rowIndex, data)   => postToSheet({ action: "update", sheet: CONFIG.SHEET, rowIndex, data });
+const deleteSheetRow = (rowIndex)         => postToSheet({ action: "delete", sheet: CONFIG.SHEET, rowIndex });
+
+// ============ Form ============
+function renderRegFormFields() {
+  document.getElementById("regFieldGrid").innerHTML = REG_SCHEMA.fields.map(f => {
+    let inputHtml;
+    if (f.type === "select") {
+      inputHtml = `<select id="rf_${f.key}"><option value="">-- เลือก --</option>${f.options.map(o => `<option value="${o}">${o}</option>`).join("")}</select>`;
+    } else if (f.type === "date") {
+      inputHtml = `<input id="rf_${f.key}" type="date">`;
+    } else if (f.type === "textarea") {
+      inputHtml = `<textarea id="rf_${f.key}"></textarea>`;
+    } else {
+      inputHtml = `<input id="rf_${f.key}" type="text">`;
+    }
+    return `
+      <div class="field${f.wide ? ' wide' : ''}">
+        <label for="rf_${f.key}">${f.label}${f.required ? ' <span style="color:red">*</span>' : ''}</label>
+        ${inputHtml}
+        <div class="error-msg" id="rerr_${f.key}">กรุณากรอกข้อมูล</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function validateRegForm() {
+  let isValid = true;
+  REG_SCHEMA.fields.forEach(f => {
+    const el = document.getElementById(`rf_${f.key}`);
+    const errEl = document.getElementById(`rerr_${f.key}`);
+    if (!el) return;
+    if (f.required && (!el.value || el.value.trim() === '')) {
+      el.classList.add('error');
+      if (errEl) errEl.style.display = 'block';
+      isValid = false;
+    } else {
+      el.classList.remove('error');
+      if (errEl) errEl.style.display = 'none';
+    }
+  });
+  return isValid;
+}
+
+function getRegFormData() {
+  const data = {};
+  REG_SCHEMA.fields.forEach(f => {
+    const el = document.getElementById(`rf_${f.key}`);
+    if (el) data[f.key] = el.value;
+  });
+  return data;
+}
+
+function resetRegForm() {
+  regEditingRowIndex = null;
+  document.getElementById("regFormTitle").textContent = "➕ เพิ่มรายการกฎหมายใหม่";
+  document.getElementById("regCancelEditBtn").style.display = "none";
+  REG_SCHEMA.fields.forEach(f => {
+    const el = document.getElementById(`rf_${f.key}`);
+    if (el) { el.value = ""; el.classList.remove('error'); }
+  });
+}
+
+function startRegEdit(row) {
+  regEditingRowIndex = row._rowIndex;
+  document.getElementById("regFormTitle").textContent = "✏️ แก้ไขรายการกฎหมาย";
+  document.getElementById("regCancelEditBtn").style.display = "inline-block";
+  REG_SCHEMA.fields.forEach(f => {
+    const el = document.getElementById(`rf_${f.key}`);
+    if (!el) return;
+    let val = row[f.key] !== undefined && row[f.key] !== null ? row[f.key] : "";
+    if (f.type === 'date' && val) {
+      const iso = toISODateString(val);
+      if (iso) val = iso;
+    }
+    el.value = val;
+    el.classList.remove('error');
+  });
+  document.querySelector(".form-card").scrollIntoView({ behavior: "smooth" });
+}
+
+function startRegEditBySeq(seq) {
+  const row = regRowsCache.find(r => (r["ลำดับ"] || "").toString().trim() === seq);
+  if (row) startRegEdit(row);
+}
+
+function startRegEditByIndex(rowIndex) {
+  const idx = Number(rowIndex);
+  const row = regRowsCache.find(r => r._rowIndex === idx);
+  if (row) startRegEdit(row);
+  else showToast('ไม่พบข้อมูลแถวนี้ กรุณารีเฟรชแล้วลองใหม่', true);
+}
+
+async function handleRegSave() {
+  if (!validateRegForm()) { showToast("กรุณากรอกข้อมูลให้ครบถ้วน", true); return; }
+  const data    = getRegFormData();
+  const saveBtn = document.getElementById("regSaveBtn");
+  saveBtn.disabled    = true;
+  saveBtn.textContent = "⏳ กำลังบันทึก...";
+  try {
+    if (regEditingRowIndex !== null) {
+      await updateSheetRow(regEditingRowIndex, data);
+      showToast("✅ แก้ไขข้อมูลสำเร็จ");
+    } else {
+      await addSheetRow(data);
+      showToast("✅ เพิ่มข้อมูลสำเร็จ");
+    }
+    resetRegForm();
+    await loadRegistrationData();
+  } catch (err) {
+    showToast(`❌ ${err.message}`, true);
+  } finally {
+    saveBtn.disabled    = false;
+    saveBtn.textContent = "💾 บันทึก";
+  }
+}
+
+async function handleRegDelete(rowIndex) {
+  if (!confirm("ยืนยันการลบข้อกำหนดนี้?")) return;
+  try {
+    await deleteSheetRow(rowIndex);
+    showToast("✅ ลบข้อมูลสำเร็จ");
+    await loadRegistrationData();
+  } catch (err) {
+    showToast(`❌ ${err.message}`, true);
+  }
+}
+
+async function handleRegDeleteBySeq(seq) {
+  const items = regRowsCache.filter(r => (r["ลำดับ"] || "").toString().trim() === seq);
+  if (!items.length) return;
+  if (!confirm(`ยืนยันการลบกฎหมาย ${seq} (${items.length} ข้อกำหนด) ทั้งหมด?`)) return;
+
+  // Delete from bottom of the sheet upward (highest _rowIndex first) so a
+  // deletion never shifts the row number of rows still queued for deletion.
+  const sortedItems = [...items].sort((a, b) => b._rowIndex - a._rowIndex);
+  try {
+    for (const item of sortedItems) {
+      await deleteSheetRow(item._rowIndex);
+    }
+    showToast(`✅ ลบกฎหมาย ${seq} เรียบร้อย (${items.length} ข้อกำหนด)`);
+    await loadRegistrationData();
+  } catch (err) {
+    showToast(`❌ ${err.message}`, true);
+    await loadRegistrationData();
+  }
+}
+
+// ============ Filters ============
+function populateRegFilterOptions(rows) {
+  const ministries = [...new Set(rows.map(r => (r["กระทรวง"] || "").trim()).filter(Boolean))].sort();
+  const owners     = [...new Set(rows.map(r => (r["ผู้รับผิดชอบ"] || "").trim()).filter(Boolean))].sort();
+  const sequences  = [...new Set(rows.map(r => (r["ลำดับ"] || "").toString().trim()).filter(Boolean))].sort((a, b) => {
+    const numA = parseInt(a), numB = parseInt(b);
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    return a.localeCompare(b);
+  });
+
+  const ministrySel = document.getElementById("regFilterMinistry");
+  const currentMinistry = ministrySel.value;
+  ministrySel.innerHTML = `<option value="">ทุกกระทรวง</option>` + ministries.map(m => `<option value="${m}">${m}</option>`).join("");
+  ministrySel.value = currentMinistry;
+
+  const ownerSel = document.getElementById("regFilterOwner");
+  const currentOwner = ownerSel.value;
+  ownerSel.innerHTML = `<option value="">ทุกผู้รับผิดชอบ</option>` + owners.map(o => `<option value="${o}">${o}</option>`).join("");
+  ownerSel.value = currentOwner;
+
+  const seqSel = document.getElementById("regFilterSeq");
+  const currentSeq = seqSel.value;
+  seqSel.innerHTML = `<option value="">ทุกลำดับ</option>` + sequences.map(s => `<option value="${s}">${s}</option>`).join("");
+  seqSel.value = currentSeq;
+}
+
+function applyRegFilter(rows) {
+  let result = rows;
+  if (regFilterState.ministry) result = result.filter(r => (r["กระทรวง"] || "").trim() === regFilterState.ministry);
+  if (regFilterState.owner)    result = result.filter(r => (r["ผู้รับผิดชอบ"] || "").trim() === regFilterState.owner);
+  if (regFilterState.result)   result = result.filter(r => {
+    const val = String(r["ผลการประเมิน"] || "").trim().toLowerCase();
+    return val === regFilterState.result.toLowerCase();
+  });
+  if (regFilterState.seq)      result = result.filter(r => (r["ลำดับ"] || "").toString().trim() === regFilterState.seq);
+  return result;
+}
+
+function groupRegRows(rows) {
+  const map = new Map();
+  rows.forEach(r => {
+    const seq = (r["ลำดับ"] || "").toString().trim();
+    const key = seq || `__no_seq_${r._rowIndex}`;
+    if (!map.has(key)) map.set(key, { seq, items: [] });
+    map.get(key).items.push(r);
+  });
+  return Array.from(map.values()).sort((a, b) => {
+    const numA = parseInt(a.seq), numB = parseInt(b.seq);
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    return a.seq.localeCompare(b.seq);
+  });
+}
+
+function renderMinistryFilter() {
+  const container = document.getElementById('regMinistryFilterContainer');
+  if (!container) return;
+  const counts = {};
+  regRowsCache.forEach(r => {
+    const m = (r["กระทรวง"] || "").trim() || 'ไม่ระบุ';
+    counts[m] = (counts[m] || 0) + 1;
+  });
+  const ministries = Object.keys(counts).sort();
+  container.innerHTML = `
+    <div class="ministry-filter-group">
+      <button class="filter-chip active" data-ministry="">🏛️ ทั้งหมด <span class="chip-count">${regRowsCache.length}</span></button>
+      ${ministries.map(m => `
+        <button class="filter-chip" data-ministry="${m}">${getMinistryIcon(m)} ${m} <span class="chip-count">${counts[m]}</span></button>
+      `).join("")}
+    </div>
+  `;
+  container.querySelectorAll('.filter-chip').forEach(btn => {
+    btn.addEventListener('click', function () {
+      container.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const ministry = this.dataset.ministry;
+      document.getElementById('regFilterMinistry').value = ministry;
+      regFilterState.ministry = ministry;
+      const searchBox = document.getElementById('regQuickSearch');
+      if (searchBox) searchBox.value = '';
+      renderRegList();
+    });
+  });
+}
+
+// ============ Summary (KPI + donut + ministry chart) ============
+function renderRegSummary(rows) {
+  const kpiGrid    = document.getElementById("regKpiGrid");
+  const donutEl    = document.getElementById("regDonut");
+  const donutTot   = document.getElementById("regDonutTotal");
+  const ministryEl = document.getElementById("regMinistryChart");
+
+  if (!rows.length) {
+    kpiGrid.innerHTML = `<div class="skeleton-row">❌ ยังไม่มีข้อมูลในทะเบียนกฎหมาย</div>`;
+    donutEl.innerHTML = "";
+    ministryEl.innerHTML = "";
+    return;
+  }
+
+  const total = rows.length;
+  const uniqueLaws = new Set(rows.map(r => (r["ลำดับ"] || "").toString().trim()).filter(Boolean)).size || total;
+
+  const normResult = (v) => {
+    const s = String(v || "").trim().toLowerCase();
+    if (s === "yes" || s.includes("ผ่าน")) return "yes";
+    if (s === "no"  || s.includes("ไม่ผ่าน")) return "no";
+    return "na";
+  };
+  const counts = { yes: 0, no: 0, na: 0 };
+  rows.forEach(r => counts[normResult(r["ผลการประเมิน"])]++);
+  const compliancePct = total ? Math.round((counts.yes / total) * 100) : 0;
+
+  const cards = [
+    { label: "ข้อกำหนดทั้งหมด",    value: total,     icon: "📜", status: "good", subtitle: `${uniqueLaws} ฉบับ` },
+    { label: "ผ่านการประเมิน",     value: counts.yes, icon: "✅", status: counts.yes > 0 ? "good" : "warn", subtitle: `${compliancePct}%` },
+    { label: "ไม่ผ่านการประเมิน",  value: counts.no,  icon: "❌", status: counts.no > 0 ? "bad" : "good", subtitle: counts.no > 0 ? 'ต้องดำเนินการ' : 'ไม่มี' },
+    { label: "รอประเมิน (NA)",     value: counts.na,  icon: "⏳", status: counts.na > 0 ? "warn" : "good", subtitle: 'ยังไม่ประเมิน' },
+  ];
+
+  kpiGrid.innerHTML = cards.map(c => `
+    <div class="kpi-card status-${c.status}">
+      <div class="kpi-icon">${c.icon}</div>
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${formatNum(c.value)}</div>
+      <div class="kpi-meta"><span class="target">${c.subtitle}</span></div>
+    </div>
+  `).join("");
+
+  if (donutTot) donutTot.textContent = `${total} รายการ`;
+  donutEl.innerHTML = `
+    <div class="donut-wrap">
+      ${renderDonut([
+        { value: counts.yes, color: "#2E8B57" },
+        { value: counts.no, color: "#C23B3B" },
+        { value: counts.na, color: "#9AA7B8" }
+      ], "ทั้งหมด", total)}
+      <div class="donut-legend">
+        <div class="donut-legend-item"><span class="sw" style="background:#2E8B57"></span>Yes (ผ่าน) <b>${counts.yes} รายการ</b></div>
+        <div class="donut-legend-item"><span class="sw" style="background:#C23B3B"></span>No (ไม่ผ่าน) <b>${counts.no} รายการ</b></div>
+        ${counts.na ? `<div class="donut-legend-item"><span class="sw" style="background:#9AA7B8"></span>NA (ไม่ระบุ) <b>${counts.na} รายการ</b></div>` : ''}
+      </div>
+    </div>
+  `;
+
+  const byMinistry = {};
+  rows.forEach(r => {
+    const m = (r["กระทรวง"] || "ไม่ระบุ").trim() || "ไม่ระบุ";
+    byMinistry[m] = (byMinistry[m] || 0) + 1;
+  });
+  const entries = Object.entries(byMinistry).sort((a, b) => b[1] - a[1]);
+  const maxVal = Math.max(...entries.map(e => e[1]), 1);
+  const palette = ["blue", "green", "amber", "purple", "red"];
+  ministryEl.innerHTML = entries.map(([label, value], i) => `
+    <div class="bar-item">
+      <span class="bar-label">${getMinistryIcon(label)} ${escapeHtml(label)}</span>
+      <div class="bar-track">
+        <div class="bar-fill ${palette[i % palette.length]}" style="width:${(value / maxVal) * 100}%">${value > 0 ? value : ''}</div>
+      </div>
+      <span class="bar-value">${value}</span>
+    </div>
+  `).join("");
+}
+
+// ============ Classic registry table (matches the printed register layout) ============
+function renderRegList() {
+  const tbody   = document.getElementById("regList");
+  const countEl = document.getElementById("regTableCount");
+
+  const filteredRows = applyRegFilter(regRowsCache);
+  const groups = groupRegRows(filteredRows);
+
+  if (countEl) {
+    countEl.innerHTML = `
+      <div class="reg-row-count">
+        <span>📋 ทะเบียนกฎหมาย</span>
+        <span class="count-badge">${groups.length} ฉบับ</span>
+        <span>·</span>
+        <span>ข้อกำหนดทั้งหมด</span>
+        <span class="count-badge">${filteredRows.length} ข้อ</span>
+      </div>
+    `;
+  }
+
+  if (!groups.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="11">
+          <div class="empty-state">
+            <div class="icon">🔍</div>
+            <div>ไม่พบข้อมูลตามตัวกรองที่เลือก</div>
+            <div style="font-size:12px;margin-top:6px;">ลองปรับตัวกรองหรือค้นหาด้วยคำอื่น</div>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = groups.map(({ seq, items }) => {
+    const escapedSeq = String(seq ?? "").replace(/"/g, '&quot;');
+    const first = items[0];
+    const ministry = first["กระทรวง"] || "ไม่ระบุ";
+    const ministryClass = getMinistryClass(ministry);
+    const ministryIcon  = getMinistryIcon(ministry);
+    const lawName  = first["ชื่อกฎหมาย"] || "-";
+    const lawDate  = first["วันที่ประกาศ"] || "";
+    const dateDisplay = lawDate ? formatDateThai(lawDate) : "-";
+    const rowspan = items.length;
+
+    return items.map((it, idx) => {
+      const detail = it["รายละเอียดข้อกำหนดกฎหมาย"] || "-";
+      const note   = it["หมายเหตุ"] || "";
+      const isFirst = idx === 0;
+
+      return `
+        <tr class="reg-group-row${isFirst ? ' reg-group-first' : ''}" data-seq="${escapedSeq}">
+          ${isFirst ? `
+            <td class="center" rowspan="${rowspan}">
+              <div class="law-group-actions">
+                <span class="law-seq-badge">${escapeHtml(seq || "-")}</span>
+                <div class="group-btns">
+                  <button class="icon-btn edit" onclick="startRegEditBySeq('${escapedSeq}')" title="แก้ไขฉบับ (ข้อแรก)">✏️</button>
+                  <button class="icon-btn delete" onclick="handleRegDeleteBySeq('${escapedSeq}')" title="ลบทั้งฉบับ">🗑️</button>
+                </div>
+              </div>
+            </td>
+            <td rowspan="${rowspan}"><span class="ministry-pill ${ministryClass}">${ministryIcon} ${escapeHtml(ministry)}</span></td>
+            <td rowspan="${rowspan}"><span class="law-name-cell">${escapeHtml(lawName)}</span></td>
+            <td class="center" rowspan="${rowspan}">${dateDisplay}</td>
+          ` : ``}
+          <td>${escapeHtml(detail)}</td>
+          <td class="center">${escapeHtml(it["ความถี่"] || "-")}</td>
+          <td class="center">${escapeHtml(it["กำหนดการ"] || "-")}</td>
+          <td class="center">${evalBadge(it["ผลการประเมิน"])}</td>
+          <td>${escapeHtml(it["ผู้รับผิดชอบ"] || "-")}</td>
+          <td>${note ? escapeHtml(note) : "-"}</td>
+          <td class="center">
+            <div class="table-actions">
+              <button class="icon-btn edit" onclick="startRegEditByIndex(${it._rowIndex})" title="แก้ไข">✏️</button>
+              <button class="icon-btn delete" onclick="handleRegDelete(${it._rowIndex})" title="ลบ">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }).join("");
+}
+
+// ============ Quick search ============
+function setupQuickSearch() {
+  const searchInput = document.getElementById('regQuickSearch');
+  if (!searchInput) return;
+  let searchTimeout;
+  searchInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      filterRegBySearch(e.target.value.trim().toLowerCase());
+    }, 300);
+  });
+}
+
+function filterRegBySearch(searchTerm) {
+  renderRegList();
+  if (!searchTerm) return;
+
+  const rows = document.querySelectorAll('#regList tr.reg-group-row');
+  const seqTextMap = new Map();
+  rows.forEach(row => {
+    const seq = row.dataset.seq;
+    const prev = seqTextMap.get(seq) || '';
+    seqTextMap.set(seq, prev + ' ' + row.textContent.toLowerCase());
+  });
+
+  const matchedSeqs = new Set();
+  seqTextMap.forEach((text, seq) => { if (text.includes(searchTerm)) matchedSeqs.add(seq); });
+
+  rows.forEach(row => {
+    row.style.display = matchedSeqs.has(row.dataset.seq) ? '' : 'none';
+  });
+
+  const countEl = document.getElementById("regTableCount");
+  if (countEl) {
+    countEl.innerHTML = `
+      <div class="reg-row-count">
+        <span>🔍 ค้นหา: "${escapeHtml(searchTerm)}"</span>
+        <span class="count-badge">${matchedSeqs.size} จาก ${seqTextMap.size} ฉบับ</span>
+      </div>
+    `;
+  }
+}
+
+// ============ Load ============
+async function loadRegistrationData() {
+  const kpiGrid  = document.getElementById("regKpiGrid");
+  const listBody = document.getElementById("regList");
+  showLoading(kpiGrid);
+  listBody.innerHTML = `<tr><td colspan="11" class="skeleton-row">⏳ กำลังโหลด...</td></tr>`;
+  try {
+    regRowsCache = await fetchSheetData(CONFIG.SHEET);
+    populateRegFilterOptions(regRowsCache);
+    renderMinistryFilter();
+    renderRegSummary(regRowsCache);
+    renderRegList();
+  } catch (err) {
+    kpiGrid.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
+    document.getElementById("regDonut").innerHTML = "";
+    document.getElementById("regMinistryChart").innerHTML = "";
+    listBody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="icon">⚠️</div><div>${escapeHtml(err.message)}</div></div></td></tr>`;
+  }
+}
+
+// ============ Init ============
+function init() {
+  renderRegFormFields();
+  document.getElementById("regSaveBtn").addEventListener("click", handleRegSave);
+  document.getElementById("regCancelEditBtn").addEventListener("click", resetRegForm);
+
+  document.getElementById("regClearFilterBtn").addEventListener("click", () => {
+    document.getElementById("regFilterMinistry").value = "";
+    document.getElementById("regFilterResult").value = "";
+    document.getElementById("regFilterOwner").value = "";
+    document.getElementById("regFilterSeq").value = "";
+    document.getElementById("regQuickSearch").value = "";
+    regFilterState.ministry = ""; regFilterState.result = ""; regFilterState.owner = ""; regFilterState.seq = "";
+    const chips = document.querySelectorAll('#regMinistryFilterContainer .filter-chip');
+    chips.forEach(chip => chip.classList.remove('active'));
+    const allChip = document.querySelector('#regMinistryFilterContainer .filter-chip[data-ministry=""]');
+    if (allChip) allChip.classList.add('active');
+    renderRegList();
+  });
+
+  ["regFilterMinistry", "regFilterResult", "regFilterOwner", "regFilterSeq"].forEach(id => {
+    document.getElementById(id).addEventListener("change", (e) => {
+      const map = { regFilterMinistry: "ministry", regFilterResult: "result", regFilterOwner: "owner", regFilterSeq: "seq" };
+      regFilterState[map[id]] = e.target.value;
+      document.getElementById("regQuickSearch").value = "";
+      if (id === 'regFilterMinistry') {
+        document.querySelectorAll('#regMinistryFilterContainer .filter-chip').forEach(chip => {
+          chip.classList.toggle('active', chip.dataset.ministry === e.target.value);
+        });
+      }
+      renderRegList();
+    });
+  });
+
+  setupQuickSearch();
+  document.getElementById("regClearSearchBtn").addEventListener("click", () => {
+    document.getElementById("regQuickSearch").value = "";
+    renderRegList();
+  });
+
+  document.getElementById("refreshBtn").addEventListener("click", () => {
+    loadRegistrationData();
+    showToast("🔄 รีเฟรชข้อมูลแล้ว");
+  });
+
+  loadRegistrationData();
+}
+
+document.addEventListener("DOMContentLoaded", init);
+
+console.log('✅ Registration Laws and Safety page loaded! (classic table layout)');
+</script>
+</body>
+</html>
