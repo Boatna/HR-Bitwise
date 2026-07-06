@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="auth.js"></script>
     <script src="config.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -233,6 +234,7 @@
         <a href="leave.html"     class="nav-btn">📅 บันทึกการลา</a>
         <a href="dashboard.html" class="nav-btn active">📈 Dashboard</a>
         <a href="employees.html" class="nav-btn">👥 จัดการพนักงาน</a>
+        <button onclick="HR_AUTH.logout()" class="nav-btn" style="cursor:pointer;">🚪 ออกจากระบบ</button>
     </div>
 </nav>
 
@@ -724,7 +726,10 @@ function renderManpower(emps, targets) {
     setText('valMpTarget', totalTarget > 0 ? Math.round(totalTarget) : '—');
 
     const empTotal = emps.length;
-    let thaiMale=0, thaiFemale=0, myanmarMale=0, myanmarFemale=0, genderUnknown=0;
+    // BUG FIX: เดิมพนักงานสัญชาติอื่น (ลาว/กัมพูชา/เวียดนาม/อื่นๆ) ไม่ถูกนับที่ไหนเลย
+    // (มี else if ไทย/พม่า แต่ไม่มี else) ทำให้ thais+myanmars < headcount จริง
+    // และกราฟโดนัทไม่ครบ 100% แก้โดยเพิ่ม bucket "อื่นๆ" ให้ครอบคลุมทุกคน
+    let thaiMale=0, thaiFemale=0, myanmarMale=0, myanmarFemale=0, otherNatMale=0, otherNatFemale=0, genderUnknown=0;
     emps.forEach(e => {
         const gender = getGender(e);
         const nat    = String(e['สัญชาติ'] || 'อื่นๆ').trim();
@@ -733,11 +738,14 @@ function renderManpower(emps, targets) {
             gender === 'ชาย' ? thaiMale++ : thaiFemale++;
         } else if (nat === 'พม่า') {
             gender === 'ชาย' ? myanmarMale++ : myanmarFemale++;
+        } else {
+            gender === 'ชาย' ? otherNatMale++ : otherNatFemale++;
         }
     });
 
     const thais    = thaiMale + thaiFemale;
     const myanmars = myanmarMale + myanmarFemale;
+    const others   = otherNatMale + otherNatFemale;
     const pct = (n) => empTotal > 0 ? ((n/empTotal)*100).toFixed(1)+'%' : '—';
 
     setText('valThaiMale',         thaiMale);
@@ -754,7 +762,12 @@ function renderManpower(emps, targets) {
     const guWrap = document.getElementById('genderUnknownWrap');
     if (guWrap) guWrap.style.display = genderUnknown > 0 ? 'block' : 'none';
 
-    drawDonut('wfNatPie', ['🇹🇭 ไทย','🇲🇲 พม่า'], [thais, myanmars], [COLORS.orange, COLORS.purple]);
+    // BUG FIX: รวม "อื่นๆ" เข้ากราฟ เพื่อให้ thais+myanmars+others+genderUnknown = empTotal เสมอ
+    if (others > 0) {
+        drawDonut('wfNatPie', ['🇹🇭 ไทย','🇲🇲 พม่า','🌏 อื่นๆ'], [thais, myanmars, others], [COLORS.orange, COLORS.purple, COLORS.teal]);
+    } else {
+        drawDonut('wfNatPie', ['🇹🇭 ไทย','🇲🇲 พม่า'], [thais, myanmars], [COLORS.orange, COLORS.purple]);
+    }
 
     drawTargetStackedBar(targets, emps);
 
@@ -841,15 +854,26 @@ function drawTargetStackedBar(targets, emps) {
     if (noData) noData.style.display = 'none';
     if (legend) legend.style.display = 'flex';
 
-    const deptCount = {};
+    // BUG FIX: เดิม group ตาม "ชื่อแผนก" อย่างเดียว ถ้ามี 2 Plant ที่มีแผนกชื่อเดียวกัน
+    // (เช่น Production ที่ Plant 1 และ Plant 2) actual ของทั้ง 2 แท่งจะถูกรวมปนกันผิดๆ
+    // แก้: ใช้ key = "แผนก::Plant" เพื่อแยกนับให้ตรงกับแต่ละแถวใน ManpowerTarget จริง
+    function keyOf(dept, plant) {
+        return `${String(dept||'').trim().toLowerCase()}::${String(plant||'').trim().toLowerCase()}`;
+    }
+
+    const deptPlantCount = {};
     (emps || []).forEach(e => {
-        const d = String(e['แผนก'] || 'ไม่ระบุ').trim().toLowerCase();
-        deptCount[d] = (deptCount[d] || 0) + 1;
+        const k = keyOf(e['แผนก'] || 'ไม่ระบุ', e['Plant'] || '');
+        deptPlantCount[k] = (deptPlantCount[k] || 0) + 1;
     });
 
     const sorted  = [...validTargets].sort((a,b) => getTargetValue(b) - getTargetValue(a));
-    const labels  = sorted.map(t => String(t['แผนก']).trim());
-    const actuals = sorted.map(t => deptCount[String(t['แผนก']).trim().toLowerCase()] || 0);
+    const labels  = sorted.map(t => {
+        const dept  = String(t['แผนก']).trim();
+        const plant = String(t['Plant']||'').trim();
+        return plant ? `${dept} (${plant})` : dept;
+    });
+    const actuals = sorted.map(t => deptPlantCount[keyOf(t['แผนก'], t['Plant'])] || 0);
     const tgts    = sorted.map(t => Math.round(getTargetValue(t)));
     const gaps    = actuals.map((a, i) => Math.max(0, tgts[i] - a));
 

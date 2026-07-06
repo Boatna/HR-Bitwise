@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>HR Dashboard · Bitwise Group</title>
+<script src="auth.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -322,10 +323,16 @@ footer {
       <span class="brand-sub">Bitwise Group</span>
     </div>
   </a>
-  <a href="Menu.html" class="nav-cta">
-    <span>🗂️</span>
-    <span class="cta-text">เมนูกรอกข้อมูล</span>
-  </a>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <a href="Menu.html" class="nav-cta">
+      <span>🗂️</span>
+      <span class="cta-text">เมนูกรอกข้อมูล</span>
+    </a>
+    <button onclick="HR_AUTH.logout()" class="nav-cta" style="background:transparent;color:var(--text2);border:1.5px solid var(--line2);box-shadow:none;cursor:pointer;">
+      <span>🚪</span>
+      <span class="cta-text">ออกจากระบบ</span>
+    </button>
+  </div>
 </nav>
 
 <section class="hero">
@@ -357,7 +364,6 @@ footer {
       <div class="dc-info"><div class="dc-title">Dashboard HR Manpower and Resign</div><div class="dc-sub">วิเคราะห์ แสดงข้อมูลกำลังคนและการลาออก</div></div>
       <span class="dc-badge">Live</span><span class="dc-arrow">→</span>
     </a>
-    <div class="hero-right">
     <a href="https://script.google.com/macros/s/AKfycbwPCmuDRnq-Fsy59qXuK5Chm19moPZ94G5hLzp9pGyy6bPeX-KXS1ZHBlcnrkfFhmAoqg/exec" class="dash-card">
       <div class="dc-icon">🏥</div>
       <div class="dc-info"><div class="dc-title">Dashboard ห้องพยาบาล</div><div class="dc-sub">สถิติการใช้บริการ</div></div>
@@ -373,7 +379,6 @@ footer {
       <div class="dc-info"><div class="dc-title">Dashboard วินัย</div><div class="dc-sub">บันทึกการลงโทษทางวินัย</div></div>
       <span class="dc-badge">Live</span><span class="dc-arrow">→</span>
     </a>
-    <div class="hero-right">
     <a href="safety-DB.html" class="dash-card">
       <div class="dc-icon">📈</div>
       <div class="dc-info"><div class="dc-title">Dashboard Safety</div><div class="dc-sub">วิเคราะห์ แสดงข้อมูลปลอดภัยในโรงงาน</div></div>

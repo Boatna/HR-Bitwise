@@ -1,5 +1,5 @@
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbz88CDRWN587TPvtdfUTc3RiCtemSZL91yHEXDCsBqP2IAKM6PZTc5fpIdksgUeGg_o/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzP53BzlaDEJI0JP3sZDrqFmWTj0smku_qFceX4IUeMkbYUkfZF0OCtb7QeK1Wbv3nH/exec",
   EMP_DOB_FIELD: 'วันเกิด/DOB',
 
   LEAVE_REASONS: [

@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>เมนูกรอกข้อมูล · Bitwise Group</title>
+<script src="auth.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -217,9 +218,14 @@ footer {
       <span class="brand-sub">Bitwise Group</span>
     </div>
   </a>
-  <a href="index.html" class="nav-back">
-    ← <span class="back-text">กลับหน้าหลัก</span>
-  </a>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <a href="index.html" class="nav-back">
+      ← <span class="back-text">กลับหน้าหลัก</span>
+    </a>
+    <button onclick="HR_AUTH.logout()" class="nav-back" style="cursor:pointer;">
+      🚪 <span class="back-text">ออกจากระบบ</span>
+    </button>
+  </div>
 </nav>
 
 <main>

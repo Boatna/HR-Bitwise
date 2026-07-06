@@ -148,6 +148,15 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .btn-outline:hover { background: var(--blue2); color: white; }
 .btn-danger { background: var(--red); color: white; }
 .btn-danger:hover { background: #a83232; }
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
 
 .pillars {
   background: rgba(0,0,0,0.18);
@@ -171,7 +180,8 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   margin-bottom: 14px;
 }
 .section-num {
-  width: 34px; height: 34px; border-radius: 10px;
+  width: 34px; height: 34px;
+  border-radius: 10px;
   background: var(--blue2);
   color: white;
   display: flex; align-items: center; justify-content: center;
@@ -360,11 +370,14 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .data-table th:first-child { border-radius: 8px 0 0 8px; }
 .data-table th:last-child { border-radius: 0 8px 8px 0; }
 .data-table tbody tr:hover { background: var(--bg); }
-.data-table .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.data-table .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .data-table .row-actions button { border: none; background: none; cursor: pointer; font-size: 13px; padding: 4px 10px; border-radius: 6px; transition: background 0.2s; font-family: inherit; }
 .data-table .row-actions .edit-btn { color: var(--blue); }
+.data-table .row-actions .edit-btn:hover { background: var(--blue-light); }
 .data-table .row-actions .delete-btn { color: var(--red); }
-.data-table .row-actions button:hover { background: var(--bg); }
+.data-table .row-actions .delete-btn:hover { background: var(--red-light); }
+.data-table .row-actions .view-btn { color: var(--text-muted); }
+.data-table .row-actions .view-btn:hover { background: var(--bg); }
 
 .badge { display: inline-block; padding: 4px 13px; border-radius: 999px; font-size: 12px; font-weight: 700; }
 .badge-good { background: var(--green-light); color: var(--green-dark); }
@@ -419,60 +432,357 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .cell-truncate { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cell-truncate:hover { white-space: normal; overflow: visible; }
 
-#regTable { table-layout: fixed; font-size: 12.5px; border-collapse: separate; border-spacing: 0; }
-#regTable th, #regTable td { padding: 10px 12px; }
-#regTable thead th {
-  position: sticky; top: 0; z-index: 2;
-  box-shadow: 0 2px 6px rgba(29,111,204,0.10);
+/* ============ Registration Law Table ============ */
+.reg-table-wrapper {
+  max-height: 75vh;
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  position: relative;
+  background: white;
 }
-#regTable tbody tr { transition: background 0.15s; cursor: pointer; }
-#regTable tbody tr:nth-child(even) { background: #F7FAFF; }
-#regTable tbody tr:hover { background: var(--blue-light); }
-#regTable td.reg-truncate {
-  max-width: 0;
+
+.reg-table-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.reg-table-wrapper::-webkit-scrollbar-track {
+  background: var(--bg);
+  border-radius: 10px;
+}
+.reg-table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--blue3);
+  border-radius: 10px;
+}
+.reg-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--blue2);
+}
+
+/* ============ Table Styles ============ */
+#regTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  table-layout: fixed;
+}
+
+#regTable thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+#regTable thead th {
+  background: var(--navy-deep);
+  color: white;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 3px solid var(--blue3);
+}
+
+#regTable thead th:first-child { border-radius: 8px 0 0 0; }
+#regTable thead th:last-child { border-radius: 0 8px 0 0; }
+
+/* Column Widths */
+#regTable .col-seq { width: 6%; min-width: 55px; }
+#regTable .col-ministry { width: 8%; min-width: 80px; }
+#regTable .col-law { width: 14%; min-width: 140px; }
+#regTable .col-date { width: 8%; min-width: 80px; }
+#regTable .col-detail { width: 20%; min-width: 180px; }
+#regTable .col-frequency { width: 7%; min-width: 65px; }
+#regTable .col-schedule { width: 6%; min-width: 55px; }
+#regTable .col-result { width: 8%; min-width: 70px; }
+#regTable .col-responsible { width: 9%; min-width: 80px; }
+#regTable .col-actions { width: 8%; min-width: 90px; }
+
+/* Row Styles */
+#regTable tbody tr.law-group {
+  border-bottom: 2px solid var(--border);
+}
+#regTable tbody tr.law-group:last-child {
+  border-bottom: none;
+}
+#regTable tbody tr.law-group .group-row {
+  background: var(--blue-light);
+}
+#regTable tbody tr.law-group .group-row:hover {
+  background: #D6E8FF;
+}
+#regTable tbody tr.requirement-row {
+  background: white;
+}
+#regTable tbody tr.requirement-row:hover {
+  background: var(--bg);
+}
+#regTable tbody tr.requirement-row td {
+  padding: 8px 12px 8px 24px;
+  border-bottom: 1px dashed var(--border);
+}
+#regTable tbody tr.requirement-row:last-child td {
+  border-bottom: none;
+}
+#regTable tbody tr.requirement-row .req-number {
+  font-weight: 700;
+  color: var(--blue2);
+  display: inline-block;
+  min-width: 30px;
+  font-size: 12px;
+}
+#regTable tbody tr.requirement-row .req-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+  display: block;
+}
+#regTable tbody tr.requirement-row .req-text .truncate {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  line-clamp: 2;
+}
+#regTable tbody tr.requirement-row .req-text .full-text {
+  display: none;
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+#regTable tbody tr.requirement-row .req-text .show-more-btn {
+  color: var(--blue2);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+#regTable tbody tr.requirement-row .req-text .show-more-btn:hover {
+  background: var(--blue-light);
+}
+
+/* ============ Group Row Styles ============ */
+.group-row td {
+  padding: 10px 12px;
+  vertical-align: middle;
+  border-bottom: 2px solid var(--blue2);
+}
+.group-row .law-seq {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--blue2);
+  font-family: 'DM Mono', monospace;
+  background: white;
+  padding: 2px 10px;
+  border-radius: 6px;
+  display: inline-block;
+  border: 1.5px solid var(--blue2);
+}
+.group-row .law-title {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--navy-deep);
+}
+.group-row .law-ministry {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.group-row .law-ministry.ministry-แรงงาน { background: #EBF3FF; color: #1D6FCC; }
+.group-row .law-ministry.ministry-อุตสาหกรรม { background: #E6F4EA; color: #2E8B57; }
+.group-row .law-ministry.ministry-สาธารณสุข { background: #FBEAEA; color: #C23B3B; }
+.group-row .law-ministry.ministry-พลังงาน { background: #FCF1D8; color: #E0A106; }
+.group-row .law-ministry.ministry-มหาดไทย { background: #F0EBFF; color: #7B61FF; }
+.group-row .law-ministry.ministry-ไม่ระบุ { background: #F0F0F0; color: #888; }
+
+.group-row .law-date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.group-row .law-stats {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.group-row .law-stats .stat-badge {
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
   white-space: nowrap;
 }
-#regTable .row-actions { display: flex; gap: 4px; flex-wrap: wrap; cursor: default; }
-#regTable .row-actions button { padding: 5px 9px; font-size: 12px; border-radius: 6px; }
-#regTable .view-btn { color: var(--navy-2); }
-#regTable .seq-chip {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 30px; padding: 3px 9px;
-  background: var(--navy-deep); color: white;
-  border-radius: 999px; font-weight: 800; font-size: 11.5px;
-  font-family: 'DM Mono', monospace;
+.group-row .law-stats .stat-badge.total {
+  background: var(--blue-light);
+  color: var(--blue);
 }
-.ministry-chip {
-  display: inline-block; padding: 4px 11px; border-radius: 999px;
-  font-size: 11.5px; font-weight: 700; background: var(--blue-light); color: var(--blue);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+.group-row .law-stats .stat-badge.yes {
+  background: var(--green-light);
+  color: var(--green-dark);
 }
-.reg-search-wrap { position: relative; flex: 1; min-width: 220px; max-width: 340px; }
-.reg-search-wrap input {
-  width: 100%; padding: 10px 16px 10px 38px;
-  border: 1px solid var(--border); border-radius: 999px;
-  font-size: 13.5px; font-family: inherit; background: var(--bg);
+.group-row .law-stats .stat-badge.no {
+  background: var(--red-light);
+  color: var(--red);
+}
+.group-row .law-stats .stat-badge.na {
+  background: #F0F0F0;
+  color: #888;
+}
+
+/* ============ Result Badges ============ */
+.result-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.result-badge.yes {
+  background: var(--green-light);
+  color: var(--green-dark);
+}
+.result-badge.no {
+  background: var(--red-light);
+  color: var(--red);
+}
+.result-badge.na {
+  background: #F0F0F0;
+  color: #888;
+}
+
+/* ============ Action Buttons ============ */
+.row-actions .btn-sm {
+  padding: 4px 10px;
+  font-size: 11.5px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
   transition: all 0.2s;
 }
-.reg-search-wrap input:focus {
-  outline: none; border-color: var(--blue); background: white;
+.row-actions .btn-sm.btn-edit {
+  background: var(--blue-light);
+  color: var(--blue);
+}
+.row-actions .btn-sm.btn-edit:hover {
+  background: var(--blue2);
+  color: white;
+}
+.row-actions .btn-sm.btn-delete {
+  background: var(--red-light);
+  color: var(--red);
+}
+.row-actions .btn-sm.btn-delete:hover {
+  background: var(--red);
+  color: white;
+}
+.row-actions .btn-sm.btn-view {
+  background: var(--bg);
+  color: var(--text-muted);
+}
+.row-actions .btn-sm.btn-view:hover {
+  background: var(--blue2);
+  color: white;
+}
+.row-actions .btn-sm.btn-expand {
+  background: var(--bg);
+  color: var(--blue);
+  border: 1px solid var(--border);
+}
+.row-actions .btn-sm.btn-expand:hover {
+  background: var(--blue-light);
+}
+
+/* ============ Reg Quick Search ============ */
+.reg-quick-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex: 1;
+  max-width: 400px;
+}
+.reg-quick-search input {
+  flex: 1;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  min-width: 200px;
+}
+.reg-quick-search input:focus {
+  outline: none;
+  border-color: var(--blue);
   box-shadow: 0 0 0 3px rgba(30,111,217,0.12);
 }
-.reg-search-wrap .search-icon {
-  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-  font-size: 13px; pointer-events: none; opacity: 0.6;
-}
-.reg-table-toolbar {
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 12px; margin-bottom: 16px;
-}
-.reg-empty-state {
-  text-align: center; padding: 40px 20px; color: var(--text-muted);
-}
-.reg-empty-state .emoji { font-size: 34px; display: block; margin-bottom: 10px; }
 
+.reg-row-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.reg-row-count .count-badge {
+  background: var(--blue-light);
+  color: var(--blue);
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* ============ Ministry Filter ============ */
+.ministry-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.ministry-filter-group .filter-chip {
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: white;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-muted);
+  font-family: inherit;
+}
+.ministry-filter-group .filter-chip:hover {
+  background: var(--blue-light);
+  border-color: var(--blue);
+}
+.ministry-filter-group .filter-chip.active {
+  background: var(--blue2);
+  color: white;
+  border-color: var(--blue2);
+}
+.ministry-filter-group .filter-chip .chip-count {
+  background: rgba(255,255,255,0.3);
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  margin-left: 4px;
+}
+.ministry-filter-group .filter-chip.active .chip-count {
+  background: rgba(255,255,255,0.2);
+}
+
+/* ============ Modal ============ */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(15,39,68,0.55);
   display: none; align-items: center; justify-content: center;
@@ -485,15 +795,23 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   box-shadow: var(--shadow-hover); border-top: 4px solid var(--blue2);
   padding: 28px 30px;
 }
-.modal-card h3 { margin: 0 0 16px 0; font-size: 16.5px; color: var(--navy-deep); display:flex; align-items:center; justify-content:space-between; gap:10px; }
-.modal-card .modal-close { border: none; background: var(--bg); color: var(--text-muted); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 15px; flex-shrink:0; }
+.modal-card h3 {
+  margin: 0 0 16px 0; font-size: 16.5px; color: var(--navy-deep);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.modal-card .modal-close {
+  border: none; background: var(--bg); color: var(--text-muted);
+  width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 15px; flex-shrink: 0;
+}
 .modal-card .modal-close:hover { background: var(--red-light); color: var(--red); }
 .modal-row { padding: 10px 0; border-bottom: 1px solid var(--border); }
 .modal-row:last-child { border-bottom: none; }
-.modal-row .modal-label { font-size: 11.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.modal-row .modal-label {
+  font-size: 11.5px; color: var(--text-muted); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+}
 .modal-row .modal-value { font-size: 14px; color: var(--text); white-space: pre-wrap; line-height: 1.6; }
 
-/* --- Registration Detail Modal --- */
 .law-header {
   display: flex;
   gap: 20px;
@@ -514,18 +832,14 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   font-family: 'DM Mono', monospace;
   white-space: nowrap;
 }
-.law-info {
-  flex: 1;
-}
+.law-info { flex: 1; }
 .law-title {
   font-size: 16px;
   font-weight: 700;
   color: var(--navy-deep);
   line-height: 1.5;
 }
-.law-requirements {
-  margin-top: 20px;
-}
+.law-requirements { margin-top: 20px; }
 .law-requirements h4 {
   font-size: 15px;
   color: var(--navy);
@@ -561,9 +875,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   flex-shrink: 0;
   margin-top: 2px;
 }
-.req-content {
-  flex: 1;
-}
+.req-content { flex: 1; }
 .req-detail {
   font-size: 14px;
   line-height: 1.7;
@@ -596,6 +908,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   border-left: 3px solid var(--amber);
 }
 
+/* ============ Page Footer ============ */
 .page-footer {
   text-align: center; padding: 28px;
   color: #B8D4F5; font-size: 14px; font-weight: 600;
@@ -603,8 +916,19 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   margin-top: 30px;
   border-top: 4px solid var(--blue3);
 }
-.page-footer .foot-row { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; margin-top: 10px; font-size: 12.5px; color: #D7E1EE; }
+.page-footer .foot-row {
+  display: flex; gap: 28px; justify-content: center; flex-wrap: wrap;
+  margin-top: 10px; font-size: 12.5px; color: #D7E1EE;
+}
 .page-footer .foot-row span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ============ Responsive ============ */
+@media (max-width: 1024px) {
+  #regTable { font-size: 12px; }
+  #regTable thead th { font-size: 10px; padding: 8px 10px; }
+  #regTable tbody tr.requirement-row td { padding: 6px 10px 6px 16px; }
+  .group-row td { padding: 8px 10px; }
+}
 
 @media (max-width: 768px) {
   .topbar-inner { flex-direction: column; align-items: center; text-align: center; }
@@ -621,7 +945,49 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   .law-code { font-size: 20px; align-self: flex-start; }
   .requirement-item { flex-direction: column; gap: 8px; }
   .req-meta { flex-direction: column; gap: 6px; }
+  .reg-table-wrapper { max-height: 50vh; }
+  
+  /* Mobile table -> card */
+  #regTable thead { display: none; }
+  #regTable tbody tr.law-group {
+    display: block;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  #regTable tbody tr.law-group .group-row {
+    display: block;
+    padding: 12px 14px;
+  }
+  #regTable tbody tr.law-group .group-row td {
+    display: block;
+    padding: 4px 0;
+    border: none;
+    width: 100% !important;
+    min-width: unset !important;
+  }
+  #regTable tbody tr.requirement-row {
+    display: block;
+    padding: 8px 14px;
+  }
+  #regTable tbody tr.requirement-row td {
+    display: block;
+    padding: 4px 0;
+    border: none;
+    width: 100% !important;
+    min-width: unset !important;
+  }
+  #regTable tbody tr.requirement-row td:before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 11px;
+    display: block;
+  }
+  .group-row .law-stats { margin-top: 6px; }
 }
+
 @media (max-width: 480px) {
   .kpi-grid { grid-template-columns: 1fr 1fr; }
   .bar-label { min-width: 80px; font-size: 12px; }
@@ -834,6 +1200,9 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
       </div>
     </div>
 
+    <!-- Ministry Filter Chips -->
+    <div id="regMinistryFilterContainer" style="margin-bottom: 16px;"></div>
+
     <div class="filter-bar">
       <div class="filter-field">
         <label for="regFilterMinistry">กระทรวง</label>
@@ -845,6 +1214,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
           <option value="">ทุกผล</option>
           <option value="Yes">Yes (ผ่าน)</option>
           <option value="No">No (ไม่ผ่าน)</option>
+          <option value="NA">NA (ไม่ระบุ)</option>
         </select>
       </div>
       <div class="filter-field">
@@ -870,8 +1240,29 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
     </div>
 
     <div class="panel">
-      <h3>📋 รายการทะเบียนกฎหมายทั้งหมด <span class="badge-count" id="regTableCount">—</span></h3>
-      <div style="overflow-x:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <h3 style="margin:0;">
+          📋 รายการทะเบียนกฎหมายทั้งหมด 
+          <span class="badge-count" id="regTableCount">—</span>
+        </h3>
+        <div class="reg-quick-search">
+          <input 
+            type="text" 
+            id="regQuickSearch" 
+            placeholder="🔍 ค้นหาด่วน (ชื่อกฎหมาย, กระทรวง, ผู้รับผิดชอบ...)" 
+            autocomplete="off"
+          />
+          <button 
+            class="btn btn-outline btn-sm" 
+            id="regClearSearchBtn"
+            style="padding:6px 12px;font-size:12px;white-space:nowrap;"
+          >
+            ✕ ล้าง
+          </button>
+        </div>
+      </div>
+      
+      <div class="reg-table-wrapper">
         <table class="data-table" id="regTable">
           <thead></thead>
           <tbody></tbody>
@@ -968,6 +1359,7 @@ const filterState = { year: "", month: "", plant: "" };
 const editFilterState = { year: "", month: "", plant: "" };
 const regFilterState = { ministry: "", result: "", owner: "", seq: "" };
 
+// ============ Helper Functions ============
 function formatNum(v) {
   if (v === undefined || v === null || v === "") return "-";
   const n = Number(v);
@@ -1054,9 +1446,9 @@ function riskBadge(level) {
 
 function evalBadge(result) {
   const s = String(result || "").trim().toLowerCase();
-  if (s === "yes" || s.includes("ผ่าน")) return `<span class="badge badge-good">✅ Yes</span>`;
-  if (s === "no"  || s.includes("ไม่ผ่าน")) return `<span class="badge badge-bad">❌ No</span>`;
-  return result || "-";
+  if (s === "yes" || s.includes("ผ่าน")) return `<span class="result-badge yes">✅ Yes</span>`;
+  if (s === "no"  || s.includes("ไม่ผ่าน")) return `<span class="result-badge no">❌ No</span>`;
+  return `<span class="result-badge na">NA</span>`;
 }
 
 function showToast(msg, isError = false) {
@@ -1071,6 +1463,7 @@ function showLoading(el) {
   el.innerHTML = `<div class="skeleton-row">⏳ กำลังโหลด...</div>`;
 }
 
+// ============ API Functions ============
 async function fetchWithRetry(url, options = {}, retries = CONFIG.RETRY) {
   for (let i = 0; i < retries; i++) {
     try {
@@ -1124,6 +1517,7 @@ const addSheetRow    = (sheet, data)             => postToSheet({ action: "add",
 const updateSheetRow = (sheet, rowIndex, data)   => postToSheet({ action: "update", sheet, rowIndex, data });
 const deleteSheetRow = (sheet, rowIndex)         => postToSheet({ action: "delete", sheet, rowIndex });
 
+// ============ Filter Functions ============
 function populatePlantOptions(selectEl) {
   selectEl.innerHTML = `<option value="">ทุก Plant</option>` +
     CONFIG.PLANTS.map(p => `<option value="${p}">${p}</option>`).join("");
@@ -1144,6 +1538,30 @@ function populateMonthOptions(selectEl) {
     }).join("");
 }
 
+function samePlant(a, b) {
+  if (a === undefined || a === null || a === '') return true;
+  return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+}
+
+function applyClientFilter(rows, { requireMonth = true } = {}) {
+  let result = rows;
+  if (requireMonth) {
+    if (filterState.month) {
+      result = result.filter(r => rowMonthValue(r) === filterState.month);
+    } else if (filterState.year) {
+      result = result.filter(r => {
+        const m = rowMonthValue(r);
+        return m && m.slice(0, 4) === filterState.year;
+      });
+    }
+  }
+  if (filterState.plant) {
+    result = result.filter(r => samePlant(r.plant, filterState.plant));
+  }
+  return result;
+}
+
+// ============ Dashboard Functions ============
 function initFilterBar() {
   const now = new Date();
   const yearSel  = document.getElementById("filterYear");
@@ -1175,9 +1593,6 @@ function onFilterChange() {
   let year  = yearSel.value;
   const month = monthSel.value;
   const plant = plantSel.value;
-  // BUG FIX: เดิมถ้าเลือก "เดือน" โดยไม่ได้เลือก "ปี" ก่อน ตัวกรองเดือนจะไม่ถูกใช้เลย
-  // (เพราะเงื่อนไข year && month เป็นเท็จ) ทำให้ผู้ใช้กดเลือกเดือนแล้วเหมือนไม่มีอะไรเกิดขึ้น
-  // จึงเติมปีปัจจุบันให้อัตโนมัติเมื่อเลือกเดือนโดยยังไม่ได้เลือกปี
   if (month && !year) {
     year = String(new Date().getFullYear());
     yearSel.value = year;
@@ -1196,29 +1611,6 @@ function updateFilterSummary() {
             : `<b>ทุกช่วงเวลา</b>`);
   parts.push(filterState.plant ? `Plant: <b>${filterState.plant}</b>` : `Plant: <b>ทุก Plant</b>`);
   document.getElementById("filterSummary").innerHTML = `🔎 กำลังแสดงข้อมูล: ${parts.join(" &nbsp;|&nbsp; ")}`;
-}
-
-function samePlant(a, b) {
-  if (a === undefined || a === null || a === '') return true;
-  return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
-}
-
-function applyClientFilter(rows, { requireMonth = true } = {}) {
-  let result = rows;
-  if (requireMonth) {
-    if (filterState.month) {
-      result = result.filter(r => rowMonthValue(r) === filterState.month);
-    } else if (filterState.year) {
-      result = result.filter(r => {
-        const m = rowMonthValue(r);
-        return m && m.slice(0, 4) === filterState.year;
-      });
-    }
-  }
-  if (filterState.plant) {
-    result = result.filter(r => samePlant(r.plant, filterState.plant));
-  }
-  return result;
 }
 
 function renderGauge(value, max, target) {
@@ -1401,9 +1793,6 @@ async function loadKpi() {
   showLoading(grid);
   try {
     const allRows = await fetchSheetData(CONFIG.SHEETS.KPI);
-    // กรองเฉพาะ Plant ที่นี่ (ไม่กรองเดือน) แล้วค่อยรวมยอดตามเดือนใน groupKpiRows
-    // เพื่อให้ตอนเลือก "ทุก Plant" ค่าของทุกโรงงานถูกรวมกันอย่างถูกต้อง แทนที่จะสุ่มหยิบ
-    // แถวใดแถวหนึ่งมาแสดง และเพื่อให้หา "เดือนก่อนหน้า" ได้ถูกต้องแม้ตอนกรองเหลือเดือนเดียว
     let baseRows = allRows;
     if (filterState.plant) baseRows = baseRows.filter(r => samePlant(r.plant, filterState.plant));
     const grouped = groupKpiRows(baseRows);
@@ -1476,8 +1865,6 @@ async function loadTrendChart() {
     let rows = allRows;
     const yearScope = filterState.year || String(new Date().getFullYear());
     if (filterState.plant) rows = rows.filter(r => samePlant(r.plant, filterState.plant));
-    // รวมยอดของทุก Plant ที่ตรงกับเดือนเดียวกันเข้าด้วยกันก่อน (groupKpiRows)
-    // ป้องกันไม่ให้กราฟสะสมนับซ้ำ/แสดงจุดเดือนเดิมหลายจุดตอนเลือก "ทุก Plant"
     const grouped = groupKpiRows(rows).filter(g => g.month.slice(0, 4) === yearScope);
     if (scopeLabel) scopeLabel.textContent = `ปี ${Number(yearScope) + 543}`;
     if (!grouped.length) {
@@ -1823,6 +2210,7 @@ async function loadAllDashboardData() {
   }
 }
 
+// ============ Edit View ============
 const SCHEMAS = {
   KPI: {
     sheet: CONFIG.SHEETS.KPI,
@@ -1922,24 +2310,26 @@ const SCHEMAS = {
 const REG_SCHEMA = {
   sheet: CONFIG.SHEETS.REGISTRATION,
   fields: [
-    { key: "ลำดับ",                         label: "ลำดับ (รหัส)",                type: "text",     required: true,  showInTable: true,  width: "6%" },
-    { key: "กระทรวง",                       label: "กระทรวง",                     type: "text",                       showInTable: true,  width: "10%" },
-    { key: "ชื่อกฎหมาย",                    label: "ชื่อกฎหมาย",                  type: "text",     required: true, wide: true, showInTable: true, width: "20%" },
-    { key: "วันที่ประกาศ",                  label: "วันที่ประกาศ",                type: "date",                       showInTable: true,  width: "9%" },
-    { key: "รายละเอียดข้อกำหนดกฎหมาย",      label: "รายละเอียดข้อกำหนดกฎหมาย",     type: "textarea", wide: true,        showInTable: false },
-    { key: "ความถี่",                       label: "ความถี่",                     type: "text",                       showInTable: true,  width: "8%" },
-    { key: "กำหนดการ",                      label: "กำหนดการ",                    type: "text",                       showInTable: true,  width: "9%" },
-    { key: "ผลการประเมิน",                  label: "ผลการประเมิน",                type: "select", options: ["Yes","No"], showInTable: true, width: "9%" },
-    { key: "ผู้รับผิดชอบ",                  label: "ผู้รับผิดชอบ",                type: "text",                       showInTable: true,  width: "10%" },
-    { key: "หมายเหตุ",                      label: "หมายเหตุ",                    type: "text",                       showInTable: false },
+    { key: "ลำดับ",                         label: "ลำดับ (รหัส)",                type: "text",     required: true },
+    { key: "กระทรวง",                       label: "กระทรวง",                     type: "text" },
+    { key: "ชื่อกฎหมาย",                    label: "ชื่อกฎหมาย",                  type: "text",     required: true, wide: true },
+    { key: "วันที่ประกาศ",                  label: "วันที่ประกาศ",                type: "date" },
+    { key: "รายละเอียดข้อกำหนดกฎหมาย",      label: "รายละเอียดข้อกำหนดกฎหมาย",     type: "textarea", wide: true },
+    { key: "ความถี่",                       label: "ความถี่",                     type: "text" },
+    { key: "กำหนดการ",                      label: "กำหนดการ",                    type: "text" },
+    { key: "ผลการประเมิน",                  label: "ผลการประเมิน",                type: "select", options: ["Yes","No","NA"] },
+    { key: "ผู้รับผิดชอบ",                  label: "ผู้รับผิดชอบ",                type: "text" },
+    { key: "หมายเหตุ",                      label: "หมายเหตุ",                    type: "text" },
   ],
 };
 let regEditingRowIndex = null;
+let regRowsCache = [];
 
 let activeSchemaKey  = "KPI";
 let editingRowIndex  = null;
 let editInitialized  = false;
 
+// ============ Edit View Functions ============
 function initEditView() {
   if (editInitialized) return;
   editInitialized = true;
@@ -2163,31 +2553,109 @@ async function handleDelete(rowIndex) {
   }
 }
 
+// ============ Registration View Functions ============
 let regInitialized = false;
-let regRowsCache = [];
 
 function initRegistrationView() {
   if (regInitialized) return;
   regInitialized = true;
+  
   renderRegFormFields();
   document.getElementById("regSaveBtn").addEventListener("click", handleRegSave);
   document.getElementById("regCancelEditBtn").addEventListener("click", resetRegForm);
+  
   document.getElementById("regClearFilterBtn").addEventListener("click", () => {
     document.getElementById("regFilterMinistry").value = "";
     document.getElementById("regFilterResult").value = "";
     document.getElementById("regFilterOwner").value = "";
     document.getElementById("regFilterSeq").value = "";
-    regFilterState.ministry = ""; regFilterState.result = ""; regFilterState.owner = ""; regFilterState.seq = "";
+    document.getElementById("regQuickSearch").value = "";
+    
+    regFilterState.ministry = ""; 
+    regFilterState.result = ""; 
+    regFilterState.owner = ""; 
+    regFilterState.seq = "";
+    
+    // Reset ministry chips
+    const chips = document.querySelectorAll('#regMinistryFilterContainer .filter-chip');
+    chips.forEach(chip => chip.classList.remove('active'));
+    const allChip = document.querySelector('#regMinistryFilterContainer .filter-chip[data-ministry=""]');
+    if (allChip) allChip.classList.add('active');
+    
     renderRegTable();
   });
+  
   ["regFilterMinistry", "regFilterResult", "regFilterOwner", "regFilterSeq"].forEach(id => {
     document.getElementById(id).addEventListener("change", (e) => {
-      const map = { regFilterMinistry: "ministry", regFilterResult: "result", regFilterOwner: "owner", regFilterSeq: "seq" };
+      const map = { 
+        regFilterMinistry: "ministry", 
+        regFilterResult: "result", 
+        regFilterOwner: "owner", 
+        regFilterSeq: "seq" 
+      };
       regFilterState[map[id]] = e.target.value;
+      document.getElementById("regQuickSearch").value = "";
+      // Sync chips
+      if (id === 'regFilterMinistry') {
+        const chips = document.querySelectorAll('#regMinistryFilterContainer .filter-chip');
+        chips.forEach(chip => {
+          chip.classList.toggle('active', chip.dataset.ministry === e.target.value);
+        });
+      }
       renderRegTable();
     });
   });
+  
+  setupQuickSearch();
+  
+  document.getElementById("regClearSearchBtn").addEventListener("click", () => {
+    document.getElementById("regQuickSearch").value = "";
+    renderRegTable();
+  });
+  
   loadRegistrationData();
+}
+
+function setupQuickSearch() {
+  const searchInput = document.getElementById('regQuickSearch');
+  if (!searchInput) return;
+  
+  let searchTimeout;
+  searchInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      const searchTerm = e.target.value.trim().toLowerCase();
+      filterRegBySearch(searchTerm);
+    }, 300);
+  });
+}
+
+function filterRegBySearch(searchTerm) {
+  if (!searchTerm) {
+    renderRegTable();
+    return;
+  }
+  const rows = document.querySelectorAll('#regTable tbody tr.law-group');
+  let visibleCount = 0;
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    if (text.includes(searchTerm)) {
+      row.style.display = '';
+      visibleCount++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+  const countEl = document.getElementById("regTableCount");
+  if (countEl) {
+    const totalGroups = document.querySelectorAll('#regTable tbody tr.law-group').length;
+    countEl.innerHTML = `
+      <div class="reg-row-count">
+        <span>🔍 ค้นหา: "${searchTerm}"</span>
+        <span class="count-badge">${visibleCount} จาก ${totalGroups} ฉบับ</span>
+      </div>
+    `;
+  }
 }
 
 function renderRegFormFields() {
@@ -2303,6 +2771,29 @@ async function handleRegDelete(rowIndex) {
   }
 }
 
+// ============ Registration Table Functions ============
+function getMinistryIcon(ministry) {
+  const icons = {
+    'แรงงาน': '⚙️',
+    'อุตสาหกรรม': '🏭',
+    'สาธารณสุข': '🏥',
+    'พลังงาน': '⚡',
+    'มหาดไทย': '🏛️'
+  };
+  return icons[ministry] || '📋';
+}
+
+function getMinistryClass(ministry) {
+  const map = {
+    'แรงงาน': 'ministry-แรงงาน',
+    'อุตสาหกรรม': 'ministry-อุตสาหกรรม',
+    'สาธารณสุข': 'ministry-สาธารณสุข',
+    'พลังงาน': 'ministry-พลังงาน',
+    'มหาดไทย': 'ministry-มหาดไทย'
+  };
+  return map[ministry] || 'ministry-ไม่ระบุ';
+}
+
 function populateRegFilterOptions(rows) {
   const ministries = [...new Set(rows.map(r => (r["กระทรวง"] || "").trim()).filter(Boolean))].sort();
   const owners     = [...new Set(rows.map(r => (r["ผู้รับผิดชอบ"] || "").trim()).filter(Boolean))].sort();
@@ -2312,14 +2803,17 @@ function populateRegFilterOptions(rows) {
     if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
     return a.localeCompare(b);
   });
+  
   const ministrySel = document.getElementById("regFilterMinistry");
   const currentMinistry = ministrySel.value;
   ministrySel.innerHTML = `<option value="">ทุกกระทรวง</option>` + ministries.map(m => `<option value="${m}">${m}</option>`).join("");
   ministrySel.value = currentMinistry;
+  
   const ownerSel = document.getElementById("regFilterOwner");
   const currentOwner = ownerSel.value;
   ownerSel.innerHTML = `<option value="">ทุกผู้รับผิดชอบ</option>` + owners.map(o => `<option value="${o}">${o}</option>`).join("");
   ownerSel.value = currentOwner;
+  
   const seqSel = document.getElementById("regFilterSeq");
   const currentSeq = seqSel.value;
   seqSel.innerHTML = `<option value="">ทุกลำดับ</option>` + sequences.map(s => `<option value="${s}">${s}</option>`).join("");
@@ -2330,24 +2824,66 @@ function applyRegFilter(rows) {
   let result = rows;
   if (regFilterState.ministry) result = result.filter(r => (r["กระทรวง"] || "").trim() === regFilterState.ministry);
   if (regFilterState.owner)    result = result.filter(r => (r["ผู้รับผิดชอบ"] || "").trim() === regFilterState.owner);
-  if (regFilterState.result)   result = result.filter(r => String(r["ผลการประเมิน"] || "").trim().toLowerCase() === regFilterState.result.toLowerCase());
+  if (regFilterState.result)   result = result.filter(r => {
+    const val = String(r["ผลการประเมิน"] || "").trim().toLowerCase();
+    return val === regFilterState.result.toLowerCase();
+  });
   if (regFilterState.seq)      result = result.filter(r => (r["ลำดับ"] || "").toString().trim() === regFilterState.seq);
   return result;
 }
 
-async function loadRegistrationData() {
-  const kpiGrid = document.getElementById("regKpiGrid");
-  showLoading(kpiGrid);
-  try {
-    regRowsCache = await fetchSheetData(REG_SCHEMA.sheet);
-    populateRegFilterOptions(regRowsCache);
-    renderRegSummary(regRowsCache);
-    renderRegTable();
-  } catch (err) {
-    kpiGrid.innerHTML = `<div class="skeleton-row">❌ ${err.message}</div>`;
-    document.getElementById("regDonut").innerHTML = "";
-    document.getElementById("regMinistryChart").innerHTML = "";
-  }
+function groupRegRows(rows) {
+  const map = new Map();
+  rows.forEach(r => {
+    const seq = (r["ลำดับ"] || "").toString().trim();
+    const key = seq || `__no_seq_${r._rowIndex}`;
+    if (!map.has(key)) map.set(key, { seq, items: [] });
+    map.get(key).items.push(r);
+  });
+  return Array.from(map.values()).sort((a, b) => {
+    const numA = parseInt(a.seq);
+    const numB = parseInt(b.seq);
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    return a.seq.localeCompare(b.seq);
+  });
+}
+
+function renderMinistryFilter() {
+  const container = document.getElementById('regMinistryFilterContainer');
+  if (!container) return;
+  
+  // Get counts per ministry
+  const counts = {};
+  regRowsCache.forEach(r => {
+    const m = (r["กระทรวง"] || "").trim() || 'ไม่ระบุ';
+    counts[m] = (counts[m] || 0) + 1;
+  });
+  
+  const ministries = Object.keys(counts).sort();
+  
+  container.innerHTML = `
+    <div class="ministry-filter-group">
+      <button class="filter-chip active" data-ministry="">
+        🏛️ ทั้งหมด <span class="chip-count">${regRowsCache.length}</span>
+      </button>
+      ${ministries.map(m => `
+        <button class="filter-chip" data-ministry="${m}">
+          ${getMinistryIcon(m)} ${m} <span class="chip-count">${counts[m]}</span>
+        </button>
+      `).join("")}
+    </div>
+  `;
+  
+  container.querySelectorAll('.filter-chip').forEach(btn => {
+    btn.addEventListener('click', function() {
+      container.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const ministry = this.dataset.ministry;
+      document.getElementById('regFilterMinistry').value = ministry;
+      regFilterState.ministry = ministry;
+      renderRegTable();
+    });
+  });
 }
 
 function renderRegSummary(rows) {
@@ -2355,67 +2891,118 @@ function renderRegSummary(rows) {
   const donutEl   = document.getElementById("regDonut");
   const donutTot  = document.getElementById("regDonutTotal");
   const ministryEl = document.getElementById("regMinistryChart");
+  
   if (!rows.length) {
     kpiGrid.innerHTML = `<div class="skeleton-row">❌ ยังไม่มีข้อมูลในทะเบียนกฎหมาย</div>`;
     donutEl.innerHTML = "";
     ministryEl.innerHTML = "";
     return;
   }
+  
   const total = rows.length;
   const uniqueLaws = new Set(rows.map(r => (r["ลำดับ"] || "").toString().trim()).filter(Boolean)).size || total;
+  
   const normResult = (v) => {
     const s = String(v || "").trim().toLowerCase();
     if (s === "yes" || s.includes("ผ่าน")) return "yes";
     if (s === "no"  || s.includes("ไม่ผ่าน")) return "no";
-    return "unknown";
+    return "na";
   };
-  const counts = { yes: 0, no: 0, unknown: 0 };
+  
+  const counts = { yes: 0, no: 0, na: 0 };
   rows.forEach(r => counts[normResult(r["ผลการประเมิน"])]++);
+  
   const compliancePct = total ? Math.round((counts.yes / total) * 100) : 0;
   const ministrySet = new Set(rows.map(r => (r["กระทรวง"] || "").trim()).filter(Boolean));
+  
   const cards = [
-    { label: "รายการข้อกำหนดทั้งหมด", value: total, icon: "📜", status: "good" },
-    { label: "จำนวนกฎหมาย (ไม่ซ้ำ)", value: uniqueLaws, icon: "📚", status: "good" },
-    { label: "ผ่านการประเมิน (Yes)", value: counts.yes, icon: "✅", status: "good" },
-    { label: "ไม่ผ่านการประเมิน (No)", value: counts.no, icon: "❌", status: counts.no > 0 ? "bad" : "good" },
-    { label: "อัตราความสอดคล้อง", value: `${compliancePct}%`, icon: "📊", status: compliancePct >= 90 ? "good" : (compliancePct >= 70 ? "warn" : "bad") },
-    { label: "จำนวนกระทรวงที่เกี่ยวข้อง", value: ministrySet.size, icon: "🏛️", status: "good" },
+    { 
+      label: "ข้อกำหนดทั้งหมด", 
+      value: total, 
+      icon: "📜", 
+      status: "good",
+      subtitle: `${uniqueLaws} ฉบับ`
+    },
+    { 
+      label: "ผ่านการประเมิน", 
+      value: counts.yes, 
+      icon: "✅", 
+      status: counts.yes > 0 ? "good" : "warn",
+      subtitle: `${compliancePct}%`
+    },
+    { 
+      label: "ไม่ผ่านการประเมิน", 
+      value: counts.no, 
+      icon: "❌", 
+      status: counts.no > 0 ? "bad" : "good",
+      subtitle: counts.no > 0 ? 'ต้องดำเนินการ' : 'ไม่มี'
+    },
+    { 
+      label: "รอประเมิน (NA)", 
+      value: counts.na, 
+      icon: "⏳", 
+      status: counts.na > 0 ? "warn" : "good",
+      subtitle: 'ยังไม่ประเมิน'
+    },
   ];
+  
   kpiGrid.innerHTML = cards.map(c => `
     <div class="kpi-card status-${c.status}">
       <div class="kpi-icon">${c.icon}</div>
       <div class="kpi-label">${c.label}</div>
       <div class="kpi-value">${formatNum(c.value)}</div>
+      <div class="kpi-meta">
+        <span class="target">${c.subtitle}</span>
+      </div>
     </div>
   `).join("");
+  
   if (donutTot) donutTot.textContent = `${total} รายการ`;
+  
   donutEl.innerHTML = `
     <div class="donut-wrap">
       ${renderDonut([
-        { value: counts.yes,     color: "#2E8B57" },
-        { value: counts.no,      color: "#C23B3B" },
-        { value: counts.unknown, color: "#9AA7B8" }
+        { value: counts.yes, color: "#2E8B57" },
+        { value: counts.no, color: "#C23B3B" },
+        { value: counts.na, color: "#9AA7B8" }
       ], "ทั้งหมด", total)}
       <div class="donut-legend">
-        <div class="donut-legend-item"><span class="sw" style="background:#2E8B57"></span>Yes (ผ่าน) <b>${counts.yes} รายการ</b></div>
-        <div class="donut-legend-item"><span class="sw" style="background:#C23B3B"></span>No (ไม่ผ่าน) <b>${counts.no} รายการ</b></div>
-        ${counts.unknown ? `<div class="donut-legend-item"><span class="sw" style="background:#9AA7B8"></span>ไม่ระบุ <b>${counts.unknown} รายการ</b></div>` : ""}
+        <div class="donut-legend-item">
+          <span class="sw" style="background:#2E8B57"></span>
+          Yes (ผ่าน) <b>${counts.yes} รายการ</b>
+        </div>
+        <div class="donut-legend-item">
+          <span class="sw" style="background:#C23B3B"></span>
+          No (ไม่ผ่าน) <b>${counts.no} รายการ</b>
+        </div>
+        ${counts.na ? `
+          <div class="donut-legend-item">
+            <span class="sw" style="background:#9AA7B8"></span>
+            NA (ไม่ระบุ) <b>${counts.na} รายการ</b>
+          </div>
+        ` : ''}
       </div>
     </div>
   `;
+  
   const byMinistry = {};
   rows.forEach(r => {
     const m = (r["กระทรวง"] || "ไม่ระบุ").trim() || "ไม่ระบุ";
     byMinistry[m] = (byMinistry[m] || 0) + 1;
   });
+  
   const entries = Object.entries(byMinistry).sort((a, b) => b[1] - a[1]);
   const maxVal = Math.max(...entries.map(e => e[1]), 1);
   const palette = ["blue", "green", "amber", "purple", "red"];
+  
   ministryEl.innerHTML = entries.map(([label, value], i) => `
     <div class="bar-item">
-      <span class="bar-label">${label}</span>
+      <span class="bar-label">${getMinistryIcon(label)} ${label}</span>
       <div class="bar-track">
-        <div class="bar-fill ${palette[i % palette.length]}" style="width:${(value / maxVal) * 100}%">${value}</div>
+        <div class="bar-fill ${palette[i % palette.length]}" 
+             style="width:${(value / maxVal) * 100}%">
+          ${value > 0 ? value : ''}
+        </div>
       </div>
       <span class="bar-value">${value}</span>
     </div>
@@ -2426,56 +3013,241 @@ function renderRegTable() {
   const thead = document.querySelector("#regTable thead");
   const tbody = document.querySelector("#regTable tbody");
   const countEl = document.getElementById("regTableCount");
-  const rows = applyRegFilter(regRowsCache);
-  if (countEl) countEl.textContent = `${rows.length} รายการ`;
-  const tableFields = REG_SCHEMA.fields.filter(f => f.showInTable);
-  const actionsWidth = "19%";
+  
+  const filteredRows = applyRegFilter(regRowsCache);
+  const groups = groupRegRows(filteredRows);
+  
+  if (countEl) {
+    countEl.innerHTML = `
+      <div class="reg-row-count">
+        <span>📋 ทะเบียนกฎหมาย</span>
+        <span class="count-badge">${groups.length} ฉบับ</span>
+        <span style="margin-left: 8px;">|</span>
+        <span>ข้อกำหนดทั้งหมด</span>
+        <span class="count-badge">${filteredRows.length} ข้อ</span>
+      </div>
+    `;
+  }
+  
+  // Create Header
   thead.innerHTML = `
-    <colgroup>
-      ${tableFields.map(f => `<col style="width:${f.width}">`).join("")}
-      <col style="width:${actionsWidth}">
-    </colgroup>
-    <tr>${tableFields.map(f => `<th>${f.label}</th>`).join("")}<th>จัดการ</th></tr>
+    <tr>
+      <th class="col-seq">ลำดับ</th>
+      <th class="col-ministry">กระทรวง</th>
+      <th class="col-law">ชื่อกฎหมาย</th>
+      <th class="col-date">วันที่ประกาศ</th>
+      <th class="col-detail">ข้อกำหนด</th>
+      <th class="col-frequency">ความถี่</th>
+      <th class="col-schedule">กำหนด</th>
+      <th class="col-result">ผลประเมิน</th>
+      <th class="col-responsible">ผู้รับผิดชอบ</th>
+      <th class="col-actions">จัดการ</th>
+    </tr>
   `;
-  if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="${tableFields.length + 1}" class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</td></tr>`;
+  
+  if (!groups.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted);">
+          <div style="font-size:40px;margin-bottom:10px;">🔍</div>
+          <div>ไม่พบข้อมูลตามตัวกรองที่เลือก</div>
+          <div style="font-size:12px;margin-top:5px;">ลองปรับตัวกรองหรือค้นหาด้วยคำอื่น</div>
+        </td>
+      </tr>
+    `;
     return;
   }
-  tbody.innerHTML = rows.map(row => `
-    <tr>
-      ${tableFields.map(f => {
-        let val = row[f.key] ?? "-";
-        if (f.type === 'date' && val !== "-") val = formatDateThai(val);
-        else if (f.key === "ผลการประเมิน") return `<td>${evalBadge(val)}</td>`;
-        const safe = String(val).replace(/"/g, '&quot;');
-        return `<td class="reg-truncate" title="${safe}">${val}</td>`;
-      }).join("")}
-      <td class="row-actions">
-        <button class="view-btn"   data-row="${row._rowIndex}">👁️ ดูรายละเอียด</button>
-        <button class="edit-btn"   data-row="${row._rowIndex}">✏️ แก้ไข</button>
-        <button class="delete-btn" data-row="${row._rowIndex}">🗑️ ลบ</button>
-      </td>
-    </tr>
-  `).join("");
-  tbody.querySelectorAll(".view-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const rowIndex = Number(btn.dataset.row);
-      const row = rows.find(r => r._rowIndex === rowIndex);
-      if (row) openRegDetailModal(row);
-    });
+  
+  let html = '';
+  
+  groups.forEach(({ seq, items }, groupIndex) => {
+    const first = items[0];
+    const escapedSeq = String(seq ?? "").replace(/"/g, '&quot;');
+    
+    const yesCount = items.filter(it => String(it["ผลการประเมิน"] || "").trim().toLowerCase() === 'yes').length;
+    const noCount = items.filter(it => String(it["ผลการประเมิน"] || "").trim().toLowerCase() === 'no').length;
+    const naCount = items.length - yesCount - noCount;
+    
+    const ministry = first["กระทรวง"] || "ไม่ระบุ";
+    const ministryClass = getMinistryClass(ministry);
+    const ministryIcon = getMinistryIcon(ministry);
+    const lawName = first["ชื่อกฎหมาย"] || "-";
+    const lawDate = first["วันที่ประกาศ"] || "";
+    const dateDisplay = lawDate ? formatDateThai(lawDate) : "-";
+    
+    // Overall result badge
+    let resultBadge = '';
+    if (items.length === yesCount) {
+      resultBadge = '<span class="result-badge yes">✅ ผ่านทั้งหมด</span>';
+    } else if (noCount > 0) {
+      resultBadge = '<span class="result-badge no">❌ มีไม่ผ่าน</span>';
+    } else {
+      resultBadge = '<span class="result-badge na">⚠️ รอประเมิน</span>';
+    }
+    
+    html += `
+      <tr class="law-group" data-seq="${escapedSeq}">
+        <td colspan="10" style="padding:0;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr class="group-row">
+              <td class="col-seq"><span class="law-seq">${seq || "-"}</span></td>
+              <td class="col-ministry">
+                <span class="law-ministry ${ministryClass}">${ministryIcon} ${ministry}</span>
+              </td>
+              <td class="col-law"><span class="law-title" title="${lawName}">${lawName}</span></td>
+              <td class="col-date"><span class="law-date">${dateDisplay}</span></td>
+              <td class="col-detail">
+                <div class="law-stats">
+                  <span class="stat-badge total">📋 ${items.length} ข้อ</span>
+                  ${yesCount > 0 ? `<span class="stat-badge yes">✅ ${yesCount}</span>` : ''}
+                  ${noCount > 0 ? `<span class="stat-badge no">❌ ${noCount}</span>` : ''}
+                  ${naCount > 0 ? `<span class="stat-badge na">NA ${naCount}</span>` : ''}
+                </div>
+              </td>
+              <td class="col-frequency">${first["ความถี่"] || "-"}</td>
+              <td class="col-schedule">${first["กำหนดการ"] || "-"}</td>
+              <td class="col-result">${resultBadge}</td>
+              <td class="col-responsible">${first["ผู้รับผิดชอบ"] || "-"}</td>
+              <td class="col-actions">
+                <div class="row-actions">
+                  <button class="btn-sm btn-expand" onclick="toggleLawGroup('${escapedSeq}')">
+                    📖 <span id="expand-label-${escapedSeq}">ขยาย</span>
+                  </button>
+                  <button class="btn-sm btn-edit" onclick="startRegEditBySeq('${escapedSeq}')">✏️</button>
+                  <button class="btn-sm btn-delete" onclick="handleRegDeleteBySeq('${escapedSeq}')">🗑️</button>
+                </div>
+              </td>
+            </tr>
+            <!-- Requirements rows -->
+            <tr class="requirement-rows" id="req-${escapedSeq}" style="display:none;">
+              <td colspan="10" style="padding:0;">
+                <table style="width:100%;border-collapse:collapse;">
+                  ${items.map((it, idx) => {
+                    const result = String(it["ผลการประเมิน"] || "").trim().toLowerCase();
+                    const resultClass = result === 'yes' ? 'yes' : (result === 'no' ? 'no' : 'na');
+                    const resultDisplay = result === 'yes' ? '✅ Yes' : (result === 'no' ? '❌ No' : 'NA');
+                    const detail = it["รายละเอียดข้อกำหนดกฎหมาย"] || "-";
+                    const isLong = detail.length > 100;
+                    const note = it["หมายเหตุ"] || "";
+                    
+                    return `
+                      <tr class="requirement-row" data-seq="${escapedSeq}">
+                        <td class="col-seq" style="text-align:center;color:var(--text-muted);font-size:11px;">${idx + 1}</td>
+                        <td class="col-ministry"></td>
+                        <td class="col-law"></td>
+                        <td class="col-date"></td>
+                        <td class="col-detail">
+                          <div class="req-text">
+                            <span class="req-number">ข้อ ${idx + 1}:</span>
+                            <span class="detail-content ${isLong ? 'truncate' : ''}" id="detail-${escapedSeq}-${idx}">
+                              ${detail}
+                            </span>
+                            ${isLong ? `
+                              <button class="show-more-btn" onclick="toggleDetail('${escapedSeq}', ${idx})">
+                                อ่านเพิ่มเติม ▼
+                              </button>
+                            ` : ''}
+                            ${note ? `<span style="display:block;font-size:12px;color:var(--text-muted);margin-top:4px;">📋 หมายเหตุ: ${note}</span>` : ''}
+                          </div>
+                        </td>
+                        <td class="col-frequency">${it["ความถี่"] || "-"}</td>
+                        <td class="col-schedule">${it["กำหนดการ"] || "-"}</td>
+                        <td class="col-result"><span class="result-badge ${resultClass}">${resultDisplay}</span></td>
+                        <td class="col-responsible">${it["ผู้รับผิดชอบ"] || "-"}</td>
+                        <td class="col-actions">
+                          <div class="row-actions">
+                            <button class="btn-sm btn-edit" onclick="startRegEdit(${it._rowIndex})">✏️</button>
+                            <button class="btn-sm btn-delete" onclick="handleRegDelete(${it._rowIndex})">🗑️</button>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join("")}
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
   });
-  tbody.querySelectorAll(".edit-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const rowIndex = Number(btn.dataset.row);
-      const row = rows.find(r => r._rowIndex === rowIndex);
-      if (row) startRegEdit(row);
-    });
-  });
-  tbody.querySelectorAll(".delete-btn").forEach(btn => {
-    btn.addEventListener("click", () => handleRegDelete(Number(btn.dataset.row)));
-  });
+  
+  tbody.innerHTML = html;
 }
 
+// ============ Registration Helper Functions ============
+function toggleLawGroup(seq) {
+  const rows = document.getElementById(`req-${seq}`);
+  if (rows) {
+    const isHidden = rows.style.display === 'none';
+    rows.style.display = isHidden ? '' : 'none';
+    
+    const label = document.getElementById(`expand-label-${seq}`);
+    if (label) {
+      label.textContent = isHidden ? 'ซ่อน' : 'ขยาย';
+    }
+  }
+}
+
+function toggleDetail(seq, idx) {
+  const el = document.getElementById(`detail-${seq}-${idx}`);
+  if (!el) return;
+  
+  const isTruncated = el.classList.contains('truncate');
+  const btn = el.parentElement.querySelector('.show-more-btn');
+  
+  if (isTruncated) {
+    el.classList.remove('truncate');
+    if (btn) btn.textContent = 'แสดงน้อยลง ▲';
+  } else {
+    el.classList.add('truncate');
+    if (btn) btn.textContent = 'อ่านเพิ่มเติม ▼';
+  }
+}
+
+function openRegDetailModalBySeq(seq) {
+  const row = regRowsCache.find(r => (r["ลำดับ"] || "").toString().trim() === seq);
+  if (row) openRegDetailModal(row);
+}
+
+function startRegEditBySeq(seq) {
+  const row = regRowsCache.find(r => (r["ลำดับ"] || "").toString().trim() === seq);
+  if (row) startRegEdit(row);
+}
+
+async function handleRegDeleteBySeq(seq) {
+  const items = regRowsCache.filter(r => (r["ลำดับ"] || "").toString().trim() === seq);
+  if (!items.length) return;
+  if (!confirm(`ยืนยันการลบกฎหมาย ${seq} (${items.length} ข้อกำหนด) ทั้งหมด?`)) return;
+  
+  try {
+    for (const item of items) {
+      await deleteSheetRow(REG_SCHEMA.sheet, item._rowIndex);
+    }
+    showToast(`✅ ลบกฎหมาย ${seq} เรียบร้อย (${items.length} ข้อกำหนด)`);
+    await loadRegistrationData();
+  } catch (err) {
+    showToast(`❌ ${err.message}`, true);
+  }
+}
+
+async function loadRegistrationData() {
+  const kpiGrid = document.getElementById("regKpiGrid");
+  showLoading(kpiGrid);
+  try {
+    regRowsCache = await fetchSheetData(REG_SCHEMA.sheet);
+    populateRegFilterOptions(regRowsCache);
+    renderMinistryFilter();
+    renderRegSummary(regRowsCache);
+    renderRegTable();
+  } catch (err) {
+    kpiGrid.innerHTML = `<div class="skeleton-row">❌ ${err.message}</div>`;
+    document.getElementById("regDonut").innerHTML = "";
+    document.getElementById("regMinistryChart").innerHTML = "";
+  }
+}
+
+// ============ Modal Functions ============
 function openRegDetailModal(row) {
   const card = document.getElementById("regDetailModalCard");
   const mainSeq = row["ลำดับ"] || "";
@@ -2550,6 +3322,7 @@ function closeRegDetailModal() {
   document.getElementById("regDetailModal").classList.remove("show");
 }
 
+// ============ Navigation ============
 function switchView(view) {
   document.getElementById("dashboardView").classList.toggle("active", view === "dashboard");
   document.getElementById("registrationView").classList.toggle("active", view === "registration");
@@ -2562,12 +3335,14 @@ function switchView(view) {
   else { loadAllDashboardData(); }
 }
 
+// ============ Event Listeners ============
 document.addEventListener('keydown', e => {
   if (e.ctrlKey && e.key === 'e') { e.preventDefault(); switchView('edit'); }
   if (e.ctrlKey && e.key === 'd') { e.preventDefault(); switchView('dashboard'); }
   if (e.key === 'Escape' && editingRowIndex !== null) { resetForm(); showToast('ยกเลิกการแก้ไข'); }
   if (e.key === 'Escape') closeRegDetailModal();
 });
+
 document.getElementById("regDetailModal").addEventListener("click", (e) => {
   if (e.target.id === "regDetailModal") closeRegDetailModal();
 });
@@ -2576,6 +3351,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initFilterBar();
   loadAllDashboardData();
 });
+
 document.getElementById("toEditBtn").addEventListener("click",         () => switchView("edit"));
 document.getElementById("toRegistrationBtn").addEventListener("click", () => switchView("registration"));
 document.getElementById("toDashboardBtn").addEventListener("click",    () => switchView("dashboard"));
@@ -2594,7 +3370,7 @@ setInterval(() => {
   }
 }, 300000);
 
-console.log('✅ Executive Safety Dashboard (redesigned) loaded!');
+console.log('✅ Executive Safety Dashboard (Table version) loaded!');
 </script>
 </body>
 </html>

@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<script src="auth.js"></script>
 <script src="config.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -159,6 +160,7 @@ tbody tr:hover td{background:var(--bg3)}
     <a href="leave.html"     class="nav-btn">📅 บันทึกการลา</a>
     <a href="dashboard.html" class="nav-btn">📊 Dashboard</a>
     <a href="employees.html" class="nav-btn">👥 พนักงาน</a>
+    <button onclick="HR_AUTH.logout()" class="nav-btn" style="cursor:pointer;">🚪 ออกจากระบบ</button>
   </div>
 </nav>
 
