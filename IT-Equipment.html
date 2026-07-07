@@ -393,6 +393,21 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 }
 .btn-edit:hover { background: var(--teal); color: #fff; }
 
+/* delete button (NEW) */
+.btn-delete {
+  padding: 4px 10px;
+  border: 1.5px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.btn-delete:hover { background: var(--danger); color: #fff; }
+
 .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
 .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
 .empty-state-msg { font-size: 14px; }
@@ -478,6 +493,8 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 .modal-desc { font-size: 13px; color: var(--text-sub); line-height: 1.6; margin-bottom: 24px; word-break: break-word; }
 .modal-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .modal-actions .btn-primary { margin: 0; width: auto; padding: 10px 24px; }
+.modal-actions .btn-primary.danger-btn { background: var(--danger); }
+.modal-actions .btn-primary.danger-btn:hover { background: #B91C1C; }
 
 /* ── REQ FORM notice ── */
 .req-notice {
@@ -767,8 +784,6 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 
         <div class="req-notice">
           📦 การเบิกอุปกรณ์ = ได้รับอุปกรณ์ไปโดยไม่ต้องคืน (เช่น โน๊ตบุ๊ค, PC, เมาส์, แป้นพิม, อุปกรณ์สิ้นเปลือง)<br />
-          🔁 หากอุปกรณ์ตัวเดิม (Serial No./Asset No. เดิม) เปลี่ยนมือไปยังพนักงานคนใหม่ (เช่น พนักงานคนเดิมลาออก)
-          <b>ไม่ต้องเบิกใหม่</b> — ให้ไปที่แท็บ "ประวัติการเบิก" แล้วกดปุ่ม "แก้ไข" ที่รายการเดิมแทน
         </div>
 
         <div class="field">
@@ -1066,8 +1081,8 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 
 <div id="modal" class="modal-backdrop" hidden>
   <div class="modal-box">
-    <div class="modal-icon">📦</div>
-    <h2 class="modal-title">ยืนยันการคืนอุปกรณ์</h2>
+    <div class="modal-icon" id="modalIcon">📦</div>
+    <h2 class="modal-title" id="modalTitle">ยืนยันการคืนอุปกรณ์</h2>
     <p class="modal-desc" id="modalDesc"></p>
     <div class="modal-actions">
       <button id="modalCancel" class="btn-outline">ยกเลิก</button>
@@ -1076,9 +1091,6 @@ select.field-input { padding-right: 32px; cursor: pointer; }
   </div>
 </div>
 
-<!-- ── EDIT REQUISITION MODAL (NEW) ──────────────────────────────────
-     ใช้แก้ไขรายการเบิกเดิม เช่น เปลี่ยนผู้ถือครองอุปกรณ์เมื่อพนักงาน
-     คนเดิมลาออกแล้วมีพนักงานใหม่มารับเครื่องต่อ (Serial/Asset เดิม) -->
 <div id="editReqModal" class="modal-backdrop" hidden>
   <div class="modal-box wide">
     <div class="modal-icon">✏️</div>
@@ -1178,20 +1190,25 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaPItomL0NZmtxjaGDpzcuuSZwZEqhqO0ov6_5d57B_sRt8Xlppwz_LzTLWtbYPUtODA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyML9K_m0RfeJwWELFCid26k5HMfUe3PJg2mBx6d_CYfnISObyJcb12nDIBJY8Oo3AboA/exec';
 
 const PAGE_SIZE = 10;
 let borrowPage = 1;
 let reqPage    = 1;
 let machinePage = 1; 
 
-const SERIAL_REQUIRED_EQUIPMENT = ['Notebook', 'PC/All In One', 'หน้าจอคอมพิวเตอร์'];
+// FEATURE (เพิ่มเติม): เพิ่ม 'MAC-Notebook' เข้าไปในรายการที่ต้องกรอก Serial/Asset No.
+// เหมือนอุปกรณ์ประเภท Notebook/PC ทั่วไป (เพราะยังเป็นเครื่องที่ต้องติดตามครุภัณฑ์)
+// หมายเหตุ: ต้องเพิ่มชื่อ "MAC-Notebook" เป็นแถวใหม่ในชีต "Equipment" บน Google Sheet
+// ด้วย ไม่เช่นนั้นจะไม่ปรากฏใน dropdown ประเภทอุปกรณ์ (รายชื่อ dropdown โหลดจากชีตนั้น)
+const SERIAL_REQUIRED_EQUIPMENT = ['Notebook', 'PC/All In One', 'หน้าจอคอมพิวเตอร์', 'MAC-Notebook'];
 function equipmentNeedsSerial(eqName) {
   const norm = s => String(s || '').trim().toLowerCase();
   return SERIAL_REQUIRED_EQUIPMENT.some(name => norm(name) === norm(eqName));
 }
 
-// ประเภทอุปกรณ์ที่ต้องแสดงช่องเวอร์ชั่น Windows 
+// ประเภทอุปกรณ์ที่ต้องแสดงช่องเวอร์ชั่น Windows
+// หมายเหตุ: ตั้งใจไม่ใส่ 'MAC-Notebook' ไว้ในนี้ เพราะเครื่อง Mac ใช้ macOS ไม่ใช่ Windows
 const WINDOWS_REQUIRED_EQUIPMENT = ['Notebook', 'PC/All In One'];
 function equipmentNeedsWindows(eqName) {
   const norm = s => String(s || '').trim().toLowerCase();
@@ -1204,14 +1221,10 @@ let borrowHistory     = [];
 let filteredBorrow    = [];
 let reqHistory        = [];
 let filteredReq       = [];
-let pendingReturnRow  = null;
-
-// state สำหรับแท็บคอมพิวเตอร์เครื่องจักร
+let pendingAction     = null; // NEW: generalized pending confirm-modal action ({type, ...})
 let machineList        = [];
 let filteredMachine     = [];
 let editingMachineRow   = null;
-
-// state สำหรับแก้ไขประวัติการเบิก (NEW)
 let editingReqRowIndex  = null;
 let selectedEditReqEmp  = null;
 
@@ -1344,8 +1357,10 @@ const editReqNote           = $('editReqNote');
 const editReqCancelBtn      = $('editReqCancel');
 const editReqSaveBtn        = $('editReqSave');
 
-// Modal (return equipment)
+// Modal (return equipment / delete confirm)
 const modal       = $('modal');
+const modalIcon   = $('modalIcon');
+const modalTitle  = $('modalTitle');
 const modalDesc   = $('modalDesc');
 const modalCancel = $('modalCancel');
 const modalConfirm= $('modalConfirm');
@@ -1747,6 +1762,7 @@ function makeAutocomplete({ searchInput, dropdown, statusEl, idDisplay, nameDisp
       highlightIdx = Math.max(highlightIdx - 1, 0);
       items.forEach((el, i) => el.classList.toggle('highlighted', i === highlightIdx));
     } else if (e.key === 'Enter') {
+      e.preventDefault();
       if (highlightIdx >= 0) {
         const results = searchEmployees(searchInput.value.trim().replace(/\s—\s.*/, ''));
         if (results[highlightIdx]) selectEmployee(results[highlightIdx]);
@@ -1913,9 +1929,10 @@ function renderBorrowTable(rows, page) {
             : isOverdue
               ? `<span class="badge badge-overdue">⚠ เกินกำหนด</span>`
               : `<span class="badge badge-pending">⏳ รอดำเนินการ</span>`;
-          const action = r.status === 'รอดำเนินการ'
+          const returnBtn = r.status === 'รอดำเนินการ'
             ? `<button class="btn-return" data-row="${esc(String(r.rowIndex))}" data-name="${esc(r.name)}" data-eq="${esc(r.equipment)}">คืนอุปกรณ์</button>`
             : '';
+          const deleteBtn = `<button class="btn-delete" data-row="${esc(String(r.rowIndex))}" data-name="${esc(r.name)}" data-eq="${esc(r.equipment)}">ลบ</button>`;
           return `<tr>
             <td class="td-mono">${rows.length - i}</td>
             <td class="td-mono">${esc(r.empId)}</td>
@@ -1924,7 +1941,7 @@ function renderBorrowTable(rows, page) {
             <td class="td-date">${formatDate(r.borrowDate)}</td>
             <td class="td-date">${formatDate(r.returnDate)}</td>
             <td>${badge}</td>
-            <td>${action}</td>
+            <td><div class="td-actions">${returnBtn}${deleteBtn}</div></td>
           </tr>`;
         }).join('')}
       </tbody>
@@ -1933,6 +1950,9 @@ function renderBorrowTable(rows, page) {
 
   borrowTableWrap.querySelectorAll('.btn-return').forEach(btn =>
     btn.addEventListener('click', () => openReturnModal(btn))
+  );
+  borrowTableWrap.querySelectorAll('.btn-delete').forEach(btn =>
+    btn.addEventListener('click', () => openDeleteBorrowModal(btn))
   );
   bindPaginationEvents(borrowTableWrap, p => renderBorrowTable(filteredBorrow, p));
 }
@@ -2042,7 +2062,7 @@ function renderReqTable(rows, page) {
           <td class="td-date">${formatDate(r.reqDate)}</td>
           <td class="td-note">${esc(r.note) || '<span style="color:var(--text-muted)">—</span>'}</td>
           <td><span class="badge badge-req">📦 เบิกแล้ว</span></td>
-          <td><button class="btn-edit" data-row="${esc(String(r.rowIndex))}">แก้ไข</button></td>
+          <td><div class="td-actions"><button class="btn-edit" data-row="${esc(String(r.rowIndex))}">แก้ไข</button><button class="btn-delete" data-row="${esc(String(r.rowIndex))}" data-name="${esc(r.name)}">ลบ</button></div></td>
         </tr>`;
         }).join('')}
       </tbody>
@@ -2051,6 +2071,9 @@ function renderReqTable(rows, page) {
 
   reqTableWrap.querySelectorAll('.btn-edit').forEach(btn =>
     btn.addEventListener('click', () => openEditReqModal(Number(btn.dataset.row)))
+  );
+  reqTableWrap.querySelectorAll('.btn-delete').forEach(btn =>
+    btn.addEventListener('click', () => openDeleteReqModal(btn))
   );
   bindPaginationEvents(reqTableWrap, p => renderReqTable(filteredReq, p));
 }
@@ -2250,7 +2273,9 @@ function applyMachineFilters() {
       const hit = (r.name  || '').toLowerCase().includes(q) ||
                   (r.ip    || '').toLowerCase().includes(q) ||
                   (r.dept  || '').toLowerCase().includes(q) ||
-                  (r.owner || '').toLowerCase().includes(q);
+                  (r.owner || '').toLowerCase().includes(q) ||
+                  (r.note  || '').toLowerCase().includes(q) ||
+                  (r.windowsVersion || '').toLowerCase().includes(q);
       if (!hit) return false;
     }
     if (dept && r.dept !== dept) return false;
@@ -2297,7 +2322,7 @@ function renderMachineTable(rows, page) {
           <td style="font-size:12px;color:var(--text-sub)">${esc(r.dept) || '—'}</td>
           <td>${esc(r.owner) || '—'}</td>
           <td class="td-note">${esc(r.note) || '<span style="color:var(--text-muted)">—</span>'}</td>
-          <td><button class="btn-edit" data-row="${esc(String(r.rowIndex))}">แก้ไข</button></td>
+          <td><div class="td-actions"><button class="btn-edit" data-row="${esc(String(r.rowIndex))}">แก้ไข</button><button class="btn-delete" data-row="${esc(String(r.rowIndex))}" data-name="${esc(r.name)}">ลบ</button></div></td>
         </tr>`;
         }).join('')}
       </tbody>
@@ -2306,6 +2331,9 @@ function renderMachineTable(rows, page) {
 
   machineTableWrap.querySelectorAll('.btn-edit').forEach(btn =>
     btn.addEventListener('click', () => startEditMachine(Number(btn.dataset.row)))
+  );
+  machineTableWrap.querySelectorAll('.btn-delete').forEach(btn =>
+    btn.addEventListener('click', () => openDeleteMachineModal(btn))
   );
   bindPaginationEvents(machineTableWrap, p => renderMachineTable(filteredMachine, p));
 }
@@ -2465,12 +2493,28 @@ function setupEditReqModal() {
   editReqSaveBtn.addEventListener('click', saveEditRequisition);
 }
 
+// FIX (BUG): เดิมฟังก์ชันนี้แค่ซ่อน/แสดง field แต่ไม่ล้างค่าเก่าที่ค้างอยู่
+// ทำให้ถ้าผู้ใช้เปลี่ยนประเภทอุปกรณ์จาก Notebook -> เมาส์ ในหน้าต่างแก้ไข
+// ค่า Serial No. / Asset No. / Windows Version เดิมจะยังคงถูกส่งไปบันทึกทับ
+// ข้อมูลของอุปกรณ์ที่ไม่เกี่ยวข้องกับข้อมูลเหล่านั้นเลย จึงต้อง reset ค่าด้วย
+// เหมือนกับที่ฟอร์มบันทึกการเบิกปกติทำใน updateSerialAssetVisibility()
 function updateEditSerialAssetVisibility() {
   const showSerial = equipmentNeedsSerial(editReqEquipment.value);
   editSerialAssetGroup.style.display = showSerial ? 'flex' : 'none';
+  if (!showSerial) {
+    editReqSerialNo.value = '';
+    editReqAssetNo.value  = '';
+    editReqSerialWarn.style.display = 'none';
+    editReqSerialNo.style.borderColor = '';
+  }
 
   const showWin = equipmentNeedsWindows(editReqEquipment.value);
   editWinVersionField.style.display = showWin ? 'block' : 'none';
+  if (!showWin) {
+    editReqWinVersionSelect.value = '';
+    editReqWinVersionInput.value = '';
+    switchToDropdownEditWinInput();
+  }
 }
 
 function openEditReqModal(rowIndex) {
@@ -2502,7 +2546,6 @@ function openEditReqModal(rowIndex) {
   }
 
   editReqEquipment.value = item.equipment || '';
-  updateEditSerialAssetVisibility();
 
   editReqSerialNo.value = item.serialNo || '';
   editReqAssetNo.value  = item.assetNo  || '';
@@ -2510,6 +2553,10 @@ function openEditReqModal(rowIndex) {
   editReqSerialNo.style.borderColor = '';
 
   setEditWindowsVersionValue(item.windowsVersion || '');
+
+  // NOTE: ต้องเรียกหลังจากตั้งค่า serial/asset/windows ไว้ก่อน เพราะฟังก์ชันนี้
+  // จะ "ล้างค่า" ถ้าประเภทอุปกรณ์ปัจจุบันไม่ต้องการ field นั้น ๆ (ดู FIX ด้านบน)
+  updateEditSerialAssetVisibility();
 
   editReqDate.value = item.reqDate || toLocalDate(new Date());
   editReqNote.value = item.note || '';
@@ -2658,30 +2705,96 @@ function exportRowsToExcel(rows, sheetName, filename) {
   }
 }
 
+/* ─── Confirm Modal (return / delete) — GENERALIZED (FIX) ───
+   เดิม modal นี้ถูกเขียนไว้เฉพาะสำหรับ "คืนอุปกรณ์" เท่านั้น (ตัวแปรชื่อ
+   pendingReturnRow, ข้อความ/ปุ่มตายตัว) พอจะเพิ่มฟีเจอร์ "ลบรายการ" (ของที่ขาด/
+   ที่ผู้ใช้ร้องขอเพิ่ม) จึงต้องรื้อ modal ให้ใช้ซ้ำได้กับหลาย action โดยเก็บ
+   สถานะไว้ใน pendingAction = { type, rowIndex, ... } แล้ว dispatch ตอนกดยืนยัน */
 function setupModal() {
-  modalCancel.addEventListener('click',  () => { modal.hidden = true; pendingReturnRow = null; });
-  modal.addEventListener('click', e => { if (e.target === modal) { modal.hidden = true; pendingReturnRow = null; } });
-  modalConfirm.addEventListener('click', async () => {
-    if (!pendingReturnRow) return;
-    modal.hidden = true;
-    try {
-      const res = await apiPost({ action: 'returnEquipment', rowIndex: pendingReturnRow.rowIndex });
-      if (res.status === 'success') {
-        showToast('✅ บันทึกการคืนเรียบร้อยแล้ว', 'success');
-        loadBorrowHistory();
-      } else throw new Error(res.message);
-    } catch (err) {
-      showToast('❌ ' + (err.message || 'เกิดข้อผิดพลาด'), 'error');
-    } finally {
-      pendingReturnRow = null;
-    }
-  });
+  modalCancel.addEventListener('click',  closeConfirmModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeConfirmModal(); });
+  modalConfirm.addEventListener('click', onConfirmModalAction);
+}
+
+function closeConfirmModal() {
+  modal.hidden = true;
+  pendingAction = null;
 }
 
 function openReturnModal(btn) {
-  pendingReturnRow = { rowIndex: btn.dataset.row, name: btn.dataset.name, equipment: btn.dataset.eq };
-  modalDesc.textContent = `ยืนยันการคืน "${pendingReturnRow.equipment}" จาก ${pendingReturnRow.name}`;
+  pendingAction = { type: 'return', rowIndex: btn.dataset.row, name: btn.dataset.name, equipment: btn.dataset.eq };
+  modalIcon.textContent  = '📦';
+  modalTitle.textContent = 'ยืนยันการคืนอุปกรณ์';
+  modalDesc.textContent  = `ยืนยันการคืน "${pendingAction.equipment}" จาก ${pendingAction.name}`;
+  modalConfirm.textContent = 'ยืนยันการคืน';
+  modalConfirm.classList.remove('danger-btn');
   modal.hidden = false;
+}
+
+function openDeleteBorrowModal(btn) {
+  pendingAction = { type: 'deleteBorrow', rowIndex: btn.dataset.row, name: btn.dataset.name, equipment: btn.dataset.eq };
+  modalIcon.textContent  = '🗑️';
+  modalTitle.textContent = 'ยืนยันการลบรายการยืม';
+  modalDesc.textContent  = `ต้องการลบรายการยืม "${pendingAction.equipment}" ของ ${pendingAction.name} ใช่หรือไม่? การลบไม่สามารถย้อนกลับได้`;
+  modalConfirm.textContent = 'ลบรายการ';
+  modalConfirm.classList.add('danger-btn');
+  modal.hidden = false;
+}
+
+function openDeleteReqModal(btn) {
+  pendingAction = { type: 'deleteReq', rowIndex: btn.dataset.row, name: btn.dataset.name };
+  modalIcon.textContent  = '🗑️';
+  modalTitle.textContent = 'ยืนยันการลบรายการเบิก';
+  modalDesc.textContent  = `ต้องการลบรายการเบิกของ ${pendingAction.name} ใช่หรือไม่? การลบไม่สามารถย้อนกลับได้`;
+  modalConfirm.textContent = 'ลบรายการ';
+  modalConfirm.classList.add('danger-btn');
+  modal.hidden = false;
+}
+
+function openDeleteMachineModal(btn) {
+  pendingAction = { type: 'deleteMachine', rowIndex: btn.dataset.row, name: btn.dataset.name };
+  modalIcon.textContent  = '🗑️';
+  modalTitle.textContent = 'ยืนยันการลบเครื่องจักร';
+  modalDesc.textContent  = `ต้องการลบข้อมูลเครื่องจักร "${pendingAction.name}" ใช่หรือไม่? การลบไม่สามารถย้อนกลับได้`;
+  modalConfirm.textContent = 'ลบรายการ';
+  modalConfirm.classList.add('danger-btn');
+  modal.hidden = false;
+}
+
+async function onConfirmModalAction() {
+  if (!pendingAction) return;
+  const action = pendingAction;
+  modal.hidden = true;
+  pendingAction = null;
+
+  try {
+    if (action.type === 'return') {
+      const res = await apiPost({ action: 'returnEquipment', rowIndex: action.rowIndex });
+      if (res.status !== 'success') throw new Error(res.message);
+      showToast('✅ บันทึกการคืนเรียบร้อยแล้ว', 'success');
+      loadBorrowHistory();
+
+    } else if (action.type === 'deleteBorrow') {
+      const res = await apiPost({ action: 'deleteBorrowRow', rowIndex: action.rowIndex });
+      if (res.status !== 'success') throw new Error(res.message);
+      showToast('✅ ลบรายการยืมเรียบร้อยแล้ว', 'success');
+      loadBorrowHistory();
+
+    } else if (action.type === 'deleteReq') {
+      const res = await apiPost({ action: 'deleteRequisitionRow', rowIndex: action.rowIndex });
+      if (res.status !== 'success') throw new Error(res.message);
+      showToast('✅ ลบรายการเบิกเรียบร้อยแล้ว', 'success');
+      loadReqHistory();
+
+    } else if (action.type === 'deleteMachine') {
+      const res = await apiPost({ action: 'deleteMachineRow', rowIndex: action.rowIndex });
+      if (res.status !== 'success') throw new Error(res.message);
+      showToast('✅ ลบข้อมูลเครื่องจักรเรียบร้อยแล้ว', 'success');
+      loadMachineList();
+    }
+  } catch (err) {
+    showToast('❌ ' + (err.message || 'เกิดข้อผิดพลาด'), 'error');
+  }
 }
 
 function resetBorrowForm() {

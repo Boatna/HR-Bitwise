@@ -567,11 +567,11 @@ let regRowsCache = [];
 let regEditingRowIndex = null;
 let regSearchTerm = "";
 let regCurrentPage = 1;
-const REG_PAGE_SIZE = 10; // แสดง 10 ฉบับกฎหมายต่อหน้า
+const REG_PAGE_SIZE = 10;
 
 // --- whole-law (group) edit state ---
-let regGroupEditItems = null;   // array of item editors while editing a whole ฉบับ, else null
-let regGroupEditSeq   = null;   // seq value of the group currently being edited
+let regGroupEditItems = null;   
+let regGroupEditSeq   = null;   
 let regGroupItemUidCounter = 0;
 
 const REG_SCHEMA = {
@@ -957,8 +957,6 @@ function cancelGroupEdit() {
 
 async function handleGroupSave() {
   if (!regGroupEditItems) return;
-
-  // sync ค่าจากช่อง input ล่าสุดเข้ากับ state ก่อนบันทึก (เผื่อ event ยังไม่ทัน fire)
   document.querySelectorAll('#regGroupItemsContainer [data-uid][data-field]').forEach(el => {
     const uid   = Number(el.dataset.uid);
     const field = el.dataset.field;
@@ -1001,8 +999,6 @@ async function handleGroupSave() {
       regGroupEditItems.filter(it => it.rowIndex !== null).map(it => it.rowIndex)
     );
     const toDelete = [...originalRowIndexes].filter(idx => !keptRowIndexes.has(idx));
-
-    // 1) อัปเดตข้อกำหนดที่มีอยู่แล้ว (ใช้ rowIndex เดิม จึงทำก่อนการลบใด ๆ)
     for (const item of regGroupEditItems.filter(it => it.rowIndex !== null)) {
       await updateSheetRow(item.rowIndex, {
         ...sharedData,
@@ -1015,7 +1011,6 @@ async function handleGroupSave() {
       });
     }
 
-    // 2) เพิ่มข้อกำหนดใหม่ (append ท้ายชีต ไม่กระทบเลขแถวเดิม)
     for (const item of regGroupEditItems.filter(it => it.rowIndex === null)) {
       await addSheetRow({
         ...sharedData,
@@ -1028,7 +1023,6 @@ async function handleGroupSave() {
       });
     }
 
-    // 3) ลบข้อกำหนดที่ถูกเอาออกจากฉบับ (ลบจากแถวล่างขึ้นบนกันเลขแถวเพี้ยนระหว่างลบ)
     const sortedDelete = toDelete.sort((a, b) => b - a);
     for (const rowIndex of sortedDelete) {
       await deleteSheetRow(rowIndex);
@@ -1084,9 +1078,6 @@ async function handleRegDeleteBySeq(seq) {
   const items = regRowsCache.filter(r => (r["ลำดับ"] || "").toString().trim() === seq);
   if (!items.length) return;
   if (!confirm(`ยืนยันการลบกฎหมาย ${seq} (${items.length} ข้อกำหนด) ทั้งหมด?`)) return;
-
-  // Delete from bottom of the sheet upward (highest _rowIndex first) so a
-  // deletion never shifts the row number of rows still queued for deletion.
   const sortedItems = [...items].sort((a, b) => b._rowIndex - a._rowIndex);
   try {
     for (const item of sortedItems) {
@@ -1153,7 +1144,6 @@ function groupRegRows(rows) {
   });
 }
 
-// Combines dropdown filters + quick search, grouped by ลำดับ (กฎหมาย 1 ฉบับ = 1 กลุ่ม)
 function getFilteredGroups() {
   const filteredRows = applyRegFilter(regRowsCache);
   let groups = groupRegRows(filteredRows);
@@ -1199,7 +1189,6 @@ function renderMinistryFilter() {
   });
 }
 
-// ============ Summary (KPI + donut + ministry chart) ============
 function renderRegSummary(rows) {
   const kpiGrid    = document.getElementById("regKpiGrid");
   const donutEl    = document.getElementById("regDonut");
@@ -1277,7 +1266,6 @@ function renderRegSummary(rows) {
   `).join("");
 }
 
-// ============ Classic registry table (matches the printed register layout) ============
 function renderRegList() {
   const tbody   = document.getElementById("regList");
   const countEl = document.getElementById("regTableCount");
@@ -1387,7 +1375,6 @@ function renderPagination(currentPage, totalPages) {
     return `<button class="page-btn ${active}" ${disabled} ${onclick}>${label}</button>`;
   }
 
-  // เลือกช่วงเลขหน้าที่จะแสดง (มี ... เมื่อหน้ามีจำนวนมาก)
   const pages = [];
   const windowSize = 1;
   for (let p = 1; p <= totalPages; p++) {
@@ -1416,7 +1403,6 @@ function goToRegPage(page) {
   document.querySelector('.reg-table-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// ============ Quick search ============
 function setupQuickSearch() {
   const searchInput = document.getElementById('regQuickSearch');
   if (!searchInput) return;
@@ -1447,7 +1433,6 @@ function filterRegBySearch(searchTerm) {
   }
 }
 
-// ============ Load ============
 async function loadRegistrationData() {
   const kpiGrid  = document.getElementById("regKpiGrid");
   const listBody = document.getElementById("regList");
@@ -1467,7 +1452,6 @@ async function loadRegistrationData() {
   }
 }
 
-// ============ Init ============
 function init() {
   renderRegFormFields();
   document.getElementById("regSaveBtn").addEventListener("click", handleRegSave);
