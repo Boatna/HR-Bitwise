@@ -249,7 +249,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .ministry-pill.ministry-มหาดไทย { background: #F0EBFF; color: #7B61FF; }
 .ministry-pill.ministry-ไม่ระบุ { background: #F0F0F0; color: #888; }
 
-/* ============ Legal registry table (classic register style, like the printed form) ============ */
+/* ============ Legal registry table ============ */
 .reg-table-wrap {
   overflow-x: auto;
   background: var(--card);
@@ -260,7 +260,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  min-width: 1180px;
+  min-width: 1420px;
 }
 .reg-table th, .reg-table td {
   border: 1px solid var(--border);
@@ -310,6 +310,18 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .icon-btn.edit:hover { background: var(--blue2); color: white; }
 .icon-btn.delete { background: var(--red-light); color: var(--red); }
 .icon-btn.delete:hover { background: var(--red); color: white; }
+
+.attach-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 700;
+  background: var(--blue-light); color: var(--blue); text-decoration: none; white-space: nowrap;
+  transition: all 0.2s;
+}
+.attach-link:hover { background: var(--blue2); color: white; }
+.attach-none { color: var(--text-muted); font-size: 12px; }
+.file-current-note { margin-top: 6px; font-size: 12.5px; color: var(--text-muted); }
+.file-current-note a { color: var(--blue); font-weight: 600; }
+.file-selected-status { color: var(--green-dark); font-weight: 600; }
 
 .empty-state {
   text-align: center; padding: 60px 20px; color: var(--text-muted);
@@ -493,6 +505,10 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
         <label for="gf_วันที่ประกาศ">วันที่ประกาศ</label>
         <input id="gf_วันที่ประกาศ" type="date">
       </div>
+      <div class="field">
+        <label for="gf_วันที่มีผลบังคับใช้">วันที่มีผลบังคับใช้</label>
+        <input id="gf_วันที่มีผลบังคับใช้" type="date">
+      </div>
     </div>
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 12px 0;flex-wrap:wrap;gap:10px;">
@@ -531,17 +547,20 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
             <th style="width:120px">กระทรวง</th>
             <th style="min-width:200px">ชื่อกฎหมาย</th>
             <th style="width:110px">วันที่ประกาศ</th>
+            <th style="width:110px">วันที่มีผลบังคับใช้</th>
             <th style="min-width:280px">รายละเอียดข้อกำหนดกฎหมาย</th>
             <th style="width:90px">ความถี่</th>
             <th style="width:90px">กำหนดการ</th>
             <th style="width:110px">ผลการประเมิน</th>
+            <th style="width:110px">อัปเดตล่าสุด</th>
             <th style="width:120px">ผู้รับผิดชอบ</th>
             <th style="min-width:140px">หมายเหตุ</th>
+            <th style="width:100px">ไฟล์แนบ</th>
             <th style="width:90px">จัดการ</th>
           </tr>
         </thead>
         <tbody id="regList">
-          <tr><td colspan="11" class="skeleton-row">⏳ กำลังโหลดข้อมูล...</td></tr>
+          <tr><td colspan="14" class="skeleton-row">⏳ กำลังโหลดข้อมูล...</td></tr>
         </tbody>
       </table>
     </div>
@@ -564,7 +583,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 
 <script>
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycby7PMOtaMTaRbLnNb1F8dtAbG6oeKRFpkw8hsJAReqM0B2SASDQ3JQp6O2ygU83JKfJ/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzilMXRMyEf67jGC4RCkj-zavqKhav1X6GxY1IVyuLS1RGs5tftP1jmrZcXVT3lCB_x/exec",
   SHEET: "Registration_Laws_and_Safety",
   TIMEOUT: 30000,
   RETRY: 3
@@ -582,9 +601,7 @@ let regGroupEditItems = null;
 let regGroupEditSeq   = null;   
 let regGroupItemUidCounter = 0;
 
-// ============ Ministry -> code-prefix map (auto numbering) ============
-// ตัวอย่าง: แรงงาน -> L001, L002 ... / อุตสาหกรรม -> I001, I002 ...
-// สาธารณสุข -> H001 ... / พลังงาน -> E001 ... / มหาดไทย -> In001 ...
+// ============ Ministry -> code-prefix map ============
 const MINISTRY_PREFIX = {
   'แรงงาน': 'L',
   'อุตสาหกรรม': 'I',
@@ -594,8 +611,6 @@ const MINISTRY_PREFIX = {
 };
 const MINISTRY_OPTIONS = Object.keys(MINISTRY_PREFIX);
 
-// สถานะ: ค่า "ลำดับ" ในช่องฟอร์มปัจจุบันเป็นค่าที่ระบบรันให้อัตโนมัติอยู่หรือไม่
-// (ถ้าผู้ใช้พิมพ์แก้เองจะไม่ auto-run ทับให้อีก)
 let regSeqAutoFilled = false;
 
 const REG_SCHEMA = {
@@ -610,12 +625,17 @@ const REG_SCHEMA = {
     },
     { key: "ชื่อกฎหมาย",               label: "ชื่อกฎหมาย",                type: "text",     required: true, wide: true },
     { key: "วันที่ประกาศ",             label: "วันที่ประกาศ",              type: "date" },
+    { key: "วันที่มีผลบังคับใช้",      label: "วันที่มีผลบังคับใช้",       type: "date" },
     { key: "รายละเอียดข้อกำหนดกฎหมาย", label: "รายละเอียดข้อกำหนดกฎหมาย",  type: "textarea", wide: true },
     { key: "ความถี่",                  label: "ความถี่",                   type: "text" },
     { key: "กำหนดการ",                 label: "กำหนดการ",                  type: "text" },
     { key: "ผลการประเมิน",             label: "ผลการประเมิน",              type: "select",   options: ["Yes","No","NA"] },
     { key: "ผู้รับผิดชอบ",             label: "ผู้รับผิดชอบ",              type: "text" },
     { key: "หมายเหตุ",                 label: "หมายเหตุ",                  type: "text" },
+    {
+      key: "ไฟล์แนบ", label: "ไฟล์แนบ (PDF)", type: "file", wide: true,
+      hint: "แนบไฟล์ PDF ขนาดไม่เกิน 10MB ระบบจะอัปโหลดขึ้น Google Drive ให้อัตโนมัติ (สร้างโฟลเดอร์ตามลำดับกฎหมาย)"
+    },
   ],
 };
 
@@ -699,9 +719,7 @@ function getMinistryClass(ministry) {
   return map[ministry] || 'ministry-ไม่ระบุ';
 }
 
-// ============ Auto-number logic (เลือกกระทรวง -> รันเลขลำดับให้อัตโนมัติ) ============
-// สแกน regRowsCache หาเลขสูงสุดของ prefix นั้น ๆ แล้ว +1 พร้อมเติมเลข 0 นำหน้าให้ครบ 3 หลัก
-// เช่น แรงงาน (L) มีอยู่ถึง L112 -> รหัสถัดไปคือ L113
+// ============ Auto-number logic ============
 function computeNextSeq(ministry) {
   const prefix = MINISTRY_PREFIX[ministry];
   if (!prefix) return '';
@@ -718,13 +736,11 @@ function computeNextSeq(ministry) {
   return prefix + String(maxNum + 1).padStart(3, '0');
 }
 
-// ผูก event: เมื่อเลือก/เปลี่ยนกระทรวงในฟอร์ม "เพิ่ม/แก้ไขข้อกำหนด" ให้รันเลขลำดับให้อัตโนมัติ
 function setupSeqAutoGenerate() {
   const ministrySel = document.getElementById('rf_กระทรวง');
   const seqInput    = document.getElementById('rf_ลำดับ');
   if (!ministrySel || !seqInput) return;
 
-  // ถ้าผู้ใช้พิมพ์แก้ไขเลขลำดับเอง ให้เลิกถือว่าเป็นค่าที่ auto-fill ไว้
   seqInput.addEventListener('input', () => {
     if (!seqInput.dataset.settingProgrammatically) {
       regSeqAutoFilled = false;
@@ -732,11 +748,9 @@ function setupSeqAutoGenerate() {
   });
 
   ministrySel.addEventListener('change', () => {
-    // ตอนกำลังแก้ไขรายการเดิม (มี rowIndex) จะไม่รันเลขใหม่ให้ทับของเดิม
     if (regEditingRowIndex !== null) return;
     const ministry = ministrySel.value;
     if (!ministry) return;
-    // รันเลขให้เมื่อช่องว่างอยู่ หรือค่าปัจจุบันเป็นค่าที่ auto-fill ไว้ก่อนหน้า (ยังไม่ถูกแก้เอง)
     if (seqInput.value.trim() === '' || regSeqAutoFilled) {
       const nextSeq = computeNextSeq(ministry);
       if (nextSeq) {
@@ -819,6 +833,48 @@ const addSheetRow    = (data)             => postToSheet({ action: "add",    she
 const updateSheetRow = (rowIndex, data)   => postToSheet({ action: "update", sheet: CONFIG.SHEET, rowIndex, data });
 const deleteSheetRow = (rowIndex)         => postToSheet({ action: "delete", sheet: CONFIG.SHEET, rowIndex });
 
+// ============ Attachment (PDF) upload helpers ============
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result || "";
+      const base64 = String(result).split(",")[1] || "";
+      resolve(base64);
+    };
+    reader.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    reader.readAsDataURL(file);
+  });
+}
+
+// อัปโหลดไฟล์ (File object) ขึ้น Drive
+async function uploadAttachmentFileObject(file, existingUrl, seqForFolder) {
+  if (!file) return existingUrl || '';
+  if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name || '')) {
+    throw new Error('รองรับเฉพาะไฟล์ PDF เท่านั้น');
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error('ไฟล์ต้องมีขนาดไม่เกิน 10MB');
+  }
+  const base64Data = await readFileAsBase64(file);
+  const result = await postToSheet({
+    action: 'uploadFile',
+    fileName: file.name,
+    mimeType: file.type || 'application/pdf',
+    base64Data: base64Data,
+    seq: seqForFolder || ''
+  });
+  if (result.error) throw new Error(result.error);
+  return result.fileUrl || '';
+}
+
+// ฟังก์ชันสำหรับอ่านไฟล์จาก input element
+async function uploadAttachmentIfNeeded(fileInputEl, hiddenUrlEl, seqForFolder) {
+  const file = fileInputEl && fileInputEl.files && fileInputEl.files[0] ? fileInputEl.files[0] : null;
+  const existingUrl = hiddenUrlEl ? hiddenUrlEl.value : '';
+  return uploadAttachmentFileObject(file, existingUrl, seqForFolder);
+}
+
 // ============ Form ============
 function renderRegFormFields() {
   document.getElementById("regFieldGrid").innerHTML = REG_SCHEMA.fields.map(f => {
@@ -835,6 +891,13 @@ function renderRegFormFields() {
       inputHtml = `<input id="rf_${f.key}" type="date">`;
     } else if (f.type === "textarea") {
       inputHtml = `<textarea id="rf_${f.key}"></textarea>`;
+    } else if (f.type === "file") {
+      inputHtml = `
+        <input id="rf_${f.key}" type="file" accept="application/pdf">
+        <input type="hidden" id="rf_${f.key}_url" value="">
+        <div class="file-current-note" id="rf_${f.key}_current"></div>
+        <div class="file-current-note file-selected-status" style="color:var(--green-dark);"></div>
+      `;
     } else {
       inputHtml = `<input id="rf_${f.key}" type="text">`;
     }
@@ -844,9 +907,26 @@ function renderRegFormFields() {
         ${inputHtml}
         <div class="error-msg" id="rerr_${f.key}">กรุณากรอกข้อมูล</div>
         ${f.hint ? `<div class="hint">${escapeHtml(f.hint)}</div>` : ''}
+        ${f.key === 'ผลการประเมิน' ? `<div class="file-current-note" id="rf_ผลการประเมิน_reviewdate"></div>` : ''}
       </div>
     `;
   }).join("");
+  
+  // ผูก event สำหรับ file input
+  const fileInput = document.getElementById('rf_ไฟล์แนบ');
+  if (fileInput) {
+    fileInput.addEventListener('change', function() {
+      const file = this.files && this.files[0] ? this.files[0] : null;
+      const parentDiv = this.closest('.field');
+      if (parentDiv) {
+        const statusEl = parentDiv.querySelector('.file-selected-status');
+        if (statusEl) {
+          statusEl.textContent = file ? `✅ เลือกไฟล์: ${file.name}` : '';
+          statusEl.style.display = file ? 'block' : 'none';
+        }
+      }
+    });
+  }
 }
 
 function validateRegForm() {
@@ -870,6 +950,7 @@ function validateRegForm() {
 function getRegFormData() {
   const data = {};
   REG_SCHEMA.fields.forEach(f => {
+    if (f.type === 'file') return;
     const el = document.getElementById(`rf_${f.key}`);
     if (el) data[f.key] = el.value;
   });
@@ -883,18 +964,64 @@ function resetRegForm() {
   document.getElementById("regFormTitle").textContent = "➕ เพิ่มรายการกฎหมายใหม่";
   document.getElementById("regCancelEditBtn").style.display = "none";
   REG_SCHEMA.fields.forEach(f => {
+    if (f.type === 'file') {
+      const fileInput = document.getElementById(`rf_${f.key}`);
+      const hiddenUrl  = document.getElementById(`rf_${f.key}_url`);
+      const currentEl  = document.getElementById(`rf_${f.key}_current`);
+      const statusEl   = document.querySelector(`#rf_${f.key}`)?.closest?.('.field')?.querySelector?.('.file-selected-status');
+      if (fileInput) fileInput.value = "";
+      if (hiddenUrl) hiddenUrl.value = "";
+      if (currentEl) currentEl.innerHTML = "";
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.display = 'none'; }
+      return;
+    }
     const el = document.getElementById(`rf_${f.key}`);
     if (el) { el.value = ""; el.classList.remove('error'); }
   });
+  const reviewDateEl = document.getElementById('rf_ผลการประเมิน_reviewdate');
+  if (reviewDateEl) reviewDateEl.innerHTML = "";
 }
 
 function startRegEdit(row) {
   if (regGroupEditItems) cancelGroupEdit();
   regEditingRowIndex = row._rowIndex;
-  regSeqAutoFilled = false; // กำลังแก้ไขของเดิม ไม่ต้องรันเลขใหม่ให้อัตโนมัติ
+  regSeqAutoFilled = false;
   document.getElementById("regFormTitle").textContent = "✏️ แก้ไขรายการกฎหมาย";
   document.getElementById("regCancelEditBtn").style.display = "inline-block";
+  
   REG_SCHEMA.fields.forEach(f => {
+    if (f.type === 'file') {
+      const fileInput = document.getElementById(`rf_${f.key}`);
+      const hiddenUrl = document.getElementById(`rf_${f.key}_url`);
+      const currentEl = document.getElementById(`rf_${f.key}_current`);
+      const statusEl = fileInput?.closest?.('.field')?.querySelector?.('.file-selected-status');
+      const existingUrl = row[f.key] || "";
+      
+      if (fileInput) fileInput.value = "";
+      if (hiddenUrl) hiddenUrl.value = existingUrl;
+      if (currentEl) {
+        currentEl.innerHTML = existingUrl
+          ? `📎 ไฟล์เดิม: <a href="${escapeHtml(existingUrl)}" target="_blank" rel="noopener">เปิดดูไฟล์</a> (เลือกไฟล์ใหม่เพื่อแทนที่)`
+          : `ยังไม่มีไฟล์แนบ`;
+      }
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.display = 'none'; }
+      
+      if (fileInput) {
+        fileInput.addEventListener('change', function() {
+          const file = this.files && this.files[0] ? this.files[0] : null;
+          const parentDiv = this.closest('.field');
+          if (parentDiv) {
+            const sEl = parentDiv.querySelector('.file-selected-status');
+            if (sEl) {
+              sEl.textContent = file ? `✅ เลือกไฟล์: ${file.name}` : '';
+              sEl.style.display = file ? 'block' : 'none';
+            }
+          }
+        });
+      }
+      return;
+    }
+    
     const el = document.getElementById(`rf_${f.key}`);
     if (!el) return;
     let val = row[f.key] !== undefined && row[f.key] !== null ? row[f.key] : "";
@@ -905,6 +1032,13 @@ function startRegEdit(row) {
     el.value = val;
     el.classList.remove('error');
   });
+  
+  const reviewDateEl = document.getElementById('rf_ผลการประเมิน_reviewdate');
+  if (reviewDateEl) {
+    const reviewDate = row['วันที่ประเมินล่าสุด'];
+    reviewDateEl.innerHTML = reviewDate ? `🕓 ประเมิน/ทบทวนล่าสุดเมื่อ: ${formatDateThai(reviewDate)}` : '';
+  }
+  
   document.querySelector(".form-card").scrollIntoView({ behavior: "smooth" });
 }
 
@@ -938,6 +1072,9 @@ function startRegEditGroupBySeq(seq) {
     result: it["ผลการประเมิน"] || "",
     owner:  it["ผู้รับผิดชอบ"] || "",
     note:   it["หมายเหตุ"] || "",
+    attachUrl: it["ไฟล์แนบ"] || "",
+    attachFileObj: null,
+    reviewDate: it["วันที่ประเมินล่าสุด"] || "",
   }));
 
   const first = items[0];
@@ -946,6 +1083,8 @@ function startRegEditGroupBySeq(seq) {
   document.getElementById("gf_ชื่อกฎหมาย").value = first["ชื่อกฎหมาย"] || "";
   const dateVal = first["วันที่ประกาศ"];
   document.getElementById("gf_วันที่ประกาศ").value = dateVal ? (toISODateString(dateVal) || "") : "";
+  const effDateVal = first["วันที่มีผลบังคับใช้"];
+  document.getElementById("gf_วันที่มีผลบังคับใช้").value = effDateVal ? (toISODateString(effDateVal) || "") : "";
 
   const labelEl = document.getElementById("regGroupEditLabel");
   if (labelEl) labelEl.textContent = `${seq} · ${items.length} ข้อกำหนด`;
@@ -962,6 +1101,7 @@ function renderGroupEditRows() {
     container.innerHTML = `<div class="skeleton-row">ยังไม่มีข้อกำหนดในฉบับนี้ กด "➕ เพิ่มข้อกำหนดใหม่" เพื่อเริ่มเพิ่ม</div>`;
     return;
   }
+  
   container.innerHTML = regGroupEditItems.map((item, idx) => `
     <div class="group-item-card" data-uid="${item.uid}">
       <div class="group-item-head">
@@ -989,6 +1129,7 @@ function renderGroupEditRows() {
             <option value="No" ${item.result === 'No' ? 'selected' : ''}>No</option>
             <option value="NA" ${item.result === 'NA' ? 'selected' : ''}>NA</option>
           </select>
+          ${item.reviewDate ? `<div class="file-current-note">🕓 ประเมิน/ทบทวนล่าสุดเมื่อ: ${formatDateThai(item.reviewDate)}</div>` : ''}
         </div>
         <div class="field">
           <label>ผู้รับผิดชอบ</label>
@@ -998,28 +1139,69 @@ function renderGroupEditRows() {
           <label>หมายเหตุ</label>
           <input type="text" data-uid="${item.uid}" data-field="note" value="${escapeHtml(item.note)}">
         </div>
+        <div class="field wide">
+          <label>ไฟล์แนบ (PDF)</label>
+          <input type="file" accept="application/pdf" data-uid="${item.uid}" data-field="attachFile">
+          <div class="file-current-note">
+            ${item.attachUrl
+              ? `📎 ไฟล์เดิม: <a href="${escapeHtml(item.attachUrl)}" target="_blank" rel="noopener">เปิดดูไฟล์</a> (เลือกไฟล์ใหม่เพื่อแทนที่)`
+              : `ยังไม่มีไฟล์แนบ`}
+          </div>
+          ${item.attachFileObj ? `<div class="file-current-note file-selected-status" style="color:var(--green-dark);">✅ เลือกไฟล์: ${escapeHtml(item.attachFileObj.name)}</div>` : ''}
+        </div>
       </div>
     </div>
   `).join("");
-
+  
+  // ผูก event ให้กับทุก input และ select
   container.querySelectorAll('[data-uid][data-field]').forEach(el => {
     el.addEventListener('input', onGroupItemFieldChange);
     el.addEventListener('change', onGroupItemFieldChange);
   });
+  
+  // ผูก event ให้กับ file input โดยเฉพาะ
+  container.querySelectorAll('input[type="file"][data-uid]').forEach(el => {
+    el.addEventListener('change', function(e) {
+      const uid = Number(this.dataset.uid);
+      const item = regGroupEditItems.find(it => it.uid === uid);
+      if (item) {
+        const file = this.files && this.files[0] ? this.files[0] : null;
+        item.attachFileObj = file;
+        
+        const parentDiv = this.closest('.field');
+        if (parentDiv) {
+          let statusEl = parentDiv.querySelector('.file-selected-status');
+          if (!statusEl) {
+            statusEl = document.createElement('div');
+            statusEl.className = 'file-current-note file-selected-status';
+            statusEl.style.color = 'var(--green-dark)';
+            parentDiv.appendChild(statusEl);
+          }
+          statusEl.textContent = file ? `✅ เลือกไฟล์: ${file.name}` : '';
+          statusEl.style.display = file ? 'block' : 'none';
+        }
+      }
+    });
+  });
 }
 
 function onGroupItemFieldChange(e) {
-  const uid   = Number(e.target.dataset.uid);
+  const uid = Number(e.target.dataset.uid);
   const field = e.target.dataset.field;
-  const item  = regGroupEditItems && regGroupEditItems.find(it => it.uid === uid);
-  if (item) item[field] = e.target.value;
+  const item = regGroupEditItems && regGroupEditItems.find(it => it.uid === uid);
+  if (!item) return;
+  if (field === 'attachFile') {
+    return;
+  }
+  item[field] = e.target.value;
 }
 
 function addGroupEditRow() {
   if (!regGroupEditItems) return;
   regGroupEditItems.push({
     uid: regGroupItemUidCounter++,
-    rowIndex: null, detail: "", freq: "", sched: "", result: "", owner: "", note: ""
+    rowIndex: null, detail: "", freq: "", sched: "", result: "", owner: "", note: "",
+    attachUrl: "", attachFileObj: null
   });
   renderGroupEditRows();
 }
@@ -1044,20 +1226,78 @@ function cancelGroupEdit() {
   if (formCard) formCard.style.display = "";
 }
 
+// ============ Save Functions ============
+async function handleRegSave() {
+  if (!validateRegForm()) { 
+    showToast("กรุณากรอกข้อมูลให้ครบถ้วน", true); 
+    return; 
+  }
+  
+  const data = getRegFormData();
+  const saveBtn = document.getElementById("regSaveBtn");
+  
+  saveBtn.disabled = true;
+  saveBtn.textContent = "⏳ กำลังบันทึก...";
+  
+  try {
+    const fileInput = document.getElementById('rf_ไฟล์แนบ');
+    const hiddenUrl = document.getElementById('rf_ไฟล์แนบ_url');
+    const seqForFolder = (document.getElementById('rf_ลำดับ').value || '').trim();
+    
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+      saveBtn.textContent = "⏳ กำลังอัปโหลดไฟล์...";
+      const fileUrl = await uploadAttachmentFileObject(
+        fileInput.files[0],
+        hiddenUrl ? hiddenUrl.value : '',
+        seqForFolder
+      );
+      data["ไฟล์แนบ"] = fileUrl;
+      if (hiddenUrl) hiddenUrl.value = fileUrl;
+    } else if (hiddenUrl && hiddenUrl.value) {
+      data["ไฟล์แนบ"] = hiddenUrl.value;
+    }
+    
+    saveBtn.textContent = "⏳ กำลังบันทึกข้อมูล...";
+    if (regEditingRowIndex !== null) {
+      await updateSheetRow(regEditingRowIndex, data);
+      showToast("✅ แก้ไขข้อมูลสำเร็จ");
+    } else {
+      await addSheetRow(data);
+      showToast("✅ เพิ่มข้อมูลสำเร็จ");
+    }
+    
+    resetRegForm();
+    await loadRegistrationData();
+    
+  } catch (err) {
+    showToast(`❌ ${err.message}`, true);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "💾 บันทึก";
+  }
+}
+
 async function handleGroupSave() {
   if (!regGroupEditItems) return;
+  
   document.querySelectorAll('#regGroupItemsContainer [data-uid][data-field]').forEach(el => {
-    const uid   = Number(el.dataset.uid);
+    const uid = Number(el.dataset.uid);
     const field = el.dataset.field;
-    const item  = regGroupEditItems.find(it => it.uid === uid);
-    if (item) item[field] = el.value;
+    const item = regGroupEditItems.find(it => it.uid === uid);
+    if (item) {
+      if (field === 'attachFile') {
+        return;
+      }
+      item[field] = el.value;
+    }
   });
-
-  const seqVal     = document.getElementById("gf_ลำดับ").value.trim();
-  const ministry   = document.getElementById("gf_กระทรวง").value.trim();
-  const lawName    = document.getElementById("gf_ชื่อกฎหมาย").value.trim();
+  
+  const seqVal = document.getElementById("gf_ลำดับ").value.trim();
+  const ministry = document.getElementById("gf_กระทรวง").value.trim();
+  const lawName = document.getElementById("gf_ชื่อกฎหมาย").value.trim();
   const announceDt = document.getElementById("gf_วันที่ประกาศ").value;
-
+  const effectiveDt = document.getElementById("gf_วันที่มีผลบังคับใช้").value;
+  
   if (!seqVal || !lawName) {
     showToast('กรุณากรอก "ลำดับ" และ "ชื่อกฎหมาย" ให้ครบถ้วน', true);
     return;
@@ -1066,19 +1306,20 @@ async function handleGroupSave() {
     showToast('ต้องมีข้อกำหนดอย่างน้อย 1 ข้อ', true);
     return;
   }
-
+  
   const saveBtn = document.getElementById("regGroupSaveBtn");
-  saveBtn.disabled    = true;
-  saveBtn.textContent = "⏳ กำลังบันทึก...";
-
+  saveBtn.disabled = true;
+  saveBtn.textContent = "⏳ กำลังอัปโหลดไฟล์ / บันทึก...";
+  
   try {
     const sharedData = {
       "ลำดับ": seqVal,
       "กระทรวง": ministry,
       "ชื่อกฎหมาย": lawName,
       "วันที่ประกาศ": announceDt,
+      "วันที่มีผลบังคับใช้": effectiveDt,
     };
-
+    
     const originalRowIndexes = new Set(
       regRowsCache
         .filter(r => (r["ลำดับ"] || "").toString().trim() === regGroupEditSeq)
@@ -1088,7 +1329,17 @@ async function handleGroupSave() {
       regGroupEditItems.filter(it => it.rowIndex !== null).map(it => it.rowIndex)
     );
     const toDelete = [...originalRowIndexes].filter(idx => !keptRowIndexes.has(idx));
+    
+    let uploadedCount = 0;
+    const totalItems = regGroupEditItems.length;
+    
     for (const item of regGroupEditItems.filter(it => it.rowIndex !== null)) {
+      let attachUrl = item.attachUrl || '';
+      if (item.attachFileObj) {
+        saveBtn.textContent = `⏳ กำลังอัปโหลดไฟล์... (${++uploadedCount}/${totalItems})`;
+        attachUrl = await uploadAttachmentFileObject(item.attachFileObj, item.attachUrl, seqVal);
+      }
+      
       await updateSheetRow(item.rowIndex, {
         ...sharedData,
         "รายละเอียดข้อกำหนดกฎหมาย": item.detail,
@@ -1097,10 +1348,17 @@ async function handleGroupSave() {
         "ผลการประเมิน": item.result,
         "ผู้รับผิดชอบ": item.owner,
         "หมายเหตุ": item.note,
+        "ไฟล์แนบ": attachUrl,
       });
     }
-
+    
     for (const item of regGroupEditItems.filter(it => it.rowIndex === null)) {
+      let attachUrl = '';
+      if (item.attachFileObj) {
+        saveBtn.textContent = `⏳ กำลังอัปโหลดไฟล์... (${++uploadedCount}/${totalItems})`;
+        attachUrl = await uploadAttachmentFileObject(item.attachFileObj, '', seqVal);
+      }
+      
       await addSheetRow({
         ...sharedData,
         "รายละเอียดข้อกำหนดกฎหมาย": item.detail,
@@ -1109,46 +1367,24 @@ async function handleGroupSave() {
         "ผลการประเมิน": item.result,
         "ผู้รับผิดชอบ": item.owner,
         "หมายเหตุ": item.note,
+        "ไฟล์แนบ": attachUrl,
       });
     }
-
+    
     const sortedDelete = toDelete.sort((a, b) => b - a);
     for (const rowIndex of sortedDelete) {
       await deleteSheetRow(rowIndex);
     }
-
+    
     showToast(`✅ บันทึกฉบับ ${seqVal} เรียบร้อย`);
     cancelGroupEdit();
     await loadRegistrationData();
+    
   } catch (err) {
     showToast(`❌ ${err.message}`, true);
   } finally {
-    saveBtn.disabled    = false;
+    saveBtn.disabled = false;
     saveBtn.textContent = "💾 บันทึกทั้งฉบับ";
-  }
-}
-
-async function handleRegSave() {
-  if (!validateRegForm()) { showToast("กรุณากรอกข้อมูลให้ครบถ้วน", true); return; }
-  const data    = getRegFormData();
-  const saveBtn = document.getElementById("regSaveBtn");
-  saveBtn.disabled    = true;
-  saveBtn.textContent = "⏳ กำลังบันทึก...";
-  try {
-    if (regEditingRowIndex !== null) {
-      await updateSheetRow(regEditingRowIndex, data);
-      showToast("✅ แก้ไขข้อมูลสำเร็จ");
-    } else {
-      await addSheetRow(data);
-      showToast("✅ เพิ่มข้อมูลสำเร็จ");
-    }
-    resetRegForm();
-    await loadRegistrationData();
-  } catch (err) {
-    showToast(`❌ ${err.message}`, true);
-  } finally {
-    saveBtn.disabled    = false;
-    saveBtn.textContent = "💾 บันทึก";
   }
 }
 
@@ -1387,7 +1623,7 @@ function renderRegList() {
   if (!allGroups.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="11">
+        <td colspan="14">
           <div class="empty-state">
             <div class="icon">🔍</div>
             <div>ไม่พบข้อมูลตามตัวกรองที่เลือก</div>
@@ -1409,6 +1645,8 @@ function renderRegList() {
     const lawName  = first["ชื่อกฎหมาย"] || "-";
     const lawDate  = first["วันที่ประกาศ"] || "";
     const dateDisplay = lawDate ? formatDateThai(lawDate) : "-";
+    const effDate  = first["วันที่มีผลบังคับใช้"] || "";
+    const effDateDisplay = effDate ? formatDateThai(effDate) : "-";
     const rowspan = items.length;
 
     return items.map((it, idx) => {
@@ -1431,13 +1669,20 @@ function renderRegList() {
             <td rowspan="${rowspan}"><span class="ministry-pill ${ministryClass}">${ministryIcon} ${escapeHtml(ministry)}</span></td>
             <td rowspan="${rowspan}"><span class="law-name-cell">${escapeHtml(lawName)}</span></td>
             <td class="center" rowspan="${rowspan}">${dateDisplay}</td>
+            <td class="center" rowspan="${rowspan}">${effDateDisplay}</td>
           ` : ``}
           <td>${escapeHtml(detail)}</td>
           <td class="center">${escapeHtml(it["ความถี่"] || "-")}</td>
           <td class="center">${escapeHtml(it["กำหนดการ"] || "-")}</td>
           <td class="center">${evalBadge(it["ผลการประเมิน"])}</td>
+          <td class="center">${it["วันที่ประเมินล่าสุด"] ? formatDateThai(it["วันที่ประเมินล่าสุด"]) : `<span class="attach-none">-</span>`}</td>
           <td>${escapeHtml(it["ผู้รับผิดชอบ"] || "-")}</td>
           <td>${note ? escapeHtml(note) : "-"}</td>
+          <td class="center">
+            ${it["ไฟล์แนบ"]
+              ? `<a class="attach-link" href="${escapeHtml(it["ไฟล์แนบ"])}" target="_blank" rel="noopener">📎 ดูไฟล์</a>`
+              : `<span class="attach-none">-</span>`}
+          </td>
           <td class="center">
             <div class="table-actions">
               <button class="icon-btn edit" onclick="startRegEditByIndex(${it._rowIndex})" title="แก้ไข">✏️</button>
@@ -1526,7 +1771,7 @@ async function loadRegistrationData() {
   const kpiGrid  = document.getElementById("regKpiGrid");
   const listBody = document.getElementById("regList");
   showLoading(kpiGrid);
-  listBody.innerHTML = `<tr><td colspan="11" class="skeleton-row">⏳ กำลังโหลด...</td></tr>`;
+  listBody.innerHTML = `<tr><td colspan="14" class="skeleton-row">⏳ กำลังโหลด...</td></tr>`;
   try {
     regRowsCache = await fetchSheetData(CONFIG.SHEET);
     populateRegFilterOptions(regRowsCache);
@@ -1537,13 +1782,13 @@ async function loadRegistrationData() {
     kpiGrid.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
     document.getElementById("regDonut").innerHTML = "";
     document.getElementById("regMinistryChart").innerHTML = "";
-    listBody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="icon">⚠️</div><div>${escapeHtml(err.message)}</div></div></td></tr>`;
+    listBody.innerHTML = `<tr><td colspan="14"><div class="empty-state"><div class="icon">⚠️</div><div>${escapeHtml(err.message)}</div></div></td></tr>`;
   }
 }
 
 function init() {
   renderRegFormFields();
-  setupSeqAutoGenerate(); // ผูก event auto-run เลขลำดับตามกระทรวงที่เลือก
+  setupSeqAutoGenerate();
   document.getElementById("regSaveBtn").addEventListener("click", handleRegSave);
   document.getElementById("regCancelEditBtn").addEventListener("click", resetRegForm);
 
@@ -1601,7 +1846,7 @@ function init() {
 
 document.addEventListener("DOMContentLoaded", init);
 
-console.log('✅ Registration Laws and Safety page loaded! (ministry auto-numbering enabled)');
+console.log('✅ Registration Laws and Safety page loaded! (ministry auto-numbering + file upload fixed)');
 </script>
 </body>
 </html>
