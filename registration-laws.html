@@ -230,6 +230,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,111,217,0.12); }
 .field input.error, .field select.error, .field textarea.error { border-color: var(--red); }
 .field .error-msg { color: var(--red); font-size: 12px; margin-top: 4px; display: none; }
+.field .hint { color: var(--text-muted); font-size: 11px; margin-top: 4px; }
 .field.wide { grid-column: 1 / -1; }
 .form-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
@@ -470,12 +471,19 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
     <p style="margin:-6px 0 16px 0;color:var(--text-muted);font-size:13px;">แก้ไข เพิ่ม หรือลบข้อกำหนดของฉบับนี้ได้ทุกข้อ แล้วกด "บันทึกทั้งฉบับ" ครั้งเดียว</p>
     <div class="field-grid">
       <div class="field">
-        <label for="gf_ลำดับ">ลำดับ (รหัส) <span style="color:red">*</span></label>
-        <input id="gf_ลำดับ" type="text">
+        <label for="gf_กระทรวง">กระทรวง</label>
+        <select id="gf_กระทรวง">
+          <option value="">-- เลือกกระทรวง --</option>
+          <option value="แรงงาน">แรงงาน (L)</option>
+          <option value="อุตสาหกรรม">อุตสาหกรรม (I)</option>
+          <option value="สาธารณสุข">สาธารณสุข (H)</option>
+          <option value="พลังงาน">พลังงาน (E)</option>
+          <option value="มหาดไทย">มหาดไทย (In)</option>
+        </select>
       </div>
       <div class="field">
-        <label for="gf_กระทรวง">กระทรวง</label>
-        <input id="gf_กระทรวง" type="text">
+        <label for="gf_ลำดับ">ลำดับ (รหัส) <span style="color:red">*</span></label>
+        <input id="gf_ลำดับ" type="text">
       </div>
       <div class="field wide">
         <label for="gf_ชื่อกฎหมาย">ชื่อกฎหมาย <span style="color:red">*</span></label>
@@ -574,10 +582,32 @@ let regGroupEditItems = null;
 let regGroupEditSeq   = null;   
 let regGroupItemUidCounter = 0;
 
+// ============ Ministry -> code-prefix map (auto numbering) ============
+// ตัวอย่าง: แรงงาน -> L001, L002 ... / อุตสาหกรรม -> I001, I002 ...
+// สาธารณสุข -> H001 ... / พลังงาน -> E001 ... / มหาดไทย -> In001 ...
+const MINISTRY_PREFIX = {
+  'แรงงาน': 'L',
+  'อุตสาหกรรม': 'I',
+  'สาธารณสุข': 'H',
+  'พลังงาน': 'E',
+  'มหาดไทย': 'In'
+};
+const MINISTRY_OPTIONS = Object.keys(MINISTRY_PREFIX);
+
+// สถานะ: ค่า "ลำดับ" ในช่องฟอร์มปัจจุบันเป็นค่าที่ระบบรันให้อัตโนมัติอยู่หรือไม่
+// (ถ้าผู้ใช้พิมพ์แก้เองจะไม่ auto-run ทับให้อีก)
+let regSeqAutoFilled = false;
+
 const REG_SCHEMA = {
   fields: [
-    { key: "ลำดับ",                    label: "ลำดับ (รหัส)",              type: "text",     required: true },
-    { key: "กระทรวง",                  label: "กระทรวง",                   type: "text" },
+    {
+      key: "กระทรวง", label: "กระทรวง", type: "select", required: true,
+      options: MINISTRY_OPTIONS.map(m => ({ value: m, label: `${m} (${MINISTRY_PREFIX[m]})` }))
+    },
+    {
+      key: "ลำดับ", label: "ลำดับ (รหัส)", type: "text", required: true,
+      hint: "เลือกกระทรวงก่อน ระบบจะรันเลขลำดับให้อัตโนมัติ (แก้ไขเองภายหลังได้)"
+    },
     { key: "ชื่อกฎหมาย",               label: "ชื่อกฎหมาย",                type: "text",     required: true, wide: true },
     { key: "วันที่ประกาศ",             label: "วันที่ประกาศ",              type: "date" },
     { key: "รายละเอียดข้อกำหนดกฎหมาย", label: "รายละเอียดข้อกำหนดกฎหมาย",  type: "textarea", wide: true },
@@ -669,6 +699,56 @@ function getMinistryClass(ministry) {
   return map[ministry] || 'ministry-ไม่ระบุ';
 }
 
+// ============ Auto-number logic (เลือกกระทรวง -> รันเลขลำดับให้อัตโนมัติ) ============
+// สแกน regRowsCache หาเลขสูงสุดของ prefix นั้น ๆ แล้ว +1 พร้อมเติมเลข 0 นำหน้าให้ครบ 3 หลัก
+// เช่น แรงงาน (L) มีอยู่ถึง L112 -> รหัสถัดไปคือ L113
+function computeNextSeq(ministry) {
+  const prefix = MINISTRY_PREFIX[ministry];
+  if (!prefix) return '';
+  let maxNum = 0;
+  const re = new RegExp('^' + prefix + '(\\d+)$', 'i');
+  regRowsCache.forEach(r => {
+    const seq = (r["ลำดับ"] || "").toString().trim();
+    const m = seq.match(re);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (!isNaN(n) && n > maxNum) maxNum = n;
+    }
+  });
+  return prefix + String(maxNum + 1).padStart(3, '0');
+}
+
+// ผูก event: เมื่อเลือก/เปลี่ยนกระทรวงในฟอร์ม "เพิ่ม/แก้ไขข้อกำหนด" ให้รันเลขลำดับให้อัตโนมัติ
+function setupSeqAutoGenerate() {
+  const ministrySel = document.getElementById('rf_กระทรวง');
+  const seqInput    = document.getElementById('rf_ลำดับ');
+  if (!ministrySel || !seqInput) return;
+
+  // ถ้าผู้ใช้พิมพ์แก้ไขเลขลำดับเอง ให้เลิกถือว่าเป็นค่าที่ auto-fill ไว้
+  seqInput.addEventListener('input', () => {
+    if (!seqInput.dataset.settingProgrammatically) {
+      regSeqAutoFilled = false;
+    }
+  });
+
+  ministrySel.addEventListener('change', () => {
+    // ตอนกำลังแก้ไขรายการเดิม (มี rowIndex) จะไม่รันเลขใหม่ให้ทับของเดิม
+    if (regEditingRowIndex !== null) return;
+    const ministry = ministrySel.value;
+    if (!ministry) return;
+    // รันเลขให้เมื่อช่องว่างอยู่ หรือค่าปัจจุบันเป็นค่าที่ auto-fill ไว้ก่อนหน้า (ยังไม่ถูกแก้เอง)
+    if (seqInput.value.trim() === '' || regSeqAutoFilled) {
+      const nextSeq = computeNextSeq(ministry);
+      if (nextSeq) {
+        seqInput.dataset.settingProgrammatically = '1';
+        seqInput.value = nextSeq;
+        regSeqAutoFilled = true;
+        delete seqInput.dataset.settingProgrammatically;
+      }
+    }
+  });
+}
+
 function renderDonut(segments, centerLabel, centerValue) {
   const total = segments.reduce((s, x) => s + x.value, 0) || 1;
   const r = 54, cx = 64, cy = 64, circumference = 2 * Math.PI * r;
@@ -744,7 +824,13 @@ function renderRegFormFields() {
   document.getElementById("regFieldGrid").innerHTML = REG_SCHEMA.fields.map(f => {
     let inputHtml;
     if (f.type === "select") {
-      inputHtml = `<select id="rf_${f.key}"><option value="">-- เลือก --</option>${f.options.map(o => `<option value="${o}">${o}</option>`).join("")}</select>`;
+      const optsHtml = f.options.map(o => {
+        if (o && typeof o === 'object') {
+          return `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`;
+        }
+        return `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`;
+      }).join("");
+      inputHtml = `<select id="rf_${f.key}"><option value="">-- เลือก --</option>${optsHtml}</select>`;
     } else if (f.type === "date") {
       inputHtml = `<input id="rf_${f.key}" type="date">`;
     } else if (f.type === "textarea") {
@@ -757,6 +843,7 @@ function renderRegFormFields() {
         <label for="rf_${f.key}">${f.label}${f.required ? ' <span style="color:red">*</span>' : ''}</label>
         ${inputHtml}
         <div class="error-msg" id="rerr_${f.key}">กรุณากรอกข้อมูล</div>
+        ${f.hint ? `<div class="hint">${escapeHtml(f.hint)}</div>` : ''}
       </div>
     `;
   }).join("");
@@ -792,6 +879,7 @@ function getRegFormData() {
 function resetRegForm() {
   if (regGroupEditItems) cancelGroupEdit();
   regEditingRowIndex = null;
+  regSeqAutoFilled = false;
   document.getElementById("regFormTitle").textContent = "➕ เพิ่มรายการกฎหมายใหม่";
   document.getElementById("regCancelEditBtn").style.display = "none";
   REG_SCHEMA.fields.forEach(f => {
@@ -803,6 +891,7 @@ function resetRegForm() {
 function startRegEdit(row) {
   if (regGroupEditItems) cancelGroupEdit();
   regEditingRowIndex = row._rowIndex;
+  regSeqAutoFilled = false; // กำลังแก้ไขของเดิม ไม่ต้องรันเลขใหม่ให้อัตโนมัติ
   document.getElementById("regFormTitle").textContent = "✏️ แก้ไขรายการกฎหมาย";
   document.getElementById("regCancelEditBtn").style.display = "inline-block";
   REG_SCHEMA.fields.forEach(f => {
@@ -1454,6 +1543,7 @@ async function loadRegistrationData() {
 
 function init() {
   renderRegFormFields();
+  setupSeqAutoGenerate(); // ผูก event auto-run เลขลำดับตามกระทรวงที่เลือก
   document.getElementById("regSaveBtn").addEventListener("click", handleRegSave);
   document.getElementById("regCancelEditBtn").addEventListener("click", resetRegForm);
 
@@ -1511,7 +1601,7 @@ function init() {
 
 document.addEventListener("DOMContentLoaded", init);
 
-console.log('✅ Registration Laws and Safety page loaded! (classic table layout, paginated 10 laws/page)');
+console.log('✅ Registration Laws and Safety page loaded! (ministry auto-numbering enabled)');
 </script>
 </body>
 </html>
