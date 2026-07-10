@@ -17,7 +17,7 @@
   --blue3:       #3B82F6;
   --blue4:       #60A5FA;
   --cyan:        #0EA5E9;
-  --blue-light:  #EBF3FF;
+  --blue-light:  #EAF2FF;
   --green:       #2E8B57;
   --green-light: #E6F4EA;
   --green-dark:  #1F6E42;
@@ -26,37 +26,57 @@
   --red:         #C23B3B;
   --red-light:   #FBEAEA;
   --purple:      #7B61FF;
-  --bg:          #F0F6FF;
+  --bg:          #F5F9FF;
+  --bg-soft:     #FAFCFF;
   --card:        #FFFFFF;
-  --border:      rgba(29,111,204,0.15);
-  --text:        #0F2744;
-  --text-muted:  #4A7CB5;
+  --border:      rgba(29,111,204,0.14);
+  --border-soft: rgba(29,111,204,0.08);
+  --text:        #16324F;
+  --text-muted:  #3D6C99;
   --radius:      16px;
   --radius-sm:   10px;
-  --shadow:      0 2px 16px rgba(29,111,204,0.10);
-  --shadow-hover:0 8px 32px rgba(29,111,204,0.18);
+  --shadow:      0 2px 14px rgba(29,111,204,0.08);
+  --shadow-hover:0 8px 28px rgba(29,111,204,0.16);
+  --focus-ring:  0 0 0 3px rgba(37,99,235,0.25);
 }
 
 * { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
   font-family: 'Noto Sans Thai', 'Outfit', sans-serif;
   background: var(--bg);
   color: var(--text);
-  line-height: 1.55;
+  line-height: 1.6;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
+
+/* comfortable, low-glare scrollbars for long factory-floor sessions */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--blue4); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--blue3); }
+
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 
 /* ============ Topbar (shared theme) ============ */
 .topbar {
   background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 55%, var(--navy-2) 100%);
   color: white;
-  position: relative;
+  position: sticky;
+  top: 0;
   overflow: hidden;
   border-bottom: 4px solid var(--blue3);
-  z-index: 10;
+  box-shadow: 0 4px 18px rgba(15,39,68,0.18);
+  z-index: 50;
 }
 .topbar::before {
   content: "";
@@ -79,6 +99,14 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   z-index: 1;
 }
 .brand { display: flex; align-items: center; gap: 16px; }
+.brand-mascot {
+  height: 88px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35));
+  margin-left: 2px;
+  flex-shrink: 0;
+}
 .brand-badge {
   width: 56px; height: 56px;
   border-radius: 50%;
@@ -105,18 +133,20 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 9px 18px; border-radius: 999px;
+  padding: 11px 20px; border-radius: 999px;
   font-size: 13.5px; font-weight: 600; cursor: pointer;
   border: none; font-family: inherit; transition: all 0.2s;
   text-decoration: none;
+  min-height: 40px;
 }
 .btn-primary { background: var(--blue2); color: white; box-shadow: 0 3px 10px rgba(37,99,235,0.30); }
 .btn-primary:hover { background: var(--blue); transform: translateY(-1px); }
 .btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.22); }
 .btn-secondary:hover { background: rgba(255,255,255,0.2); }
 .btn-home {
-  padding: 9px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
+  padding: 11px 20px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
   border: 1.5px solid rgba(96,165,250,0.5); background: rgba(37,99,235,0.25); color: white;
+  min-height: 40px;
 }
 .btn-home:hover { background: rgba(37,99,235,0.55); border-color: var(--blue4); transform: translateY(-1px); }
 .btn-outline { background: transparent; color: var(--blue2); border: 2px solid var(--blue2); }
@@ -199,7 +229,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 }
 .filter-field { display: flex; flex-direction: column; gap: 4px; min-width: 170px; }
 .filter-field label { font-size: 11.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
-.filter-field select { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; background: white; color: var(--text); cursor: pointer; }
+.filter-field select { padding: 11px 12px; min-height: 42px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; background: white; color: var(--text); cursor: pointer; }
 .filter-field select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,111,217,0.12); }
 .filter-actions { display: flex; gap: 8px; margin-left: auto; }
 
@@ -225,7 +255,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .form-card { background: var(--card); border-radius: var(--radius); padding: 24px; margin-bottom: 22px; box-shadow: var(--shadow); border-top: 3px solid var(--blue2); }
 .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px; }
 .field label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 5px; font-weight: 600; }
-.field input, .field select, .field textarea { width: 100%; padding: 10px 13px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color 0.2s; }
+.field input, .field select, .field textarea { width: 100%; padding: 11px 13px; min-height: 42px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color 0.2s; }
 .field textarea { resize: vertical; min-height: 72px; line-height: 1.6; }
 .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,111,217,0.12); }
 .field input.error, .field select.error, .field textarea.error { border-color: var(--red); }
@@ -260,14 +290,17 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  min-width: 1420px;
+  min-width: 1100px;
+  table-layout: fixed;
 }
 .reg-table th, .reg-table td {
-  border: 1px solid var(--border);
-  padding: 11px 13px;
+  border: 1px solid var(--border-soft);
+  padding: 13px 14px;
   text-align: left;
   vertical-align: top;
   line-height: 1.65;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 .reg-table thead th {
   background: var(--blue-light);
@@ -281,7 +314,8 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   z-index: 2;
 }
 .reg-table td.center { text-align: center; vertical-align: middle; }
-.reg-table tbody tr.reg-group-row:hover { background: var(--bg); }
+.reg-table tbody tr:nth-child(even) { background: var(--bg-soft); }
+.reg-table tbody tr.reg-group-row:hover { background: var(--blue-light); }
 .reg-table tbody tr.reg-group-first { border-top: 3px solid var(--blue2); }
 .reg-table td .law-name-cell { font-weight: 700; color: var(--navy-deep); }
 
@@ -300,6 +334,35 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .law-group-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .law-group-actions .group-btns { display: flex; gap: 5px; }
 .table-actions { display: flex; gap: 5px; justify-content: center; }
+
+/* ============ Responsive card view (mobile / tablet portrait) ============ */
+.reg-cards { display: none; flex-direction: column; gap: 16px; }
+.law-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.law-card-head {
+  background: var(--blue-light);
+  padding: 14px 16px;
+  display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px;
+  border-bottom: 2px solid var(--blue2);
+}
+.law-card-head-main { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; }
+.law-card-title { font-weight: 700; color: var(--navy-deep); font-size: 14.5px; line-height: 1.4; }
+.law-card-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; color: var(--text-muted); }
+.law-card-meta b { color: var(--navy); font-weight: 600; }
+.law-card-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.law-card-items { display: flex; flex-direction: column; }
+.law-card-item { padding: 14px 16px; border-top: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 9px; }
+.law-card-item:nth-child(even) { background: var(--bg-soft); }
+.item-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 4px 12px; font-size: 13px; }
+.item-row .k { color: var(--text-muted); font-weight: 700; flex-shrink: 0; }
+.item-row .v { text-align: right; color: var(--text); flex: 1; min-width: 120px; }
+.item-row.detail-row { flex-direction: column; gap: 4px; }
+.item-row.detail-row .v { text-align: left; }
+.item-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 2px; padding-top: 8px; border-top: 1px dashed var(--border); }
+
+@media (max-width: 1100px) {
+  .reg-table-wrap { display: none; }
+  .reg-cards { display: flex; }
+}
 
 .icon-btn {
   border: none; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600;
@@ -327,6 +390,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   text-align: center; padding: 60px 20px; color: var(--text-muted);
 }
 .empty-state .icon { font-size: 44px; margin-bottom: 12px; }
+.empty-state-mascot { height: 120px; width: auto; margin: 0 auto 14px auto; display: block; }
 
 /* ============ Pagination ============ */
 .reg-pagination {
@@ -369,7 +433,9 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 
 @media (max-width: 768px) {
   .topbar-inner { flex-direction: column; align-items: center; text-align: center; }
+  .brand { flex-wrap: wrap; justify-content: center; }
   .brand h1 { font-size: 20px; }
+  .brand-mascot { height: 64px; order: -1; }
   .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   .chart-grid { grid-template-columns: 1fr; }
   .kpi-value { font-size: 27px; }
@@ -397,6 +463,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
         <h1><span>Bitwise </span>ทะเบียนกฎหมายความปลอดภัย</h1>
         <p class="subtitle">Registration Laws and Safety · Bitwise Group</p>
       </div>
+      <img src="mascot-safety.png" alt="Bitwise Safety Mascot" class="brand-mascot" onerror="this.style.display='none';" />
     </div>
     <div class="topbar-actions">
       <a href="safety-DB.html" class="btn btn-home">← กลับสู่ Dashboard</a>
@@ -543,26 +610,30 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
       <table class="reg-table">
         <thead>
           <tr>
-            <th style="width:70px">ลำดับ</th>
-            <th style="width:120px">กระทรวง</th>
-            <th style="min-width:200px">ชื่อกฎหมาย</th>
-            <th style="width:110px">วันที่ประกาศ</th>
-            <th style="width:110px">วันที่มีผลบังคับใช้</th>
-            <th style="min-width:280px">รายละเอียดข้อกำหนดกฎหมาย</th>
-            <th style="width:90px">ความถี่</th>
-            <th style="width:90px">กำหนดการ</th>
-            <th style="width:110px">ผลการประเมิน</th>
-            <th style="width:110px">อัปเดตล่าสุด</th>
-            <th style="width:120px">ผู้รับผิดชอบ</th>
-            <th style="min-width:140px">หมายเหตุ</th>
-            <th style="width:100px">ไฟล์แนบ</th>
-            <th style="width:90px">จัดการ</th>
+            <th style="width:64px">ลำดับ</th>
+            <th style="width:100px">กระทรวง</th>
+            <th style="min-width:170px">ชื่อกฎหมาย</th>
+            <th style="width:90px">วันที่ประกาศ</th>
+            <th style="width:90px">วันที่มีผลบังคับใช้</th>
+            <th style="min-width:220px">รายละเอียดข้อกำหนดกฎหมาย</th>
+            <th style="width:78px">ความถี่</th>
+            <th style="width:78px">กำหนดการ</th>
+            <th style="width:96px">ผลการประเมิน</th>
+            <th style="width:96px">อัปเดตล่าสุด</th>
+            <th style="width:100px">ผู้รับผิดชอบ</th>
+            <th style="min-width:120px">หมายเหตุ</th>
+            <th style="width:86px">ไฟล์แนบ</th>
+            <th style="width:78px">จัดการ</th>
           </tr>
         </thead>
         <tbody id="regList">
           <tr><td colspan="14" class="skeleton-row">⏳ กำลังโหลดข้อมูล...</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="reg-cards" id="regCards">
+      <div class="skeleton-row">⏳ กำลังโหลดข้อมูล...</div>
     </div>
 
     <div class="reg-pagination" id="regPagination"></div>
@@ -645,6 +716,16 @@ function escapeHtml(value) {
   return String(value)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+// สำหรับฝัง value ลงใน onclick="fn('...')" อย่างปลอดภัย
+// (กันกรณี "ลำดับ" หรือค่าอื่นมีเครื่องหมาย ' หรือ " ปนอยู่ ซึ่งจะทำให้ปุ่มพัง/โค้ดหลุด)
+function escapeJsAttr(value) {
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/"/g, "&quot;")
+    .replace(/[\r\n]+/g, " ");
 }
 
 function formatNum(v) {
@@ -1593,6 +1674,7 @@ function renderRegSummary(rows) {
 
 function renderRegList() {
   const tbody   = document.getElementById("regList");
+  const cardsEl = document.getElementById("regCards");
   const countEl = document.getElementById("regTableCount");
 
   const allGroups = getFilteredGroups();
@@ -1621,23 +1703,22 @@ function renderRegList() {
   }
 
   if (!allGroups.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="14">
-          <div class="empty-state">
-            <div class="icon">🔍</div>
-            <div>ไม่พบข้อมูลตามตัวกรองที่เลือก</div>
-            <div style="font-size:12px;margin-top:6px;">ลองปรับตัวกรองหรือค้นหาด้วยคำอื่น</div>
-          </div>
-        </td>
-      </tr>
+    const emptyHtml = `
+      <div class="empty-state">
+        <img src="mascot-safety.png" alt="" class="empty-state-mascot" onerror="this.outerHTML='&lt;div class=&quot;icon&quot;&gt;🔍&lt;/div&gt;';" />
+        <div>ไม่พบข้อมูลตามตัวกรองที่เลือก</div>
+        <div style="font-size:12px;margin-top:6px;">ลองปรับตัวกรองหรือค้นหาด้วยคำอื่น</div>
+      </div>
     `;
+    tbody.innerHTML = `<tr><td colspan="14">${emptyHtml}</td></tr>`;
+    if (cardsEl) cardsEl.innerHTML = emptyHtml;
     renderPagination(0, 0);
     return;
   }
 
   tbody.innerHTML = pageGroups.map(({ seq, items }) => {
-    const escapedSeq = String(seq ?? "").replace(/"/g, '&quot;');
+    const escapedSeq = escapeHtml(seq ?? "");
+    const jsSeq = escapeJsAttr(seq ?? "");
     const first = items[0];
     const ministry = first["กระทรวง"] || "ไม่ระบุ";
     const ministryClass = getMinistryClass(ministry);
@@ -1661,8 +1742,8 @@ function renderRegList() {
               <div class="law-group-actions">
                 <span class="law-seq-badge">${escapeHtml(seq || "-")}</span>
                 <div class="group-btns">
-                  <button class="icon-btn edit" onclick="startRegEditGroupBySeq('${escapedSeq}')" title="แก้ไขทั้งฉบับ (ทุกข้อกำหนด)">✏️</button>
-                  <button class="icon-btn delete" onclick="handleRegDeleteBySeq('${escapedSeq}')" title="ลบทั้งฉบับ">🗑️</button>
+                  <button class="icon-btn edit" onclick="startRegEditGroupBySeq('${jsSeq}')" title="แก้ไขทั้งฉบับ (ทุกข้อกำหนด)">✏️</button>
+                  <button class="icon-btn delete" onclick="handleRegDeleteBySeq('${jsSeq}')" title="ลบทั้งฉบับ">🗑️</button>
                 </div>
               </div>
             </td>
@@ -1694,7 +1775,72 @@ function renderRegList() {
     }).join("");
   }).join("");
 
+  if (cardsEl) cardsEl.innerHTML = pageGroups.map(({ seq, items }) => renderLawCard(seq, items)).join("");
+
   renderPagination(regCurrentPage, totalPages);
+}
+
+// การ์ดสำหรับจอมือถือ/แท็บเล็ต (แสดงข้อมูลครบทุกฟิลด์โดยไม่ต้องเลื่อนแนวนอน)
+function renderLawCard(seq, items) {
+  const jsSeq = escapeJsAttr(seq ?? "");
+  const first = items[0];
+  const ministry = first["กระทรวง"] || "ไม่ระบุ";
+  const ministryClass = getMinistryClass(ministry);
+  const ministryIcon  = getMinistryIcon(ministry);
+  const lawName  = first["ชื่อกฎหมาย"] || "-";
+  const lawDate  = first["วันที่ประกาศ"] || "";
+  const dateDisplay = lawDate ? formatDateThai(lawDate) : "-";
+  const effDate  = first["วันที่มีผลบังคับใช้"] || "";
+  const effDateDisplay = effDate ? formatDateThai(effDate) : "-";
+
+  const itemsHtml = items.map((it, idx) => {
+    const detail = it["รายละเอียดข้อกำหนดกฎหมาย"] || "-";
+    const note   = it["หมายเหตุ"] || "";
+    const reviewDate = it["วันที่ประเมินล่าสุด"] ? formatDateThai(it["วันที่ประเมินล่าสุด"]) : "-";
+    const attach = it["ไฟล์แนบ"]
+      ? `<a class="attach-link" href="${escapeHtml(it["ไฟล์แนบ"])}" target="_blank" rel="noopener">📎 ดูไฟล์</a>`
+      : `<span class="attach-none">-</span>`;
+    return `
+      <div class="law-card-item">
+        <div class="item-row"><span class="k">ข้อที่</span><span class="v">${idx + 1} / ${items.length}</span></div>
+        <div class="item-row detail-row"><span class="k">รายละเอียดข้อกำหนด</span><span class="v">${escapeHtml(detail)}</span></div>
+        <div class="item-row"><span class="k">ความถี่</span><span class="v">${escapeHtml(it["ความถี่"] || "-")}</span></div>
+        <div class="item-row"><span class="k">กำหนดการ</span><span class="v">${escapeHtml(it["กำหนดการ"] || "-")}</span></div>
+        <div class="item-row"><span class="k">ผลการประเมิน</span><span class="v">${evalBadge(it["ผลการประเมิน"])}</span></div>
+        <div class="item-row"><span class="k">อัปเดตล่าสุด</span><span class="v">${reviewDate}</span></div>
+        <div class="item-row"><span class="k">ผู้รับผิดชอบ</span><span class="v">${escapeHtml(it["ผู้รับผิดชอบ"] || "-")}</span></div>
+        <div class="item-row"><span class="k">หมายเหตุ</span><span class="v">${note ? escapeHtml(note) : "-"}</span></div>
+        <div class="item-row"><span class="k">ไฟล์แนบ</span><span class="v">${attach}</span></div>
+        <div class="item-actions">
+          <button class="icon-btn edit" onclick="startRegEditByIndex(${it._rowIndex})" title="แก้ไข">✏️ แก้ไข</button>
+          <button class="icon-btn delete" onclick="handleRegDelete(${it._rowIndex})" title="ลบ">🗑️ ลบ</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="law-card">
+      <div class="law-card-head">
+        <div class="law-card-head-main">
+          <span class="law-seq-badge">${escapeHtml(seq || "-")}</span>
+          <div class="law-card-title">${escapeHtml(lawName)}</div>
+          <div class="law-card-meta">
+            <span class="ministry-pill ${ministryClass}">${ministryIcon} ${escapeHtml(ministry)}</span>
+            <span><b>ประกาศ:</b> ${dateDisplay}</span>
+            <span><b>มีผลบังคับใช้:</b> ${effDateDisplay}</span>
+          </div>
+        </div>
+        <div class="law-card-actions">
+          <button class="icon-btn edit" onclick="startRegEditGroupBySeq('${jsSeq}')" title="แก้ไขทั้งฉบับ (ทุกข้อกำหนด)">✏️ ทั้งฉบับ</button>
+          <button class="icon-btn delete" onclick="handleRegDeleteBySeq('${jsSeq}')" title="ลบทั้งฉบับ">🗑️</button>
+        </div>
+      </div>
+      <div class="law-card-items">
+        ${itemsHtml}
+      </div>
+    </div>
+  `;
 }
 
 function renderPagination(currentPage, totalPages) {
@@ -1770,8 +1916,10 @@ function filterRegBySearch(searchTerm) {
 async function loadRegistrationData() {
   const kpiGrid  = document.getElementById("regKpiGrid");
   const listBody = document.getElementById("regList");
+  const cardsEl  = document.getElementById("regCards");
   showLoading(kpiGrid);
   listBody.innerHTML = `<tr><td colspan="14" class="skeleton-row">⏳ กำลังโหลด...</td></tr>`;
+  if (cardsEl) cardsEl.innerHTML = `<div class="skeleton-row">⏳ กำลังโหลด...</div>`;
   try {
     regRowsCache = await fetchSheetData(CONFIG.SHEET);
     populateRegFilterOptions(regRowsCache);
@@ -1783,6 +1931,7 @@ async function loadRegistrationData() {
     document.getElementById("regDonut").innerHTML = "";
     document.getElementById("regMinistryChart").innerHTML = "";
     listBody.innerHTML = `<tr><td colspan="14"><div class="empty-state"><div class="icon">⚠️</div><div>${escapeHtml(err.message)}</div></div></td></tr>`;
+    if (cardsEl) cardsEl.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><div>${escapeHtml(err.message)}</div></div>`;
   }
 }
 

@@ -17,7 +17,7 @@
   --blue3:       #3B82F6;
   --blue4:       #60A5FA;
   --cyan:        #0EA5E9;
-  --blue-light:  #EBF3FF;
+  --blue-light:  #EAF2FF;
   --green:       #2E8B57;
   --green-light: #E6F4EA;
   --green-dark:  #1F6E42;
@@ -26,37 +26,57 @@
   --red:         #C23B3B;
   --red-light:   #FBEAEA;
   --purple:      #7B61FF;
-  --bg:          #F0F6FF;
+  --bg:          #F5F9FF;
+  --bg-soft:     #FAFCFF;
   --card:        #FFFFFF;
-  --border:      rgba(29,111,204,0.15);
-  --text:        #0F2744;
-  --text-muted:  #4A7CB5;
+  --border:      rgba(29,111,204,0.14);
+  --border-soft: rgba(29,111,204,0.08);
+  --text:        #16324F;
+  --text-muted:  #3D6C99;
   --radius:      16px;
   --radius-sm:   10px;
-  --shadow:      0 2px 16px rgba(29,111,204,0.10);
-  --shadow-hover:0 8px 32px rgba(29,111,204,0.18);
+  --shadow:      0 2px 14px rgba(29,111,204,0.08);
+  --shadow-hover:0 8px 28px rgba(29,111,204,0.16);
+  --focus-ring:  0 0 0 3px rgba(37,99,235,0.25);
 }
 
 * { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
   font-family: 'Noto Sans Thai', 'Outfit', sans-serif;
   background: var(--bg);
   color: var(--text);
-  line-height: 1.55;
+  line-height: 1.6;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
+
+/* comfortable, low-glare scrollbars for long factory-floor sessions */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--blue4); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--blue3); }
+
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 
 .topbar {
   background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 55%, var(--navy-2) 100%);
   color: white;
   padding: 0;
-  position: relative;
+  position: sticky;
+  top: 0;
   overflow: hidden;
   border-bottom: 4px solid var(--blue3);
-  z-index: 10;
+  box-shadow: 0 4px 18px rgba(15,39,68,0.18);
+  z-index: 50;
 }
 .topbar::before {
   content: "";
@@ -79,6 +99,14 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   z-index: 1;
 }
 .brand { display: flex; align-items: center; gap: 16px; }
+.brand-mascot {
+  height: 88px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35));
+  margin-left: 2px;
+  flex-shrink: 0;
+}
 .brand-badge {
   width: 56px; height: 56px;
   border-radius: 50%;
@@ -121,7 +149,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 9px 18px;
+  padding: 11px 20px;
   border-radius: 999px;
   font-size: 13.5px;
   font-weight: 600;
@@ -129,6 +157,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
   border: none;
   font-family: inherit;
   transition: all 0.2s;
+  min-height: 40px;
 }
 .btn-primary { background: var(--blue2); color: white; box-shadow: 0 3px 10px rgba(37,99,235,0.30); }
 .btn-primary:hover { background: var(--blue); transform: translateY(-1px); }
@@ -136,12 +165,13 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .btn-secondary:hover { background: rgba(255,255,255,0.2); }
 .btn-home {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 9px 18px; border-radius: 999px;
+  padding: 11px 20px; border-radius: 999px;
   font-size: 13.5px; font-weight: 600; cursor: pointer;
   border: 1.5px solid rgba(96,165,250,0.5);
   font-family: inherit; transition: all 0.2s;
   background: rgba(37,99,235,0.25); color: white;
   text-decoration: none; white-space: nowrap;
+  min-height: 40px;
 }
 .btn-home:hover { background: rgba(37,99,235,0.55); border-color: var(--blue4); transform: translateY(-1px); }
 .btn-outline { background: transparent; color: var(--blue2); border: 2px solid var(--blue2); }
@@ -211,7 +241,8 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .filter-field { display: flex; flex-direction: column; gap: 4px; min-width: 150px; }
 .filter-field label { font-size: 11.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
 .filter-field select {
-  padding: 9px 12px;
+  padding: 11px 12px;
+  min-height: 42px;
   border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 14px;
@@ -365,11 +396,12 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .minibar-month { font-size: 11px; color: var(--text-muted); font-weight: 600; }
 
 .data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-.data-table th, .data-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-.data-table th { color: var(--navy-2); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; background: var(--blue-light); }
+.data-table th, .data-table td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
+.data-table th { color: var(--navy-2); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; background: var(--blue-light); position: sticky; top: 0; z-index: 2; }
 .data-table th:first-child { border-radius: 8px 0 0 8px; }
 .data-table th:last-child { border-radius: 0 8px 8px 0; }
-.data-table tbody tr:hover { background: var(--bg); }
+.data-table tbody tr:nth-child(even) { background: var(--bg-soft); }
+.data-table tbody tr:hover { background: var(--blue-light); }
 .data-table .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .data-table .row-actions button { border: none; background: none; cursor: pointer; font-size: 13px; padding: 4px 10px; border-radius: 6px; transition: background 0.2s; font-family: inherit; }
 .data-table .row-actions .edit-btn { color: var(--blue); }
@@ -420,7 +452,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 .form-card { background: var(--card); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow); border-top: 3px solid var(--blue2); }
 .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 14px; }
 .field label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
-.field input, .field select, .field textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color 0.2s; }
+.field input, .field select, .field textarea { width: 100%; padding: 11px 13px; min-height: 42px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color 0.2s; }
 .field textarea { resize: vertical; min-height: 64px; }
 .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,111,217,0.12); }
 .field input.error, .field select.error, .field textarea.error { border-color: var(--red); }
@@ -450,7 +482,9 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
 
 @media (max-width: 768px) {
   .topbar-inner { flex-direction: column; align-items: center; text-align: center; }
+  .brand { flex-wrap: wrap; justify-content: center; }
   .brand h1 { font-size: 21px; }
+  .brand-mascot { height: 64px; order: -1; }
   .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   .chart-grid { grid-template-columns: 1fr; }
   .kpi-value { font-size: 27px; }
@@ -486,6 +520,7 @@ h1,h2,h3,h4 { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; }
         <h1><span>Bitwise </span>DASHBOARD SAFETY</h1>
         <p class="subtitle">Bitwise Group · ความปลอดภัย อาชีวอนามัย และสภาพแวดล้อมในการทำงาน</p>
       </div>
+      <img src="mascot-safety.png" alt="Bitwise Safety Mascot" class="brand-mascot" onerror="this.style.display='none';" />
     </div>
     <div class="topbar-actions">
       <span id="dataDate" class="data-date">📅 ข้อมูล ณ วันที่ —</span>
