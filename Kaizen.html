@@ -1185,10 +1185,13 @@ body {
               <button id="btnFixColumns" class="btn-secondary text-sm flex items-center gap-1">
                 🧩 ซ่อมแซมตำแหน่งคอลัมน์
               </button>
+              <button id="btnSetupDatabase" class="btn-secondary text-sm flex items-center gap-1">
+                🗄️ ตั้งค่า/ซ่อมแซม Header ระบบ
+              </button>
             </div>
           </div>
           <p class="text-xs mt-2" style="color:var(--ink-faint);">
-            ใช้เมื่อหัวหน้าแผนกไม่เห็นงานที่พนักงานส่ง เนื่องจากชื่อแผนกไม่ตรงกัน หรือกดอนุมัติแล้วขึ้น "รายการนี้อยู่ในสถานะ...ไม่สามารถตรวจสอบได้" ให้กด "ซ่อมแซมตำแหน่งคอลัมน์"
+            ใช้เมื่อหัวหน้าแผนกไม่เห็นงานที่พนักงานส่ง เนื่องจากชื่อแผนกไม่ตรงกัน หรือกดอนุมัติแล้วขึ้น "รายการนี้อยู่ในสถานะ...ไม่สามารถตรวจสอบได้" ให้กด "ซ่อมแซมตำแหน่งคอลัมน์" ส่วน "ตั้งค่า/ซ่อมแซม Header ระบบ" ใช้ตรวจสอบว่าทุกชีต (Data, History, Comments, MonthlyProgress, Managers) มีหัวตารางครบและตรงตำแหน่งมาตรฐาน ปลอดภัยที่จะกดซ้ำได้เสมอ
           </p>
         </div>
 
@@ -1253,8 +1256,8 @@ body {
 
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <div class="stat-card rail-blue"><div class="stat-label">พนักงานทั้งหมด</div><div class="stat-number num" id="hrTotalEmp">0</div></div>
-          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">✅ ถึงเป้าหมาย</div><div class="stat-number num" style="color:var(--good-600);" id="hrAchieved">0</div></div>
-          <div class="stat-card rail-warn"><div class="stat-label" style="color:var(--warn-600);">⏳ ยังไม่ถึง</div><div class="stat-number num" style="color:var(--warn-600);" id="hrNotAchieved">0</div></div>
+          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">✅ Status <span style="text-transform:none;letter-spacing:0;font-weight:500;">(ส่งและอนุมัติผ่าน)</span></div><div class="stat-number num" style="color:var(--good-600);" id="hrAchieved">0</div></div>
+          <div class="stat-card rail-warn"><div class="stat-label" style="color:var(--warn-600);">⏳ ยังไม่ถึงเป้า</div><div class="stat-number num" style="color:var(--warn-600);" id="hrNotAchieved">0</div></div>
           <div class="stat-card rail-blue"><div class="stat-label" style="color:var(--brand-700);">% สำเร็จ</div><div class="stat-number num" style="color:var(--brand-700);" id="hrPercent">0%</div></div>
           <div class="stat-card rail-blue"><div class="stat-label" style="color:var(--steel-500);">Kaizen ทั้งหมด</div><div class="stat-number num" style="color:var(--steel-500);" id="hrTotalKaizen">0</div></div>
         </div>
@@ -1578,7 +1581,7 @@ body {
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzy7VNmVjRERZ5qdOTnEQaeooSMhdhE2ZByzZBSbl1Mwj73ZacPRBdBHQDXp4YwvYk4bw/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZdR_4lTh-xiPJ7OQjWBijKMgqWs72y8VVDgdlAbGbmUdpLF_GvESs7_UYTQjSoU3MWw/exec';
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
     const monthNamesTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -2346,6 +2349,37 @@ body {
       });
     }
 
+    function setupDatabaseUI() {
+      Swal.fire({
+        title: 'ยืนยันการตั้งค่า/ซ่อมแซม Header',
+        text: 'ระบบจะตรวจสอบชีตที่จำเป็นทั้งหมด (Data, History, Comments, MonthlyProgress, Managers) และตั้งหัวตารางให้ตรงตามมาตรฐานของระบบ ไม่กระทบข้อมูลที่มีอยู่แล้ว ต้องการดำเนินการต่อหรือไม่?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ดำเนินการ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#1B6E4C',
+        cancelButtonColor: '#8695B4'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          showLoading();
+          callAppsScript('setupDatabase', {})
+            .then(function(res) {
+              hideLoading();
+              if (res.success) {
+                showSuccess(res.message);
+                loadQueue();
+                DASHBOARD_DATA = null;
+                loadHrDashboard();
+              } else showError(res.message);
+            })
+            .catch(function(err) {
+              hideLoading();
+              showError(err);
+            });
+        }
+      });
+    }
+
     function debugReviewQueue() {
       showLoading();
       callAppsScript('debugReviewQueue', { reviewerId: CURRENT_USER.id })
@@ -2354,37 +2388,35 @@ body {
           if (!res.success) { showError(res.message); return; }
           
           var debug = res.debug;
+          var isHeadRole = (debug.reviewerApproverTypes || []).indexOf('หัวหน้าแผนก') > -1;
+          var isDirectorRole = (debug.reviewerApproverTypes || []).indexOf('ผู้จัดการ') > -1;
+
           var html = '<div style="text-align:left;font-size:13px;line-height:1.6;">';
           html += '<p><b>👤 ผู้ตรวจสอบ:</b> ' + escapeHtml(debug.reviewerName) + '</p>';
           html += '<p><b>🏢 แผนก:</b> "' + escapeHtml(debug.reviewerDepartment) + '"</p>';
-          html += '<p><b>📋 บทบาท:</b> ' + escapeHtml(debug.reviewerApproverTypes.join(', ') || '-') + '</p>';
+          html += '<p><b>📋 บทบาท:</b> ' + escapeHtml((debug.reviewerApproverTypes || []).join(', ') || '-') + '</p>';
           html += '<hr style="border-color:var(--line-soft);margin:8px 0;">';
-          html += '<p><b>📊 สถานะคิวทั้งหมด:</b></p>';
+          html += '<p><b>📊 สถานะคิวทั้งหมด (ทุกแผนก):</b></p>';
           html += '<ul style="margin:4px 0 8px 18px;">';
-          html += '<li>📌 รอหัวหน้าแผนกตรวจทั้งหมด: <b>' + debug.totalPendingHead + '</b> รายการ</li>';
-          html += '<li style="color:var(--good-600);">✅ แผนกตรงกัน (ควรเห็น): <b>' + debug.matchingDepartment + '</b> รายการ</li>';
-          html += '<li style="color:var(--bad-600);">❌ แผนกไม่ตรงกัน (ไม่เห็น): <b>' + debug.mismatchingDepartment + '</b> รายการ</li>';
+          html += '<li>📌 รอหัวหน้าแผนกตรวจทั้งหมด: <b>' + debug.totalPendingHead + '</b> รายการ' + (isHeadRole ? ' <span style="color:var(--good-600);">(ควรเห็นทั้งหมด)</span>' : ' <span style="color:var(--ink-faint);">(ไม่ใช่บทบาทของคุณ)</span>') + '</li>';
+          html += '<li>📌 รอผู้จัดการตรวจทั้งหมด: <b>' + debug.totalPendingDirector + '</b> รายการ' + (isDirectorRole ? ' <span style="color:var(--good-600);">(ควรเห็นทั้งหมด)</span>' : ' <span style="color:var(--ink-faint);">(ไม่ใช่บทบาทของคุณ)</span>') + '</li>';
+          html += '<li style="color:var(--brand-700);font-weight:700;">👁️ รายการที่คุณเห็นจริงในคิว: <b>' + debug.recordsVisibleToReviewer + '</b> รายการ</li>';
           html += '</ul>';
-          
-          if (debug.departmentMismatchList && debug.departmentMismatchList.length > 0) {
-            html += '<div style="background:var(--bad-50);padding:8px 12px;border-radius:8px;border:1px solid #F3C6C2;margin:4px 0;">';
-            html += '<p style="font-weight:bold;color:var(--bad-600);">⚠️ รายการที่แผนกไม่ตรงกัน (หัวหน้าแผนกไม่เห็น):</p>';
-            debug.departmentMismatchList.forEach(function(item) {
-              html += '<div style="font-size:12px;padding:2px 0;">- ' + escapeHtml(item.id) + ': "' + escapeHtml(item.department) + '" - ' + escapeHtml(item.title) + '</div>';
+
+          if (debug.recordsVisibleList && debug.recordsVisibleList.length > 0) {
+            html += '<div style="background:var(--good-50);padding:8px 12px;border-radius:8px;border:1px solid #A7E0C0;margin:4px 0;max-height:220px;overflow-y:auto;">';
+            html += '<p style="font-weight:bold;color:var(--good-600);">✅ รายการที่คุณเห็นในคิวตอนนี้:</p>';
+            debug.recordsVisibleList.forEach(function(item) {
+              html += '<div style="font-size:12px;padding:2px 0;">- ' + escapeHtml(item.id) + ' [' + escapeHtml(item.status) + '] "' + escapeHtml(item.department) + '" - ' + escapeHtml(item.title) + '</div>';
             });
             html += '</div>';
-          }
-          
-          if (debug.matchingList && debug.matchingList.length > 0) {
-            html += '<div style="background:var(--good-50);padding:8px 12px;border-radius:8px;border:1px solid #A7E0C0;margin:4px 0;">';
-            html += '<p style="font-weight:bold;color:var(--good-600);">✅ รายการที่แผนกตรงกัน (หัวหน้าแผนกควรเห็น):</p>';
-            debug.matchingList.forEach(function(item) {
-              html += '<div style="font-size:12px;padding:2px 0;">- ' + escapeHtml(item.id) + ': "' + escapeHtml(item.department) + '" - ' + escapeHtml(item.title) + '</div>';
-            });
+          } else {
+            html += '<div style="background:var(--warn-50);padding:8px 12px;border-radius:8px;border:1px solid #FCE7B0;margin:4px 0;">';
+            html += '<p style="color:var(--warn-600);">⚠️ ไม่พบรายการที่คุณควรเห็นในคิวขณะนี้ (อาจไม่มีรายการรอตรวจตรงกับบทบาทของคุณ หรือบทบาทในชีต Managers ไม่ถูกต้อง)</p>';
             html += '</div>';
           }
-          
-          html += '<p style="font-size:11px;color:var(--ink-faint);margin-top:8px;">💡 ถ้าแผนกไม่ตรงกัน ให้ใช้ปุ่ม "ซ่อมแซมชื่อแผนก" หรือ "ซิงค์แผนกผู้จัดการ"</p>';
+
+          html += '<p style="font-size:11px;color:var(--ink-faint);margin-top:8px;">💡 ระบบปัจจุบันให้ผู้ตรวจสอบทุกคนเห็นงานของทุกแผนก คิวจะกรองตาม "บทบาท" (หัวหน้าแผนก/ผู้จัดการ) และ "สถานะ" ของรายการเท่านั้น หากยังไม่เห็นรายการที่ควรเห็น ให้ตรวจสอบคอลัมน์ ApproverType ของคุณในชีต Managers หรือกดปุ่ม "ซ่อมแซมตำแหน่งคอลัมน์"</p>';
           html += '</div>';
           
           Swal.fire({
@@ -2597,7 +2629,14 @@ body {
 
         var actionHtml = '';
         var isPending = r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR;
-        if (isPending) {
+        // ✅ เช็คสิทธิ์ตามบทบาทจริง (หัวหน้าแผนก/ผู้จัดการ) เทียบกับสถานะของรายการนี้
+        // เพื่อไม่ให้ปุ่มอนุมัติ/ตีกลับ แสดงในรายการที่ผู้ใช้คนนี้ไม่มีสิทธิ์ตรวจ
+        // (เช่น หัวหน้าแผนกเห็นรายการ "รอผู้จัดการตรวจ" ของแผนกอื่นในตาราง แต่ไม่มีสิทธิ์กดอนุมัติ)
+        var isDirectorUser = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
+        var isHeadUser = (CURRENT_USER.approverType || []).indexOf('หัวหน้าแผนก') > -1;
+        var canApproveThis = (isHeadUser && r.status === STATUS_PENDING_HEAD) || (isDirectorUser && r.status === STATUS_PENDING_DIRECTOR);
+
+        if (isPending && canApproveThis) {
           actionHtml =
             '<div class="flex gap-1 flex-wrap">' +
             '<button class="btnApprove btn-success text-xs py-1 px-2" data-row="' + r.rowIndex + '" aria-label="อนุมัติ" title="อนุมัติ">✅</button>' +
@@ -3118,12 +3157,12 @@ body {
       if (isLoading) return;
       var yearToLoad = beYear ? Number(beYear) : null;
 
-      var isDirector = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
-      var scopeDept = isDirector ? null : CURRENT_USER.department;
-      document.getElementById('hrDashScopeLabel').textContent = isDirector ? ' (ทุกแผนก)' : ' (แผนก ' + CURRENT_USER.department + ')';
+      // ✅ ผู้ตรวจสอบทุกคน (หัวหน้าแผนก/ผู้จัดการ) เห็นข้อมูล Dashboard HR ครบทุกแผนก
+      // เหมือนกับคิวตรวจ Kaizen ไม่จำกัดเฉพาะแผนกของตัวเองอีกต่อไป
+      document.getElementById('hrDashScopeLabel').textContent = ' (ทุกแผนก)';
 
       showLoading();
-      callAppsScript('getDashboardData', { beYear: yearToLoad, department: scopeDept })
+      callAppsScript('getDashboardData', { beYear: yearToLoad, department: null })
         .then(function(res) {
           hideLoading();
           if (!res.success) { showError(res.message); return; }
@@ -3150,8 +3189,10 @@ body {
 
     function renderHrDashKPI(summary) {
       document.getElementById('hrTotalEmp').textContent = summary.totalEmployees || 0;
-      document.getElementById('hrAchieved').textContent = summary.achievedCount || 0;
-      document.getElementById('hrNotAchieved').textContent = summary.notAchievedCount || 0;
+      // ✅ Status: จำนวนพนักงานที่ "ส่งและอนุมัติผ่าน" อย่างน้อย 1 เรื่อง (ไม่ใช่จำนวนที่ถึงเป้าหมายแบบเดิม)
+      document.getElementById('hrAchieved').textContent = summary.submittedApprovedCount || 0;
+      // ✅ ยังไม่ถึงเป้า: แสดงเป็นสัดส่วน เช่น 0/29 (จำนวนคนที่ยังไม่ถึงเป้า / พนักงานทั้งหมด)
+      document.getElementById('hrNotAchieved').textContent = (summary.notAchievedCount || 0) + ' / ' + (summary.totalEmployees || 0);
       document.getElementById('hrPercent').textContent = (summary.achievedPercent || 0) + '%';
       document.getElementById('hrTotalKaizen').textContent = summary.totalKaizen || 0;
     }
@@ -3451,6 +3492,19 @@ body {
 
       document.getElementById('formModal').classList.remove('hidden');
 
+      // ✅ ล้างฟอร์มและค่าต่าง ๆ ก่อน แล้วค่อยเติมข้อมูลชื่อ-สกุล/แผนกของพนักงานทีหลัง
+      // (เดิมเรียก kaizenForm.reset() หลังจากเติมชื่อ/แผนกไปแล้ว ทำให้ reset() ล้างค่าที่เพิ่งเติมทิ้งทันที
+      // เป็นสาเหตุที่ช่อง "ชื่อ-สกุล" และ "แผนก" ในฟอร์มส่ง Kaizen ใหม่ไม่แสดงข้อมูล)
+      document.getElementById('kaizenForm').reset();
+      document.getElementById('beforeImageInput').value = '';
+      document.getElementById('afterImageInput').value = '';
+      document.getElementById('beforeImageContainer').classList.add('hidden');
+      document.getElementById('afterImageContainer').classList.add('hidden');
+      document.getElementById('editRowIndex').value = '';
+      selectedFiles = [];
+      clearCategories();
+      clearKaizenType();
+
       var empName = CURRENT_USER.name || '';
       var empDept = CURRENT_USER.department || '';
       var empId = CURRENT_USER.id || '';
@@ -3491,16 +3545,6 @@ body {
       btnSubmit.disabled = false;
       btnSubmit.innerHTML =
         '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> บันทึก';
-
-      document.getElementById('kaizenForm').reset();
-      document.getElementById('beforeImageInput').value = '';
-      document.getElementById('afterImageInput').value = '';
-      document.getElementById('beforeImageContainer').classList.add('hidden');
-      document.getElementById('afterImageContainer').classList.add('hidden');
-      document.getElementById('editRowIndex').value = '';
-      selectedFiles = [];
-      clearCategories();
-      clearKaizenType();
 
       var now = new Date();
       var beYear = now.getFullYear() + 543;
@@ -3797,6 +3841,7 @@ body {
       document.getElementById('btnSyncManagers').addEventListener('click', syncManagerDepartments);
       document.getElementById('btnDebugQueue').addEventListener('click', debugReviewQueue);
       document.getElementById('btnFixColumns').addEventListener('click', fixColumnAlignment);
+      document.getElementById('btnSetupDatabase').addEventListener('click', setupDatabaseUI);
 
       document.getElementById('mgrSearch').addEventListener('input', debounce(renderMgrTable, 300));
       document.getElementById('mgrStatusFilter').addEventListener('change', renderMgrTable);
