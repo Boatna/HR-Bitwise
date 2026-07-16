@@ -1,0 +1,3928 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <title>ระบบบันทึก Kaizen</title>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+:root {
+  --bg: #F0F7FF;
+  --bg-line: rgba(37, 99, 235, .06);
+  --surface: #FFFFFF;
+  --surface-tint: #F8FAFF;
+  --surface-sunken: #E8F0FE;
+  --line: #B8D0E8;
+  --line-soft: #D6E6F5;
+  --ink: #1A2B4A;
+  --ink-soft: #3A5A7A;
+  --ink-faint: #7A9AB8;
+  --brand-900: #0A1E3D;
+  --brand-700: #1A3A6A;
+  --brand-600: #1E4D8C;
+  --brand-500: #2563EB;
+  --brand-400: #3B82F6;
+  --brand-300: #60A5FA;
+  --brand-100: #DBEAFE;
+  --brand-50: #EFF6FF;
+  --steel-500: #475569;
+  --good-600: #0B7A4E;
+  --good-100: #D1FAE5;
+  --good-50: #ECFDF5;
+  --warn-600: #B45309;
+  --warn-100: #FEF3C7;
+  --warn-50: #FFFBEB;
+  --bad-600: #B91C1C;
+  --bad-100: #FEE2E2;
+  --bad-50: #FEF2F2;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --shadow-1: 0 1px 3px rgba(37, 99, 235, .08), 0 1px 2px rgba(37, 99, 235, .04);
+  --shadow-2: 0 4px 16px rgba(37, 99, 235, .12), 0 2px 8px rgba(37, 99, 235, .06);
+  --shadow-3: 0 12px 40px rgba(37, 99, 235, .16), 0 4px 16px rgba(37, 99, 235, .08);
+}
+
+* {
+  font-family: 'Sarabun', sans-serif;
+}
+
+.num,
+.display,
+h1,
+h2,
+.stat-number,
+.title-main,
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-danger,
+.badge,
+.tab-btn,
+.stat-label,
+.section-title,
+.company-name,
+.code-pill {
+  font-family: 'Space Grotesk', 'Sarabun', sans-serif;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(800px 400px at 90% -5%, rgba(59, 130, 246, .06) 0%, rgba(59, 130, 246, 0) 60%),
+    radial-gradient(600px 300px at -5% 5%, rgba(37, 99, 235, .05) 0%, rgba(37, 99, 235, 0) 55%),
+    repeating-linear-gradient(0deg, var(--bg-line) 0 1px, transparent 1px 96px),
+    repeating-linear-gradient(90deg, var(--bg-line) 0 1px, transparent 1px 96px);
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+}
+
+::selection {
+  background: var(--brand-100);
+  color: var(--brand-900);
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-1);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-2);
+}
+
+.andon-mark {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+}
+
+.andon-mark span {
+  display: block;
+  width: 58%;
+  border-radius: 2px;
+}
+
+.andon-mark .lamp-red {
+  background: #E8837A;
+  height: 14%;
+}
+
+.andon-mark .lamp-amber {
+  background: #F0C463;
+  height: 14%;
+}
+
+.andon-mark .lamp-green {
+  background: #7FE0AA;
+  height: 14%;
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--brand-500), var(--brand-600));
+  color: #fff;
+  font-weight: 600;
+  font-size: .875rem;
+  padding: .65rem 1.4rem;
+  border-radius: var(--r-md);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .15) inset, 0 4px 12px rgba(37, 99, 235, .30);
+  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  letter-spacing: .01em;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .15) inset, 0 6px 20px rgba(37, 99, 235, .35);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: .875rem;
+  padding: .6rem 1.35rem;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--line);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--brand-50);
+  border-color: var(--brand-300);
+  color: var(--brand-600);
+}
+
+.btn-success {
+  background: linear-gradient(180deg, #0E9F6E, #0B7A4E);
+  color: #fff;
+  font-weight: 600;
+  padding: .5rem 1.2rem;
+  border-radius: var(--r-md);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(11, 122, 78, .25);
+  transition: filter .15s ease, transform .15s ease;
+}
+
+.btn-success:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: linear-gradient(180deg, #DC2626, #B91C1C);
+  color: #fff;
+  font-weight: 600;
+  padding: .5rem 1.2rem;
+  border-radius: var(--r-md);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(185, 28, 28, .22);
+  transition: filter .15s ease, transform .15s ease;
+}
+
+.btn-danger:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.input-field {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  padding: .62rem .85rem;
+  font-size: .875rem;
+  background: var(--surface-tint);
+  transition: all .15s ease;
+  outline: none;
+  color: var(--ink);
+}
+
+.input-field:focus {
+  border-color: var(--brand-400);
+  box-shadow: 0 0 0 4px var(--brand-100);
+  background: #fff;
+}
+
+.input-field::placeholder {
+  color: var(--ink-faint);
+}
+
+.stat-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 1.1rem 1.3rem;
+  border: 1px solid var(--line-soft);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-1);
+  transition: box-shadow .2s ease, transform .2s ease;
+  padding-left: 1.5rem;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--brand-400);
+  border-radius: 0 2px 2px 0;
+}
+
+.stat-card.rail-blue::before {
+  background: var(--brand-500);
+}
+
+.stat-card.rail-good::before {
+  background: var(--good-600);
+}
+
+.stat-card.rail-warn::before {
+  background: var(--warn-600);
+}
+
+.stat-card.rail-bad::before {
+  background: var(--bad-600);
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-2);
+  transform: translateY(-2px);
+}
+
+.stat-number {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.stat-label {
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: .3rem;
+}
+
+.progress-track {
+  background: var(--brand-50);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  height: 9px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .8s cubic-bezier(.4, 0, .2, 1);
+  background: linear-gradient(90deg, var(--brand-400), var(--brand-600));
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: .28rem .75rem;
+  border-radius: 999px;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+
+.badge-pending {
+  background: var(--warn-100);
+  color: var(--warn-600);
+}
+
+.badge-approved {
+  background: var(--good-100);
+  color: var(--good-600);
+}
+
+.badge-rejected {
+  background: var(--bad-100);
+  color: var(--bad-600);
+}
+
+.form-doc {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.form-header {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  border-bottom: 2px solid var(--brand-400);
+  background: linear-gradient(180deg, var(--brand-50), #fff);
+}
+
+.form-header>div {
+  padding: 12px 16px;
+  border-left: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.form-header>div:first-child {
+  border-left: none;
+}
+
+.form-logo {
+  align-items: center;
+  text-align: center;
+}
+
+.form-logo .logo-icon {
+  width: 42px;
+  height: 42px;
+  padding: 8px 0;
+  border-radius: 12px;
+  background: linear-gradient(160deg, var(--brand-500), var(--brand-900));
+  margin: 0 auto 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: var(--shadow-1);
+}
+
+.form-logo .company-name {
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--brand-900);
+  line-height: 1.25;
+}
+
+.form-title {
+  align-items: center;
+  text-align: center;
+}
+
+.form-title .title-main {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -.005em;
+}
+
+.form-title .title-sub {
+  font-size: .68rem;
+  color: var(--ink-faint);
+  letter-spacing: .03em;
+}
+
+.form-code {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.form-code .code-pill {
+  font-size: .66rem;
+  font-weight: 700;
+  color: var(--brand-700);
+  background: var(--brand-100);
+  padding: 3px 12px;
+  border-radius: 999px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.info-cell {
+  padding: 10px 16px;
+  border-left: 1px solid var(--line-soft);
+  border-top: 1px solid var(--line-soft);
+}
+
+.info-cell:nth-child(odd) {
+  border-left: none;
+}
+
+.info-cell .info-label {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--brand-600);
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, var(--brand-500), var(--brand-600));
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 10px 10px 0 0;
+  letter-spacing: .01em;
+}
+
+.section-body {
+  border: 1px solid var(--line-soft);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  padding: 16px;
+  background: var(--surface-tint);
+}
+
+.ba-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .ba-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel-before {
+  border: 1.5px solid #FCA5A5;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: #fff;
+}
+
+.panel-after {
+  border: 1.5px solid #6EE7B7;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: #fff;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
+.panel-before .panel-head {
+  background: var(--bad-100);
+  color: var(--bad-600);
+}
+
+.panel-after .panel-head {
+  background: var(--good-100);
+  color: var(--good-600);
+}
+
+.panel-body {
+  padding: 12px;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.category-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: all .15s ease;
+  background: #fff;
+}
+
+.category-checkbox:hover {
+  border-color: var(--brand-300);
+  background: var(--brand-50);
+}
+
+.category-checkbox.checked {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+  box-shadow: 0 0 0 3px var(--brand-100);
+}
+
+.category-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  background: var(--brand-50);
+  color: var(--ink-faint);
+  flex-shrink: 0;
+  font-family: 'Space Grotesk', 'Sarabun', sans-serif;
+}
+
+.category-checkbox.checked .category-icon {
+  background: var(--brand-500);
+  color: #fff;
+}
+
+.category-label {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  line-height: 1.2;
+}
+
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  font-size: .6rem;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Space Grotesk', 'Sarabun', sans-serif;
+}
+
+.cat-P { background: #1B6E4C; }
+.cat-D { background: #3E6B84; }
+.cat-E { background: #2F8F57; }
+.cat-S { background: #B0392C; }
+.cat-Q { background: #8B5A2B; }
+.cat-E2 { background: #7A5AA6; }
+.cat-C { background: #B07A17; }
+.cat-M { background: #B0567A; }
+
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--r-md);
+}
+
+.data-table {
+  width: 100%;
+  font-size: .85rem;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  padding: .7rem 1rem .7rem 0;
+  font-weight: 700;
+  color: var(--ink-faint);
+  border-bottom: 1.5px solid var(--line);
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  font-family: 'Space Grotesk', 'Sarabun', sans-serif;
+}
+
+.data-table td {
+  padding: .8rem 1rem .8rem 0;
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: middle;
+  color: var(--ink);
+}
+
+.data-table tbody tr {
+  transition: background .12s ease;
+  cursor: pointer;
+}
+
+.data-table tbody tr:hover {
+  background: var(--brand-50);
+}
+
+.detail-row {
+  display: none;
+  background: var(--surface-tint);
+}
+
+.detail-row.expanded {
+  display: table-row;
+}
+
+.detail-row td {
+  padding: 0 !important;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.detail-content {
+  padding: 1rem 1.5rem;
+  border-top: 2px solid var(--brand-400);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail-ba-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.detail-ba-item {
+  background: var(--surface);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-soft);
+  overflow: hidden;
+}
+
+.detail-ba-item .ba-header {
+  padding: 6px 12px;
+  font-size: .7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detail-ba-item.before .ba-header {
+  background: var(--bad-100);
+  color: var(--bad-600);
+}
+
+.detail-ba-item.after .ba-header {
+  background: var(--good-100);
+  color: var(--good-600);
+}
+
+.detail-ba-item .ba-body {
+  padding: 10px;
+}
+
+.detail-ba-item img {
+  width: 100%;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+}
+
+.detail-ba-item .ba-empty {
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-faint);
+  font-size: .75rem;
+  background: var(--surface-tint);
+  border-radius: var(--r-sm);
+  border: 1.5px dashed var(--line);
+}
+
+.detail-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.detail-cats .cat-tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: .65rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.toggle-detail {
+  cursor: pointer;
+  display: inline-block;
+  transition: transform .2s ease;
+  color: var(--brand-500);
+  font-size: .75rem;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  border-radius: 999px;
+  background: var(--brand-50);
+}
+
+.toggle-detail.rotated {
+  transform: rotate(90deg);
+  background: var(--brand-100);
+}
+
+.thumb-grid {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.thumb-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--line-soft);
+  background: var(--surface-tint);
+  flex-shrink: 0;
+}
+
+.thumb-img.no-img {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .5rem;
+  color: var(--ink-faint);
+}
+
+#imageViewerModal {
+  animation: fadeIn .25s ease;
+}
+
+#imageViewerModal img {
+  transition: transform .2s ease;
+}
+
+#imageViewerModal img:hover {
+  transform: scale(1.01);
+}
+
+.clickable-thumb {
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.clickable-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, .3);
+  z-index: 10;
+  position: relative;
+}
+
+.detail-ba-item img {
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.detail-ba-item img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+
+#loadingBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 9999;
+  background: linear-gradient(90deg, var(--brand-300), var(--brand-500), var(--brand-600), var(--brand-500), var(--brand-300));
+  background-size: 200% 100%;
+  animation: loading 1.4s ease-in-out infinite;
+  display: none;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+::-webkit-scrollbar {
+  height: 7px;
+  width: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #B8D0E8;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-400);
+}
+
+.fade-in {
+  animation: fadeIn .3s cubic-bezier(.4, 0, .2, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tab-btn {
+  padding: .55rem 1.25rem;
+  border-radius: 999px;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s ease;
+  background: transparent;
+  border: 1.5px solid transparent;
+  color: var(--ink-soft);
+}
+
+.tab-btn:hover {
+  background: var(--brand-50);
+  color: var(--brand-600);
+}
+
+.tab-btn.active {
+  background: linear-gradient(180deg, var(--brand-500), var(--brand-600));
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, .30);
+}
+
+.modal-backdrop {
+  background: rgba(10, 30, 61, .50);
+  backdrop-filter: blur(4px);
+}
+
+.row-chevron {
+  color: var(--ink-faint);
+  font-size: 1rem;
+  transition: transform .15s ease, color .15s ease;
+}
+
+.detail-actions-split {
+  display: flex;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+}
+
+.detail-actions-split button {
+  flex: 1;
+  padding: .85rem;
+  font-weight: 700;
+  font-size: .9rem;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: filter .15s ease;
+}
+
+.detail-actions-split .act-reject {
+  background: var(--bad-100);
+  color: var(--bad-600);
+}
+
+.detail-actions-split .act-reject:hover {
+  filter: brightness(.94);
+}
+
+.detail-actions-split .act-approve {
+  background: var(--good-100);
+  color: var(--good-600);
+}
+
+.detail-actions-split .act-approve:hover {
+  filter: brightness(.94);
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--brand-400);
+  outline-offset: 2px;
+}
+
+.count-input {
+  width: 76px;
+  text-align: center;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: .4rem .3rem;
+  font-size: .85rem;
+  background: #fff;
+  font-weight: 700;
+  font-family: 'Space Grotesk', 'Sarabun', sans-serif;
+}
+
+.count-input:focus {
+  border-color: var(--brand-400);
+  box-shadow: 0 0 0 3px var(--brand-100);
+  outline: none;
+}
+
+.count-save-btn {
+  padding: .4rem .7rem;
+  border-radius: var(--r-sm);
+  border: none;
+  cursor: pointer;
+  background: var(--brand-500);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  transition: filter .15s ease, transform .15s ease;
+}
+
+.count-save-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.count-save-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.count-row-dirty {
+  background: var(--warn-100) !important;
+}
+
+.month-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 5px;
+  font-size: .62rem;
+  font-weight: 700;
+  background: var(--brand-50);
+  color: var(--ink-faint);
+}
+
+.month-pill.has-count {
+  background: var(--brand-100);
+  color: var(--brand-700);
+}
+
+.upload-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--brand-50);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand-400), var(--brand-600));
+  border-radius: 999px;
+  transition: width .3s ease;
+}
+
+.img-loading {
+  background: linear-gradient(90deg, #f0f4ff 25%, #dbeafe 50%, #f0f4ff 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  min-height: 100px;
+  border-radius: var(--r-sm);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (max-width: 768px) {
+  .form-header { grid-template-columns: 1fr; }
+  .form-header>div { border-left: none; border-top: 1px solid var(--line-soft); }
+  .form-header>div:first-child { border-top: none; }
+  .info-grid { grid-template-columns: 1fr; }
+  .info-cell { border-left: none; }
+  .stat-number { font-size: 1.5rem; }
+  .category-grid { grid-template-columns: repeat(2, 1fr); }
+  .detail-grid { grid-template-columns: 1fr; }
+  .detail-ba-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+  #loadingBar, #btnLogout, #tabBar, .modal-backdrop, #btnOpenForm, #btnLogout,
+  .btn-primary, .btn-secondary, .btn-success, .btn-danger, .count-save-btn {
+    display: none !important;
+  }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; break-inside: avoid; }
+  body { background: white !important; }
+}
+  </style>
+</head>
+<body>
+
+  <div id="loadingBar"></div>
+  <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+    <div class="card p-8 w-full max-w-sm fade-in" style="box-shadow:var(--shadow-3);">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 mx-auto rounded-2xl andon-mark p-3 mb-3" style="background:linear-gradient(160deg,var(--brand-600),var(--brand-900)); box-shadow:var(--shadow-2);">
+          <span class="lamp-red"></span>
+          <span class="lamp-amber"></span>
+          <span class="lamp-green"></span>
+        </div>
+        <h1 class="text-xl font-bold" style="color:var(--ink); letter-spacing:-0.01em;">ระบบบันทึก Kaizen</h1>
+        <p class="text-sm" style="color:var(--ink-faint);">เลือกประเภทและกรอกรหัสของคุณ</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-1.5 mb-5 p-1.5 rounded-2xl" style="background:var(--brand-50);">
+        <button type="button" id="roleEmployeeBtn" class="tab-btn active !py-2.5" data-role="employee" aria-label="เข้าสู่ระบบในฐานะพนักงาน">👤 พนักงาน</button>
+        <button type="button" id="roleManagerBtn" class="tab-btn !py-2.5" data-role="manager" aria-label="เข้าสู่ระบบในฐานะหัวหน้างาน">🧑‍💼 หัวหน้างาน</button>
+      </div>
+
+      <form id="loginForm" class="space-y-4" autocomplete="off">
+        <div>
+          <label class="text-sm font-semibold mb-2 block" style="color:var(--ink-soft);" id="loginIdLabel">รหัสพนักงาน</label>
+          <input id="loginId" type="text" required autocomplete="off" class="input-field" placeholder="เช่น 00123" aria-label="กรอกรหัสพนักงาน">
+        </div>
+        <button type="submit" id="btnLogin" class="btn-primary w-full flex items-center justify-center gap-2">เข้าสู่ระบบ</button>
+      </form>
+      <p id="loginError" class="text-xs text-center mt-3 hidden" style="color:var(--bad-600); font-weight:600;"></p>
+      <p class="text-xs text-center mt-2" style="color:var(--ink-faint);">
+        กด <kbd class="px-1 py-0.5 rounded text-xs" style="background:var(--brand-50);">Enter</kbd> เพื่อเข้าสู่ระบบ
+      </p>
+    </div>
+  </div>
+
+  <div id="appShell" class="hidden">
+    <div class="sticky top-0 z-30" style="background:rgba(255,255,255,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--line-soft);">
+      <div class="max-w-7xl mx-auto px-4 py-3">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl andon-mark p-2" style="background:linear-gradient(160deg,var(--brand-600),var(--brand-900)); box-shadow:var(--shadow-2);">
+              <span class="lamp-red"></span>
+              <span class="lamp-amber"></span>
+              <span class="lamp-green"></span>
+            </div>
+            <div>
+              <h1 class="text-lg font-bold" style="color:var(--ink); letter-spacing:-0.01em;">ระบบบันทึก Kaizen</h1>
+              <p class="text-sm" style="color:var(--ink-faint);" id="profileLine">-</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <button id="btnOpenForm" class="btn-primary hidden items-center gap-2 text-sm" aria-label="ส่ง Kaizen ใหม่">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+              <span class="hidden sm:inline">ส่ง Kaizen ใหม่</span>
+            </button>
+            <button id="btnLogout" class="btn-secondary text-sm" aria-label="ออกจากระบบ">ออกจากระบบ</button>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap mt-3 pb-1" id="tabBar" role="tablist"></div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+
+      <!-- Employee View -->
+      <div id="empView" class="hidden fade-in" role="tabpanel" aria-label="รายการ Kaizen ของพนักงาน">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="stat-card rail-blue"><div class="stat-label">เป้าหมายปีนี้</div><div class="stat-number num" id="empTarget">0</div></div>
+          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">✅ ผ่านแล้ว</div><div class="stat-number num" style="color:var(--good-600);" id="empApproved">0</div></div>
+          <div class="stat-card rail-warn"><div class="stat-label" style="color:var(--warn-600);">⏳ รอตรวจ</div><div class="stat-number num" style="color:var(--warn-600);" id="empPending">0</div></div>
+          <div class="stat-card rail-bad"><div class="stat-label" style="color:var(--bad-600);">❌ ถูกตีกลับ</div><div class="stat-number num" style="color:var(--bad-600);" id="empRejected">0</div></div>
+        </div>
+
+        <div class="card p-5 mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-bold" style="color:var(--ink);">ความคืบหน้าเทียบเป้าหมาย</p>
+            <span class="text-xs num font-semibold" style="color:var(--ink-faint);" id="empProgressLabel">0 / 0</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="empProgressBar" style="width:0%"></div></div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-sm font-bold" style="color:var(--ink);">รายการ Kaizen ของฉัน <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="empRowCount">0</span> รายการ)</span></p>
+            <button id="btnRefreshEmp" class="btn-secondary text-xs py-1 px-3" aria-label="โหลดข้อมูลใหม่">🔄 โหลดใหม่</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr>
+                <th>รหัส</th><th>วันที่</th><th>หัวข้อ</th><th>ประเภท</th><th>หมวดหมู่</th><th>สถานะ</th><th>จัดการ</th>
+              </tr></thead>
+              <tbody id="empTableBody"></tbody>
+            </table>
+            <div id="empEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
+              <div class="text-3xl mb-2">🗂️</div>ยังไม่มีข้อมูล Kaizen
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manager Queue View -->
+      <div id="mgrQueueView" class="hidden fade-in" role="tabpanel" aria-label="คิวตรวจ Kaizen">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="stat-card rail-blue"><div class="stat-label">ทั้งหมด</div><div class="stat-number num" id="mgrKpiTotal">0</div></div>
+          <div class="stat-card rail-warn"><div class="stat-label" style="color:var(--warn-600);">รอตรวจ</div><div class="stat-number num" style="color:var(--warn-600);" id="mgrKpiPending">0</div></div>
+          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">ผ่านแล้ว</div><div class="stat-number num" style="color:var(--good-600);" id="mgrKpiApproved">0</div></div>
+          <div class="stat-card rail-bad"><div class="stat-label" style="color:var(--bad-600);">ตีกลับ</div><div class="stat-number num" style="color:var(--bad-600);" id="mgrKpiRejected">0</div></div>
+        </div>
+
+        <!-- ✅ Repair Tools -->
+        <div class="card p-5 mb-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm font-bold" style="color:var(--ink);">🔧 เครื่องมือซ่อมแซมข้อมูล</p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button id="btnRepairData" class="btn-secondary text-sm flex items-center gap-1">
+                🔄 ซ่อมแซมชื่อแผนก
+              </button>
+              <button id="btnSyncManagers" class="btn-secondary text-sm flex items-center gap-1">
+                🔗 ซิงค์แผนกผู้จัดการ
+              </button>
+              <button id="btnDebugQueue" class="btn-secondary text-sm flex items-center gap-1">
+                🐛 ตรวจสอบคิว
+              </button>
+              <button id="btnFixColumns" class="btn-secondary text-sm flex items-center gap-1">
+                🧩 ซ่อมแซมตำแหน่งคอลัมน์
+              </button>
+            </div>
+          </div>
+          <p class="text-xs mt-2" style="color:var(--ink-faint);">
+            ใช้เมื่อหัวหน้าแผนกไม่เห็นงานที่พนักงานส่ง เนื่องจากชื่อแผนกไม่ตรงกัน หรือกดอนุมัติแล้วขึ้น "รายการนี้อยู่ในสถานะ...ไม่สามารถตรวจสอบได้" ให้กด "ซ่อมแซมตำแหน่งคอลัมน์"
+          </p>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <p class="text-sm font-bold" style="color:var(--ink);">คิวตรวจ Kaizen <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="mgrRowCount">0</span> รายการ)</span></p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <input id="mgrSearch" type="text" placeholder="ค้นหา..." class="input-field w-48 text-sm" aria-label="ค้นหา Kaizen">
+              <select id="mgrStatusFilter" class="input-field w-auto text-sm" aria-label="กรองตามสถานะ">
+                <option value="">ทั้งหมด</option>
+                <option value="รอหัวหน้าแผนกตรวจ">รอหัวหน้าแผนกตรวจ</option>
+                <option value="รอผู้จัดการตรวจ">รอผู้จัดการตรวจ</option>
+                <option value="ผ่าน">ผ่านแล้ว</option>
+                <option value="ตีกลับ">ตีกลับ</option>
+              </select>
+              <button id="btnAdvancedSearch" class="btn-secondary text-sm flex items-center gap-1" aria-label="ค้นหาขั้นสูง">🔍 ค้นหาขั้นสูง</button>
+              <button id="btnRefreshQueue" class="btn-secondary text-xs py-1 px-3" aria-label="โหลดข้อมูลใหม่">🔄</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr>
+                <th style="width:28px;"></th>
+                <th>รหัส</th>
+                <th>วันที่</th>
+                <th>พนักงาน</th>
+                <th>แผนก</th>
+                <th>หัวข้อ</th>
+                <th>ประเภท</th>
+                <th>รูป</th>
+                <th>หมวด</th>
+                <th>ไฟล์</th>
+                <th>สถานะ</th>
+                <th>จัดการ</th>
+              </tr></thead>
+              <tbody id="mgrTableBody"></tbody>
+            </table>
+            <div id="mgrEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
+              <div class="text-3xl mb-2">📭</div>ไม่มีรายการ
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manager HR Dashboard -->
+      <div id="mgrHrDashView" class="hidden fade-in" role="tabpanel" aria-label="Dashboard HR">
+        <div class="card p-5 mb-6">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <h2 class="text-lg font-bold" style="color:var(--ink); letter-spacing:-.01em;">📊 Dashboard HR <span id="hrDashScopeLabel" class="text-sm font-normal" style="color:var(--ink-faint);"></span></h2>
+            <div class="flex items-center gap-3 flex-wrap">
+              <select id="hrDashYear" class="input-field w-auto min-w-[140px]" aria-label="เลือกปี"></select>
+              <input id="hrDashSearch" type="text" placeholder="ค้นหาพนักงาน..." class="input-field w-48 text-sm" aria-label="ค้นหาพนักงาน">
+              <select id="hrDashStatus" class="input-field w-auto text-sm" aria-label="กรองตามสถานะ">
+                <option value="">ทุกสถานะ</option>
+                <option value="achieved">✅ ถึงเป้าหมาย</option>
+                <option value="notAchieved">⏳ ยังไม่ถึง</option>
+              </select>
+              <button id="btnRefreshHrDash" class="btn-secondary text-xs py-1 px-3" aria-label="โหลดข้อมูลใหม่">🔄</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div class="stat-card rail-blue"><div class="stat-label">พนักงานทั้งหมด</div><div class="stat-number num" id="hrTotalEmp">0</div></div>
+          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">✅ ถึงเป้าหมาย</div><div class="stat-number num" style="color:var(--good-600);" id="hrAchieved">0</div></div>
+          <div class="stat-card rail-warn"><div class="stat-label" style="color:var(--warn-600);">⏳ ยังไม่ถึง</div><div class="stat-number num" style="color:var(--warn-600);" id="hrNotAchieved">0</div></div>
+          <div class="stat-card rail-blue"><div class="stat-label" style="color:var(--brand-700);">% สำเร็จ</div><div class="stat-number num" style="color:var(--brand-700);" id="hrPercent">0%</div></div>
+          <div class="stat-card rail-blue"><div class="stat-label" style="color:var(--steel-500);">Kaizen ทั้งหมด</div><div class="stat-number num" style="color:var(--steel-500);" id="hrTotalKaizen">0</div></div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <p class="text-sm font-bold" style="color:var(--ink);">รายชื่อพนักงาน <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="hrRowCount">0</span> คน)</span></p>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr>
+                <th>รหัส</th>
+                <th>ชื่อ-สกุล</th>
+                <th>แผนก</th>
+                <th class="text-center">เป้าหมาย</th>
+                <th class="text-center">ทำแล้ว</th>
+                <th>ความคืบหน้า</th>
+                <th class="text-center">สถานะ</th>
+                <th class="text-center">📋 Kaizen ที่ส่ง</th>
+              </tr></thead>
+              <tbody id="hrDashTableBody"></tbody>
+            </table>
+            <div id="hrDashEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
+              <div class="text-3xl mb-2">🔍</div>ไม่พบข้อมูล
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manager Progress View -->
+      <div id="mgrBulkView" class="hidden fade-in" role="tabpanel" aria-label="กรอกจำนวน Kaizen">
+        <div class="card p-5 mb-6">
+          <div class="flex items-start gap-3">
+            <div class="text-2xl">🔢</div>
+            <div>
+              <p class="text-sm font-bold" style="color:var(--ink);">กรอกจำนวน Kaizen ที่ส่งแล้ว</p>
+              <p class="text-xs mt-1" style="color:var(--ink-faint);">ไม่ต้องกรอกฟอร์ม Kaizen เต็มรูปแบบ — เลือกเดือน/ปี แล้วพิมพ์ "จำนวนเรื่อง" ที่พนักงานแต่ละคนส่งแล้วในเดือนนั้นได้เลย ระบบจะรวมยอดสะสมทั้งปีและเทียบกับเป้าหมายให้อัตโนมัติ</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-5 mb-6">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-2 flex-wrap">
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ปี (พ.ศ.)</label>
+                <select id="progressYear" class="input-field w-auto min-w-[120px]" aria-label="เลือกปี"></select>
+              </div>
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">เดือนที่กรอก</label>
+                <select id="progressMonth" class="input-field w-auto min-w-[130px]" aria-label="เลือกเดือน"></select>
+              </div>
+            </div>
+            <button id="btnRefreshProgress" class="btn-secondary text-sm">🔄 โหลดใหม่</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="progressSummary">
+          <div class="stat-card rail-blue"><div class="stat-label">พนักงานทั้งหมด</div><div class="stat-number num" id="progTotalEmp">0</div></div>
+          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">✅ ถึงเป้าหมาย</div><div class="stat-number num" id="progAchieved">0</div></div>
+          <div class="stat-card rail-warn"><div class="stat-label" style="color:var(--warn-600);">⏳ ยังไม่ถึง</div><div class="stat-number num" id="progNotAchieved">0</div></div>
+          <div class="stat-card rail-blue"><div class="stat-label" style="color:var(--brand-700);">% สำเร็จ</div><div class="stat-number num" id="progPercent">0%</div></div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <p class="text-sm font-bold" style="color:var(--ink);">รายชื่อพนักงาน <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="progEmpCount">0</span> คน)</span></p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <input id="progressSearch" type="text" placeholder="ค้นหารหัส/ชื่อ/แผนก..." class="input-field w-56 text-sm" aria-label="ค้นหาพนักงาน">
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr>
+                <th>รหัส</th>
+                <th>ชื่อ-สกุล</th>
+                <th>แผนก</th>
+                <th class="text-center">เป้าหมาย/ปี</th>
+                <th class="text-center">ส่งแล้ว(สะสม)</th>
+                <th class="text-center">คงเหลือ</th>
+                <th>ความคืบหน้า</th>
+                <th class="text-center">จำนวนเดือนนี้</th>
+                <th class="text-center">บันทึก</th>
+              </tr></thead>
+              <tbody id="progressTableBody"></tbody>
+            </table>
+            <div id="progressEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
+              <div class="text-3xl mb-2">🔍</div>ไม่พบรายชื่อพนักงาน
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Form Modal -->
+  <div id="formModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
+    <div class="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+
+      <div class="flex items-center justify-between px-5 py-3 sticky top-0 z-10 rounded-t-2xl" style="background:rgba(255,255,255,.95); backdrop-filter:blur(6px); border-bottom:1px solid var(--line-soft);">
+        <h2 class="font-bold text-sm" style="color:var(--ink-soft);" id="formModalTitle">ส่ง Kaizen ใหม่</h2>
+        <button id="btnCloseForm" class="w-9 h-9 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิดฟอร์ม">✕</button>
+      </div>
+
+      <form id="kaizenForm" class="p-4 sm:p-5" novalidate>
+        <input type="hidden" id="editRowIndex" value="">
+
+        <div class="form-doc">
+          <div class="form-header">
+            <div class="form-logo">
+              <div class="logo-icon andon-mark"><span class="lamp-red"></span><span class="lamp-amber"></span><span class="lamp-green"></span></div>
+              <div class="company-name">บริษัท บิทไว้ส์<br>(ประเทศไทย) จำกัด</div>
+            </div>
+            <div class="form-title">
+              <div class="title-main">ใบข้อเสนอแนะกิจกรรม KAIZEN</div>
+              <div class="title-sub">Kaizen Suggestion Form</div>
+            </div>
+            <div class="form-code">
+              <span class="code-pill">F-5S-30 Rev.4</span>
+              <span class="text-xs mt-1" style="color:var(--ink-faint);" id="formHeaderDateLabel">-</span>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-cell">
+              <span class="info-label">👤 ชื่อ-สกุล</span>
+              <input id="empName" readonly class="input-field font-semibold text-sm" style="background:var(--surface-tint);" tabindex="-1">
+            </div>
+            <div class="info-cell">
+              <span class="info-label">🏢 แผนก</span>
+              <input id="empDept" readonly class="input-field font-semibold text-sm" style="background:var(--surface-tint);" tabindex="-1">
+            </div>
+            <div class="info-cell" style="grid-column:1/-1;">
+              <span class="info-label">📅 วันที่ทำ Kaizen <span style="color:var(--bad-600);">*</span></span>
+              <div class="grid grid-cols-3 gap-2">
+                <select id="dDay" required class="input-field text-sm" aria-label="วันที่"></select>
+                <select id="dMonth" required class="input-field text-sm" aria-label="เดือน"></select>
+                <select id="dYear" required class="input-field text-sm" aria-label="ปี"></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4">
+
+            <div id="rejectBanner" class="hidden rounded-xl p-3 text-sm mb-4" style="background:var(--bad-100); border:1px solid #F3C6C2; color:var(--bad-600); font-weight:600;"></div>
+
+            <!-- หัวข้อ -->
+            <div class="section-title">📝 หัวข้อ Kaizen</div>
+            <div class="section-body space-y-3">
+              <div><label class="text-sm font-semibold mb-1 block" style="color:var(--ink-soft);" for="title">หัวข้อ Kaizen <span style="color:var(--bad-600);">*</span></label><input id="title" required class="input-field" placeholder="ระบุหัวข้อ Kaizen" maxlength="200"></div>
+            </div>
+
+            <!-- Kaizen Type -->
+            <div class="section-title mt-4">🏷️ ประเภท Kaizen <span style="color:var(--bad-600);">*</span></div>
+            <div class="section-body">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="kaizenTypeGrid">
+                <label class="category-checkbox" data-type="automation" role="radio" aria-checked="false" tabindex="0">
+                  <span class="category-icon" style="background:#6366f1;color:#fff;">🤖</span>
+                  <span class="category-label">Automation</span>
+                </label>
+                <label class="category-checkbox" data-type="karakuri" role="radio" aria-checked="false" tabindex="0">
+                  <span class="category-icon" style="background:#8b5cf6;color:#fff;">⚙️</span>
+                  <span class="category-label">Karakuri</span>
+                </label>
+                <label class="category-checkbox" data-type="genco" role="radio" aria-checked="false" tabindex="0">
+                  <span class="category-icon" style="background:#f59e0b;color:#fff;">🏭</span>
+                  <span class="category-label">Genco</span>
+                </label>
+                <label class="category-checkbox" data-type="project" role="radio" aria-checked="false" tabindex="0">
+                  <span class="category-icon" style="background:#3b82f6;color:#fff;">📋</span>
+                  <span class="category-label">Project</span>
+                </label>
+                <label class="category-checkbox" data-type="service" role="radio" aria-checked="false" tabindex="0">
+                  <span class="category-icon" style="background:#10b981;color:#fff;">🛠️</span>
+                  <span class="category-label">Service</span>
+                </label>
+                <label class="category-checkbox" data-type="innovation" role="radio" aria-checked="false" tabindex="0">
+                  <span class="category-icon" style="background:#8b5cf6;color:#fff;">💡</span>
+                  <span class="category-label">Innovation</span>
+                </label>
+                <label class="category-checkbox" data-type="suggestion" role="radio" aria-checked="false" tabindex="0">
+                  <span class="category-icon" style="background:#f472b6;color:#fff;">📝</span>
+                  <span class="category-label">Suggestion</span>
+                </label>
+              </div>
+              <input type="hidden" id="kaizenTypeData" value="">
+              <p class="text-xs mt-2" style="color:var(--ink-faint);">เลือก 1 ประเภทเท่านั้น</p>
+            </div>
+
+            <!-- หมวดหมู่ -->
+            <div class="section-title mt-4">🏷️ หมวดหมู่ Kaizen <span class="font-normal text-xs opacity-90">(เลือกได้มากกว่า 1 ข้อ) <span style="color:#FFD7D2;">*</span></span></div>
+            <div class="section-body">
+              <div class="category-grid" id="categoryGrid">
+                <label class="category-checkbox cat-P" data-cat="P" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">P</span><span class="category-label">ผลผลิต</span></label>
+                <label class="category-checkbox cat-D" data-cat="D" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">D</span><span class="category-label">การส่งมอบ</span></label>
+                <label class="category-checkbox cat-E" data-cat="E" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">E</span><span class="category-label">สิ่งแวดล้อม</span></label>
+                <label class="category-checkbox cat-S" data-cat="S" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">S</span><span class="category-label">ความปลอดภัย</span></label>
+                <label class="category-checkbox cat-Q" data-cat="Q" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">Q</span><span class="category-label">คุณภาพ</span></label>
+                <label class="category-checkbox cat-E2" data-cat="E2" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">E²</span><span class="category-label">จริยธรรม</span></label>
+                <label class="category-checkbox cat-C" data-cat="C" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">C</span><span class="category-label">ลดต้นทุน</span></label>
+                <label class="category-checkbox cat-M" data-cat="M" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">M</span><span class="category-label">ขวัญกำลังใจ</span></label>
+              </div>
+              <input type="hidden" id="categoriesData" value="{}">
+            </div>
+
+            <!-- Before/After -->
+            <div class="section-title mt-4">📷 เปรียบเทียบก่อน–หลังปรับปรุง</div>
+            <div class="section-body">
+              <div class="ba-grid">
+                <div class="panel-before">
+                  <div class="panel-head">🔴 BEFORE (ก่อนปรับปรุง)</div>
+                  <div class="panel-body">
+                    <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);" for="beforeImageInput">📎 แนบรูปภาพ</label>
+                    <input id="beforeImageInput" type="file" accept="image/*" class="input-field text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-red-50 file:text-red-700 file:font-medium" aria-label="อัปโหลดรูปภาพก่อนปรับปรุง">
+                    <div id="beforeImageContainer" class="mt-2 hidden">
+                      <img id="beforeImagePreview" class="w-full max-h-32 object-cover rounded-lg img-loading" style="border:1px solid var(--line);" alt="รูปภาพก่อนปรับปรุง" loading="lazy">
+                    </div>
+                    <label class="text-xs font-semibold block mt-2" style="color:var(--ink-soft);" for="beforeProblem">1. ปัญหาที่พบ</label>
+                    <textarea id="beforeProblem" rows="2" class="input-field resize-none text-sm" placeholder="อธิบายปัญหาที่พบ..."></textarea>
+                  </div>
+                </div>
+                <div class="panel-after">
+                  <div class="panel-head">🟢 AFTER (หลังปรับปรุง)</div>
+                  <div class="panel-body">
+                    <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);" for="afterImageInput">📎 แนบรูปภาพ</label>
+                    <input id="afterImageInput" type="file" accept="image/*" class="input-field text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:text-emerald-700 file:font-medium" aria-label="อัปโหลดรูปภาพหลังปรับปรุง">
+                    <div id="afterImageContainer" class="mt-2 hidden">
+                      <img id="afterImagePreview" class="w-full max-h-32 object-cover rounded-lg img-loading" style="border:1px solid var(--line);" alt="รูปภาพหลังปรับปรุง" loading="lazy">
+                    </div>
+                    <label class="text-xs font-semibold block mt-2" style="color:var(--ink-soft);" for="afterSolution">2. แก้ไขด้วยวิธีใด</label>
+                    <textarea id="afterSolution" rows="2" class="input-field resize-none text-sm" placeholder="อธิบายวิธีการแก้ไข..."></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 📈 ผลลัพธ์การปรับปรุง (detail) -->
+            <div class="section-title mt-4">📈 ผลลัพธ์การปรับปรุง</div>
+            <div class="section-body">
+              <div>
+                <label class="text-sm font-semibold mb-1 block" style="color:var(--ink-soft);" for="detail">ทำแล้วดีขึ้นอย่างไร</label>
+                <textarea id="detail" rows="3" class="input-field resize-none text-sm" placeholder="อธิบายว่าการปรับปรุงนี้ทำให้เกิดประโยชน์อย่างไรบ้าง..."></textarea>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex justify-between items-center text-[0.6rem] mt-3 pt-2" style="color:var(--ink-faint); border-top:1px solid var(--line-soft);">
+              <span>F-5S-30 Rev.4</span>
+              <span>ระบบบันทึก Kaizen · บริษัท บิทไว้ส์ (ประเทศไทย) จำกัด</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" id="btnCancel" class="btn-secondary text-sm">ยกเลิก</button>
+          <button type="submit" id="btnSubmit" class="btn-primary flex items-center gap-2 text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            บันทึก
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+    <div class="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+      <div class="flex items-center justify-between px-6 py-4 sticky top-0 z-10" style="background:rgba(255,255,255,.95); backdrop-filter:blur(6px); border-bottom:1px solid var(--line-soft);">
+        <h2 class="font-bold text-lg" style="color:var(--ink);" id="detailModalTitle">รายละเอียด Kaizen</h2>
+        <button id="btnCloseDetail" class="w-10 h-10 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิดรายละเอียด">✕</button>
+      </div>
+      <div id="detailBody" class="px-6 py-5 space-y-3 text-sm"></div>
+      <div id="detailReviewActions" class="hidden px-6 pb-6 flex gap-3"></div>
+    </div>
+  </div>
+
+  <!-- Comment Modal -->
+  <div id="commentModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="commentModalTitle">
+    <div class="w-full max-w-2xl max-h-[80vh] overflow-hidden rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--line-soft);">
+        <h2 class="font-bold text-lg" style="color:var(--ink);" id="commentModalTitle">💬 ความคิดเห็น</h2>
+        <button id="btnCloseComment" class="w-10 h-10 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิดความคิดเห็น">✕</button>
+      </div>
+      <div id="commentBody" class="px-6 py-4 overflow-y-auto" style="max-height: calc(80vh - 120px);">
+        <div id="commentList" class="space-y-3"></div>
+        <div class="flex gap-2 mt-4 sticky bottom-0 pt-2" style="background:var(--surface);">
+          <textarea id="newComment" class="input-field text-sm flex-1" rows="2" placeholder="เขียนความคิดเห็น... (Ctrl+Enter เพื่อส่ง)" aria-label="เขียนความคิดเห็น"></textarea>
+          <button id="btnSubmitComment" class="btn-primary text-sm self-end" aria-label="ส่งความคิดเห็น">ส่ง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee History Modal -->
+  <div id="empHistoryModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="empHistoryModalTitle">
+    <div class="w-full max-w-3xl max-h-[80vh] overflow-hidden rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--line-soft);">
+        <h2 class="font-bold text-lg" style="color:var(--ink);" id="empHistoryModalTitle">📋 ประวัติ Kaizen ของ <span id="empHistoryName"></span></h2>
+        <button id="btnCloseEmpHistory" class="w-10 h-10 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิด">✕</button>
+      </div>
+      <div class="px-6 py-4 overflow-y-auto" style="max-height: calc(80vh - 80px);">
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="rounded-lg p-3 text-center" style="background:var(--warn-100);">
+            <span class="text-xs font-semibold" style="color:var(--warn-600);">⏳ รอตรวจ</span>
+            <div class="text-xl font-bold" style="color:var(--warn-600);" id="empHistPending">0</div>
+          </div>
+          <div class="rounded-lg p-3 text-center" style="background:var(--good-100);">
+            <span class="text-xs font-semibold" style="color:var(--good-600);">✅ ผ่านแล้ว</span>
+            <div class="text-xl font-bold" style="color:var(--good-600);" id="empHistApproved">0</div>
+          </div>
+          <div class="rounded-lg p-3 text-center" style="background:var(--bad-100);">
+            <span class="text-xs font-semibold" style="color:var(--bad-600);">❌ ตีกลับ</span>
+            <div class="text-xl font-bold" style="color:var(--bad-600);" id="empHistRejected">0</div>
+          </div>
+        </div>
+        <div id="empHistoryList" class="space-y-2"></div>
+        <div id="empHistoryEmptyState" class="text-center py-8" style="color:var(--ink-faint);">ยังไม่มีข้อมูล Kaizen</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzy7VNmVjRERZ5qdOTnEQaeooSMhdhE2ZByzZBSbl1Mwj73ZacPRBdBHQDXp4YwvYk4bw/exec';
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
+    const monthNamesTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const STORAGE_KEY = 'kaizenUserSession_v2';
+
+    const STATUS_PENDING_HEAD = 'รอหัวหน้าแผนกตรวจ';
+    const STATUS_PENDING_DIRECTOR = 'รอผู้จัดการตรวจ';
+    const STATUS_APPROVED = 'ผ่าน';
+    const STATUS_REJECTED = 'ตีกลับ';
+
+    const KAIZEN_TYPES = {
+      automation: 'Automation Kaizen',
+      karakuri: 'Karakuri Kaizen',
+      genco: 'Genco Kaizen',
+      project: 'Project Kaizen',
+      service: 'Service Kaizen',
+      innovation: 'Kaizen for Innovation',
+      suggestion: 'Kaizen Suggestion System'
+    };
+
+    const CATEGORIES = {
+      'P': 'ผลผลิต',
+      'D': 'การส่งมอบ',
+      'E': 'สิ่งแวดล้อม',
+      'S': 'ความปลอดภัย',
+      'Q': 'คุณภาพ',
+      'E2': 'จริยธรรม',
+      'C': 'ลดต้นทุน',
+      'M': 'ขวัญกำลังใจ'
+    };
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    let CURRENT_USER = null;
+    let MY_RECORDS = [];
+    let QUEUE_RECORDS = [];
+    let DASHBOARD_DATA = null;
+    let currentDashboardYear = null;
+    let selectedFiles = [];
+    let currentCommentKaizenId = null;
+    let isLoading = false;
+    let PROGRESS_EMPLOYEES = [];
+    let progressBeYear = null;
+    let progressCurrentMonth = null;
+    let progressSelectedMonth = null;
+    let currentTransactionId = null;
+    let isSubmitting = false;
+    let selectedRole = 'employee';
+    let debounceTimers = {};
+
+    // ============================================================
+    // UTILITY FUNCTIONS
+    // ============================================================
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function driveImageSrc(url, size) {
+      if (!url) return '';
+      if (url.startsWith('data:')) return url;
+      var m = String(url).match(/[-\w]{25,}/);
+      if (!m) return url;
+      var sz = size || 'w600';
+      return 'https://drive.google.com/thumbnail?id=' + m[0] + '&sz=' + sz;
+    }
+
+    function driveImageThumb(url) {
+      return driveImageSrc(url, 'w120');
+    }
+
+    function showLoading() {
+      isLoading = true;
+      document.getElementById('loadingBar').style.display = 'block';
+    }
+
+    function hideLoading() {
+      isLoading = false;
+      document.getElementById('loadingBar').style.display = 'none';
+    }
+
+    function showError(err, title) {
+      hideLoading();
+      var msg = typeof err === 'string' ? err : (err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+      console.error('Error:', err);
+      Swal.fire({
+        icon: 'error',
+        title: title || 'เกิดข้อผิดพลาด',
+        text: msg,
+        confirmButtonColor: '#1B6E4C'
+      });
+    }
+
+    function showSuccess(msg) {
+      hideLoading();
+      Swal.fire({
+        icon: 'success',
+        title: msg,
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+
+    function debounce(func, wait) {
+      var key = func.name || 'anonymous';
+      return function() {
+        var context = this;
+        var args = arguments;
+        clearTimeout(debounceTimers[key]);
+        debounceTimers[key] = setTimeout(function() {
+          func.apply(context, args);
+          delete debounceTimers[key];
+        }, wait);
+      };
+    }
+
+    // ============================================================
+    // API CALL
+    // ============================================================
+    function callAppsScript(action, payload) {
+      return fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: action, payload: payload || {} })
+        })
+        .then(function(r) {
+          if (!r.ok) throw new Error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ (HTTP ' + r.status + ')');
+          return r.json();
+        })
+        .catch(function(err) {
+          if (err.message && err.message.includes('Failed to fetch')) {
+            throw new Error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+          }
+          throw err;
+        });
+    }
+
+    // ============================================================
+    // FILE HANDLING
+    // ============================================================
+    function readFileAsDataUrl(file) {
+      return new Promise(function(resolve, reject) {
+        if (file.size > MAX_FILE_SIZE) {
+          reject(new Error('ไฟล์ "' + file.name + '" มีขนาดใหญ่เกินไป (' + (file.size / 1024 / 1024).toFixed(2) + ' MB) จำกัดไม่เกิน 10 MB'));
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function() { resolve(reader.result); };
+        reader.onerror = function() { reject(new Error('ไม่สามารถอ่านไฟล์ "' + file.name + '" ได้')); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function processFilesWithProgress(files, onProgress) {
+      var total = files.length;
+      var processed = 0;
+      var results = [];
+      var errors = [];
+
+      return files.reduce(function(promise, fileData) {
+        return promise.then(function() {
+          return readFileAsDataUrl(fileData.file).then(function(dataUrl) {
+            processed++;
+            if (onProgress) onProgress(processed, total, fileData.file.name);
+            results.push({ base64: dataUrl, name: fileData.name, mimeType: fileData.type, size: fileData.file.size });
+          }).catch(function(err) {
+            processed++;
+            errors.push(err.message);
+            if (onProgress) onProgress(processed, total, fileData.file.name);
+          });
+        });
+      }, Promise.resolve()).then(function() {
+        if (errors.length > 0 && results.length === 0) throw new Error(errors.join('\n'));
+        if (errors.length > 0) console.warn('Some files failed:', errors);
+        return results;
+      });
+    }
+
+    // ============================================================
+    // RENDER HELPERS
+    // ============================================================
+    function statusPill(status) {
+      if (status === STATUS_APPROVED) return '<span class="badge badge-approved">✅ ผ่าน</span>';
+      if (status === STATUS_REJECTED) return '<span class="badge badge-rejected">❌ ตีกลับ</span>';
+      if (status === STATUS_PENDING_DIRECTOR) return '<span class="badge badge-pending">⏳ รอผู้จัดการตรวจ</span>';
+      return '<span class="badge badge-pending">⏳ รอหัวหน้าแผนกตรวจ</span>';
+    }
+
+    function catBadges(categories) {
+      if (!categories || Object.keys(categories).filter(function(k) { return categories[k]; }).length === 0) {
+        return '<span class="text-slate-300">-</span>';
+      }
+      var html = '<div class="flex gap-1 flex-wrap">';
+      Object.keys(categories).forEach(function(k) {
+        if (categories[k] && CATEGORIES[k]) {
+          html += '<span class="cat-badge cat-' + k + '" title="' + CATEGORIES[k] + '">' + k + '</span>';
+        }
+      });
+      return html + '</div>';
+    }
+
+    function catTags(categories) {
+      if (!categories) return '';
+      var tags = [];
+      var colors = { 'P': '#1B6E4C', 'D': '#3E6B84', 'E': '#2F8F57', 'S': '#B0392C', 'Q': '#8B5A2B', 'E2': '#7A5AA6', 'C': '#B07A17', 'M': '#B0567A' };
+      Object.keys(categories).forEach(function(k) {
+        if (categories[k] && CATEGORIES[k]) {
+          tags.push('<span class="cat-tag" style="background:' + (colors[k] || '#8695B4') + '">' + CATEGORIES[k] + '</span>');
+        }
+      });
+      return tags.length ? tags.join('') : '-';
+    }
+
+    function renderFileAttachments(fileUrls) {
+      if (!fileUrls || fileUrls.length === 0) return '';
+      var html = '<div class="flex flex-wrap gap-1 mt-1">';
+      fileUrls.forEach(function(url) {
+        var fileName = url.split('/').pop().split('?')[0] || 'ไฟล์แนบ';
+        var icon = fileName.match(/\.(pdf)$/i) ? '📋' :
+          fileName.match(/\.(xlsx|xls)$/i) ? '📊' :
+          fileName.match(/\.(doc|docx)$/i) ? '📝' :
+          fileName.match(/\.(zip|rar)$/i) ? '📦' :
+          fileName.match(/\.(jpg|jpeg|png|gif)$/i) ? '🖼️' : '📎';
+        html += '<a href="' + encodeURI(url) + '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">' +
+          icon + ' ' + escapeHtml(fileName) + '</a>';
+      });
+      return html + '</div>';
+    }
+
+    function getTypeLabel(type) {
+      if (!type) return '-';
+      return KAIZEN_TYPES[type] || type;
+    }
+
+    // ============================================================
+    // DATE FUNCTIONS
+    // ============================================================
+    function daysInMonth(beYear, month) {
+      return new Date(beYear - 543, month, 0).getDate();
+    }
+
+    function updateDayOptions() {
+      var day = document.getElementById('dDay');
+      var month = parseInt(document.getElementById('dMonth').value);
+      var year = parseInt(document.getElementById('dYear').value);
+      if (!month || !year) return;
+      var max = daysInMonth(year, month);
+      var cur = parseInt(day.value) || 1;
+      day.innerHTML = '';
+      for (var i = 1; i <= max; i++) day.innerHTML += '<option value="' + i + '">' + i + '</option>';
+      day.value = Math.min(cur, max);
+      updateFormHeaderDate();
+    }
+
+    function updateFormHeaderDate() {
+      var el = document.getElementById('formHeaderDateLabel');
+      var d = document.getElementById('dDay').value;
+      var m = parseInt(document.getElementById('dMonth').value);
+      var y = document.getElementById('dYear').value;
+      el.textContent = d && m && y ? (d + ' ' + monthNamesTH[m - 1] + ' ' + y) : '-';
+    }
+
+    function initDatePickers() {
+      var dMonth = document.getElementById('dMonth');
+      var dYear = document.getElementById('dYear');
+      dMonth.innerHTML = '';
+      monthNamesTH.forEach(function(m, i) { dMonth.innerHTML += '<option value="' + (i + 1) + '">' + m + '</option>'; });
+      var now = new Date().getFullYear() + 543;
+      dYear.innerHTML = '';
+      for (var y = now - 3; y <= now + 1; y++) dYear.innerHTML += '<option value="' + y + '">' + y + '</option>';
+      dMonth.value = new Date().getMonth() + 1;
+      dYear.value = now;
+      updateDayOptions();
+      document.getElementById('dDay').value = new Date().getDate();
+      updateFormHeaderDate();
+    }
+
+    function getCurrentDateString() {
+      var y = parseInt(document.getElementById('dYear').value);
+      var m = parseInt(document.getElementById('dMonth').value);
+      var d = parseInt(document.getElementById('dDay').value);
+      return (y - 543) + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    }
+
+    // ============================================================
+    // CATEGORY FUNCTIONS
+    // ============================================================
+    function getSelectedCategories() {
+      var cats = {};
+      document.querySelectorAll('.category-checkbox[data-cat].checked').forEach(function(el) {
+        if (el.dataset.cat) cats[el.dataset.cat] = true;
+      });
+      return cats;
+    }
+
+    function setCategories(cats) {
+      document.querySelectorAll('.category-checkbox[data-cat]').forEach(function(el) {
+        el.classList.remove('checked');
+        el.setAttribute('aria-checked', 'false');
+      });
+      Object.keys(cats || {}).forEach(function(k) {
+        if (cats[k]) {
+          var el = document.querySelector('.category-checkbox[data-cat="' + k + '"]');
+          if (el) { el.classList.add('checked'); el.setAttribute('aria-checked', 'true'); }
+        }
+      });
+      document.getElementById('categoriesData').value = JSON.stringify(getSelectedCategories());
+    }
+
+    function clearCategories() {
+      document.querySelectorAll('.category-checkbox[data-cat]').forEach(function(el) {
+        el.classList.remove('checked');
+        el.setAttribute('aria-checked', 'false');
+      });
+      document.getElementById('categoriesData').value = '{}';
+    }
+
+    function bindCategoryEvents() {
+      document.querySelectorAll('.category-checkbox[data-cat]').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+          e.preventDefault();
+          this.classList.toggle('checked');
+          this.setAttribute('aria-checked', this.classList.contains('checked') ? 'true' : 'false');
+          document.getElementById('categoriesData').value = JSON.stringify(getSelectedCategories());
+        });
+        el.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+        });
+      });
+    }
+
+    function getSelectedKaizenType() {
+      var selected = document.querySelector('.category-checkbox[data-type].checked');
+      return selected ? selected.dataset.type : '';
+    }
+
+    function setKaizenType(type) {
+      document.querySelectorAll('.category-checkbox[data-type]').forEach(function(el) {
+        el.classList.remove('checked');
+        el.setAttribute('aria-checked', 'false');
+      });
+      if (type) {
+        var el = document.querySelector('.category-checkbox[data-type="' + type + '"]');
+        if (el) { el.classList.add('checked'); el.setAttribute('aria-checked', 'true'); }
+      }
+      document.getElementById('kaizenTypeData').value = getSelectedKaizenType();
+    }
+
+    function bindKaizenTypeEvents() {
+      document.querySelectorAll('.category-checkbox[data-type]').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+          e.preventDefault();
+          document.querySelectorAll('.category-checkbox[data-type]').forEach(function(other) {
+            other.classList.remove('checked');
+            other.setAttribute('aria-checked', 'false');
+          });
+          this.classList.add('checked');
+          this.setAttribute('aria-checked', 'true');
+          document.getElementById('kaizenTypeData').value = getSelectedKaizenType();
+        });
+        el.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+        });
+      });
+    }
+
+    function clearKaizenType() {
+      document.querySelectorAll('.category-checkbox[data-type]').forEach(function(el) {
+        el.classList.remove('checked');
+        el.setAttribute('aria-checked', 'false');
+      });
+      document.getElementById('kaizenTypeData').value = '';
+    }
+
+    // ============================================================
+    // SESSION MANAGEMENT
+    // ============================================================
+    function saveSession(user) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      } catch (e) {}
+    }
+
+    function loadSession() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        var data = JSON.parse(raw);
+        if (!data.id || !data.role) return null;
+        return data;
+      } catch (e) { return null; }
+    }
+
+    function clearSession() {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {}
+    }
+
+    function setSelectedRole(role) {
+      selectedRole = role;
+      document.getElementById('roleEmployeeBtn').classList.toggle('active', role === 'employee');
+      document.getElementById('roleManagerBtn').classList.toggle('active', role === 'manager');
+      document.getElementById('loginIdLabel').textContent = role === 'employee' ? 'รหัสพนักงาน' : 'รหัสหัวหน้างาน';
+      document.getElementById('loginId').placeholder = role === 'employee' ? 'เช่น 00123' : 'เช่น 00456';
+      document.getElementById('loginError').classList.add('hidden');
+      document.getElementById('loginId').focus();
+    }
+
+    // ============================================================
+    // LOGIN / LOGOUT
+    // ============================================================
+    function handleLogin(e) {
+      e.preventDefault();
+      var id = document.getElementById('loginId').value.trim();
+      var btn = document.getElementById('btnLogin');
+      var errEl = document.getElementById('loginError');
+      errEl.classList.add('hidden');
+
+      if (!id) {
+        errEl.textContent = 'กรุณากรอกรหัสของคุณ';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'กำลังตรวจสอบ...';
+
+      callAppsScript('identifyUser', { role: selectedRole, id: id })
+        .then(function(res) {
+          btn.disabled = false;
+          btn.textContent = 'เข้าสู่ระบบ';
+          if (!res.success) {
+            errEl.textContent = res.message;
+            errEl.classList.remove('hidden');
+            return;
+          }
+          var user = Object.assign({ id: id }, res.profile, { role: res.role });
+          saveSession(user);
+          startApp(user);
+        })
+        .catch(function(err) {
+          btn.disabled = false;
+          btn.textContent = 'เข้าสู่ระบบ';
+          errEl.textContent = err.message;
+          errEl.classList.remove('hidden');
+        });
+    }
+
+    function logout() {
+      Swal.fire({
+        title: 'ยืนยันการออกจากระบบ',
+        text: 'คุณต้องการออกจากระบบใช่หรือไม่?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ออกจากระบบ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#B0392C',
+        cancelButtonColor: '#8695B4'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          clearSession();
+          CURRENT_USER = null;
+          MY_RECORDS = [];
+          QUEUE_RECORDS = [];
+          DASHBOARD_DATA = null;
+          PROGRESS_EMPLOYEES = [];
+          document.getElementById('appShell').classList.add('hidden');
+          document.getElementById('loginScreen').classList.remove('hidden');
+          document.getElementById('loginId').value = '';
+          document.getElementById('loginId').focus();
+          Object.keys(debounceTimers).forEach(function(key) {
+            clearTimeout(debounceTimers[key]);
+            delete debounceTimers[key];
+          });
+        }
+      });
+    }
+
+    // ============================================================
+    // APP START
+    // ============================================================
+    function startApp(user) {
+      CURRENT_USER = user;
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('appShell').classList.remove('hidden');
+
+      var roleLabel = user.role === 'employee' ? 'พนักงาน' :
+        ((user.approverType || []).indexOf('ผู้จัดการ') > -1 ? 'ผู้จัดการ' : 'หัวหน้าแผนก');
+      document.getElementById('profileLine').textContent = user.name + ' · ' + (user.department || '-') + ' · ' + roleLabel;
+
+      buildTabs();
+
+      if (user.role === 'employee') {
+        document.getElementById('btnOpenForm').classList.remove('hidden');
+        document.getElementById('btnOpenForm').classList.add('flex');
+        switchView('emp');
+        loadMyRecords();
+      } else {
+        switchView('mgrQueue');
+        loadQueue();
+      }
+    }
+
+    // ============================================================
+    // TAB MANAGEMENT
+    // ============================================================
+    function buildTabs() {
+      var bar = document.getElementById('tabBar');
+      bar.innerHTML = '';
+      if (CURRENT_USER.role === 'employee') {
+        bar.innerHTML = '<button class="tab-btn active" data-view="emp" role="tab" aria-selected="true">รายการของฉัน</button>';
+      } else {
+        var isDirector = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
+        bar.innerHTML =
+          '<button class="tab-btn active" data-view="mgrQueue" role="tab" aria-selected="true">คิวตรวจ Kaizen</button>' +
+          '<button class="tab-btn" data-view="mgrHrDash" role="tab" aria-selected="false">📊 Dashboard HR</button>' +
+          (isDirector ? '<button class="tab-btn" data-view="mgrBulk" role="tab" aria-selected="false">🔢 ความคืบหน้า Kaizen</button>' : '');
+      }
+      bar.querySelectorAll('.tab-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() { switchView(this.dataset.view); });
+      });
+    }
+
+    function switchView(view) {
+      document.getElementById('empView').classList.toggle('hidden', view !== 'emp');
+      document.getElementById('mgrQueueView').classList.toggle('hidden', view !== 'mgrQueue');
+      document.getElementById('mgrHrDashView').classList.toggle('hidden', view !== 'mgrHrDash');
+      document.getElementById('mgrBulkView').classList.toggle('hidden', view !== 'mgrBulk');
+
+      document.querySelectorAll('#tabBar .tab-btn').forEach(function(b) {
+        var isActive = b.dataset.view === view;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+
+      if (view === 'mgrHrDash') loadHrDashboard();
+      if (view === 'mgrBulk' && PROGRESS_EMPLOYEES.length === 0) loadMonthlyProgress();
+    }
+
+    // ============================================================
+    // EMPLOYEE VIEW
+    // ============================================================
+    function loadMyRecords() {
+      if (isLoading) return;
+      showLoading();
+      callAppsScript('getMyRecords', { empId: CURRENT_USER.id })
+        .then(function(res) {
+          hideLoading();
+          if (!res.success) { showError(res.message); return; }
+          MY_RECORDS = res.records || [];
+          renderEmpKPI();
+          renderEmpTable();
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    function renderEmpKPI() {
+      var target = (typeof CURRENT_USER.target === 'number') ? CURRENT_USER.target : 0;
+      var approved = MY_RECORDS.filter(function(r) { return r.status === STATUS_APPROVED; }).length;
+      var pending = MY_RECORDS.filter(function(r) { return r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR; }).length;
+      var rejected = MY_RECORDS.filter(function(r) { return r.status === STATUS_REJECTED; }).length;
+
+      document.getElementById('empTarget').textContent = target;
+      document.getElementById('empApproved').textContent = approved;
+      document.getElementById('empPending').textContent = pending;
+      document.getElementById('empRejected').textContent = rejected;
+
+      var pct = target > 0 ? Math.min(100, Math.round((approved / target) * 100)) : 100;
+      document.getElementById('empProgressBar').style.width = pct + '%';
+      document.getElementById('empProgressLabel').textContent = approved + ' / ' + target + ' (' + pct + '%)';
+    }
+
+    function renderEmpTable() {
+      var tbody = document.getElementById('empTableBody');
+      tbody.innerHTML = '';
+      document.getElementById('empRowCount').textContent = MY_RECORDS.length;
+      document.getElementById('empEmptyState').classList.toggle('hidden', MY_RECORDS.length > 0);
+
+      MY_RECORDS.forEach(function(r) {
+        var actionHtml = '';
+        if (r.status === STATUS_REJECTED) {
+          actionHtml = '<button class="btnResubmit btn-secondary text-xs py-1 px-3" data-row="' + r.rowIndex + '" aria-label="แก้ไขและส่งใหม่">แก้ไข/ส่งใหม่</button>';
+        } else if (r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR) {
+          actionHtml = '<button class="btnViewEmp text-xs font-semibold" style="color:var(--brand-600);" data-row="' + r.rowIndex + '" aria-label="ดูรายละเอียด">ดูรายละเอียด</button>' +
+            '<button class="btnDeleteEmp text-xs ml-2" style="color:var(--bad-600);" data-row="' + r.rowIndex + '" aria-label="ลบรายการ">🗑️</button>';
+        } else {
+          actionHtml = '<button class="btnViewEmp text-xs font-semibold" style="color:var(--brand-600);" data-row="' + r.rowIndex + '" aria-label="ดูรายละเอียด">ดูรายละเอียด</button>';
+        }
+
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="font-semibold" style="color:var(--ink);">' + escapeHtml(r.id) + '</td>' +
+          '<td style="color:var(--ink-faint);">' + escapeHtml(r.dateDisplay) + '</td>' +
+          '<td class="max-w-xs truncate" title="' + escapeHtml(r.title) + '">' + escapeHtml(r.title) + '</td>' +
+          '<td class="text-xs" style="color:var(--ink-faint);">' + escapeHtml(getTypeLabel(r.kaizenType)) + '</td>' +
+          '<td>' + catBadges(r.categories) + '</td>' +
+          '<td>' + statusPill(r.status) + (r.status === STATUS_REJECTED && r.rejectReason ? '<div class="text-xs mt-1" style="color:var(--bad-600);">' + escapeHtml(r.rejectReason) + '</div>' : '') + '</td>' +
+          '<td>' + actionHtml + '</td>';
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll('.btnResubmit').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var rowIndex = this.dataset.row;
+          var rec = MY_RECORDS.find(function(r) { return String(r.rowIndex) === rowIndex; });
+          if (rec) openForm(rec);
+        });
+      });
+
+      tbody.querySelectorAll('.btnViewEmp').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var rowIndex = this.dataset.row;
+          var rec = MY_RECORDS.find(function(r) { return String(r.rowIndex) === rowIndex; });
+          if (rec) showDetail(rec, false);
+        });
+      });
+
+      tbody.querySelectorAll('.btnDeleteEmp').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var rowIndex = this.dataset.row;
+          confirmDeleteRecord(rowIndex, 'emp');
+        });
+      });
+    }
+
+    // ============================================================
+    // DELETE RECORD
+    // ============================================================
+    function confirmDeleteRecord(rowIndex, type) {
+      Swal.fire({
+        title: 'ยืนยันการลบ',
+        text: 'คุณต้องการลบรายการนี้ใช่หรือไม่? การลบจะไม่สามารถกู้คืนได้',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ลบ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#B0392C',
+        cancelButtonColor: '#8695B4'
+      }).then(function(result) {
+        if (result.isConfirmed) deleteRecord(rowIndex, type);
+      });
+    }
+
+    function deleteRecord(rowIndex, type) {
+      showLoading();
+      var payload = { rowIndex: parseInt(rowIndex) };
+      if (type === 'emp') payload.empId = CURRENT_USER.id;
+      else payload.reviewerId = CURRENT_USER.id;
+
+      callAppsScript('deleteKaizenRecord', payload)
+        .then(function(res) {
+          hideLoading();
+          if (res.success) {
+            showSuccess(res.message);
+            if (type === 'emp') loadMyRecords();
+            else loadQueue();
+          } else showError(res.message);
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    // ============================================================
+    // REPAIR FUNCTIONS
+    // ============================================================
+    function repairDepartmentNames() {
+      Swal.fire({
+        title: 'ยืนยันการซ่อมแซม',
+        text: 'ระบบจะปรับชื่อแผนกใน Data sheet ให้ตรงกันทั้งหมด ต้องการดำเนินการต่อหรือไม่?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ดำเนินการ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#1B6E4C',
+        cancelButtonColor: '#8695B4'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          showLoading();
+          callAppsScript('repairDepartmentNames', {})
+            .then(function(res) {
+              hideLoading();
+              if (res.success) {
+                showSuccess(res.message);
+                loadQueue();
+                DASHBOARD_DATA = null;
+                loadHrDashboard();
+              } else showError(res.message);
+            })
+            .catch(function(err) {
+              hideLoading();
+              showError(err);
+            });
+        }
+      });
+    }
+
+    function syncManagerDepartments() {
+      Swal.fire({
+        title: 'ยืนยันการซิงค์',
+        text: 'ระบบจะปรับชื่อแผนกใน Managers sheet ให้ตรงกับ HR_Employees ต้องการดำเนินการต่อหรือไม่?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ดำเนินการ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#1B6E4C',
+        cancelButtonColor: '#8695B4'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          showLoading();
+          callAppsScript('syncManagerDepartments', {})
+            .then(function(res) {
+              hideLoading();
+              if (res.success) {
+                showSuccess(res.message);
+                loadQueue();
+                DASHBOARD_DATA = null;
+                loadHrDashboard();
+              } else showError(res.message);
+            })
+            .catch(function(err) {
+              hideLoading();
+              showError(err);
+            });
+        }
+      });
+    }
+
+    function fixColumnAlignment() {
+      Swal.fire({
+        title: 'ยืนยันการซ่อมแซม',
+        text: 'ระบบจะตรวจสอบและย้ายค่า "สถานะ" กับ "หมวดหมู่ P-M" ในชีต Data ให้กลับไปอยู่ตำแหน่งคอลัมน์ที่ถูกต้อง (ใช้เมื่อกดอนุมัติแล้วขึ้นข้อความว่าสถานะไม่ถูกต้อง) ต้องการดำเนินการต่อหรือไม่?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ดำเนินการ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#1B6E4C',
+        cancelButtonColor: '#8695B4'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          showLoading();
+          callAppsScript('repairDataColumnAlignment', {})
+            .then(function(res) {
+              hideLoading();
+              if (res.success) {
+                showSuccess(res.message);
+                loadQueue();
+                DASHBOARD_DATA = null;
+                loadHrDashboard();
+              } else showError(res.message);
+            })
+            .catch(function(err) {
+              hideLoading();
+              showError(err);
+            });
+        }
+      });
+    }
+
+    function debugReviewQueue() {
+      showLoading();
+      callAppsScript('debugReviewQueue', { reviewerId: CURRENT_USER.id })
+        .then(function(res) {
+          hideLoading();
+          if (!res.success) { showError(res.message); return; }
+          
+          var debug = res.debug;
+          var html = '<div style="text-align:left;font-size:13px;line-height:1.6;">';
+          html += '<p><b>👤 ผู้ตรวจสอบ:</b> ' + escapeHtml(debug.reviewerName) + '</p>';
+          html += '<p><b>🏢 แผนก:</b> "' + escapeHtml(debug.reviewerDepartment) + '"</p>';
+          html += '<p><b>📋 บทบาท:</b> ' + escapeHtml(debug.reviewerApproverTypes.join(', ') || '-') + '</p>';
+          html += '<hr style="border-color:var(--line-soft);margin:8px 0;">';
+          html += '<p><b>📊 สถานะคิวทั้งหมด:</b></p>';
+          html += '<ul style="margin:4px 0 8px 18px;">';
+          html += '<li>📌 รอหัวหน้าแผนกตรวจทั้งหมด: <b>' + debug.totalPendingHead + '</b> รายการ</li>';
+          html += '<li style="color:var(--good-600);">✅ แผนกตรงกัน (ควรเห็น): <b>' + debug.matchingDepartment + '</b> รายการ</li>';
+          html += '<li style="color:var(--bad-600);">❌ แผนกไม่ตรงกัน (ไม่เห็น): <b>' + debug.mismatchingDepartment + '</b> รายการ</li>';
+          html += '</ul>';
+          
+          if (debug.departmentMismatchList && debug.departmentMismatchList.length > 0) {
+            html += '<div style="background:var(--bad-50);padding:8px 12px;border-radius:8px;border:1px solid #F3C6C2;margin:4px 0;">';
+            html += '<p style="font-weight:bold;color:var(--bad-600);">⚠️ รายการที่แผนกไม่ตรงกัน (หัวหน้าแผนกไม่เห็น):</p>';
+            debug.departmentMismatchList.forEach(function(item) {
+              html += '<div style="font-size:12px;padding:2px 0;">- ' + escapeHtml(item.id) + ': "' + escapeHtml(item.department) + '" - ' + escapeHtml(item.title) + '</div>';
+            });
+            html += '</div>';
+          }
+          
+          if (debug.matchingList && debug.matchingList.length > 0) {
+            html += '<div style="background:var(--good-50);padding:8px 12px;border-radius:8px;border:1px solid #A7E0C0;margin:4px 0;">';
+            html += '<p style="font-weight:bold;color:var(--good-600);">✅ รายการที่แผนกตรงกัน (หัวหน้าแผนกควรเห็น):</p>';
+            debug.matchingList.forEach(function(item) {
+              html += '<div style="font-size:12px;padding:2px 0;">- ' + escapeHtml(item.id) + ': "' + escapeHtml(item.department) + '" - ' + escapeHtml(item.title) + '</div>';
+            });
+            html += '</div>';
+          }
+          
+          html += '<p style="font-size:11px;color:var(--ink-faint);margin-top:8px;">💡 ถ้าแผนกไม่ตรงกัน ให้ใช้ปุ่ม "ซ่อมแซมชื่อแผนก" หรือ "ซิงค์แผนกผู้จัดการ"</p>';
+          html += '</div>';
+          
+          Swal.fire({
+            title: '🐛 ตรวจสอบคิวตรวจสอบ',
+            html: html,
+            confirmButtonColor: '#1B6E4C',
+            width: '700px',
+            confirmButtonText: 'ปิด'
+          });
+        })
+        .catch(function(err) {
+          hideLoading();
+          showError(err);
+        });
+    }
+
+    // ============================================================
+    // MANAGER QUEUE
+    // ============================================================
+    function loadQueue() {
+      if (isLoading) return;
+      showLoading();
+      callAppsScript('getReviewQueue', { reviewerId: CURRENT_USER.id })
+        .then(function(res) {
+          hideLoading();
+          if (!res.success) { showError(res.message); return; }
+          QUEUE_RECORDS = res.records || [];
+          renderMgrKPI();
+          renderMgrTable();
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    function renderMgrKPI() {
+      document.getElementById('mgrKpiTotal').textContent = QUEUE_RECORDS.length;
+      document.getElementById('mgrKpiPending').textContent = QUEUE_RECORDS.filter(function(r) {
+        return r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR;
+      }).length;
+      document.getElementById('mgrKpiApproved').textContent = QUEUE_RECORDS.filter(function(r) { return r.status === STATUS_APPROVED; }).length;
+      document.getElementById('mgrKpiRejected').textContent = QUEUE_RECORDS.filter(function(r) { return r.status === STATUS_REJECTED; }).length;
+    }
+
+    function openImageViewer(imageUrl, label) {
+      if (!imageUrl) return;
+      
+      var displayUrl = imageUrl;
+      var fileId = imageUrl.match(/[-\w]{25,}/);
+      if (fileId) {
+        displayUrl = 'https://drive.google.com/thumbnail?id=' + fileId[0] + '&sz=w1200';
+      }
+
+      var modalHtml = 
+        '<div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.85); backdrop-filter:blur(8px);" onclick="closeImageViewer(event)">' +
+        '<div class="relative max-w-4xl max-h-[90vh] w-full" onclick="event.stopPropagation();">' +
+        '<button onclick="closeImageViewer(event)" class="absolute -top-12 right-0 text-white text-2xl hover:text-gray-300 transition" style="background:none;border:none;cursor:pointer;">✕</button>' +
+        '<div class="bg-white rounded-xl p-2 shadow-2xl">' +
+        '<div class="text-xs font-semibold p-2" style="color:var(--ink-faint);">' + (label || 'รูปภาพ') + '</div>' +
+        '<img src="' + displayUrl + '" alt="' + (label || 'รูปภาพ') + '" class="w-full max-h-[70vh] object-contain rounded" onerror="this.parentElement.innerHTML=\'<div class=\\"p-8 text-center text-white\\">ไม่สามารถโหลดรูปภาพได้</div>\'">' +
+        '<div class="flex justify-between items-center p-2 text-xs" style="color:var(--ink-faint);">' +
+        '<span>คลิกนอกภาพเพื่อปิด</span>' +
+        '<a href="' + imageUrl + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">เปิดใน Drive</a>' +
+        '</div>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
+
+      var existingModal = document.getElementById('imageViewerModal');
+      if (existingModal) existingModal.remove();
+
+      var div = document.createElement('div');
+      div.id = 'imageViewerModal';
+      div.innerHTML = modalHtml;
+      document.body.appendChild(div);
+    }
+
+    function closeImageViewer(event) {
+      if (event && event.target && !event.target.closest('#imageViewerModal')) return;
+      var modal = document.getElementById('imageViewerModal');
+      if (modal) modal.remove();
+    }
+
+    function buildFullDetailHtml(r) {
+      var html = '';
+
+      html += '<div class="detail-grid">' +
+        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">📋 รหัส</span><div class="font-semibold text-sm">' + escapeHtml(r.id) + '</div></div>' +
+        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">📅 วันที่</span><div class="text-sm">' + escapeHtml(r.dateDisplay) + '</div></div>' +
+        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">👤 ชื่อ-สกุล</span><div class="text-sm font-semibold">' + escapeHtml(r.name) + '</div></div>' +
+        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">🏢 แผนก</span><div class="text-sm">' + escapeHtml(r.department) + '</div></div>' +
+        '</div>';
+
+      html += '<div class="mt-2"><span class="text-xs font-semibold" style="color:var(--ink-faint);">📝 หัวข้อ</span><div class="text-sm font-semibold">' + escapeHtml(r.title) + '</div></div>';
+      html += '<div class="mt-1"><span class="text-xs font-semibold" style="color:var(--ink-faint);">🏷️ ประเภท</span><span class="text-sm ml-2">' + escapeHtml(getTypeLabel(r.kaizenType)) + '</span></div>';
+
+      html += '<div class="mt-2"><span class="text-xs font-semibold" style="color:var(--ink-faint);">🏷️ หมวดหมู่</span> ' +
+        '<div class="detail-cats mt-1">' + catTags(r.categories) + '</div></div>';
+
+      if (r.detail) {
+        html += '<div class="mt-2"><span class="text-xs font-semibold" style="color:var(--ink-faint);">📝 รายละเอียด</span>' +
+          '<div class="whitespace-pre-wrap text-sm mt-1 p-2 rounded" style="background:var(--surface-tint); border:1px solid var(--line-soft);">' + escapeHtml(r.detail) + '</div></div>';
+      }
+
+      if (r.result) {
+        html += '<div class="mt-2"><span class="text-xs font-semibold" style="color:var(--ink-faint);">📊 ผลลัพธ์</span>' +
+          '<div class="whitespace-pre-wrap text-sm mt-1 p-2 rounded" style="background:var(--surface-tint); border:1px solid var(--line-soft);">' + escapeHtml(r.result) + '</div></div>';
+      }
+
+      html += '<div class="detail-ba-grid mt-2">' +
+        '<div class="detail-ba-item before"><div class="ba-header">🔴 ก่อนปรับปรุง (Before)</div><div class="ba-body">' +
+        (r.beforeImageUrl ? 
+          '<div class="relative"><img src="' + driveImageSrc(r.beforeImageUrl) + '" alt="รูปก่อนปรับปรุง" class="w-full max-h-40 object-cover rounded cursor-pointer" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.beforeImageUrl) + '\', \'Before\')" onerror="this.parentElement.innerHTML=&#39;&lt;div class=&quot;ba-empty&quot;&gt;ไม่สามารถโหลดรูปภาพได้&lt;/div&gt;&#39;"><div class="text-xs text-center mt-1" style="color:var(--ink-faint);">คลิกที่รูปเพื่อดูขนาดใหญ่</div></div>' :
+          '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
+        (r.beforeProblem ? '<p class="text-xs mt-1" style="color:var(--ink-soft);"><b>ปัญหาที่พบ:</b> ' + escapeHtml(r.beforeProblem) + '</p>' : '') +
+        '</div></div>' +
+        '<div class="detail-ba-item after"><div class="ba-header">🟢 หลังปรับปรุง (After)</div><div class="ba-body">' +
+        (r.afterImageUrl ? 
+          '<div class="relative"><img src="' + driveImageSrc(r.afterImageUrl) + '" alt="รูปหลังปรับปรุง" class="w-full max-h-40 object-cover rounded cursor-pointer" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.afterImageUrl) + '\', \'After\')" onerror="this.parentElement.innerHTML=&#39;&lt;div class=&quot;ba-empty&quot;&gt;ไม่สามารถโหลดรูปภาพได้&lt;/div&gt;&#39;"><div class="text-xs text-center mt-1" style="color:var(--ink-faint);">คลิกที่รูปเพื่อดูขนาดใหญ่</div></div>' :
+          '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
+        (r.afterSolution ? '<p class="text-xs mt-1" style="color:var(--ink-soft);"><b>วิธีแก้ไข:</b> ' + escapeHtml(r.afterSolution) + '</p>' : '') +
+        '</div></div></div>';
+
+      if (r.fileUrls && r.fileUrls.length > 0) {
+        html += '<div class="mt-2"><span class="text-xs font-semibold" style="color:var(--ink-faint);">📎 ไฟล์แนบ:</span>' + renderFileAttachments(r.fileUrls) + '</div>';
+      }
+
+      var extraDocs = [];
+      if (r.formPdfUrl) extraDocs.push('<a href="' + encodeURI(r.formPdfUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📋 ฟอร์ม PDF</a>');
+      if (r.pdfUrl) extraDocs.push('<a href="' + encodeURI(r.pdfUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📄 PDF</a>');
+      if (r.excelUrl) extraDocs.push('<a href="' + encodeURI(r.excelUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📊 Excel</a>');
+      if (extraDocs.length > 0) {
+        html += '<div class="mt-2 flex gap-2 flex-wrap">' + extraDocs.join('') + '</div>';
+      }
+
+      if (r.status !== STATUS_PENDING_HEAD && r.status !== STATUS_PENDING_DIRECTOR) {
+        html +=
+          '<div class="mt-2 grid grid-cols-2 gap-2 p-2 rounded text-xs" style="background:#fff; border:1px solid var(--line-soft);">' +
+          '<div><span style="color:var(--ink-faint);">ตรวจโดย:</span> ' + escapeHtml(r.reviewedBy || '-') + '</div>' +
+          '<div><span style="color:var(--ink-faint);">วันที่ตรวจ:</span> ' + escapeHtml(r.reviewedDate || '-') + '</div>' +
+          (r.status === STATUS_REJECTED && r.rejectReason ? '<div class="col-span-2" style="color:var(--bad-600);"><b>เหตุผลที่ตีกลับ:</b> ' + escapeHtml(r.rejectReason) + '</div>' : '') +
+          '</div>';
+      }
+
+      if (r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR) {
+        var isDirector = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
+        var isHead = (CURRENT_USER.approverType || []).indexOf('หัวหน้าแผนก') > -1;
+        var canApprove = false;
+        if (isHead && r.status === STATUS_PENDING_HEAD) canApprove = true;
+        if (isDirector && r.status === STATUS_PENDING_DIRECTOR) canApprove = true;
+
+        if (canApprove) {
+          html +=
+            '<div class="mt-3 detail-actions-split">' +
+            '<button class="act-approve" onclick="reviewRecord(' + r.rowIndex + ', \'approve\')" aria-label="อนุมัติ">✅ อนุมัติ</button>' +
+            '<button class="act-reject" onclick="promptReject(' + r.rowIndex + ')" aria-label="ตีกลับ">❌ ตีกลับ</button>' +
+            '</div>';
+        } else {
+          html += '<div class="mt-2 text-xs text-center" style="color:var(--ink-faint);">⏳ รอผู้ตรวจสอบที่เกี่ยวข้อง</div>';
+        }
+      }
+
+      return html;
+    }
+
+    function renderMgrTable() {
+      var search = document.getElementById('mgrSearch').value.trim().toLowerCase();
+      var statusFilter = document.getElementById('mgrStatusFilter').value;
+
+      var filtered = QUEUE_RECORDS.filter(function(r) {
+        var matchSearch = !search ||
+          (r.name || '').toLowerCase().indexOf(search) > -1 ||
+          (r.title || '').toLowerCase().indexOf(search) > -1 ||
+          (r.id || '').toLowerCase().indexOf(search) > -1 ||
+          (r.department || '').toLowerCase().indexOf(search) > -1 ||
+          (r.detail || '').toLowerCase().indexOf(search) > -1 ||
+          (r.beforeProblem || '').toLowerCase().indexOf(search) > -1 ||
+          (r.afterSolution || '').toLowerCase().indexOf(search) > -1;
+        var matchStatus = !statusFilter || r.status === statusFilter;
+        return matchSearch && matchStatus;
+      });
+
+      var tbody = document.getElementById('mgrTableBody');
+      tbody.innerHTML = '';
+      document.getElementById('mgrRowCount').textContent = filtered.length;
+      document.getElementById('mgrEmptyState').classList.toggle('hidden', filtered.length > 0);
+
+      filtered.forEach(function(r, i) {
+        var rowId = 'mgr_row_' + i + '_' + Date.now();
+
+        var thumbsHtml = '<div class="thumb-grid">';
+        if (r.beforeImageUrl || r.afterImageUrl) {
+          if (r.beforeImageUrl) {
+            thumbsHtml += '<img src="' + driveImageThumb(r.beforeImageUrl) + '" class="thumb-img clickable-thumb" data-url="' + encodeURI(r.beforeImageUrl) + '" data-label="Before" title="คลิกเพื่อดูรูป Before" alt="รูปก่อนปรับปรุง" loading="lazy" onerror="this.className=\'thumb-img no-img\';this.alt=\'ไม่สามารถโหลดรูปได้\'">';
+          }
+          if (r.afterImageUrl) {
+            thumbsHtml += '<img src="' + driveImageThumb(r.afterImageUrl) + '" class="thumb-img clickable-thumb" data-url="' + encodeURI(r.afterImageUrl) + '" data-label="After" title="คลิกเพื่อดูรูป After" alt="รูปหลังปรับปรุง" loading="lazy" onerror="this.className=\'thumb-img no-img\';this.alt=\'ไม่สามารถโหลดรูปได้\'">';
+          }
+        } else {
+          thumbsHtml += '<span class="thumb-img no-img" aria-label="ไม่มีรูปภาพ">-</span>';
+        }
+        thumbsHtml += '</div>';
+
+        var fileLinks = [];
+        if (r.formPdfUrl) fileLinks.push('<a href="' + encodeURI(r.formPdfUrl) + '" target="_blank" rel="noopener noreferrer" class="text-xs" style="color:var(--brand-600);" title="ฟอร์ม PDF" aria-label="เปิดฟอร์ม PDF">📋</a>');
+        if (r.pdfUrl) fileLinks.push('<a href="' + encodeURI(r.pdfUrl) + '" target="_blank" rel="noopener noreferrer" class="text-xs" style="color:var(--brand-600);" title="PDF" aria-label="เปิด PDF">📄</a>');
+        if (r.excelUrl) fileLinks.push('<a href="' + encodeURI(r.excelUrl) + '" target="_blank" rel="noopener noreferrer" class="text-xs" style="color:var(--brand-600);" title="Excel" aria-label="เปิด Excel">📊</a>');
+        if (r.fileUrls && r.fileUrls.length > 0) {
+          fileLinks.push('<span class="text-xs" style="color:var(--ink-faint);" title="มีไฟล์แนบ ' + r.fileUrls.length + ' ไฟล์" aria-label="มีไฟล์แนบ ' + r.fileUrls.length + ' ไฟล์">📎' + r.fileUrls.length + '</span>');
+        }
+        var fileCell = fileLinks.length ? fileLinks.join(' ') : '<span class="text-slate-300" aria-label="ไม่มีไฟล์แนบ">-</span>';
+
+        var actionHtml = '';
+        var isPending = r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR;
+        if (isPending) {
+          actionHtml =
+            '<div class="flex gap-1 flex-wrap">' +
+            '<button class="btnApprove btn-success text-xs py-1 px-2" data-row="' + r.rowIndex + '" aria-label="อนุมัติ" title="อนุมัติ">✅</button>' +
+            '<button class="btnReject btn-danger text-xs py-1 px-2" data-row="' + r.rowIndex + '" aria-label="ตีกลับ" title="ตีกลับ">❌</button>' +
+            '<button class="btnHistory text-xs" style="color:#7C5CE0;" data-row="' + r.rowIndex + '" aria-label="ประวัติ" title="ประวัติ">📜</button>' +
+            '<button class="btnComment text-xs" style="color:var(--good-600);" data-row="' + r.rowIndex + '" aria-label="ความคิดเห็น" title="ความคิดเห็น">💬</button>' +
+            '<button class="btnDeleteMgr text-xs" style="color:var(--bad-600);" data-row="' + r.rowIndex + '" aria-label="ลบ" title="ลบ">🗑️</button>' +
+            '</div>';
+        } else {
+          actionHtml =
+            '<div class="flex gap-1 flex-wrap">' +
+            '<button class="btnViewMgr text-xs font-semibold" style="color:var(--brand-600);" data-row="' + r.rowIndex + '" aria-label="ดูรายละเอียด">ดู</button>' +
+            '<button class="btnHistory text-xs" style="color:#7C5CE0;" data-row="' + r.rowIndex + '" aria-label="ประวัติ" title="ประวัติ">📜</button>' +
+            '<button class="btnComment text-xs" style="color:var(--good-600);" data-row="' + r.rowIndex + '" aria-label="ความคิดเห็น" title="ความคิดเห็น">💬</button>' +
+            '<button class="btnDeleteMgr text-xs" style="color:var(--bad-600);" data-row="' + r.rowIndex + '" aria-label="ลบ" title="ลบ">🗑️</button>' +
+            '</div>';
+        }
+
+        var tr = document.createElement('tr');
+        tr.className = 'row-clickable';
+        tr.setAttribute('data-target', rowId);
+        tr.setAttribute('tabindex', '0');
+        tr.setAttribute('role', 'button');
+        tr.setAttribute('aria-expanded', 'false');
+        tr.innerHTML =
+          '<td><span class="toggle-detail" data-target="' + rowId + '" onclick="event.stopPropagation();toggleDetailRow(this)" aria-label="แสดงรายละเอียด">▶</span></td>' +
+          '<td class="font-semibold" style="color:var(--ink);">' + escapeHtml(r.id) + '</td>' +
+          '<td style="color:var(--ink-faint);">' + escapeHtml(r.dateDisplay) + '</td>' +
+          '<td>' + escapeHtml(r.name) + '</td>' +
+          '<td>' + escapeHtml(r.department) + '</td>' +
+          '<td class="max-w-xs truncate" title="' + escapeHtml(r.title) + '">' + escapeHtml(r.title) + '</td>' +
+          '<td class="text-xs" style="color:var(--ink-faint);">' + escapeHtml(getTypeLabel(r.kaizenType)) + '</td>' +
+          '<td>' + thumbsHtml + '</td>' +
+          '<td>' + catBadges(r.categories) + '</td>' +
+          '<td>' + fileCell + '</td>' +
+          '<td>' + statusPill(r.status) + (r.status === STATUS_REJECTED && r.rejectReason ? '<div class="text-xs mt-1" style="color:var(--bad-600);">' + escapeHtml(r.rejectReason) + '</div>' : '') + '</td>' +
+          '<td>' + actionHtml + '</td>';
+        tbody.appendChild(tr);
+
+        var detailTr = document.createElement('tr');
+        detailTr.id = rowId;
+        detailTr.className = 'detail-row';
+        detailTr.innerHTML = '<td colspan="12"><div class="detail-content">' + buildFullDetailHtml(r) + '</div></td>';
+        tbody.appendChild(detailTr);
+      });
+
+      tbody.querySelectorAll('.clickable-thumb').forEach(function(img) {
+        img.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var url = this.dataset.url;
+          var label = this.dataset.label || 'รูปภาพ';
+          if (url) openImageViewer(url, label);
+        });
+      });
+
+      bindMgrTableEvents(tbody);
+    }
+
+    function toggleDetailRow(el) {
+      var targetId = el.dataset.target;
+      var detailRow = document.getElementById(targetId);
+      var tr = el.closest('tr');
+      if (detailRow) {
+        detailRow.classList.toggle('expanded');
+        var isExpanded = detailRow.classList.contains('expanded');
+        el.classList.toggle('rotated');
+        if (tr) tr.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+      }
+    }
+
+    function bindMgrTableEvents(tbody) {
+      tbody.querySelectorAll('.btnApprove').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          reviewRecord(this.dataset.row, 'approve');
+        });
+      });
+
+      tbody.querySelectorAll('.btnReject').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          promptReject(this.dataset.row);
+        });
+      });
+
+      tbody.querySelectorAll('.btnViewMgr').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var rowIndex = this.dataset.row;
+          var rec = QUEUE_RECORDS.find(function(r) { return String(r.rowIndex) === rowIndex; });
+          if (rec) showDetail(rec, true);
+        });
+      });
+
+      tbody.querySelectorAll('.btnHistory').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var rowIndex = this.dataset.row;
+          var rec = QUEUE_RECORDS.find(function(r) { return String(r.rowIndex) === rowIndex; });
+          if (rec) showVersionHistory(rec.id);
+        });
+      });
+
+      tbody.querySelectorAll('.btnComment').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var rowIndex = this.dataset.row;
+          var rec = QUEUE_RECORDS.find(function(r) { return String(r.rowIndex) === rowIndex; });
+          if (rec) openCommentModal(rec.id);
+        });
+      });
+
+      tbody.querySelectorAll('.btnDeleteMgr').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          confirmDeleteRecord(this.dataset.row, 'mgr');
+        });
+      });
+
+      tbody.querySelectorAll('.row-clickable').forEach(function(row) {
+        row.addEventListener('click', function() {
+          var targetId = this.dataset.target;
+          var detailRow = document.getElementById(targetId);
+          var chevron = this.querySelector('.toggle-detail');
+          if (detailRow) {
+            detailRow.classList.toggle('expanded');
+            var isExpanded = detailRow.classList.contains('expanded');
+            if (chevron) chevron.classList.toggle('rotated');
+            this.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+          }
+        });
+        row.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+        });
+      });
+    }
+
+    // ============================================================
+    // REVIEW RECORD
+    // ============================================================
+    function promptReject(rowIndex) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'ระบุเหตุผลในการตีกลับ',
+        input: 'textarea',
+        inputPlaceholder: 'กรุณาระบุเหตุผล...',
+        showCancelButton: true,
+        confirmButtonText: 'ตีกลับ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#B0392C',
+        cancelButtonColor: '#8695B4',
+        inputValidator: function(v) { if (!v || !v.trim()) return 'กรุณาระบุเหตุผล'; }
+      }).then(function(result) {
+        if (result.isConfirmed) reviewRecord(rowIndex, 'reject', result.value.trim());
+      });
+    }
+
+    function reviewRecord(rowIndex, decision, reason) {
+      showLoading();
+      callAppsScript('reviewKaizenRecord', {
+          rowIndex: rowIndex,
+          decision: decision,
+          reason: reason || '',
+          reviewerId: CURRENT_USER.id
+        })
+        .then(function(res) {
+          hideLoading();
+          if (res.success) {
+            showSuccess(res.message);
+            document.getElementById('detailModal').classList.add('hidden');
+            DASHBOARD_DATA = null;
+            loadQueue();
+            loadHrDashboard();
+          } else showError(res.message);
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    // ============================================================
+    // DETAIL VIEW
+    // ============================================================
+    function showDetail(r, allowReview) {
+      var body = document.getElementById('detailBody');
+
+      var html = '';
+      html +=
+        '<div class="flex items-center gap-3 pb-3 flex-wrap" style="border-bottom:1px solid var(--line-soft);">' +
+        '<span class="px-3 py-1 rounded-lg text-sm font-bold" style="background:var(--brand-50); color:var(--brand-700);">' + escapeHtml(r.id) + '</span>' +
+        '<span class="text-sm" style="color:var(--ink-faint);">' + escapeHtml(r.dateDisplay) + '</span>' +
+        statusPill(r.status) +
+        '</div>';
+
+      if (r.categories) {
+        html += '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">หมวดหมู่</span><div class="flex flex-wrap gap-1 mt-1">';
+        Object.keys(r.categories).forEach(function(k) {
+          if (r.categories[k] && CATEGORIES[k]) {
+            html += '<span class="cat-badge cat-' + k + '" style="padding:2px 10px;border-radius:6px;width:auto;">' + CATEGORIES[k] + '</span>';
+          }
+        });
+        html += '</div></div>';
+      }
+
+      html += '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">📋 ประเภท</span><span class="text-sm ml-2">' + escapeHtml(getTypeLabel(r.kaizenType)) + '</span></div>';
+
+      html += '<div class="grid grid-cols-2 gap-3">' +
+        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">พนักงาน</span><p class="font-semibold" style="color:var(--ink);">' + escapeHtml(r.name) + '</p></div>' +
+        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">แผนก</span><p class="font-semibold" style="color:var(--ink);">' + escapeHtml(r.department) + '</p></div>' +
+        '</div>' +
+        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">หัวข้อ</span><p class="font-semibold" style="color:var(--ink);">' + escapeHtml(r.title) + '</p></div>';
+
+      if (r.beforeImageUrl || r.afterImageUrl || r.beforeProblem || r.afterSolution) {
+        html += '<div class="grid grid-cols-2 gap-3">' +
+          '<div class="panel-before"><div class="panel-head" style="font-size:.7rem;">🔴 Before</div><div class="panel-body">' +
+          (r.beforeImageUrl ? '<img src="' + driveImageSrc(r.beforeImageUrl) + '" class="w-full max-h-28 object-cover rounded" alt="รูปก่อนปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.beforeImageUrl) + '\', \'Before\')" onerror="this.style.display=\'none\'">' :
+            '<div class="text-xs" style="color:var(--ink-faint);">ไม่มีรูป</div>') +
+          (r.beforeProblem ? '<p class="text-xs mt-1" style="color:var(--ink-soft);">' + escapeHtml(r.beforeProblem) + '</p>' : '') +
+          '</div></div>' +
+          '<div class="panel-after"><div class="panel-head" style="font-size:.7rem;">🟢 After</div><div class="panel-body">' +
+          (r.afterImageUrl ? '<img src="' + driveImageSrc(r.afterImageUrl) + '" class="w-full max-h-28 object-cover rounded" alt="รูปหลังปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.afterImageUrl) + '\', \'After\')" onerror="this.style.display=\'none\'">' :
+            '<div class="text-xs" style="color:var(--ink-faint);">ไม่มีรูป</div>') +
+          (r.afterSolution ? '<p class="text-xs mt-1" style="color:var(--ink-soft);">' + escapeHtml(r.afterSolution) + '</p>' : '') +
+          '</div></div></div>';
+      }
+
+      if (r.fileUrls && r.fileUrls.length > 0) {
+        html += '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">📎 ไฟล์แนบ</span>' + renderFileAttachments(r.fileUrls) + '</div>';
+      }
+
+      html +=
+        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">ทำแล้วดีขึ้นอย่างไร</span><div class="rounded-xl p-3 whitespace-pre-wrap" style="background:var(--surface-tint); border:1px solid var(--line-soft);">' +
+        escapeHtml(r.detail || '-') + '</div></div>' +
+        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">ผลลัพธ์</span><div class="rounded-xl p-3 whitespace-pre-wrap" style="background:var(--surface-tint); border:1px solid var(--line-soft);">' +
+        escapeHtml(r.result || '-') + '</div></div>';
+
+      if (r.status !== STATUS_PENDING_HEAD && r.status !== STATUS_PENDING_DIRECTOR) {
+        html +=
+          '<div class="rounded-xl p-3 text-xs" style="background:var(--surface-tint); border:1px solid var(--line-soft);"><div><span style="color:var(--ink-faint);">ตรวจโดย:</span> ' +
+          escapeHtml(r.reviewedBy || '-') + '</div>' +
+          '<div><span style="color:var(--ink-faint);">วันที่ตรวจ:</span> ' + escapeHtml(r.reviewedDate || '-') + '</div>' +
+          (r.status === STATUS_REJECTED ? '<div style="color:var(--bad-600);"><span style="color:var(--ink-faint);">เหตุผล:</span> ' + escapeHtml(r.rejectReason || '-') + '</div>' : '') +
+          '</div>';
+      }
+
+      if (r.formPdfUrl || r.pdfUrl || r.excelUrl) {
+        html += '<div class="flex gap-2 flex-wrap">';
+        if (r.formPdfUrl) html += '<a href="' + encodeURI(r.formPdfUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📋 ฟอร์ม PDF</a>';
+        if (r.pdfUrl) html += '<a href="' + encodeURI(r.pdfUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📄 PDF</a>';
+        if (r.excelUrl) html += '<a href="' + encodeURI(r.excelUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📊 Excel</a>';
+        html += '</div>';
+      }
+
+      body.innerHTML = html;
+
+      var actions = document.getElementById('detailReviewActions');
+      if (allowReview && (r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR)) {
+        var isDirector = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
+        var isHead = (CURRENT_USER.approverType || []).indexOf('หัวหน้าแผนก') > -1;
+        var canApprove = false;
+        if (isHead && r.status === STATUS_PENDING_HEAD) canApprove = true;
+        if (isDirector && r.status === STATUS_PENDING_DIRECTOR) canApprove = true;
+
+        if (canApprove) {
+          actions.classList.remove('hidden');
+          actions.innerHTML =
+            '<button id="detailApprove" class="btn-success flex-1" aria-label="อนุมัติ">✅ อนุมัติ</button>' +
+            '<button id="detailReject" class="btn-danger flex-1" aria-label="ตีกลับ">❌ ตีกลับ</button>';
+          document.getElementById('detailApprove').addEventListener('click', function() { reviewRecord(r.rowIndex, 'approve'); });
+          document.getElementById('detailReject').addEventListener('click', function() {
+            document.getElementById('detailModal').classList.add('hidden');
+            promptReject(r.rowIndex);
+          });
+        } else {
+          actions.classList.add('hidden');
+          actions.innerHTML = '';
+        }
+      } else {
+        actions.classList.add('hidden');
+        actions.innerHTML = '';
+      }
+
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+
+    // ============================================================
+    // VERSION HISTORY
+    // ============================================================
+    function showVersionHistory(kaizenId) {
+      showLoading();
+      callAppsScript('getKaizenHistory', { kaizenId: kaizenId })
+        .then(function(res) {
+          hideLoading();
+          if (!res.success) { showError(res.message); return; }
+
+          var history = res.history || [];
+          var html = '<div class="text-sm">';
+          if (history.length === 0) {
+            html += '<p style="color:var(--ink-faint);">ยังไม่มีประวัติการแก้ไข</p>';
+          } else {
+            html += '<div class="space-y-2 max-h-96 overflow-y-auto">';
+            var actionLabels = {
+              'CREATE': '📝 สร้าง', 'CREATE_BY_MANAGER': '👤 หัวหน้างานบันทึกแทน',
+              'UPDATE': '✏️ แก้ไข', 'APPROVE': '✅ อนุมัติ', 'REJECT': '❌ ตีกลับ',
+              'RESUBMIT': '🔄 ส่งใหม่', 'DELETE': '🗑️ ลบ', 'HEAD_APPROVE': '👔 หัวหน้าแผนกอนุมัติ',
+              'DIRECTOR_APPROVE': '👨‍💼 ผู้จัดการอนุมัติ'
+            };
+
+            history.forEach(function(h) {
+              var date = h.timestamp ? new Date(h.timestamp).toLocaleString('th-TH') : '-';
+              var actionLabel = actionLabels[h.action] || h.action;
+
+              html +=
+                '<div class="pl-3 py-2 rounded-r-lg" style="border-left:3px solid var(--brand-500); background:var(--brand-50);">' +
+                '<div class="flex justify-between items-start">' +
+                '<div><span class="font-bold" style="color:var(--brand-700);">เวอร์ชัน ' + h.version + '</span> <span class="ml-2 text-sm font-semibold">' + actionLabel + '</span></div>' +
+                '<span class="text-xs" style="color:var(--ink-faint);">' + date + '</span>' +
+                '</div>' +
+                '<div class="text-xs mt-1" style="color:var(--ink-soft);">โดย: ' + escapeHtml(h.userName || 'System') + '</div>';
+
+              if (h.action === 'REJECT' && h.newData && h.newData.rejectReason) {
+                html += '<div class="mt-1 text-xs" style="color:var(--bad-600);">เหตุผล: ' + escapeHtml(h.newData.rejectReason) + '</div>';
+              }
+
+              html += '</div>';
+            });
+
+            html += '</div>';
+          }
+          html += '</div>';
+
+          Swal.fire({
+            title: '📜 ประวัติการแก้ไข',
+            html: html,
+            confirmButtonColor: '#1B6E4C',
+            width: '700px',
+            confirmButtonText: 'ปิด'
+          });
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    // ============================================================
+    // COMMENT FUNCTIONS
+    // ============================================================
+    function openCommentModal(kaizenId) {
+      currentCommentKaizenId = kaizenId;
+      document.getElementById('commentModal').classList.remove('hidden');
+      document.getElementById('newComment').focus();
+      loadComments(kaizenId);
+    }
+
+    function closeCommentModal() {
+      document.getElementById('commentModal').classList.add('hidden');
+      currentCommentKaizenId = null;
+    }
+
+    function loadComments(kaizenId) {
+      showLoading();
+      callAppsScript('getComments', { kaizenId: kaizenId })
+        .then(function(res) {
+          hideLoading();
+          if (!res.success) { showError(res.message); return; }
+
+          var list = document.getElementById('commentList');
+          var comments = res.comments || [];
+
+          if (comments.length === 0) {
+            list.innerHTML = '<p class="text-center py-4" style="color:var(--ink-faint);">ยังไม่มีความคิดเห็น</p>';
+          } else {
+            var html = '';
+            comments.forEach(function(c) {
+              var date = c.timestamp ? new Date(c.timestamp).toLocaleString('th-TH') : '-';
+              var isOwn = c.userId === CURRENT_USER.id;
+              html +=
+                '<div class="rounded-lg p-3" style="background:var(--surface-tint); border:1px solid var(--line-soft);">' +
+                '<div class="flex justify-between items-start">' +
+                '<div><span class="font-semibold text-sm" style="color:var(--ink);">' + escapeHtml(c.userName || 'ไม่ระบุ') + '</span>' +
+                '<span class="text-xs ml-2" style="color:var(--ink-faint);">' + date + '</span></div>' +
+                (isOwn ? '<button onclick="deleteComment(\'' + c.id + '\')" class="text-xs" style="color:var(--bad-600);" aria-label="ลบความคิดเห็น">ลบ</button>' : '') +
+                '</div>' +
+                '<p class="text-sm mt-1 whitespace-pre-wrap">' + escapeHtml(c.comment) + '</p>' +
+                '</div>';
+            });
+            list.innerHTML = html;
+          }
+
+          document.getElementById('newComment').value = '';
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    function submitComment() {
+      var comment = document.getElementById('newComment').value.trim();
+      if (!comment) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาเขียนความคิดเห็น', confirmButtonColor: '#1B6E4C' });
+        return;
+      }
+
+      showLoading();
+      callAppsScript('addComment', {
+          kaizenId: currentCommentKaizenId,
+          comment: comment,
+          userId: CURRENT_USER.id,
+          userName: CURRENT_USER.name
+        })
+        .then(function(res) {
+          hideLoading();
+          if (res.success) {
+            loadComments(currentCommentKaizenId);
+            showSuccess('เพิ่มความคิดเห็นสำเร็จ');
+          } else showError(res.message);
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    function deleteComment(commentId) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'ยืนยันการลบ',
+        text: 'คุณต้องการลบความคิดเห็นนี้ใช่หรือไม่?',
+        showCancelButton: true,
+        confirmButtonText: 'ลบ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#B0392C',
+        cancelButtonColor: '#8695B4'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          showLoading();
+          callAppsScript('deleteComment', { commentId: commentId, userId: CURRENT_USER.id })
+            .then(function(res) {
+              hideLoading();
+              if (res.success) {
+                loadComments(currentCommentKaizenId);
+                showSuccess('ลบความคิดเห็นสำเร็จ');
+              } else showError(res.message);
+            })
+            .catch(function(err) { hideLoading(); showError(err); });
+        }
+      });
+    }
+
+    // ============================================================
+    // ADVANCED SEARCH
+    // ============================================================
+    function showAdvancedSearch() {
+      var depts = [];
+      QUEUE_RECORDS.forEach(function(r) {
+        if (r.department && depts.indexOf(r.department) === -1) depts.push(r.department);
+      });
+      depts.sort();
+
+      var categories = ['P', 'D', 'E', 'S', 'Q', 'E2', 'C', 'M'];
+      var statuses = [STATUS_PENDING_HEAD, STATUS_PENDING_DIRECTOR, STATUS_APPROVED, STATUS_REJECTED];
+
+      var html =
+        '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">' +
+        '<div><label class="text-xs font-medium text-slate-500 block">ค้นหาคำ</label><input id="advKeyword" class="input-field text-sm" placeholder="รหัส, หัวข้อ, ชื่อพนักงาน..."></div>' +
+        '<div><label class="text-xs font-medium text-slate-500 block">สถานะ</label><select id="advStatus" class="input-field text-sm"><option value="">ทั้งหมด</option>' +
+        statuses.map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div><label class="text-xs font-medium text-slate-500 block">แผนก</label><select id="advDepartment" class="input-field text-sm"><option value="">ทั้งหมด</option>' +
+        depts.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div><label class="text-xs font-medium text-slate-500 block">หมวดหมู่</label><select id="advCategory" class="input-field text-sm"><option value="">ทั้งหมด</option>' +
+        categories.map(function(c) { return '<option value="' + c + '">' + CATEGORIES[c] + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div><label class="text-xs font-medium text-slate-500 block">วันที่เริ่มต้น</label><input id="advDateFrom" type="date" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-medium text-slate-500 block">วันที่สิ้นสุด</label><input id="advDateTo" type="date" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-medium text-slate-500 block">ผู้ตรวจสอบ</label><input id="advReviewedBy" class="input-field text-sm" placeholder="ชื่อผู้ตรวจสอบ"></div>' +
+        '<div class="flex items-end gap-2"><div class="flex-1"><label class="text-xs font-medium text-slate-500 block">เรียงตาม</label><select id="advSortBy" class="input-field text-sm"><option value="date">วันที่</option><option value="id">รหัส</option><option value="title">หัวข้อ</option><option value="name">พนักงาน</option><option value="department">แผนก</option><option value="status">สถานะ</option></select></div>' +
+        '<div class="flex-1"><label class="text-xs font-medium text-slate-500 block">ลำดับ</label><select id="advSortOrder" class="input-field text-sm"><option value="desc">มากไปน้อย</option><option value="asc">น้อยไปมาก</option></select></div></div>' +
+        '</div>';
+
+      Swal.fire({
+        title: '🔍 ค้นหาและกรองขั้นสูง',
+        html: html,
+        confirmButtonText: 'ค้นหา',
+        cancelButtonText: 'ยกเลิก',
+        showCancelButton: true,
+        confirmButtonColor: '#1B6E4C',
+        cancelButtonColor: '#8695B4',
+        width: '700px',
+        preConfirm: function() {
+          return {
+            keyword: document.getElementById('advKeyword').value.trim(),
+            status: document.getElementById('advStatus').value,
+            department: document.getElementById('advDepartment').value,
+            category: document.getElementById('advCategory').value,
+            dateFrom: document.getElementById('advDateFrom').value,
+            dateTo: document.getElementById('advDateTo').value,
+            reviewedBy: document.getElementById('advReviewedBy').value.trim(),
+            sortBy: document.getElementById('advSortBy').value,
+            sortOrder: document.getElementById('advSortOrder').value
+          };
+        }
+      }).then(function(result) {
+        if (result.isConfirmed && result.value) performAdvancedSearch(result.value);
+      });
+    }
+
+    function performAdvancedSearch(params) {
+      showLoading();
+      callAppsScript('advancedSearch', params)
+        .then(function(res) {
+          hideLoading();
+          if (!res.success) { showError(res.message); return; }
+          QUEUE_RECORDS = res.records || [];
+          renderMgrKPI();
+          renderMgrTable();
+          Swal.fire({ icon: 'success', title: 'พบ ' + res.total + ' รายการ', timer: 1500, showConfirmButton: false });
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    // ============================================================
+    // HR DASHBOARD
+    // ============================================================
+    function loadHrDashboard(beYear) {
+      if (isLoading) return;
+      var yearToLoad = beYear ? Number(beYear) : null;
+
+      var isDirector = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
+      var scopeDept = isDirector ? null : CURRENT_USER.department;
+      document.getElementById('hrDashScopeLabel').textContent = isDirector ? ' (ทุกแผนก)' : ' (แผนก ' + CURRENT_USER.department + ')';
+
+      showLoading();
+      callAppsScript('getDashboardData', { beYear: yearToLoad, department: scopeDept })
+        .then(function(res) {
+          hideLoading();
+          if (!res.success) { showError(res.message); return; }
+          DASHBOARD_DATA = res;
+          currentDashboardYear = res.beYear;
+          populateHrDashYears(res.availableYears, res.beYear);
+          renderHrDashKPI(res.summary);
+          renderHrDashTable();
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    function populateHrDashYears(years, selected) {
+      var sel = document.getElementById('hrDashYear');
+      sel.innerHTML = '';
+      (years || []).forEach(function(y) {
+        var opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = 'พ.ศ. ' + y;
+        sel.appendChild(opt);
+      });
+      sel.value = selected;
+    }
+
+    function renderHrDashKPI(summary) {
+      document.getElementById('hrTotalEmp').textContent = summary.totalEmployees || 0;
+      document.getElementById('hrAchieved').textContent = summary.achievedCount || 0;
+      document.getElementById('hrNotAchieved').textContent = summary.notAchievedCount || 0;
+      document.getElementById('hrPercent').textContent = (summary.achievedPercent || 0) + '%';
+      document.getElementById('hrTotalKaizen').textContent = summary.totalKaizen || 0;
+    }
+
+    function renderHrDashTable() {
+      if (!DASHBOARD_DATA) return;
+
+      var search = document.getElementById('hrDashSearch').value.trim().toLowerCase();
+      var status = document.getElementById('hrDashStatus').value;
+
+      var filtered = DASHBOARD_DATA.employees.filter(function(e) {
+        var matchSearch = !search ||
+          (e.name || '').toLowerCase().indexOf(search) > -1 ||
+          (e.department || '').toLowerCase().indexOf(search) > -1 ||
+          (e.empId || '').toLowerCase().indexOf(search) > -1;
+        var matchStatus = !status || (status === 'achieved' ? e.achieved : !e.achieved);
+        return matchSearch && matchStatus;
+      });
+
+      var tbody = document.getElementById('hrDashTableBody');
+      tbody.innerHTML = '';
+      document.getElementById('hrRowCount').textContent = filtered.length;
+      document.getElementById('hrDashEmptyState').classList.toggle('hidden', filtered.length > 0);
+
+      filtered.forEach(function(e) {
+        var pct = e.percent || 0;
+        var barColor = e.achieved ? 'linear-gradient(90deg,#1B6E4C,#2A8C61)' : (pct >= 50 ? 'linear-gradient(90deg,#B07A17,#C3780C)' : 'linear-gradient(90deg,#B0392C,#D8433B)');
+        var badge = e.achieved ? '<span class="badge badge-approved">✅ ถึงเป้าหมาย</span>' : '<span class="badge badge-pending">⏳ ยังไม่ถึง</span>';
+
+        var tr = document.createElement('tr');
+        tr.dataset.empid = e.empId;
+        tr.innerHTML =
+          '<td class="font-semibold" style="color:var(--ink);">' + escapeHtml(e.empId) + '</td>' +
+          '<td class="font-semibold" style="color:var(--ink);">' + escapeHtml(e.name) + '</td>' +
+          '<td>' + escapeHtml(e.department || '-') + '</td>' +
+          '<td class="text-center font-semibold num">' + e.target + '</td>' +
+          '<td class="text-center font-bold num" style="color:' + (e.achieved ? 'var(--brand-600)' : 'var(--ink)') + ';">' + e.count + '</td>' +
+          '<td><div class="flex items-center gap-2"><div class="progress-track flex-1"><div class="progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div><span class="text-xs font-semibold num min-w-[2.5rem]">' + pct + '%</span></div></td>' +
+          '<td class="text-center">' + badge + '</td>' +
+          '<td class="text-center"><button class="btnViewEmpHistory btn-secondary text-xs py-1 px-2" data-empid="' + escapeHtml(e.empId) + '" aria-label="ดูประวัติ Kaizen">📋 ดูประวัติ</button></td>';
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll('.btnViewEmpHistory').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var empId = this.dataset.empid;
+          var emp = DASHBOARD_DATA.employees.find(function(e) { return e.empId === empId; });
+          if (emp) showEmployeeHistory(empId, emp.name);
+        });
+      });
+    }
+
+    // ============================================================
+    // EMPLOYEE HISTORY MODAL
+    // ============================================================
+    function showEmployeeHistory(empId, empName) {
+      var beYear = document.getElementById('hrDashYear').value;
+
+      showLoading();
+      callAppsScript('getEmployeeKaizenHistory', { empId: empId, beYear: beYear || null })
+        .then(function(res) {
+          hideLoading();
+          if (!res.success) { showError(res.message); return; }
+
+          document.getElementById('empHistoryName').textContent = empName || empId;
+          document.getElementById('empHistPending').textContent = res.summary.pending || 0;
+          document.getElementById('empHistApproved').textContent = res.summary.approved || 0;
+          document.getElementById('empHistRejected').textContent = res.summary.rejected || 0;
+
+          var list = document.getElementById('empHistoryList');
+          var records = res.records || [];
+
+          if (records.length === 0) {
+            document.getElementById('empHistoryEmptyState').classList.remove('hidden');
+            list.innerHTML = '';
+          } else {
+            document.getElementById('empHistoryEmptyState').classList.add('hidden');
+            var html = '';
+            records.forEach(function(r) {
+              html +=
+                '<div class="rounded-lg p-3" style="background:var(--surface-tint); border:1px solid var(--line-soft);">' +
+                '<div class="flex items-center justify-between flex-wrap gap-2">' +
+                '<div><span class="font-semibold" style="color:var(--ink);">' + escapeHtml(r.id) + '</span> ' +
+                '<span class="text-xs" style="color:var(--ink-faint);">' + escapeHtml(r.dateDisplay) + '</span></div>' +
+                statusPill(r.status) +
+                '</div>' +
+                '<p class="text-sm mt-1 font-semibold" style="color:var(--ink);">' + escapeHtml(r.title) + '</p>' +
+                '<div class="flex items-center gap-2 mt-1 flex-wrap">' +
+                '<span class="text-xs" style="color:var(--ink-faint);">ประเภท: ' + escapeHtml(getTypeLabel(r.kaizenType)) + '</span> ' +
+                catBadges(r.categories) +
+                '</div>' +
+                '<button class="btnViewEmpHistoryDetail btn-secondary text-xs py-1 px-2 mt-2" data-row="' + r.rowIndex + '" aria-label="ดูรายละเอียด">ดูรายละเอียด</button>' +
+                '</div>';
+            });
+            list.innerHTML = html;
+
+            list.querySelectorAll('.btnViewEmpHistoryDetail').forEach(function(btn) {
+              btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var rowIndex = this.dataset.row;
+                var rec = records.find(function(r) { return String(r.rowIndex) === rowIndex; });
+                if (rec) showDetail(rec, false);
+              });
+            });
+          }
+
+          document.getElementById('empHistoryModal').classList.remove('hidden');
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    // ============================================================
+    // MONTHLY PROGRESS
+    // ============================================================
+    function populateProgressYearOptions(years, selected) {
+      var sel = document.getElementById('progressYear');
+      sel.innerHTML = '';
+      (years || []).forEach(function(y) {
+        var opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = 'พ.ศ. ' + y;
+        sel.appendChild(opt);
+      });
+      sel.value = selected;
+    }
+
+    function populateProgressMonthOptions(currentMonth) {
+      var sel = document.getElementById('progressMonth');
+      if (sel.options.length === 0) {
+        monthNamesTH.forEach(function(m, i) {
+          var opt = document.createElement('option');
+          opt.value = (i + 1);
+          opt.textContent = m;
+          sel.appendChild(opt);
+        });
+      }
+      progressSelectedMonth = progressSelectedMonth || currentMonth;
+      sel.value = progressSelectedMonth;
+    }
+
+    function loadMonthlyProgress(beYear) {
+      if (isLoading) return;
+      showLoading();
+
+      document.getElementById('progressTableBody').innerHTML =
+        '<tr><td colspan="9" class="text-center py-8" style="color:var(--ink-faint);">⏳ กำลังโหลดข้อมูล...</td></tr>';
+
+      callAppsScript('getMonthlyProgressForManager', { reviewerId: CURRENT_USER.id, beYear: beYear || null })
+        .then(function(res) {
+          hideLoading();
+          if (!res.success) { showError(res.message); return; }
+
+          PROGRESS_EMPLOYEES = res.employees || [];
+          progressBeYear = res.beYear;
+          progressCurrentMonth = res.currentMonth;
+          if (!progressSelectedMonth) progressSelectedMonth = res.currentMonth;
+
+          populateProgressYearOptions(res.availableYears, res.beYear);
+          populateProgressMonthOptions(res.currentMonth);
+          renderProgressSummary(res.summary);
+          renderProgressTable();
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    function renderProgressSummary(summary) {
+      document.getElementById('progTotalEmp').textContent = summary.totalEmployees || 0;
+      document.getElementById('progAchieved').textContent = summary.achievedCount || 0;
+      document.getElementById('progNotAchieved').textContent = summary.notAchievedCount || 0;
+      document.getElementById('progPercent').textContent = (summary.achievedPercent || 0) + '%';
+    }
+
+    function renderProgressTable() {
+      var search = document.getElementById('progressSearch').value.trim().toLowerCase();
+      var month = Number(document.getElementById('progressMonth').value) || progressSelectedMonth;
+
+      var filtered = PROGRESS_EMPLOYEES.filter(function(e) {
+        return !search ||
+          (e.name || '').toLowerCase().indexOf(search) > -1 ||
+          (e.department || '').toLowerCase().indexOf(search) > -1 ||
+          (e.empId || '').toLowerCase().indexOf(search) > -1;
+      });
+
+      var tbody = document.getElementById('progressTableBody');
+      tbody.innerHTML = '';
+      document.getElementById('progEmpCount').textContent = filtered.length;
+      document.getElementById('progressEmptyState').classList.toggle('hidden', filtered.length > 0);
+
+      filtered.forEach(function(e) {
+        var pct = e.percent || 0;
+        var barColor = e.achieved ? 'linear-gradient(90deg,#1B6E4C,#2A8C61)' : (pct >= 50 ? 'linear-gradient(90deg,#B07A17,#C3780C)' : 'linear-gradient(90deg,#B0392C,#D8433B)');
+        var monthCount = (e.monthly && e.monthly[month] !== undefined) ? e.monthly[month] : 0;
+
+        var tr = document.createElement('tr');
+        tr.dataset.empid = e.empId;
+        tr.innerHTML =
+          '<td class="font-semibold" style="color:var(--ink);">' + escapeHtml(e.empId) + '</td>' +
+          '<td>' + escapeHtml(e.name) + '</td>' +
+          '<td>' + escapeHtml(e.department) + '</td>' +
+          '<td class="text-center font-semibold num">' + e.target + '</td>' +
+          '<td class="text-center font-bold num" style="color:' + (e.achieved ? 'var(--brand-600)' : 'var(--ink)') + ';">' + e.total + '</td>' +
+          '<td class="text-center font-semibold num" style="color:' + (e.remaining > 0 ? 'var(--warn-600)' : 'var(--good-600)') + ';">' + e.remaining + '</td>' +
+          '<td><div class="flex items-center gap-2"><div class="progress-track flex-1"><div class="progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div><span class="text-xs font-semibold num min-w-[2.5rem]">' + pct + '%</span></div></td>' +
+          '<td class="text-center"><input type="number" min="0" step="1" class="count-input progress-count-input" data-empid="' + escapeHtml(e.empId) + '" value="' + monthCount + '" aria-label="จำนวน Kaizen เดือนนี้"></td>' +
+          '<td class="text-center"><button class="count-save-btn btnSaveProgress" data-empid="' + escapeHtml(e.empId) + '" aria-label="บันทึกจำนวน">บันทึก</button></td>';
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll('.progress-count-input').forEach(function(input) {
+        input.addEventListener('input', function() {
+          var tr = this.closest('tr');
+          if (tr) tr.classList.add('count-row-dirty');
+        });
+        input.addEventListener('keydown', function(ev) {
+          if (ev.key === 'Enter') {
+            ev.preventDefault();
+            var tr = this.closest('tr');
+            var btn = tr ? tr.querySelector('.btnSaveProgress') : null;
+            if (btn) btn.click();
+          }
+        });
+      });
+
+      tbody.querySelectorAll('.btnSaveProgress').forEach(function(btn) {
+        btn.addEventListener('click', function() { saveProgressCountForRow(this); });
+      });
+    }
+
+    function saveProgressCountForRow(btn) {
+      var empId = btn.dataset.empid;
+      var tr = btn.closest('tr');
+      var input = tr ? tr.querySelector('.progress-count-input') : null;
+      if (!input) return;
+
+      var count = Number(input.value);
+      if (isNaN(count) || count < 0) {
+        Swal.fire({ icon: 'warning', title: 'กรุณากรอกจำนวนที่ถูกต้อง', confirmButtonColor: '#1B6E4C' });
+        input.focus();
+        return;
+      }
+
+      var month = Number(document.getElementById('progressMonth').value) || progressSelectedMonth;
+      var beYear = Number(document.getElementById('progressYear').value) || progressBeYear;
+
+      btn.disabled = true;
+      var originalText = btn.textContent;
+      btn.textContent = '...';
+
+      callAppsScript('saveMonthlyProgressCount', {
+          reviewerId: CURRENT_USER.id,
+          empId: empId,
+          beYear: beYear,
+          month: month,
+          count: count
+        })
+        .then(function(res) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+          if (res.success) {
+            if (tr) tr.classList.remove('count-row-dirty');
+            var emp = PROGRESS_EMPLOYEES.find(function(e) { return e.empId === empId; });
+            if (emp) {
+              var prevMonthCount = (emp.monthly && emp.monthly[month] !== undefined) ? emp.monthly[month] : 0;
+              emp.monthly = emp.monthly || {};
+              emp.monthly[month] = count;
+              emp.total = emp.total - prevMonthCount + count;
+              emp.achieved = emp.total >= emp.target;
+              emp.percent = emp.target > 0 ? Math.min(100, Math.round((emp.total / emp.target) * 100)) : 100;
+              emp.remaining = Math.max(0, emp.target - emp.total);
+            }
+            var achievedCount = PROGRESS_EMPLOYEES.filter(function(e) { return e.achieved; }).length;
+            var totalEmployees = PROGRESS_EMPLOYEES.length;
+            renderProgressSummary({
+              totalEmployees: totalEmployees,
+              achievedCount: achievedCount,
+              notAchievedCount: totalEmployees - achievedCount,
+              achievedPercent: totalEmployees > 0 ? Math.round((achievedCount / totalEmployees) * 100) : 0
+            });
+            renderProgressTable();
+            showSuccess('บันทึกจำนวนสำเร็จ');
+          } else showError(res.message);
+        })
+        .catch(function(err) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+          showError(err);
+        });
+    }
+
+    // ============================================================
+    // FORM FUNCTIONS
+    // ============================================================
+    function openForm(recordToEdit) {
+      currentTransactionId = null;
+      isSubmitting = false;
+
+      document.getElementById('formModal').classList.remove('hidden');
+
+      var empName = CURRENT_USER.name || '';
+      var empDept = CURRENT_USER.department || '';
+      var empId = CURRENT_USER.id || '';
+      var empPosition = CURRENT_USER.position || '';
+      var empPlant = CURRENT_USER.plant || '';
+      
+      function updateFormUserInfo(user) {
+        document.getElementById('empName').value = user.name || '';
+        document.getElementById('empDept').value = user.department || '';
+        document.getElementById('kaizenForm').dataset.empId = user.id || '';
+        document.getElementById('kaizenForm').dataset.empPosition = user.position || '';
+        document.getElementById('kaizenForm').dataset.empPlant = user.plant || '';
+      }
+
+      if (!empDept || !empPosition) {
+        showLoading();
+        callAppsScript('identifyUser', { role: 'employee', id: empId })
+          .then(function(res) {
+            hideLoading();
+            if (res.success && res.profile) {
+              CURRENT_USER = Object.assign({}, CURRENT_USER, res.profile);
+              updateFormUserInfo(CURRENT_USER);
+            } else {
+              updateFormUserInfo(CURRENT_USER);
+            }
+          })
+          .catch(function(err) {
+            hideLoading();
+            console.warn('Could not fetch full user info:', err);
+            updateFormUserInfo(CURRENT_USER);
+          });
+      } else {
+        updateFormUserInfo(CURRENT_USER);
+      }
+
+      var rejectBanner = document.getElementById('rejectBanner');
+      var btnSubmit = document.getElementById('btnSubmit');
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML =
+        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> บันทึก';
+
+      document.getElementById('kaizenForm').reset();
+      document.getElementById('beforeImageInput').value = '';
+      document.getElementById('afterImageInput').value = '';
+      document.getElementById('beforeImageContainer').classList.add('hidden');
+      document.getElementById('afterImageContainer').classList.add('hidden');
+      document.getElementById('editRowIndex').value = '';
+      selectedFiles = [];
+      clearCategories();
+      clearKaizenType();
+
+      var now = new Date();
+      var beYear = now.getFullYear() + 543;
+      var month = now.getMonth() + 1;
+      var day = now.getDate();
+
+      var dDay = document.getElementById('dDay');
+      var dMonth = document.getElementById('dMonth');
+      var dYear = document.getElementById('dYear');
+
+      if (dDay.options.length === 0) {
+        var maxDay = daysInMonth(beYear, month);
+        for (var i = 1; i <= maxDay; i++) {
+          var opt = document.createElement('option');
+          opt.value = i;
+          opt.textContent = i;
+          dDay.appendChild(opt);
+        }
+      }
+
+      if (dMonth.options.length === 0) {
+        monthNamesTH.forEach(function(m, idx) {
+          var opt = document.createElement('option');
+          opt.value = idx + 1;
+          opt.textContent = m;
+          dMonth.appendChild(opt);
+        });
+      }
+
+      if (dYear.options.length === 0) {
+        for (var y = beYear - 3; y <= beYear + 1; y++) {
+          var opt = document.createElement('option');
+          opt.value = y;
+          opt.textContent = y;
+          dYear.appendChild(opt);
+        }
+      }
+
+      dMonth.value = month;
+      dYear.value = beYear;
+      updateDayOptions();
+      dDay.value = Math.min(day, daysInMonth(beYear, month));
+      updateFormHeaderDate();
+
+      if (recordToEdit) {
+        document.getElementById('formModalTitle').textContent = 'แก้ไขและส่งใหม่ (' + recordToEdit.id + ')';
+        document.getElementById('editRowIndex').value = recordToEdit.rowIndex;
+        document.getElementById('title').value = recordToEdit.title || '';
+        document.getElementById('detail').value = recordToEdit.detail || '';
+        document.getElementById('beforeProblem').value = recordToEdit.beforeProblem || '';
+        document.getElementById('afterSolution').value = recordToEdit.afterSolution || '';
+        setCategories(recordToEdit.categories);
+        if (recordToEdit.kaizenType) setKaizenType(recordToEdit.kaizenType);
+
+        if (recordToEdit.date) {
+          var dateParts = recordToEdit.date.split('-');
+          if (dateParts.length === 3) {
+            var yBe = parseInt(dateParts[0]) + 543;
+            dYear.value = yBe;
+            dMonth.value = parseInt(dateParts[1]);
+            updateDayOptions();
+            dDay.value = Math.min(parseInt(dateParts[2]), daysInMonth(yBe, parseInt(dateParts[1])));
+            updateFormHeaderDate();
+          }
+        }
+
+        if (recordToEdit.rejectReason) {
+          rejectBanner.textContent = 'เหตุผลที่ถูกตีกลับ: ' + recordToEdit.rejectReason;
+          rejectBanner.classList.remove('hidden');
+        } else {
+          rejectBanner.classList.add('hidden');
+        }
+      } else {
+        document.getElementById('formModalTitle').textContent = 'ส่ง Kaizen ใหม่';
+        document.getElementById('detail').value = '';
+        rejectBanner.classList.add('hidden');
+      }
+
+      updateFormHeaderDate();
+      document.getElementById('title').focus();
+    }
+
+    function closeForm() {
+      if (isSubmitting) return;
+
+      document.getElementById('formModal').classList.add('hidden');
+      document.getElementById('kaizenForm').reset();
+      document.getElementById('beforeImageInput').value = '';
+      document.getElementById('afterImageInput').value = '';
+      document.getElementById('beforeImageContainer').classList.add('hidden');
+      document.getElementById('afterImageContainer').classList.add('hidden');
+      document.getElementById('editRowIndex').value = '';
+      selectedFiles = [];
+      clearCategories();
+      clearKaizenType();
+      currentTransactionId = null;
+      isSubmitting = false;
+    }
+
+    function onSubmit(e) {
+      e.preventDefault();
+      if (isSubmitting) return;
+
+      var btnSubmit = document.getElementById('btnSubmit');
+      if (btnSubmit.disabled) return;
+
+      var kaizenType = getSelectedKaizenType();
+      if (!kaizenType) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาเลือกประเภท Kaizen', confirmButtonColor: '#1B6E4C' });
+        return;
+      }
+
+      var categories = getSelectedCategories();
+      if (Object.keys(categories).length === 0) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาเลือกหมวดหมู่', text: 'ต้องเลือกอย่างน้อย 1 หมวดหมู่', confirmButtonColor: '#1B6E4C' });
+        return;
+      }
+
+      var title = document.getElementById('title').value.trim();
+      if (!title) {
+        Swal.fire({ icon: 'warning', title: 'กรุณากรอกหัวข้อ Kaizen', confirmButtonColor: '#1B6E4C' });
+        document.getElementById('title').focus();
+        return;
+      }
+
+      var detail = document.getElementById('detail').value.trim();
+      if (!detail) {
+        Swal.fire({ icon: 'warning', title: 'กรุณากรอก "ทำแล้วดีขึ้นอย่างไร"', text: 'อธิบายผลลัพธ์ของการปรับปรุง', confirmButtonColor: '#1B6E4C' });
+        document.getElementById('detail').focus();
+        return;
+      }
+
+      currentTransactionId = 'txn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+      isSubmitting = true;
+
+      var rowIndex = document.getElementById('editRowIndex').value;
+      
+      var payload = {
+        empId: CURRENT_USER.id || document.getElementById('kaizenForm').dataset.empId,
+        name: CURRENT_USER.name || document.getElementById('empName').value,
+        department: CURRENT_USER.department || document.getElementById('empDept').value,
+        position: CURRENT_USER.position || document.getElementById('kaizenForm').dataset.empPosition,
+        plant: CURRENT_USER.plant || document.getElementById('kaizenForm').dataset.empPlant,
+        date: getCurrentDateString(),
+        title: title,
+        detail: detail,
+        beforeProblem: document.getElementById('beforeProblem').value.trim(),
+        afterSolution: document.getElementById('afterSolution').value.trim(),
+        categories: categories,
+        kaizenType: kaizenType,
+        transactionId: currentTransactionId
+      };
+      if (rowIndex) payload.rowIndex = rowIndex;
+
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '⏳ กำลังเตรียมข้อมูล...';
+      showLoading();
+
+      var finish = function(payloadWithFile) {
+        var action = rowIndex ? 'resubmitKaizenRecord' : 'addKaizenRecordWithMultipleFiles';
+
+        callAppsScript(action, payloadWithFile)
+          .then(function(res) {
+            hideLoading();
+            isSubmitting = false;
+            currentTransactionId = null;
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML =
+              '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> บันทึก';
+
+            if (res.success) {
+              showSuccess(res.message);
+              closeForm();
+              loadMyRecords();
+            } else {
+              showError(res.message);
+            }
+          })
+          .catch(function(err) {
+            hideLoading();
+            isSubmitting = false;
+            currentTransactionId = null;
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML =
+              '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> บันทึก';
+            showError(err);
+          });
+      };
+
+      var fileTasks = [];
+
+      if (selectedFiles.length > 0) {
+        var filesData = selectedFiles.map(function(f) { return { file: f.file, name: f.name, type: f.type }; });
+        var progressContainer = document.getElementById('uploadProgressContainer');
+        var progressFill = document.getElementById('uploadProgressFill');
+        var progressText = document.getElementById('uploadProgressText');
+        if (progressContainer) progressContainer.classList.remove('hidden');
+
+        fileTasks.push(processFilesWithProgress(filesData, function(current, total, fileName) {
+          var pct = Math.round((current / total) * 100);
+          if (progressFill) progressFill.style.width = pct + '%';
+          if (progressText) progressText.textContent = 'กำลังประมวลผล: ' + current + '/' + total + ' (' + pct + '%) - ' + fileName;
+          btnSubmit.innerHTML = '⏳ กำลังอัปโหลด... ' + pct + '%';
+        }).then(function(results) {
+          if (progressContainer) progressContainer.classList.add('hidden');
+          if (results.length > 0) payload.files = results;
+        }).catch(function(err) {
+          if (progressContainer) progressContainer.classList.add('hidden');
+          throw err;
+        }));
+      }
+
+      var beforeFile = document.getElementById('beforeImageInput').files[0];
+      if (beforeFile) {
+        fileTasks.push(readFileAsDataUrl(beforeFile).then(function(dataUrl) {
+          payload.beforeImageBase64 = dataUrl;
+          payload.beforeImageFileName = beforeFile.name;
+          payload.beforeImageMimeType = beforeFile.type;
+        }));
+      }
+
+      var afterFile = document.getElementById('afterImageInput').files[0];
+      if (afterFile) {
+        fileTasks.push(readFileAsDataUrl(afterFile).then(function(dataUrl) {
+          payload.afterImageBase64 = dataUrl;
+          payload.afterImageFileName = afterFile.name;
+          payload.afterImageMimeType = afterFile.type;
+        }));
+      }
+
+      Promise.all(fileTasks).then(function() {
+        finish(payload);
+      }).catch(function(err) {
+        hideLoading();
+        isSubmitting = false;
+        currentTransactionId = null;
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML =
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> บันทึก';
+        showError('ไม่สามารถอ่านไฟล์ได้: ' + err.message);
+      });
+    }
+
+    // ============================================================
+    // EVENT BINDINGS
+    // ============================================================
+    function bindEvents() {
+      document.getElementById('loginForm').addEventListener('submit', handleLogin);
+      document.getElementById('roleEmployeeBtn').addEventListener('click', function() { setSelectedRole('employee'); });
+      document.getElementById('roleManagerBtn').addEventListener('click', function() { setSelectedRole('manager'); });
+      document.getElementById('btnLogout').addEventListener('click', logout);
+
+      document.getElementById('btnOpenForm').addEventListener('click', function() {
+        if (!isLoading && !isSubmitting) openForm(null);
+      });
+      document.getElementById('btnCloseForm').addEventListener('click', closeForm);
+      document.getElementById('btnCancel').addEventListener('click', closeForm);
+      document.getElementById('kaizenForm').addEventListener('submit', onSubmit);
+      document.getElementById('formModal').addEventListener('click', function(ev) {
+        if (ev.target === this && !isSubmitting) closeForm();
+      });
+
+      document.getElementById('btnCloseDetail').addEventListener('click', function() {
+        document.getElementById('detailModal').classList.add('hidden');
+      });
+      document.getElementById('detailModal').addEventListener('click', function(ev) {
+        if (ev.target === this) this.classList.add('hidden');
+      });
+
+      document.getElementById('btnCloseComment').addEventListener('click', closeCommentModal);
+      document.getElementById('commentModal').addEventListener('click', function(ev) {
+        if (ev.target === this) closeCommentModal();
+      });
+      document.getElementById('btnSubmitComment').addEventListener('click', submitComment);
+      document.getElementById('newComment').addEventListener('keydown', function(ev) {
+        if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); submitComment(); }
+      });
+
+      document.getElementById('btnCloseEmpHistory').addEventListener('click', function() {
+        document.getElementById('empHistoryModal').classList.add('hidden');
+      });
+      document.getElementById('empHistoryModal').addEventListener('click', function(ev) {
+        if (ev.target === this) this.classList.add('hidden');
+      });
+
+      document.getElementById('btnRefreshEmp').addEventListener('click', loadMyRecords);
+      document.getElementById('btnRefreshQueue').addEventListener('click', loadQueue);
+      document.getElementById('btnRefreshHrDash').addEventListener('click', function() {
+        loadHrDashboard(document.getElementById('hrDashYear').value);
+      });
+
+      // ✅ Repair buttons
+      document.getElementById('btnRepairData').addEventListener('click', repairDepartmentNames);
+      document.getElementById('btnSyncManagers').addEventListener('click', syncManagerDepartments);
+      document.getElementById('btnDebugQueue').addEventListener('click', debugReviewQueue);
+      document.getElementById('btnFixColumns').addEventListener('click', fixColumnAlignment);
+
+      document.getElementById('mgrSearch').addEventListener('input', debounce(renderMgrTable, 300));
+      document.getElementById('mgrStatusFilter').addEventListener('change', renderMgrTable);
+      document.getElementById('btnAdvancedSearch').addEventListener('click', showAdvancedSearch);
+
+      document.getElementById('progressSearch').addEventListener('input', debounce(renderProgressTable, 300));
+      document.getElementById('btnRefreshProgress').addEventListener('click', function() {
+        loadMonthlyProgress(document.getElementById('progressYear').value);
+      });
+      document.getElementById('progressYear').addEventListener('change', function() {
+        loadMonthlyProgress(this.value);
+      });
+      document.getElementById('progressMonth').addEventListener('change', function() {
+        progressSelectedMonth = Number(this.value);
+        renderProgressTable();
+      });
+
+      document.getElementById('hrDashYear').addEventListener('change', function() {
+        loadHrDashboard(this.value);
+      });
+      document.getElementById('hrDashSearch').addEventListener('input', debounce(renderHrDashTable, 300));
+      document.getElementById('hrDashStatus').addEventListener('change', renderHrDashTable);
+
+      document.getElementById('dMonth').addEventListener('change', updateDayOptions);
+      document.getElementById('dYear').addEventListener('change', updateDayOptions);
+
+      document.getElementById('beforeImageInput').addEventListener('change', function() {
+        var f = this.files[0];
+        var container = document.getElementById('beforeImageContainer');
+        if (!f) { container.classList.add('hidden'); return; }
+        container.classList.remove('hidden');
+        var preview = document.getElementById('beforeImagePreview');
+        preview.classList.add('img-loading');
+        readFileAsDataUrl(f).then(function(dataUrl) {
+          preview.onload = function() { preview.classList.remove('img-loading'); };
+          preview.onerror = function() { preview.classList.remove('img-loading'); };
+          preview.src = dataUrl;
+        }).catch(function() { container.classList.add('hidden'); });
+      });
+
+      document.getElementById('afterImageInput').addEventListener('change', function() {
+        var f = this.files[0];
+        var container = document.getElementById('afterImageContainer');
+        if (!f) { container.classList.add('hidden'); return; }
+        container.classList.remove('hidden');
+        var preview = document.getElementById('afterImagePreview');
+        preview.classList.add('img-loading');
+        readFileAsDataUrl(f).then(function(dataUrl) {
+          preview.onload = function() { preview.classList.remove('img-loading'); };
+          preview.onerror = function() { preview.classList.remove('img-loading'); };
+          preview.src = dataUrl;
+        }).catch(function() { container.classList.add('hidden'); });
+      });
+
+      bindCategoryEvents();
+      bindKaizenTypeEvents();
+
+      document.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Escape') {
+          if (!document.getElementById('formModal').classList.contains('hidden')) {
+            if (!isSubmitting) closeForm();
+          } else if (!document.getElementById('detailModal').classList.contains('hidden')) {
+            document.getElementById('detailModal').classList.add('hidden');
+          } else if (!document.getElementById('commentModal').classList.contains('hidden')) {
+            closeCommentModal();
+          } else if (!document.getElementById('empHistoryModal').classList.contains('hidden')) {
+            document.getElementById('empHistoryModal').classList.add('hidden');
+          }
+        }
+        if (ev.key === 'n' && ev.ctrlKey && CURRENT_USER && CURRENT_USER.role === 'employee') {
+          ev.preventDefault();
+          if (!isLoading && !isSubmitting && document.getElementById('formModal').classList.contains('hidden')) {
+            openForm(null);
+          }
+        }
+      });
+
+      document.getElementById('categoryGrid').addEventListener('click', function() {
+        setTimeout(function() {
+          document.querySelectorAll('.category-checkbox[data-cat]').forEach(function(el) {
+            el.setAttribute('aria-checked', el.classList.contains('checked') ? 'true' : 'false');
+          });
+        }, 100);
+      });
+    }
+
+    // ============================================================
+    // INITIALIZATION
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+      initDatePickers();
+      bindEvents();
+
+      var saved = loadSession();
+      if (saved && saved.id && saved.role) {
+        showLoading();
+        callAppsScript('identifyUser', { role: saved.role, id: saved.id })
+          .then(function(res) {
+            hideLoading();
+            if (res.success) {
+              var user = Object.assign({ id: saved.id }, res.profile, { role: res.role });
+              saveSession(user);
+              startApp(user);
+            } else {
+              clearSession();
+              document.getElementById('loginScreen').classList.remove('hidden');
+            }
+          })
+          .catch(function() {
+            hideLoading();
+            clearSession();
+            document.getElementById('loginScreen').classList.remove('hidden');
+          });
+      } else {
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('loginId').focus();
+      }
+    });
+
+    window.addEventListener('beforeunload', function(e) {
+      if (!document.getElementById('formModal').classList.contains('hidden') && isSubmitting) {
+        e.preventDefault();
+        e.returnValue = 'กำลังบันทึกข้อมูล กรุณารอสักครู่';
+        return e.returnValue;
+      }
+    });
+  </script>
+</body>
+</html>

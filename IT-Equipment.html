@@ -351,7 +351,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 
 .td-mono { font-family: var(--font-mono); font-size: 12px; color: var(--text-sub); }
 .td-date { font-family: var(--font-mono); font-size: 12px; }
-.td-note { white-space: normal; max-width: 220px; font-size: 12.5px; color: var(--text-sub); }
+.td-note { white-space: normal; max-width: 220px; font-size: 12.5px; color: var(--text-sub); word-break: break-word; overflow-wrap: anywhere; line-height: 1.5; }
 .td-actions { display: flex; gap: 6px; }
 
 /* badges */
@@ -860,6 +860,12 @@ select.field-input { padding-right: 32px; cursor: pointer; }
           </div>
         </div>
 
+        <div class="field" id="macField" style="display:none">
+          <label class="field-label" for="reqMacAddress">MAC Address <span style="font-weight:400;color:var(--text-muted)">(ถ้ามี)</span></label>
+          <input type="text" id="reqMacAddress" class="field-input mono teal-focus" placeholder="เช่น AA:BB:CC:DD:EE:FF" />
+          <span class="field-hint" id="reqMacWarn" style="display:none;color:var(--danger);font-weight:500;margin-top:4px"></span>
+        </div>
+
         <div class="field">
           <label class="field-label" for="reqDate">วันที่เบิก</label>
           <input type="date" id="reqDate" class="field-input mono teal-focus" />
@@ -941,7 +947,7 @@ select.field-input { padding-right: 32px; cursor: pointer; }
       <div class="history-toolbar">
         <div class="card-label teal" style="padding:0;margin:0">ประวัติการเบิกอุปกรณ์</div>
         <div class="toolbar-right">
-          <input type="text" id="searchReq" class="search-input" placeholder="ค้นหา รหัส / ชื่อ / Serial..." />
+          <input type="text" id="searchReq" class="search-input" placeholder="ค้นหา รหัส / ชื่อ / Serial / MAC..." />
           <button id="exportReqBtn" class="btn-export" title="ส่งออก Excel">⬇️ Excel</button>
           <button id="refreshReqBtn" class="btn-refresh" title="รีเฟรช">↻</button>
         </div>
@@ -1168,6 +1174,12 @@ select.field-input { padding-right: 32px; cursor: pointer; }
       </div>
     </div>
 
+    <div class="field" id="editMacField" style="display:none">
+      <label class="field-label" for="editReqMacAddress">MAC Address <span style="font-weight:400;color:var(--text-muted)">(ถ้ามี)</span></label>
+      <input type="text" id="editReqMacAddress" class="field-input mono teal-focus" placeholder="เช่น AA:BB:CC:DD:EE:FF" />
+      <span class="field-hint" id="editReqMacWarn" style="display:none;color:var(--danger);font-weight:500;margin-top:4px"></span>
+    </div>
+
     <div class="field">
       <label class="field-label" for="editReqDate">วันที่เบิก</label>
       <input type="date" id="editReqDate" class="field-input mono teal-focus" />
@@ -1190,29 +1202,35 @@ select.field-input { padding-right: 32px; cursor: pointer; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyML9K_m0RfeJwWELFCid26k5HMfUe3PJg2mBx6d_CYfnISObyJcb12nDIBJY8Oo3AboA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwheSErxfvBSAmyVPAS9g9UnHg_HYVHtyuTdsSI249GcVSNtTQTDAulPb9RVxrg_wDS4g/exec';
 
 const PAGE_SIZE = 10;
 let borrowPage = 1;
 let reqPage    = 1;
 let machinePage = 1; 
 
-// FEATURE (เพิ่มเติม): เพิ่ม 'MAC-Notebook' เข้าไปในรายการที่ต้องกรอก Serial/Asset No.
-// เหมือนอุปกรณ์ประเภท Notebook/PC ทั่วไป (เพราะยังเป็นเครื่องที่ต้องติดตามครุภัณฑ์)
-// หมายเหตุ: ต้องเพิ่มชื่อ "MAC-Notebook" เป็นแถวใหม่ในชีต "Equipment" บน Google Sheet
-// ด้วย ไม่เช่นนั้นจะไม่ปรากฏใน dropdown ประเภทอุปกรณ์ (รายชื่อ dropdown โหลดจากชีตนั้น)
 const SERIAL_REQUIRED_EQUIPMENT = ['Notebook', 'PC/All In One', 'หน้าจอคอมพิวเตอร์', 'MAC-Notebook'];
 function equipmentNeedsSerial(eqName) {
   const norm = s => String(s || '').trim().toLowerCase();
   return SERIAL_REQUIRED_EQUIPMENT.some(name => norm(name) === norm(eqName));
 }
 
-// ประเภทอุปกรณ์ที่ต้องแสดงช่องเวอร์ชั่น Windows
-// หมายเหตุ: ตั้งใจไม่ใส่ 'MAC-Notebook' ไว้ในนี้ เพราะเครื่อง Mac ใช้ macOS ไม่ใช่ Windows
 const WINDOWS_REQUIRED_EQUIPMENT = ['Notebook', 'PC/All In One'];
 function equipmentNeedsWindows(eqName) {
   const norm = s => String(s || '').trim().toLowerCase();
   return WINDOWS_REQUIRED_EQUIPMENT.some(name => norm(name) === norm(eqName));
+}
+
+const MAC_REQUIRED_EQUIPMENT = ['Notebook', 'PC/All In One', 'MAC-Notebook'];
+function equipmentNeedsMac(eqName) {
+  const norm = s => String(s || '').trim().toLowerCase();
+  return MAC_REQUIRED_EQUIPMENT.some(name => norm(name) === norm(eqName));
+}
+
+function isLikelyMac(mac) {
+  const v = String(mac || '').trim();
+  if (!v) return true; 
+  return /^([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}$/.test(v) || /^[0-9A-Fa-f]{12}$/.test(v);
 }
 
 let allEmployees      = [];
@@ -1221,7 +1239,7 @@ let borrowHistory     = [];
 let filteredBorrow    = [];
 let reqHistory        = [];
 let filteredReq       = [];
-let pendingAction     = null; // NEW: generalized pending confirm-modal action ({type, ...})
+let pendingAction     = null; 
 let machineList        = [];
 let filteredMachine     = [];
 let editingMachineRow   = null;
@@ -1266,6 +1284,9 @@ const serialAssetGroup  = $('serialAssetGroup');
 const reqSerialNo       = $('reqSerialNo');
 const reqSerialWarn     = $('reqSerialWarn');
 const reqAssetNo        = $('reqAssetNo');
+const macField          = $('macField');
+const reqMacAddress     = $('reqMacAddress');
+const reqMacWarn        = $('reqMacWarn');
 const reqDate           = $('reqDate');
 const reqNoteInput      = $('reqNote'); 
 const submitReqBtn      = $('submitReqBtn');
@@ -1347,6 +1368,9 @@ const editSerialAssetGroup  = $('editSerialAssetGroup');
 const editReqSerialNo       = $('editReqSerialNo');
 const editReqSerialWarn     = $('editReqSerialWarn');
 const editReqAssetNo        = $('editReqAssetNo');
+const editMacField          = $('editMacField');
+const editReqMacAddress     = $('editReqMacAddress');
+const editReqMacWarn        = $('editReqMacWarn');
 const editWinVersionField   = $('editWinVersionField');
 const editWinInputRow       = $('editWinInputRow');
 const editReqWinVersionSelect = $('editReqWinVersionSelect');
@@ -1378,6 +1402,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupWindowsVersionField();
   setupExport();
   setupSerialDuplicateCheck();
+  setupMacDuplicateCheck();
   setupSerialAssetVisibility();
   updateSerialAssetVisibility();
 
@@ -1437,6 +1462,17 @@ function updateSerialAssetVisibility() {
   winVersionField.style.display = showWin ? 'block' : 'none';
   if (!showWin) {
     resetWindowsVersionField();
+  }
+
+  // NEW: แสดง/ซ่อนช่อง MAC Address ตามประเภทอุปกรณ์ และล้างค่าเดิมถ้าไม่เกี่ยวข้อง
+  // (ป้องกันบั๊กแบบเดียวกับที่เคยเกิดกับ Serial/Asset No. คือค่าเก่าค้างแล้วถูก
+  // ส่งไปบันทึกทับข้อมูลของอุปกรณ์ที่ไม่เกี่ยวข้องกับ MAC Address เลย)
+  const showMac = equipmentNeedsMac(reqEqSelect.value);
+  macField.style.display = showMac ? 'block' : 'none';
+  if (!showMac) {
+    reqMacAddress.value = '';
+    reqMacWarn.style.display = 'none';
+    reqMacAddress.style.borderColor = '';
   }
 }
 
@@ -1831,6 +1867,7 @@ function setupFormSubmits() {
     const name   = reqEmpNameDisplay.value.trim();
     const eq     = reqEqSelect.value;
     const serial = reqSerialNo.value.trim();
+    const mac    = reqMacAddress.value.trim();
     const rd     = reqDate.value;
     const winVer = getSelectedWindowsVersion();
     const note   = reqNoteInput.value.trim();
@@ -1850,6 +1887,14 @@ function setupFormSubmits() {
       return;
     }
 
+    // NEW: กัน MAC Address ซ้ำก่อนส่งขึ้นเซิร์ฟเวอร์ (server ก็เช็คซ้ำอีกชั้นหนึ่งด้วย)
+    const dupMac = mac ? findDuplicateMac(mac) : null;
+    if (dupMac) {
+      showToast(`❌ MAC Address "${mac}" ถูกเบิกไปแล้วโดย ${dupMac.name || dupMac.empId}`, 'error');
+      reqMacAddress.focus();
+      return;
+    }
+
     const emp = selectedReqEmp || allEmployees.find(e => e.empId === empId) || {};
 
     setBtnLoading(submitReqBtn, true);
@@ -1861,6 +1906,7 @@ function setupFormSubmits() {
         equipment:  eq,
         serialNo:   serial,
         assetNo:    reqAssetNo.value.trim(),
+        macAddress: mac,
         reqDate:    rd,
         department: emp.department || '',
         position:   emp.position   || '',
@@ -2020,6 +2066,36 @@ function setupSerialDuplicateCheck() {
   });
 }
 
+// NEW: ตรวจ MAC Address ซ้ำ (client-side, เหมือนแพทเทิร์นของ Serial No.)
+// excludeRowIndex ใช้ตอนแก้ไขรายการเดิม เพื่อไม่นับว่าซ้ำกับตัวมันเอง
+function findDuplicateMac(mac, excludeRowIndex) {
+  const v = String(mac || '').trim().toLowerCase();
+  if (!v) return null;
+  return reqHistory.find(r =>
+    r.rowIndex !== excludeRowIndex &&
+    String(r.macAddress || '').trim().toLowerCase() === v
+  ) || null;
+}
+
+function setupMacDuplicateCheck() {
+  reqMacAddress.addEventListener('input', () => {
+    const val = reqMacAddress.value;
+    const dup = findDuplicateMac(val);
+    if (dup) {
+      reqMacWarn.textContent = `⚠ MAC Address นี้ถูกเบิกไปแล้วโดย ${dup.name || dup.empId} (${formatDate(dup.reqDate)})`;
+      reqMacWarn.style.display = 'block';
+      reqMacAddress.style.borderColor = 'var(--danger)';
+    } else if (val && !isLikelyMac(val)) {
+      reqMacWarn.textContent = '⚠ รูปแบบ MAC Address ไม่ถูกต้อง (เช่น AA:BB:CC:DD:EE:FF) — ยังบันทึกได้ แต่โปรดตรวจสอบอีกครั้ง';
+      reqMacWarn.style.display = 'block';
+      reqMacAddress.style.borderColor = 'var(--warn)';
+    } else {
+      reqMacWarn.style.display = 'none';
+      reqMacAddress.style.borderColor = '';
+    }
+  });
+}
+
 function renderReqStats() {
   const today     = toLocalDate(new Date());
   const thisMonth = today.slice(0, 7);
@@ -2044,7 +2120,7 @@ function renderReqTable(rows, page) {
     <table class="borrow-table">
       <thead><tr>
         <th>#</th><th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>แผนก</th>
-        <th>ประเภทอุปกรณ์</th><th>Serial No.</th><th>Asset No.</th><th>Windows</th><th>วันที่เบิก</th><th>คำอธิบายเพิ่มเติม</th><th>สถานะ</th><th></th>
+        <th>ประเภทอุปกรณ์</th><th>Serial No.</th><th>Asset No.</th><th>Windows</th><th>MAC Address</th><th>วันที่เบิก</th><th>คำอธิบายเพิ่มเติม</th><th>สถานะ</th><th></th>
       </tr></thead>
       <tbody>
         ${pageRows.map((r, j) => {
@@ -2059,8 +2135,9 @@ function renderReqTable(rows, page) {
           <td class="td-mono">${esc(r.serialNo)}</td>
           <td class="td-mono">${esc(r.assetNo) || '—'}</td>
           <td>${r.windowsVersion ? `<span class="badge badge-win">🪟 ${esc(r.windowsVersion)}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+          <td class="td-mono">${esc(r.macAddress) || '—'}</td>
           <td class="td-date">${formatDate(r.reqDate)}</td>
-          <td class="td-note">${esc(r.note) || '<span style="color:var(--text-muted)">—</span>'}</td>
+          <td class="td-note"${r.note ? ` title="${esc(r.note)}"` : ''}>${esc(r.note) || '<span style="color:var(--text-muted)">—</span>'}</td>
           <td><span class="badge badge-req">📦 เบิกแล้ว</span></td>
           <td><div class="td-actions"><button class="btn-edit" data-row="${esc(String(r.rowIndex))}">แก้ไข</button><button class="btn-delete" data-row="${esc(String(r.rowIndex))}" data-name="${esc(r.name)}">ลบ</button></div></td>
         </tr>`;
@@ -2160,6 +2237,7 @@ function applyReqFilters() {
                   (r.equipment  || '').toLowerCase().includes(q) ||
                   (r.department || '').toLowerCase().includes(q) ||
                   (r.windowsVersion || '').toLowerCase().includes(q) ||
+                  (r.macAddress || '').toLowerCase().includes(q) ||
                   (r.note       || '').toLowerCase().includes(q);
       if (!hit) return false;
     }
@@ -2321,7 +2399,7 @@ function renderMachineTable(rows, page) {
           <td class="td-mono">${esc(r.ip) || '—'}</td>
           <td style="font-size:12px;color:var(--text-sub)">${esc(r.dept) || '—'}</td>
           <td>${esc(r.owner) || '—'}</td>
-          <td class="td-note">${esc(r.note) || '<span style="color:var(--text-muted)">—</span>'}</td>
+          <td class="td-note"${r.note ? ` title="${esc(r.note)}"` : ''}>${esc(r.note) || '<span style="color:var(--text-muted)">—</span>'}</td>
           <td><div class="td-actions"><button class="btn-edit" data-row="${esc(String(r.rowIndex))}">แก้ไข</button><button class="btn-delete" data-row="${esc(String(r.rowIndex))}" data-name="${esc(r.name)}">ลบ</button></div></td>
         </tr>`;
         }).join('')}
@@ -2485,6 +2563,24 @@ function setupEditReqModal() {
     }
   });
 
+  // NEW: ตรวจ MAC Address ซ้ำ/รูปแบบ ภายใน modal แก้ไข (ไม่นับรายการที่กำลังแก้ไขอยู่เอง)
+  editReqMacAddress.addEventListener('input', () => {
+    const val = editReqMacAddress.value;
+    const dup = findDuplicateMac(val, editingReqRowIndex);
+    if (dup) {
+      editReqMacWarn.textContent = `⚠ MAC Address นี้ถูกใช้งานโดยรายการอื่นอยู่แล้ว: ${dup.name || dup.empId} (${formatDate(dup.reqDate)})`;
+      editReqMacWarn.style.display = 'block';
+      editReqMacAddress.style.borderColor = 'var(--danger)';
+    } else if (val && !isLikelyMac(val)) {
+      editReqMacWarn.textContent = '⚠ รูปแบบ MAC Address ไม่ถูกต้อง (เช่น AA:BB:CC:DD:EE:FF) — ยังบันทึกได้ แต่โปรดตรวจสอบอีกครั้ง';
+      editReqMacWarn.style.display = 'block';
+      editReqMacAddress.style.borderColor = 'var(--warn)';
+    } else {
+      editReqMacWarn.style.display = 'none';
+      editReqMacAddress.style.borderColor = '';
+    }
+  });
+
   editReqCancelBtn.addEventListener('click', closeEditReqModal);
   editReqModal.addEventListener('click', e => {
     if (e.target === editReqModal) closeEditReqModal();
@@ -2514,6 +2610,17 @@ function updateEditSerialAssetVisibility() {
     editReqWinVersionSelect.value = '';
     editReqWinVersionInput.value = '';
     switchToDropdownEditWinInput();
+  }
+
+  // NEW: เหมือนกับ Serial/Asset No. และ Windows Version ด้านบน — ต้อง reset
+  // MAC Address เมื่อเปลี่ยนประเภทอุปกรณ์เป็นชนิดที่ไม่เกี่ยวข้อง มิเช่นนั้นค่าเดิม
+  // จะค้างและถูกส่งไปบันทึกทับโดยไม่ตั้งใจ
+  const showMac = equipmentNeedsMac(editReqEquipment.value);
+  editMacField.style.display = showMac ? 'block' : 'none';
+  if (!showMac) {
+    editReqMacAddress.value = '';
+    editReqMacWarn.style.display = 'none';
+    editReqMacAddress.style.borderColor = '';
   }
 }
 
@@ -2552,9 +2659,14 @@ function openEditReqModal(rowIndex) {
   editReqSerialWarn.style.display = 'none';
   editReqSerialNo.style.borderColor = '';
 
+  // NEW: พรีฟิล MAC Address เดิม
+  editReqMacAddress.value = item.macAddress || '';
+  editReqMacWarn.style.display = 'none';
+  editReqMacAddress.style.borderColor = '';
+
   setEditWindowsVersionValue(item.windowsVersion || '');
 
-  // NOTE: ต้องเรียกหลังจากตั้งค่า serial/asset/windows ไว้ก่อน เพราะฟังก์ชันนี้
+  // NOTE: ต้องเรียกหลังจากตั้งค่า serial/asset/windows/mac ไว้ก่อน เพราะฟังก์ชันนี้
   // จะ "ล้างค่า" ถ้าประเภทอุปกรณ์ปัจจุบันไม่ต้องการ field นั้น ๆ (ดู FIX ด้านบน)
   updateEditSerialAssetVisibility();
 
@@ -2581,6 +2693,7 @@ async function saveEditRequisition() {
   const name  = editReqEmpNameDisplay.value.trim();
   const eq    = editReqEquipment.value;
   const serial = editReqSerialNo.value.trim();
+  const mac   = editReqMacAddress.value.trim();
   const rd    = editReqDate.value;
 
   if (!empId) { showToast('กรุณาค้นหาและเลือกพนักงาน', 'error'); editReqEmpSearchInput.focus(); return; }
@@ -2596,6 +2709,14 @@ async function saveEditRequisition() {
     return;
   }
 
+  // NEW: กัน MAC Address ซ้ำก่อนบันทึกการแก้ไข
+  const dupMac = mac ? findDuplicateMac(mac, editingReqRowIndex) : null;
+  if (dupMac) {
+    showToast(`❌ MAC Address "${mac}" ถูกใช้งานโดยรายการอื่นอยู่แล้ว (${dupMac.name || dupMac.empId})`, 'error');
+    editReqMacAddress.focus();
+    return;
+  }
+
   const emp = selectedEditReqEmp || allEmployees.find(e => e.empId === empId) || {};
 
   setBtnLoading(editReqSaveBtn, true);
@@ -2608,6 +2729,7 @@ async function saveEditRequisition() {
       equipment: eq,
       serialNo: serial,
       assetNo: editReqAssetNo.value.trim(),
+      macAddress: mac,
       reqDate: rd,
       department: emp.department || '',
       position:   emp.position   || '',
@@ -2661,6 +2783,7 @@ function setupExport() {
       'Serial No.': r.serialNo,
       'Asset No.': r.assetNo,
       'Windows Version': r.windowsVersion,
+      'MAC Address': r.macAddress || '',
       'วันที่เบิก': formatDate(r.reqDate),
       'คำอธิบายเพิ่มเติม': r.note || '',
       'สถานะ': 'เบิกแล้ว'
@@ -2820,6 +2943,9 @@ function resetReqForm() {
   reqSerialWarn.style.display = 'none';
   reqSerialNo.style.borderColor = '';
   reqAssetNo.value  = '';
+  reqMacAddress.value = '';
+  reqMacWarn.style.display = 'none';
+  reqMacAddress.style.borderColor = '';
   resetWindowsVersionField();
   reqNoteInput.value = '';
   reqDate.value = toLocalDate(new Date());
