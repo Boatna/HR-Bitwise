@@ -228,8 +228,9 @@ body {
   width: 100%;
   border: 1.5px solid var(--line);
   border-radius: var(--r-md);
-  padding: .62rem .85rem;
-  font-size: .875rem;
+  padding: .75rem .95rem;
+  font-size: .9rem;
+  line-height: 1.5;
   background: var(--surface-tint);
   transition: all .15s ease;
   outline: none;
@@ -439,7 +440,7 @@ body {
 }
 
 .info-cell {
-  padding: 10px 16px;
+  padding: 14px 18px;
   border-left: 1px solid var(--line-soft);
   border-top: 1px solid var(--line-soft);
 }
@@ -475,17 +476,17 @@ body {
   border: 1px solid var(--line-soft);
   border-top: none;
   border-radius: 0 0 10px 10px;
-  padding: 16px;
+  padding: 20px;
   background: var(--surface-tint);
 }
 
 .ba-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 18px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 639px) {
   .ba-grid {
     grid-template-columns: 1fr;
   }
@@ -525,20 +526,20 @@ body {
 }
 
 .panel-body {
-  padding: 12px;
+  padding: 14px;
 }
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
 }
 
 .category-checkbox {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 10px;
+  gap: 9px;
+  padding: 11px 12px;
   border: 1.5px solid var(--line);
   border-radius: var(--r-md);
   cursor: pointer;
@@ -582,6 +583,113 @@ body {
   font-weight: 600;
   color: var(--ink-soft);
   line-height: 1.2;
+}
+
+/* ===== Tooltip (คำอธิบายเมื่อเอาเมาส์วาง) ===== */
+.category-checkbox[data-tooltip] {
+  position: relative;
+}
+
+.category-checkbox[data-tooltip]:hover,
+.category-checkbox[data-tooltip]:focus-visible {
+  z-index: 30;
+}
+
+.category-checkbox[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--brand-900);
+  color: #fff;
+  font-family: 'Sarabun', sans-serif;
+  font-size: .72rem;
+  font-weight: 500;
+  line-height: 1.45;
+  padding: 9px 12px;
+  border-radius: 10px;
+  width: max-content;
+  max-width: 230px;
+  white-space: normal;
+  text-align: left;
+  box-shadow: var(--shadow-3);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+  z-index: 60;
+}
+
+.category-checkbox[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  border: 6px solid transparent;
+  border-top-color: var(--brand-900);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+  z-index: 60;
+}
+
+.category-checkbox[data-tooltip]:hover::after,
+.category-checkbox[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.category-checkbox[data-tooltip]:hover::before,
+.category-checkbox[data-tooltip]:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* กันไม่ให้ tooltip ของคอลัมน์ริมซ้าย/ขวาล้นจอ */
+#kaizenTypeGrid .category-checkbox:nth-child(4n+1)[data-tooltip]::after,
+#categoryGrid .category-checkbox:nth-child(4n+1)[data-tooltip]::after {
+  left: 0;
+  transform: translateX(0) translateY(4px);
+}
+#kaizenTypeGrid .category-checkbox:nth-child(4n+1)[data-tooltip]:hover::after,
+#categoryGrid .category-checkbox:nth-child(4n+1)[data-tooltip]:hover::after {
+  transform: translateX(0) translateY(0);
+}
+#kaizenTypeGrid .category-checkbox:nth-child(4n+1)[data-tooltip]::before,
+#categoryGrid .category-checkbox:nth-child(4n+1)[data-tooltip]::before {
+  left: 18px;
+  transform: translateX(0) translateY(4px);
+}
+#kaizenTypeGrid .category-checkbox:nth-child(4n+1)[data-tooltip]:hover::before,
+#categoryGrid .category-checkbox:nth-child(4n+1)[data-tooltip]:hover::before {
+  transform: translateX(0) translateY(0);
+}
+
+.tooltip-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.25);
+  font-size: .62rem;
+  font-weight: 800;
+  cursor: help;
+  margin-left: 2px;
+  vertical-align: middle;
+}
+
+@media (max-width: 639px) {
+  .category-checkbox[data-tooltip]::after {
+    max-width: 180px;
+    font-size: .68rem;
+  }
 }
 
 .cat-badge {
@@ -671,7 +779,7 @@ body {
   gap: 1rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .detail-grid {
     grid-template-columns: 1fr;
   }
@@ -878,6 +986,18 @@ body {
   background: transparent;
   border: 1.5px solid transparent;
   color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+  #tabBar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #tabBar::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: .5rem 1rem; font-size: .8rem; flex-shrink: 0; }
 }
 
 .tab-btn:hover {
@@ -990,25 +1110,6 @@ body {
   background: var(--warn-100) !important;
 }
 
-.month-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 5px;
-  border-radius: 5px;
-  font-size: .62rem;
-  font-weight: 700;
-  background: var(--brand-50);
-  color: var(--ink-faint);
-}
-
-.month-pill.has-count {
-  background: var(--brand-100);
-  color: var(--brand-700);
-}
-
 .upload-progress {
   width: 100%;
   height: 6px;
@@ -1038,20 +1139,81 @@ body {
   100% { background-position: -200% 0; }
 }
 
-@media (max-width: 768px) {
+/* ============================================================
+   RESPONSIVE — โน้ตบุ๊ก/เดสก์ท็อปจอเล็ก (1025px–1279px)
+   ============================================================ */
+@media (max-width: 1279px) {
+  .stat-number { font-size: 1.7rem; }
+}
+
+/* ============================================================
+   RESPONSIVE — iPad / แท็บเล็ต (768px–1024px)
+   ============================================================ */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .form-header { grid-template-columns: 1fr 1.6fr 1fr; }
+  .category-grid { grid-template-columns: repeat(3, 1fr); }
+  .stat-number { font-size: 1.65rem; }
+  .data-table th, .data-table td { padding-right: .6rem; }
+  .section-body { padding: 16px; }
+  .ba-grid { gap: 14px; }
+}
+
+/* iPad แนวตั้ง (ประมาณ 768px) ให้ตารางไม่แน่นเกินไป */
+@media (min-width: 768px) and (max-width: 850px) {
+  .data-table { font-size: .8rem; }
+}
+
+/* ============================================================
+   RESPONSIVE — มือถือ/แท็บเล็ตแนวตั้งขนาดเล็ก (สูงสุด 767px)
+   ============================================================ */
+@media (max-width: 767px) {
   .form-header { grid-template-columns: 1fr; }
   .form-header>div { border-left: none; border-top: 1px solid var(--line-soft); }
   .form-header>div:first-child { border-top: none; }
   .info-grid { grid-template-columns: 1fr; }
-  .info-cell { border-left: none; }
+  .info-cell { border-left: none; padding: 12px 14px; }
   .stat-number { font-size: 1.5rem; }
+  .stat-card { padding: .9rem 1rem; padding-left: 1.2rem; }
   .category-grid { grid-template-columns: repeat(2, 1fr); }
   .detail-grid { grid-template-columns: 1fr; }
   .detail-ba-grid { grid-template-columns: 1fr; }
+  .section-body { padding: 14px; }
+  .data-table { font-size: .78rem; }
+  .data-table th, .data-table td { padding-right: .6rem; }
+  .card { border-radius: var(--r-md); }
+  .btn-primary, .btn-secondary, .btn-success, .btn-danger { font-size: .82rem; }
+}
+
+/* ============================================================
+   RESPONSIVE — มือถือจอเล็กมาก (สูงสุด 400px เช่น iPhone SE)
+   ============================================================ */
+@media (max-width: 400px) {
+  .stat-number { font-size: 1.3rem; }
+  .stat-label { font-size: .62rem; }
+  .stat-card { padding: .75rem .85rem; padding-left: 1.05rem; }
+  .category-grid { grid-template-columns: repeat(2, 1fr); gap: 7px; }
+  .category-checkbox { padding: 9px 8px; }
+  .category-icon { width: 26px; height: 26px; font-size: 11px; }
+  .category-label { font-size: .68rem; }
+  .form-code { text-align: left; align-items: flex-start; }
+  .code-pill { font-size: .6rem; }
+  h1.text-base, h1.text-lg { font-size: .95rem !important; }
+}
+
+/* ============================================================
+   RESPONSIVE — จอเดสก์ท็อป/มอนิเตอร์ขนาดใหญ่ (1536px ขึ้นไป)
+   เน้นให้แสดงผลได้เต็มพื้นที่และอ่านง่ายขึ้นบนคอมพิวเตอร์
+   ============================================================ */
+@media (min-width: 1536px) {
+  body { font-size: 16px; }
+  .stat-number { font-size: 2.1rem; }
+  .data-table { font-size: .92rem; }
+  .card { border-radius: var(--r-xl); }
+  .section-body { padding: 24px; }
 }
 
 @media print {
-  #loadingBar, #btnLogout, #tabBar, .modal-backdrop, #btnOpenForm, #btnLogout,
+  #loadingBar, #btnLogout, #tabBar, .modal-backdrop, #btnOpenForm, #btnLogout, #btnAdminTools,
   .btn-primary, .btn-secondary, .btn-success, .btn-danger, .count-save-btn {
     display: none !important;
   }
@@ -1064,7 +1226,7 @@ body {
 
   <div id="loadingBar"></div>
   <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
-    <div class="card p-8 w-full max-w-sm fade-in" style="box-shadow:var(--shadow-3);">
+    <div class="card p-6 sm:p-8 w-full max-w-sm fade-in" style="box-shadow:var(--shadow-3);">
       <div class="text-center mb-6">
         <div class="w-16 h-16 mx-auto rounded-2xl andon-mark p-3 mb-3" style="background:linear-gradient(160deg,var(--brand-600),var(--brand-900)); box-shadow:var(--shadow-2);">
           <span class="lamp-red"></span>
@@ -1096,32 +1258,33 @@ body {
 
   <div id="appShell" class="hidden">
     <div class="sticky top-0 z-30" style="background:rgba(255,255,255,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--line-soft);">
-      <div class="max-w-7xl mx-auto px-4 py-3">
+      <div class="max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1680px] mx-auto px-3 sm:px-4 md:px-6 py-3">
         <div class="flex items-center justify-between flex-wrap gap-3">
-          <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-xl andon-mark p-2" style="background:linear-gradient(160deg,var(--brand-600),var(--brand-900)); box-shadow:var(--shadow-2);">
+          <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl andon-mark p-2 flex-shrink-0" style="background:linear-gradient(160deg,var(--brand-600),var(--brand-900)); box-shadow:var(--shadow-2);">
               <span class="lamp-red"></span>
               <span class="lamp-amber"></span>
               <span class="lamp-green"></span>
             </div>
-            <div>
-              <h1 class="text-lg font-bold" style="color:var(--ink); letter-spacing:-0.01em;">ระบบบันทึก Kaizen</h1>
-              <p class="text-sm" style="color:var(--ink-faint);" id="profileLine">-</p>
+            <div class="min-w-0">
+              <h1 class="text-base sm:text-lg font-bold truncate" style="color:var(--ink); letter-spacing:-0.01em;">ระบบบันทึก Kaizen</h1>
+              <p class="text-xs sm:text-sm truncate" style="color:var(--ink-faint);" id="profileLine">-</p>
             </div>
           </div>
-          <div class="flex items-center gap-3 flex-wrap">
-            <button id="btnOpenForm" class="btn-primary hidden items-center gap-2 text-sm" aria-label="ส่ง Kaizen ใหม่">
+          <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <button id="btnOpenForm" class="btn-primary hidden items-center gap-2 text-xs sm:text-sm" aria-label="ส่ง Kaizen ใหม่">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
               <span class="hidden sm:inline">ส่ง Kaizen ใหม่</span>
             </button>
-            <button id="btnLogout" class="btn-secondary text-sm" aria-label="ออกจากระบบ">ออกจากระบบ</button>
+            <button id="btnAdminTools" class="btn-secondary text-xs sm:text-sm hidden" aria-label="เครื่องมือระบบสำหรับผู้ดูแล">🛠️ <span class="hidden md:inline">เครื่องมือระบบ</span></button>
+            <button id="btnLogout" class="btn-secondary text-xs sm:text-sm" aria-label="ออกจากระบบ">ออกจากระบบ</button>
           </div>
         </div>
         <div class="flex gap-2 flex-wrap mt-3 pb-1" id="tabBar" role="tablist"></div>
       </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1680px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
 
       <!-- Employee View -->
       <div id="empView" class="hidden fade-in" role="tabpanel" aria-label="รายการ Kaizen ของพนักงาน">
@@ -1168,33 +1331,6 @@ body {
           <div class="stat-card rail-bad"><div class="stat-label" style="color:var(--bad-600);">ตีกลับ</div><div class="stat-number num" style="color:var(--bad-600);" id="mgrKpiRejected">0</div></div>
         </div>
 
-        <!-- ✅ Repair Tools -->
-        <div class="card p-5 mb-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <p class="text-sm font-bold" style="color:var(--ink);">🔧 เครื่องมือซ่อมแซมข้อมูล</p>
-            <div class="flex items-center gap-2 flex-wrap">
-              <button id="btnRepairData" class="btn-secondary text-sm flex items-center gap-1">
-                🔄 ซ่อมแซมชื่อแผนก
-              </button>
-              <button id="btnSyncManagers" class="btn-secondary text-sm flex items-center gap-1">
-                🔗 ซิงค์แผนกผู้จัดการ
-              </button>
-              <button id="btnDebugQueue" class="btn-secondary text-sm flex items-center gap-1">
-                🐛 ตรวจสอบคิว
-              </button>
-              <button id="btnFixColumns" class="btn-secondary text-sm flex items-center gap-1">
-                🧩 ซ่อมแซมตำแหน่งคอลัมน์
-              </button>
-              <button id="btnSetupDatabase" class="btn-secondary text-sm flex items-center gap-1">
-                🗄️ ตั้งค่า/ซ่อมแซม Header ระบบ
-              </button>
-            </div>
-          </div>
-          <p class="text-xs mt-2" style="color:var(--ink-faint);">
-            ใช้เมื่อหัวหน้าแผนกไม่เห็นงานที่พนักงานส่ง เนื่องจากชื่อแผนกไม่ตรงกัน หรือกดอนุมัติแล้วขึ้น "รายการนี้อยู่ในสถานะ...ไม่สามารถตรวจสอบได้" ให้กด "ซ่อมแซมตำแหน่งคอลัมน์" ส่วน "ตั้งค่า/ซ่อมแซม Header ระบบ" ใช้ตรวจสอบว่าทุกชีต (Data, History, Comments, MonthlyProgress, Managers) มีหัวตารางครบและตรงตำแหน่งมาตรฐาน ปลอดภัยที่จะกดซ้ำได้เสมอ
-          </p>
-        </div>
-
         <div class="card p-5">
           <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
             <p class="text-sm font-bold" style="color:var(--ink);">คิวตรวจ Kaizen <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="mgrRowCount">0</span> รายการ)</span></p>
@@ -1238,28 +1374,42 @@ body {
 
       <!-- Manager HR Dashboard -->
       <div id="mgrHrDashView" class="hidden fade-in" role="tabpanel" aria-label="Dashboard HR">
-        <div class="card p-5 mb-6">
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <h2 class="text-lg font-bold" style="color:var(--ink); letter-spacing:-.01em;">📊 Dashboard HR <span id="hrDashScopeLabel" class="text-sm font-normal" style="color:var(--ink-faint);"></span></h2>
-            <div class="flex items-center gap-3 flex-wrap">
-              <select id="hrDashYear" class="input-field w-auto min-w-[140px]" aria-label="เลือกปี"></select>
-              <input id="hrDashSearch" type="text" placeholder="ค้นหาพนักงาน..." class="input-field w-48 text-sm" aria-label="ค้นหาพนักงาน">
-              <select id="hrDashStatus" class="input-field w-auto text-sm" aria-label="กรองตามสถานะ">
-                <option value="">ทุกสถานะ</option>
-                <option value="achieved">✅ ถึงเป้าหมาย</option>
-                <option value="notAchieved">⏳ ยังไม่ถึง</option>
-              </select>
-              <button id="btnRefreshHrDash" class="btn-secondary text-xs py-1 px-3" aria-label="โหลดข้อมูลใหม่">🔄</button>
+        <div class="card p-5 sm:p-6 mb-6">
+          <div class="flex flex-wrap items-start justify-between gap-5">
+            <div>
+              <h2 class="text-lg font-bold" style="color:var(--ink); letter-spacing:-.01em;">📊 Dashboard HR</h2>
+              <p class="text-xs mt-1" id="hrDashScopeLabel" style="color:var(--ink-faint);"></p>
+            </div>
+            <div class="flex items-end gap-3 flex-wrap">
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ปี (พ.ศ.)</label>
+                <select id="hrDashYear" class="input-field w-auto min-w-[140px]" aria-label="เลือกปี"></select>
+              </div>
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ค้นหาพนักงาน</label>
+                <input id="hrDashSearch" type="text" placeholder="ชื่อ / รหัส / แผนก..." class="input-field w-56 text-sm" aria-label="ค้นหาพนักงาน">
+              </div>
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">สถานะ</label>
+                <select id="hrDashStatus" class="input-field w-auto text-sm" aria-label="กรองตามสถานะ">
+                  <option value="">ทุกสถานะ</option>
+                  <option value="achieved">✅ ถึงเป้าหมาย</option>
+                  <option value="notAchieved">⏳ ยังไม่ถึง</option>
+                </select>
+              </div>
+              <button id="btnRefreshHrDash" class="btn-secondary text-sm py-2 px-4 flex items-center gap-1" aria-label="โหลดข้อมูลใหม่">🔄 โหลดใหม่</button>
             </div>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div class="stat-card rail-blue"><div class="stat-label">พนักงานทั้งหมด</div><div class="stat-number num" id="hrTotalEmp">0</div></div>
-          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">✅ Status <span style="text-transform:none;letter-spacing:0;font-weight:500;">(ส่งและอนุมัติผ่าน)</span></div><div class="stat-number num" style="color:var(--good-600);" id="hrAchieved">0</div></div>
-          <div class="stat-card rail-warn"><div class="stat-label" style="color:var(--warn-600);">⏳ ยังไม่ถึงเป้า</div><div class="stat-number num" style="color:var(--warn-600);" id="hrNotAchieved">0</div></div>
-          <div class="stat-card rail-blue"><div class="stat-label" style="color:var(--brand-700);">% สำเร็จ</div><div class="stat-number num" style="color:var(--brand-700);" id="hrPercent">0%</div></div>
-          <div class="stat-card rail-blue"><div class="stat-label" style="color:var(--steel-500);">Kaizen ทั้งหมด</div><div class="stat-number num" style="color:var(--steel-500);" id="hrTotalKaizen">0</div></div>
+          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">✅ Status <span style="text-transform:none;letter-spacing:0;font-weight:500;">(ส่ง-อนุมัติผ่าน)</span></div><div class="stat-number num" style="color:var(--good-600);" id="hrAchieved">0</div></div>
+          <div class="stat-card rail-warn">
+            <div class="stat-label" style="color:var(--warn-600);">⏳ ยังไม่ถึงเป้า <span style="text-transform:none;letter-spacing:0;font-weight:500;">(รวมทุกคน)</span></div>
+            <div class="stat-number num" style="color:var(--warn-600);" id="hrNotAchieved">0/0</div>
+          </div>
+          <div class="stat-card rail-blue"><div class="stat-label" style="color:var(--brand-700);">% สำเร็จรวม</div><div class="stat-number num" style="color:var(--brand-700);" id="hrPercent">0%</div></div>
         </div>
 
         <div class="card p-5">
@@ -1355,15 +1505,15 @@ body {
   </div>
 
   <!-- Form Modal -->
-  <div id="formModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
-    <div class="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+  <div id="formModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
+    <div class="w-full h-full sm:h-auto max-w-4xl xl:max-w-5xl 2xl:max-w-6xl max-h-full sm:max-h-[92vh] overflow-y-auto sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
 
-      <div class="flex items-center justify-between px-5 py-3 sticky top-0 z-10 rounded-t-2xl" style="background:rgba(255,255,255,.95); backdrop-filter:blur(6px); border-bottom:1px solid var(--line-soft);">
+      <div class="flex items-center justify-between px-4 sm:px-5 py-3 sticky top-0 z-10 sm:rounded-t-2xl" style="background:rgba(255,255,255,.95); backdrop-filter:blur(6px); border-bottom:1px solid var(--line-soft);">
         <h2 class="font-bold text-sm" style="color:var(--ink-soft);" id="formModalTitle">ส่ง Kaizen ใหม่</h2>
         <button id="btnCloseForm" class="w-9 h-9 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิดฟอร์ม">✕</button>
       </div>
 
-      <form id="kaizenForm" class="p-4 sm:p-5" novalidate>
+      <form id="kaizenForm" class="p-3 sm:p-5 lg:p-7" novalidate>
         <input type="hidden" id="editRowIndex" value="">
 
         <div class="form-doc">
@@ -1393,7 +1543,7 @@ body {
             </div>
             <div class="info-cell" style="grid-column:1/-1;">
               <span class="info-label">📅 วันที่ทำ Kaizen <span style="color:var(--bad-600);">*</span></span>
-              <div class="grid grid-cols-3 gap-2">
+              <div class="grid grid-cols-3 gap-3">
                 <select id="dDay" required class="input-field text-sm" aria-label="วันที่"></select>
                 <select id="dMonth" required class="input-field text-sm" aria-label="เดือน"></select>
                 <select id="dYear" required class="input-field text-sm" aria-label="ปี"></select>
@@ -1407,7 +1557,7 @@ body {
 
             <!-- หัวข้อ -->
             <div class="section-title">📝 หัวข้อ Kaizen</div>
-            <div class="section-body space-y-3">
+            <div class="section-body space-y-4">
               <div><label class="text-sm font-semibold mb-1 block" style="color:var(--ink-soft);" for="title">หัวข้อ Kaizen <span style="color:var(--bad-600);">*</span></label><input id="title" required class="input-field" placeholder="ระบุหัวข้อ Kaizen" maxlength="200"></div>
             </div>
 
@@ -1415,53 +1565,54 @@ body {
             <div class="section-title mt-4">🏷️ ประเภท Kaizen <span style="color:var(--bad-600);">*</span></div>
             <div class="section-body">
               <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="kaizenTypeGrid">
-                <label class="category-checkbox" data-type="automation" role="radio" aria-checked="false" tabindex="0">
+                <label class="category-checkbox" data-type="automation" role="radio" aria-checked="false" tabindex="0" data-tooltip="ปรับปรุงงานโดยใช้ระบบ/เครื่องจักรอัตโนมัติเข้ามาช่วยทำงานแทนคน เพื่อลดขั้นตอนที่ต้องทำด้วยมือ เช่น เขียนโปรแกรม เซ็นเซอร์ หรือระบบควบคุมอัตโนมัติ">
                   <span class="category-icon" style="background:#6366f1;color:#fff;">🤖</span>
                   <span class="category-label">Automation</span>
                 </label>
-                <label class="category-checkbox" data-type="karakuri" role="radio" aria-checked="false" tabindex="0">
+                <label class="category-checkbox" data-type="karakuri" role="radio" aria-checked="false" tabindex="0" data-tooltip="ปรับปรุงโดยใช้กลไกอย่างง่ายที่ไม่ใช้ไฟฟ้า/มอเตอร์ เช่น แรงโน้มถ่วง สปริง คาน ลูกล้อ ให้ชิ้นงานหรืออุปกรณ์เคลื่อนที่ได้เองอย่างชาญฉลาด">
                   <span class="category-icon" style="background:#8b5cf6;color:#fff;">⚙️</span>
                   <span class="category-label">Karakuri</span>
                 </label>
-                <label class="category-checkbox" data-type="genco" role="radio" aria-checked="false" tabindex="0">
+                <label class="category-checkbox" data-type="genco" role="radio" aria-checked="false" tabindex="0" data-tooltip="Genba/Genco Kaizen — การปรับปรุงที่หน้างานจริง โดยลงไปดูปัญหา ณ จุดปฏิบัติงานจริง (เก็มบะ) แล้วแก้ไขตรงจุดที่พบปัญหาทันที">
                   <span class="category-icon" style="background:#f59e0b;color:#fff;">🏭</span>
                   <span class="category-label">Genco</span>
                 </label>
-                <label class="category-checkbox" data-type="project" role="radio" aria-checked="false" tabindex="0">
+                <label class="category-checkbox" data-type="project" role="radio" aria-checked="false" tabindex="0" data-tooltip="โครงการปรับปรุงขนาดใหญ่ ใช้เวลา/งบประมาณ/ทีมงานหลายฝ่ายร่วมกัน มีการวางแผนและติดตามผลเป็นขั้นตอน">
                   <span class="category-icon" style="background:#3b82f6;color:#fff;">📋</span>
                   <span class="category-label">Project</span>
                 </label>
-                <label class="category-checkbox" data-type="service" role="radio" aria-checked="false" tabindex="0">
+                <label class="category-checkbox" data-type="service" role="radio" aria-checked="false" tabindex="0" data-tooltip="ปรับปรุงกระบวนการให้บริการ (ทั้งภายในหรือกับลูกค้า) เพื่อให้รวดเร็วขึ้น สะดวกขึ้น หรือสร้างความพึงพอใจมากขึ้น">
                   <span class="category-icon" style="background:#10b981;color:#fff;">🛠️</span>
                   <span class="category-label">Service</span>
                 </label>
-                <label class="category-checkbox" data-type="innovation" role="radio" aria-checked="false" tabindex="0">
+                <label class="category-checkbox" data-type="innovation" role="radio" aria-checked="false" tabindex="0" data-tooltip="แนวคิดหรือวิธีการใหม่ที่ไม่เคยมีมาก่อนในองค์กร สร้างการเปลี่ยนแปลงที่แตกต่างจากวิธีเดิมอย่างชัดเจน">
                   <span class="category-icon" style="background:#8b5cf6;color:#fff;">💡</span>
                   <span class="category-label">Innovation</span>
                 </label>
-                <label class="category-checkbox" data-type="suggestion" role="radio" aria-checked="false" tabindex="0">
+                <label class="category-checkbox" data-type="suggestion" role="radio" aria-checked="false" tabindex="0" data-tooltip="ข้อเสนอแนะการปรับปรุงเล็กๆ น้อยๆ จากพนักงานในงานประจำวัน ทำได้ง่าย ใช้ทรัพยากรน้อย แต่ช่วยให้งานดีขึ้น">
                   <span class="category-icon" style="background:#f472b6;color:#fff;">📝</span>
                   <span class="category-label">Suggestion</span>
                 </label>
               </div>
               <input type="hidden" id="kaizenTypeData" value="">
-              <p class="text-xs mt-2" style="color:var(--ink-faint);">เลือก 1 ประเภทเท่านั้น</p>
+              <p class="text-xs mt-2" style="color:var(--ink-faint);">เลือก 1 ประเภทเท่านั้น · 💡 เอาเมาส์ไปวางบนแต่ละตัวเลือกเพื่อดูความหมาย</p>
             </div>
 
             <!-- หมวดหมู่ -->
             <div class="section-title mt-4">🏷️ หมวดหมู่ Kaizen <span class="font-normal text-xs opacity-90">(เลือกได้มากกว่า 1 ข้อ) <span style="color:#FFD7D2;">*</span></span></div>
             <div class="section-body">
               <div class="category-grid" id="categoryGrid">
-                <label class="category-checkbox cat-P" data-cat="P" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">P</span><span class="category-label">ผลผลิต</span></label>
-                <label class="category-checkbox cat-D" data-cat="D" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">D</span><span class="category-label">การส่งมอบ</span></label>
-                <label class="category-checkbox cat-E" data-cat="E" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">E</span><span class="category-label">สิ่งแวดล้อม</span></label>
-                <label class="category-checkbox cat-S" data-cat="S" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">S</span><span class="category-label">ความปลอดภัย</span></label>
-                <label class="category-checkbox cat-Q" data-cat="Q" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">Q</span><span class="category-label">คุณภาพ</span></label>
-                <label class="category-checkbox cat-E2" data-cat="E2" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">E²</span><span class="category-label">จริยธรรม</span></label>
-                <label class="category-checkbox cat-C" data-cat="C" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">C</span><span class="category-label">ลดต้นทุน</span></label>
-                <label class="category-checkbox cat-M" data-cat="M" role="checkbox" aria-checked="false" tabindex="0"><span class="category-icon">M</span><span class="category-label">ขวัญกำลังใจ</span></label>
+                <label class="category-checkbox cat-P" data-cat="P" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Productivity — เพิ่มผลผลิต ลดเวลา หรือเพิ่มประสิทธิภาพในการทำงาน/การผลิตให้ได้มากขึ้นด้วยทรัพยากรเท่าเดิม"><span class="category-icon">P</span><span class="category-label">ผลผลิต</span></label>
+                <label class="category-checkbox cat-D" data-cat="D" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Delivery — ปรับปรุงเรื่องความตรงเวลาและความแม่นยำในการส่งมอบงาน สินค้า หรือบริการให้ถึงมือผู้รับได้ตามกำหนด"><span class="category-icon">D</span><span class="category-label">การส่งมอบ</span></label>
+                <label class="category-checkbox cat-E" data-cat="E" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Environment — ลดผลกระทบต่อสิ่งแวดล้อม เช่น ประหยัดพลังงาน ลดของเสีย ลดมลพิษ หรือการใช้ทรัพยากรอย่างคุ้มค่า"><span class="category-icon">E</span><span class="category-label">สิ่งแวดล้อม</span></label>
+                <label class="category-checkbox cat-S" data-cat="S" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Safety — เพิ่มความปลอดภัยในการทำงาน ลดความเสี่ยงต่อการเกิดอุบัติเหตุหรืออันตรายต่อพนักงาน"><span class="category-icon">S</span><span class="category-label">ความปลอดภัย</span></label>
+                <label class="category-checkbox cat-Q" data-cat="Q" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Quality — ลดข้อบกพร่อง ความผิดพลาด และเพิ่มคุณภาพของงาน สินค้า หรือบริการให้ดีขึ้น"><span class="category-icon">Q</span><span class="category-label">คุณภาพ</span></label>
+                <label class="category-checkbox cat-E2" data-cat="E2" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Ethics — ส่งเสริมจริยธรรม ความซื่อสัตย์ และความถูกต้องในการทำงานหรือการปฏิบัติตามระเบียบขององค์กร"><span class="category-icon">E²</span><span class="category-label">จริยธรรม</span></label>
+                <label class="category-checkbox cat-C" data-cat="C" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Cost — ลดต้นทุนหรือค่าใช้จ่ายในการดำเนินงาน เช่น ลดการใช้วัสดุ ลดเวลาที่สูญเปล่า หรือลดค่าใช้จ่ายซ้ำซ้อน"><span class="category-icon">C</span><span class="category-label">ลดต้นทุน</span></label>
+                <label class="category-checkbox cat-M" data-cat="M" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Morale — เพิ่มขวัญและกำลังใจในการทำงาน สร้างบรรยากาศที่ดี และความพึงพอใจของพนักงานในองค์กร"><span class="category-icon">M</span><span class="category-label">ขวัญกำลังใจ</span></label>
               </div>
               <input type="hidden" id="categoriesData" value="{}">
+              <p class="text-xs mt-2" style="color:var(--ink-faint);">💡 เอาเมาส์ไปวางบนแต่ละหมวดหมู่เพื่อดูความหมาย</p>
             </div>
 
             <!-- Before/After -->
@@ -1477,7 +1628,7 @@ body {
                       <img id="beforeImagePreview" class="w-full max-h-32 object-cover rounded-lg img-loading" style="border:1px solid var(--line);" alt="รูปภาพก่อนปรับปรุง" loading="lazy">
                     </div>
                     <label class="text-xs font-semibold block mt-2" style="color:var(--ink-soft);" for="beforeProblem">1. ปัญหาที่พบ</label>
-                    <textarea id="beforeProblem" rows="2" class="input-field resize-none text-sm" placeholder="อธิบายปัญหาที่พบ..."></textarea>
+                    <textarea id="beforeProblem" rows="3" class="input-field resize-y text-sm" placeholder="อธิบายปัญหาที่พบ..."></textarea>
                   </div>
                 </div>
                 <div class="panel-after">
@@ -1489,9 +1640,22 @@ body {
                       <img id="afterImagePreview" class="w-full max-h-32 object-cover rounded-lg img-loading" style="border:1px solid var(--line);" alt="รูปภาพหลังปรับปรุง" loading="lazy">
                     </div>
                     <label class="text-xs font-semibold block mt-2" style="color:var(--ink-soft);" for="afterSolution">2. แก้ไขด้วยวิธีใด</label>
-                    <textarea id="afterSolution" rows="2" class="input-field resize-none text-sm" placeholder="อธิบายวิธีการแก้ไข..."></textarea>
+                    <textarea id="afterSolution" rows="3" class="input-field resize-y text-sm" placeholder="อธิบายวิธีการแก้ไข..."></textarea>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- 📎 เอกสารแนบเพิ่มเติม -->
+            <div class="section-title mt-4">📎 เอกสารแนบเพิ่มเติม <span class="font-normal text-xs opacity-90">(PDF / Excel / Word / รูปภาพ ฯลฯ ไม่เกิน 10 ไฟล์ รวมไม่เกิน 50MB)</span></div>
+            <div class="section-body">
+              <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);" for="multiFileInput">เลือกไฟล์แนบ (เลือกได้หลายไฟล์)</label>
+              <input id="multiFileInput" type="file" multiple class="input-field text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:font-medium" aria-label="แนบไฟล์เอกสารเพิ่มเติม">
+              <div id="existingFilesList" class="mt-2"></div>
+              <div id="selectedFilesList" class="flex flex-wrap gap-1 mt-2"></div>
+              <div id="uploadProgressContainer" class="hidden mt-2">
+                <div class="upload-progress"><div id="uploadProgressFill" class="upload-progress-fill" style="width:0%"></div></div>
+                <p id="uploadProgressText" class="text-xs mt-1" style="color:var(--ink-faint);"></p>
               </div>
             </div>
 
@@ -1499,8 +1663,8 @@ body {
             <div class="section-title mt-4">📈 ผลลัพธ์การปรับปรุง</div>
             <div class="section-body">
               <div>
-                <label class="text-sm font-semibold mb-1 block" style="color:var(--ink-soft);" for="detail">ทำแล้วดีขึ้นอย่างไร</label>
-                <textarea id="detail" rows="3" class="input-field resize-none text-sm" placeholder="อธิบายว่าการปรับปรุงนี้ทำให้เกิดประโยชน์อย่างไรบ้าง..."></textarea>
+                <label class="text-sm font-semibold mb-1 block" style="color:var(--ink-soft);" for="detail">ผลลัพธ์</label>
+                <textarea id="detail" rows="4" class="input-field resize-y text-sm" placeholder="อธิบายว่าการปรับปรุงนี้ทำให้เกิดประโยชน์อย่างไรบ้าง..."></textarea>
               </div>
             </div>
 
@@ -1524,8 +1688,8 @@ body {
   </div>
 
   <!-- Detail Modal -->
-  <div id="detailModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
-    <div class="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+  <div id="detailModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+    <div class="w-full h-full sm:h-auto max-w-5xl xl:max-w-6xl max-h-full sm:max-h-[92vh] overflow-y-auto sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
       <div class="flex items-center justify-between px-6 py-4 sticky top-0 z-10" style="background:rgba(255,255,255,.95); backdrop-filter:blur(6px); border-bottom:1px solid var(--line-soft);">
         <h2 class="font-bold text-lg" style="color:var(--ink);" id="detailModalTitle">รายละเอียด Kaizen</h2>
         <button id="btnCloseDetail" class="w-10 h-10 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิดรายละเอียด">✕</button>
@@ -1536,8 +1700,8 @@ body {
   </div>
 
   <!-- Comment Modal -->
-  <div id="commentModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="commentModalTitle">
-    <div class="w-full max-w-2xl max-h-[80vh] overflow-hidden rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+  <div id="commentModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="commentModalTitle">
+    <div class="w-full h-full sm:h-auto max-w-3xl xl:max-w-4xl max-h-full sm:max-h-[85vh] overflow-hidden sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
       <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--line-soft);">
         <h2 class="font-bold text-lg" style="color:var(--ink);" id="commentModalTitle">💬 ความคิดเห็น</h2>
         <button id="btnCloseComment" class="w-10 h-10 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิดความคิดเห็น">✕</button>
@@ -1553,8 +1717,8 @@ body {
   </div>
 
   <!-- Employee History Modal -->
-  <div id="empHistoryModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="empHistoryModalTitle">
-    <div class="w-full max-w-3xl max-h-[80vh] overflow-hidden rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+  <div id="empHistoryModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="empHistoryModalTitle">
+    <div class="w-full h-full sm:h-auto max-w-4xl xl:max-w-5xl max-h-full sm:max-h-[85vh] overflow-hidden sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
       <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--line-soft);">
         <h2 class="font-bold text-lg" style="color:var(--ink);" id="empHistoryModalTitle">📋 ประวัติ Kaizen ของ <span id="empHistoryName"></span></h2>
         <button id="btnCloseEmpHistory" class="w-10 h-10 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิด">✕</button>
@@ -1581,9 +1745,10 @@ body {
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZdR_4lTh-xiPJ7OQjWBijKMgqWs72y8VVDgdlAbGbmUdpLF_GvESs7_UYTQjSoU3MWw/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcoxPrSB2DRBCengbcCUWVPWpLPB9Yfgpqy97Drn45GO-jHWgNviAun_9_oWeKXi9ZUg/exec';
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
+    const CONFIG_MAX_FILES_PER_KAIZEN = 10; // ต้องตรงกับ CONFIG.MAX_FILES_PER_KAIZEN ฝั่ง Code.gs
     const monthNamesTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
     const STORAGE_KEY = 'kaizenUserSession_v2';
 
@@ -1622,6 +1787,7 @@ body {
     let DASHBOARD_DATA = null;
     let currentDashboardYear = null;
     let selectedFiles = [];
+    let existingFileUrlsForEdit = []; // ✅ ไฟล์แนบเดิม (ตอนแก้ไข/ส่งใหม่) ใช้แสดงผลเฉยๆ ฝั่งเซิร์ฟเวอร์จะเก็บไว้ให้อัตโนมัติ
     let currentCommentKaizenId = null;
     let isLoading = false;
     let PROGRESS_EMPLOYEES = [];
@@ -1820,6 +1986,74 @@ body {
     function getTypeLabel(type) {
       if (!type) return '-';
       return KAIZEN_TYPES[type] || type;
+    }
+
+    function fileIconFor(fileName) {
+      return fileName.match(/\.(pdf)$/i) ? '📋' :
+        fileName.match(/\.(xlsx|xls)$/i) ? '📊' :
+        fileName.match(/\.(doc|docx)$/i) ? '📝' :
+        fileName.match(/\.(zip|rar)$/i) ? '📦' :
+        fileName.match(/\.(jpg|jpeg|png|gif)$/i) ? '🖼️' : '📎';
+    }
+
+    function renderSelectedFilesList() {
+      var container = document.getElementById('selectedFilesList');
+      if (!container) return;
+      if (selectedFiles.length === 0) { container.innerHTML = ''; return; }
+      var html = '';
+      selectedFiles.forEach(function(f, idx) {
+        html += '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs" style="background:var(--brand-50); border:1px solid var(--line-soft);">' +
+          fileIconFor(f.name) + ' ' + escapeHtml(f.name) +
+          ' <button type="button" data-idx="' + idx + '" class="btnRemoveSelectedFile font-bold" style="color:var(--bad-600);" aria-label="ลบไฟล์แนบ ' + escapeHtml(f.name) + '">✕</button></span>';
+      });
+      container.innerHTML = html;
+      container.querySelectorAll('.btnRemoveSelectedFile').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var idx = parseInt(this.dataset.idx, 10);
+          selectedFiles.splice(idx, 1);
+          renderSelectedFilesList();
+        });
+      });
+    }
+
+    function renderExistingFilesList() {
+      var container = document.getElementById('existingFilesList');
+      if (!container) return;
+      if (!existingFileUrlsForEdit || existingFileUrlsForEdit.length === 0) { container.innerHTML = ''; return; }
+      container.innerHTML = '<div class="text-xs mb-1" style="color:var(--ink-faint);">ไฟล์แนบเดิม (จะเก็บไว้อัตโนมัติเมื่อบันทึก):</div>' + renderFileAttachments(existingFileUrlsForEdit);
+    }
+
+    function handleMultiFileSelect(fileList) {
+      var files = Array.prototype.slice.call(fileList || []);
+      if (files.length === 0) return;
+
+      var totalCount = selectedFiles.length + existingFileUrlsForEdit.length + files.length;
+      if (totalCount > CONFIG_MAX_FILES_PER_KAIZEN) {
+        Swal.fire({ icon: 'warning', title: 'แนบไฟล์ได้สูงสุด ' + CONFIG_MAX_FILES_PER_KAIZEN + ' ไฟล์ต่อ 1 Kaizen', confirmButtonColor: '#1B6E4C' });
+        return;
+      }
+
+      var currentTotalSize = selectedFiles.reduce(function(sum, f) { return sum + (f.file.size || 0); }, 0);
+      var rejected = [];
+
+      files.forEach(function(f) {
+        if (f.size > MAX_FILE_SIZE) {
+          rejected.push(f.name + ' (ใหญ่เกิน 10MB)');
+          return;
+        }
+        currentTotalSize += f.size;
+        if (currentTotalSize > MAX_TOTAL_SIZE) {
+          rejected.push(f.name + ' (ขนาดรวมเกิน 50MB)');
+          return;
+        }
+        selectedFiles.push({ file: f, name: f.name, type: f.type });
+      });
+
+      renderSelectedFilesList();
+
+      if (rejected.length > 0) {
+        Swal.fire({ icon: 'warning', title: 'มีไฟล์ที่ไม่ได้แนบ', html: rejected.map(escapeHtml).join('<br>'), confirmButtonColor: '#1B6E4C' });
+      }
     }
 
     // ============================================================
@@ -2057,6 +2291,7 @@ body {
           PROGRESS_EMPLOYEES = [];
           document.getElementById('appShell').classList.add('hidden');
           document.getElementById('loginScreen').classList.remove('hidden');
+          document.getElementById('btnAdminTools').classList.add('hidden');
           document.getElementById('loginId').value = '';
           document.getElementById('loginId').focus();
           Object.keys(debounceTimers).forEach(function(key) {
@@ -2084,9 +2319,15 @@ body {
       if (user.role === 'employee') {
         document.getElementById('btnOpenForm').classList.remove('hidden');
         document.getElementById('btnOpenForm').classList.add('flex');
+        document.getElementById('btnAdminTools').classList.add('hidden');
         switchView('emp');
         loadMyRecords();
       } else {
+        // ✅ FIX: ปุ่ม "เครื่องมือระบบ" เดิมไม่มีอยู่ในหน้าเว็บเลย ทำให้ฟังก์ชันซ่อมแซมระบบ
+        // (repairDepartmentNames, syncManagerDepartments, fixColumnAlignment, setupDatabaseUI,
+        // debugReviewQueue) ที่เขียนไว้ในโค้ดไม่สามารถเรียกใช้งานได้จากหน้าเว็บเลย
+        var isDirector = (user.approverType || []).indexOf('ผู้จัดการ') > -1;
+        document.getElementById('btnAdminTools').classList.toggle('hidden', !isDirector);
         switchView('mgrQueue');
         loadQueue();
       }
@@ -2251,6 +2492,29 @@ body {
           } else showError(res.message);
         })
         .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    // ============================================================
+    // ✅ FIX: เมนูเครื่องมือระบบสำหรับผู้จัดการ
+    // (ฟังก์ชันซ่อมแซมด้านล่างมีอยู่แล้วในโค้ดเดิม แต่ไม่เคยถูกผูกกับปุ่มใดๆ ในหน้าเว็บ
+    // ทำให้เรียกใช้งานไม่ได้เลยนอกจากพิมพ์ชื่อฟังก์ชันเองใน console ของเบราว์เซอร์)
+    // ============================================================
+    function showAdminToolsMenu() {
+      var html =
+        '<div style="text-align:left;display:flex;flex-direction:column;gap:8px;">' +
+        '<button type="button" class="btn-secondary" onclick="Swal.close();debugReviewQueue();">🐛 ตรวจสอบคิวตรวจสอบ (Debug Review Queue)</button>' +
+        '<button type="button" class="btn-secondary" onclick="Swal.close();repairDepartmentNames();">🏢 ซ่อมชื่อแผนกใน Data</button>' +
+        '<button type="button" class="btn-secondary" onclick="Swal.close();syncManagerDepartments();">🔄 ซิงค์แผนกใน Managers</button>' +
+        '<button type="button" class="btn-secondary" onclick="Swal.close();fixColumnAlignment();">🧩 ซ่อมตำแหน่งคอลัมน์ Status/หมวดหมู่</button>' +
+        '<button type="button" class="btn-secondary" onclick="Swal.close();setupDatabaseUI();">🗄️ ตั้งค่า/ซ่อม Header ทุกชีต</button>' +
+        '</div>';
+      Swal.fire({
+        title: '🛠️ เครื่องมือระบบ (สำหรับผู้จัดการ)',
+        html: html,
+        showConfirmButton: false,
+        showCloseButton: true,
+        width: '440px'
+      });
     }
 
     // ============================================================
@@ -2423,7 +2687,8 @@ body {
             title: '🐛 ตรวจสอบคิวตรวจสอบ',
             html: html,
             confirmButtonColor: '#1B6E4C',
-            width: '700px',
+            width: '820px',
+            padding: '1.5rem',
             confirmButtonText: 'ปิด'
           });
         })
@@ -2970,7 +3235,8 @@ body {
             title: '📜 ประวัติการแก้ไข',
             html: html,
             confirmButtonColor: '#1B6E4C',
-            width: '700px',
+            width: '780px',
+            padding: '1.5rem',
             confirmButtonText: 'ปิด'
           });
         })
@@ -3091,22 +3357,22 @@ body {
       var statuses = [STATUS_PENDING_HEAD, STATUS_PENDING_DIRECTOR, STATUS_APPROVED, STATUS_REJECTED];
 
       var html =
-        '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">' +
-        '<div><label class="text-xs font-medium text-slate-500 block">ค้นหาคำ</label><input id="advKeyword" class="input-field text-sm" placeholder="รหัส, หัวข้อ, ชื่อพนักงาน..."></div>' +
-        '<div><label class="text-xs font-medium text-slate-500 block">สถานะ</label><select id="advStatus" class="input-field text-sm"><option value="">ทั้งหมด</option>' +
+        '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left" style="padding-top:4px;">' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ค้นหาคำ</label><input id="advKeyword" class="input-field text-sm" placeholder="รหัส, หัวข้อ, ชื่อพนักงาน..."></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">สถานะ</label><select id="advStatus" class="input-field text-sm"><option value="">ทั้งหมด</option>' +
         statuses.map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('') +
         '</select></div>' +
-        '<div><label class="text-xs font-medium text-slate-500 block">แผนก</label><select id="advDepartment" class="input-field text-sm"><option value="">ทั้งหมด</option>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">แผนก</label><select id="advDepartment" class="input-field text-sm"><option value="">ทั้งหมด</option>' +
         depts.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('') +
         '</select></div>' +
-        '<div><label class="text-xs font-medium text-slate-500 block">หมวดหมู่</label><select id="advCategory" class="input-field text-sm"><option value="">ทั้งหมด</option>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">หมวดหมู่</label><select id="advCategory" class="input-field text-sm"><option value="">ทั้งหมด</option>' +
         categories.map(function(c) { return '<option value="' + c + '">' + CATEGORIES[c] + '</option>'; }).join('') +
         '</select></div>' +
-        '<div><label class="text-xs font-medium text-slate-500 block">วันที่เริ่มต้น</label><input id="advDateFrom" type="date" class="input-field text-sm"></div>' +
-        '<div><label class="text-xs font-medium text-slate-500 block">วันที่สิ้นสุด</label><input id="advDateTo" type="date" class="input-field text-sm"></div>' +
-        '<div><label class="text-xs font-medium text-slate-500 block">ผู้ตรวจสอบ</label><input id="advReviewedBy" class="input-field text-sm" placeholder="ชื่อผู้ตรวจสอบ"></div>' +
-        '<div class="flex items-end gap-2"><div class="flex-1"><label class="text-xs font-medium text-slate-500 block">เรียงตาม</label><select id="advSortBy" class="input-field text-sm"><option value="date">วันที่</option><option value="id">รหัส</option><option value="title">หัวข้อ</option><option value="name">พนักงาน</option><option value="department">แผนก</option><option value="status">สถานะ</option></select></div>' +
-        '<div class="flex-1"><label class="text-xs font-medium text-slate-500 block">ลำดับ</label><select id="advSortOrder" class="input-field text-sm"><option value="desc">มากไปน้อย</option><option value="asc">น้อยไปมาก</option></select></div></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">วันที่เริ่มต้น</label><input id="advDateFrom" type="date" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">วันที่สิ้นสุด</label><input id="advDateTo" type="date" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ผู้ตรวจสอบ</label><input id="advReviewedBy" class="input-field text-sm" placeholder="ชื่อผู้ตรวจสอบ"></div>' +
+        '<div class="flex items-end gap-3"><div class="flex-1"><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">เรียงตาม</label><select id="advSortBy" class="input-field text-sm"><option value="date">วันที่</option><option value="id">รหัส</option><option value="title">หัวข้อ</option><option value="name">พนักงาน</option><option value="department">แผนก</option><option value="status">สถานะ</option></select></div>' +
+        '<div class="flex-1"><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ลำดับ</label><select id="advSortOrder" class="input-field text-sm"><option value="desc">มากไปน้อย</option><option value="asc">น้อยไปมาก</option></select></div></div>' +
         '</div>';
 
       Swal.fire({
@@ -3117,7 +3383,8 @@ body {
         showCancelButton: true,
         confirmButtonColor: '#1B6E4C',
         cancelButtonColor: '#8695B4',
-        width: '700px',
+        width: '860px',
+        padding: '1.75rem',
         preConfirm: function() {
           return {
             keyword: document.getElementById('advKeyword').value.trim(),
@@ -3150,15 +3417,9 @@ body {
         .catch(function(err) { hideLoading(); showError(err); });
     }
 
-    // ============================================================
-    // HR DASHBOARD
-    // ============================================================
     function loadHrDashboard(beYear) {
       if (isLoading) return;
       var yearToLoad = beYear ? Number(beYear) : null;
-
-      // ✅ ผู้ตรวจสอบทุกคน (หัวหน้าแผนก/ผู้จัดการ) เห็นข้อมูล Dashboard HR ครบทุกแผนก
-      // เหมือนกับคิวตรวจ Kaizen ไม่จำกัดเฉพาะแผนกของตัวเองอีกต่อไป
       document.getElementById('hrDashScopeLabel').textContent = ' (ทุกแผนก)';
 
       showLoading();
@@ -3191,10 +3452,10 @@ body {
       document.getElementById('hrTotalEmp').textContent = summary.totalEmployees || 0;
       // ✅ Status: จำนวนพนักงานที่ "ส่งและอนุมัติผ่าน" อย่างน้อย 1 เรื่อง (ไม่ใช่จำนวนที่ถึงเป้าหมายแบบเดิม)
       document.getElementById('hrAchieved').textContent = summary.submittedApprovedCount || 0;
-      // ✅ ยังไม่ถึงเป้า: แสดงเป็นสัดส่วน เช่น 0/29 (จำนวนคนที่ยังไม่ถึงเป้า / พนักงานทั้งหมด)
-      document.getElementById('hrNotAchieved').textContent = (summary.notAchievedCount || 0) + ' / ' + (summary.totalEmployees || 0);
+      // ✅ "ยังไม่ถึงเป้า" = (เป้าหมายรวมทุกคน - ทำแล้วรวมทุกคน) / เป้าหมายรวมทุกคน เช่น "0/96"
+      var targetSum = summary.totalTargetSum || 0;
+      document.getElementById('hrNotAchieved').textContent = (summary.notAchievedCount || 0) + '/' + targetSum;
       document.getElementById('hrPercent').textContent = (summary.achievedPercent || 0) + '%';
-      document.getElementById('hrTotalKaizen').textContent = summary.totalKaizen || 0;
     }
 
     function renderHrDashTable() {
@@ -3305,9 +3566,6 @@ body {
         .catch(function(err) { hideLoading(); showError(err); });
     }
 
-    // ============================================================
-    // MONTHLY PROGRESS
-    // ============================================================
     function populateProgressYearOptions(years, selected) {
       var sel = document.getElementById('progressYear');
       sel.innerHTML = '';
@@ -3483,25 +3741,22 @@ body {
         });
     }
 
-    // ============================================================
-    // FORM FUNCTIONS
-    // ============================================================
     function openForm(recordToEdit) {
       currentTransactionId = null;
       isSubmitting = false;
 
       document.getElementById('formModal').classList.remove('hidden');
-
-      // ✅ ล้างฟอร์มและค่าต่าง ๆ ก่อน แล้วค่อยเติมข้อมูลชื่อ-สกุล/แผนกของพนักงานทีหลัง
-      // (เดิมเรียก kaizenForm.reset() หลังจากเติมชื่อ/แผนกไปแล้ว ทำให้ reset() ล้างค่าที่เพิ่งเติมทิ้งทันที
-      // เป็นสาเหตุที่ช่อง "ชื่อ-สกุล" และ "แผนก" ในฟอร์มส่ง Kaizen ใหม่ไม่แสดงข้อมูล)
       document.getElementById('kaizenForm').reset();
       document.getElementById('beforeImageInput').value = '';
       document.getElementById('afterImageInput').value = '';
       document.getElementById('beforeImageContainer').classList.add('hidden');
       document.getElementById('afterImageContainer').classList.add('hidden');
       document.getElementById('editRowIndex').value = '';
+      document.getElementById('multiFileInput').value = '';
       selectedFiles = [];
+      existingFileUrlsForEdit = [];
+      renderSelectedFilesList();
+      renderExistingFilesList();
       clearCategories();
       clearKaizenType();
 
@@ -3598,6 +3853,8 @@ body {
         document.getElementById('afterSolution').value = recordToEdit.afterSolution || '';
         setCategories(recordToEdit.categories);
         if (recordToEdit.kaizenType) setKaizenType(recordToEdit.kaizenType);
+        existingFileUrlsForEdit = (recordToEdit.fileUrls || []).slice();
+        renderExistingFilesList();
 
         if (recordToEdit.date) {
           var dateParts = recordToEdit.date.split('-');
@@ -3637,7 +3894,11 @@ body {
       document.getElementById('beforeImageContainer').classList.add('hidden');
       document.getElementById('afterImageContainer').classList.add('hidden');
       document.getElementById('editRowIndex').value = '';
+      document.getElementById('multiFileInput').value = '';
       selectedFiles = [];
+      existingFileUrlsForEdit = [];
+      renderSelectedFilesList();
+      renderExistingFilesList();
       clearCategories();
       clearKaizenType();
       currentTransactionId = null;
@@ -3788,14 +4049,12 @@ body {
       });
     }
 
-    // ============================================================
-    // EVENT BINDINGS
-    // ============================================================
     function bindEvents() {
       document.getElementById('loginForm').addEventListener('submit', handleLogin);
       document.getElementById('roleEmployeeBtn').addEventListener('click', function() { setSelectedRole('employee'); });
       document.getElementById('roleManagerBtn').addEventListener('click', function() { setSelectedRole('manager'); });
       document.getElementById('btnLogout').addEventListener('click', logout);
+      document.getElementById('btnAdminTools').addEventListener('click', showAdminToolsMenu);
 
       document.getElementById('btnOpenForm').addEventListener('click', function() {
         if (!isLoading && !isSubmitting) openForm(null);
@@ -3835,13 +4094,6 @@ body {
       document.getElementById('btnRefreshHrDash').addEventListener('click', function() {
         loadHrDashboard(document.getElementById('hrDashYear').value);
       });
-
-      // ✅ Repair buttons
-      document.getElementById('btnRepairData').addEventListener('click', repairDepartmentNames);
-      document.getElementById('btnSyncManagers').addEventListener('click', syncManagerDepartments);
-      document.getElementById('btnDebugQueue').addEventListener('click', debugReviewQueue);
-      document.getElementById('btnFixColumns').addEventListener('click', fixColumnAlignment);
-      document.getElementById('btnSetupDatabase').addEventListener('click', setupDatabaseUI);
 
       document.getElementById('mgrSearch').addEventListener('input', debounce(renderMgrTable, 300));
       document.getElementById('mgrStatusFilter').addEventListener('change', renderMgrTable);
@@ -3896,6 +4148,11 @@ body {
         }).catch(function() { container.classList.add('hidden'); });
       });
 
+      document.getElementById('multiFileInput').addEventListener('change', function() {
+        handleMultiFileSelect(this.files);
+        this.value = '';
+      });
+
       bindCategoryEvents();
       bindKaizenTypeEvents();
 
@@ -3928,9 +4185,6 @@ body {
       });
     }
 
-    // ============================================================
-    // INITIALIZATION
-    // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
       initDatePickers();
       bindEvents();
