@@ -529,6 +529,50 @@ body {
   padding: 14px;
 }
 
+/* ===== กรอบรูปภาพมาตรฐาน — ให้รูปแสดงพอดีกับกรอบเสมอ (ไม่ถูกครอปเหมือน object-cover) ===== */
+.img-frame {
+  width: 100%;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-tint);
+  border: 1.5px solid var(--line-soft);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.img-frame img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  transition: transform .15s ease;
+}
+
+.img-frame.clickable img {
+  cursor: pointer;
+}
+
+.img-frame.clickable img:hover {
+  transform: scale(1.04);
+}
+
+.img-frame.sm {
+  height: 130px;
+}
+
+.img-frame.lg {
+  height: 190px;
+}
+
+.img-frame .img-loading {
+  width: 100%;
+  height: 100%;
+}
+
 .category-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -828,6 +872,16 @@ body {
   border-radius: var(--r-sm);
 }
 
+/* กรอบรูปแบบ img-frame ภายใน detail-ba-item ต้องแสดงรูปพอดีกรอบ (contain) ไม่ถูกครอปแบบ cover ด้านบน */
+.detail-ba-item .img-frame img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 0;
+}
+
 .detail-ba-item .ba-empty {
   min-height: 80px;
   display: flex;
@@ -852,6 +906,227 @@ body {
   font-size: .65rem;
   font-weight: 700;
   color: #fff;
+}
+
+/* ============================================================
+   KAIZEN CARD LAYOUT — คิวตรวจ Kaizen (มุมมองการ์ดแบบเต็มรายละเอียด)
+   ============================================================ */
+.kz-cards-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kz-card {
+  background: var(--surface);
+  border: 1.5px solid var(--line-soft);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-1);
+  transition: box-shadow .2s ease;
+}
+
+.kz-card:hover {
+  box-shadow: var(--shadow-2);
+}
+
+.kz-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, var(--brand-50), #fff);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.kz-card-id {
+  font-family: 'Space Grotesk', 'Sarabun', sans-serif;
+  font-weight: 800;
+  font-size: .8rem;
+  color: var(--brand-700);
+  background: var(--brand-100);
+  padding: 3px 11px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.kz-card-title {
+  font-weight: 700;
+  font-size: .92rem;
+  color: var(--ink);
+  flex: 1;
+  min-width: 140px;
+}
+
+.kz-card-body {
+  display: grid;
+  grid-template-columns: 1.05fr 1.15fr .95fr;
+}
+
+.kz-card-col {
+  padding: 14px 16px;
+}
+
+.kz-card-col + .kz-card-col {
+  border-left: 1px solid var(--line-soft);
+}
+
+@media (max-width: 1023px) {
+  .kz-card-body { grid-template-columns: 1fr; }
+  .kz-card-col + .kz-card-col { border-left: none; border-top: 1px solid var(--line-soft); }
+}
+
+.kz-info-row {
+  display: flex;
+  gap: 6px;
+  font-size: .8rem;
+  margin-bottom: 7px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.kz-info-row .kz-info-value {
+  padding-top: 1px;
+}
+
+.kz-info-row:last-child { margin-bottom: 0; }
+
+.kz-info-label {
+  color: var(--ink-faint);
+  font-weight: 700;
+  min-width: 96px;
+  flex-shrink: 0;
+}
+
+.kz-info-value {
+  color: var(--ink);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.kz-result-label {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--ink-faint);
+  display: block;
+  margin: 10px 0 4px;
+}
+
+.kz-result-box {
+  font-size: .78rem;
+  line-height: 1.5;
+  background: var(--surface-tint);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: 8px 10px;
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+}
+
+.kz-ba-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.kz-ba-row .detail-ba-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.kz-ba-row .detail-ba-item .ba-body {
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kz-ba-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand-400);
+  font-size: 1.3rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  padding-top: 24px;
+}
+
+.kz-files-label,
+.kz-actions-label {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--ink-faint);
+  display: block;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.kz-files-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.kz-files-empty {
+  font-size: .78rem;
+  color: var(--ink-faint);
+}
+
+.kz-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line-soft);
+}
+
+.kz-actions button {
+  width: 100%;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+  padding: .55rem .8rem;
+}
+
+.kz-act-secondary {
+  display: flex;
+  gap: 7px;
+}
+
+.kz-act-secondary button {
+  flex: 1;
+}
+
+.kz-waiting-note {
+  font-size: .75rem;
+  text-align: center;
+  color: var(--ink-faint);
+  background: var(--surface-tint);
+  border: 1px dashed var(--line-soft);
+  border-radius: var(--r-md);
+  padding: 8px;
+}
+
+.kz-reviewed-box {
+  margin-top: 10px;
+  font-size: .72rem;
+  color: var(--ink-faint);
+  background: #fff;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: 8px 10px;
+}
+
+@media (max-width: 639px) {
+  .kz-card-header { padding: 10px 12px; }
+  .kz-card-col { padding: 12px; }
+  .kz-ba-arrow { font-size: 1.05rem; padding-top: 0; }
 }
 
 .toggle-detail {
@@ -1324,6 +1599,7 @@ body {
 
       <!-- Manager Queue View -->
       <div id="mgrQueueView" class="hidden fade-in" role="tabpanel" aria-label="คิวตรวจ Kaizen">
+        <p class="text-xs font-bold uppercase tracking-wide mb-2" style="color:var(--ink-faint); letter-spacing:.07em;">ภาพรวมคิวตรวจ Kaizen</p>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div class="stat-card rail-blue"><div class="stat-label">ทั้งหมด</div><div class="stat-number num" id="mgrKpiTotal">0</div></div>
           <div class="stat-card rail-warn"><div class="stat-label" style="color:var(--warn-600);">รอตรวจ</div><div class="stat-number num" style="color:var(--warn-600);" id="mgrKpiPending">0</div></div>
@@ -1332,42 +1608,26 @@ body {
         </div>
 
         <div class="card p-5">
-          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-            <p class="text-sm font-bold" style="color:var(--ink);">คิวตรวจ Kaizen <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="mgrRowCount">0</span> รายการ)</span></p>
-            <div class="flex items-center gap-2 flex-wrap">
-              <input id="mgrSearch" type="text" placeholder="ค้นหา..." class="input-field w-48 text-sm" aria-label="ค้นหา Kaizen">
-              <select id="mgrStatusFilter" class="input-field w-auto text-sm" aria-label="กรองตามสถานะ">
-                <option value="">ทั้งหมด</option>
-                <option value="รอหัวหน้าแผนกตรวจ">รอหัวหน้าแผนกตรวจ</option>
-                <option value="รอผู้จัดการตรวจ">รอผู้จัดการตรวจ</option>
-                <option value="ผ่าน">ผ่านแล้ว</option>
-                <option value="ตีกลับ">ตีกลับ</option>
-              </select>
-              <button id="btnAdvancedSearch" class="btn-secondary text-sm flex items-center gap-1" aria-label="ค้นหาขั้นสูง">🔍 ค้นหาขั้นสูง</button>
-              <button id="btnRefreshQueue" class="btn-secondary text-xs py-1 px-3" aria-label="โหลดข้อมูลใหม่">🔄</button>
-            </div>
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <p class="text-sm font-bold" style="color:var(--ink);">📋 คิวตรวจ Kaizen <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="mgrRowCount">0</span> รายการ)</span></p>
+            <button id="btnRefreshQueue" class="btn-secondary text-xs py-1 px-3 flex items-center gap-1" aria-label="โหลดข้อมูลใหม่">🔄 โหลดใหม่</button>
           </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr>
-                <th style="width:28px;"></th>
-                <th>รหัส</th>
-                <th>วันที่</th>
-                <th>พนักงาน</th>
-                <th>แผนก</th>
-                <th>หัวข้อ</th>
-                <th>ประเภท</th>
-                <th>รูป</th>
-                <th>หมวด</th>
-                <th>ไฟล์</th>
-                <th>สถานะ</th>
-                <th>จัดการ</th>
-              </tr></thead>
-              <tbody id="mgrTableBody"></tbody>
-            </table>
-            <div id="mgrEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
-              <div class="text-3xl mb-2">📭</div>ไม่มีรายการ
-            </div>
+
+          <div class="flex items-center gap-2 flex-wrap mt-3 pt-3 mb-4" style="border-top:1px solid var(--line-soft);">
+            <input id="mgrSearch" type="text" placeholder="🔎 ค้นหารหัส / ชื่อพนักงาน / หัวข้อ / แผนก..." class="input-field text-sm flex-1 min-w-[220px]" aria-label="ค้นหา Kaizen">
+            <select id="mgrStatusFilter" class="input-field w-auto text-sm" aria-label="กรองตามสถานะ">
+              <option value="">ทุกสถานะ</option>
+              <option value="รอหัวหน้าแผนกตรวจ">รอหัวหน้าแผนกตรวจ</option>
+              <option value="รอผู้จัดการตรวจ">รอผู้จัดการตรวจ</option>
+              <option value="ผ่าน">ผ่านแล้ว</option>
+              <option value="ตีกลับ">ตีกลับ</option>
+            </select>
+            <button id="btnAdvancedSearch" class="btn-secondary text-sm flex items-center gap-1" aria-label="ค้นหาขั้นสูง">🔍 ค้นหาขั้นสูง</button>
+          </div>
+
+          <div id="mgrCardsContainer" class="kz-cards-wrap"></div>
+          <div id="mgrEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
+            <div class="text-3xl mb-2">📭</div>ไม่มีรายการ
           </div>
         </div>
       </div>
@@ -1405,9 +1665,9 @@ body {
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div class="stat-card rail-blue"><div class="stat-label">พนักงานทั้งหมด</div><div class="stat-number num" id="hrTotalEmp">0</div></div>
           <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">✅ Status <span style="text-transform:none;letter-spacing:0;font-weight:500;">(ส่ง-อนุมัติผ่าน)</span></div><div class="stat-number num" style="color:var(--good-600);" id="hrAchieved">0</div></div>
-          <div class="stat-card rail-warn">
-            <div class="stat-label" style="color:var(--warn-600);">⏳ ยังไม่ถึงเป้า <span style="text-transform:none;letter-spacing:0;font-weight:500;">(รวมทุกคน)</span></div>
-            <div class="stat-number num" style="color:var(--warn-600);" id="hrNotAchieved">0/0</div>
+          <div class="stat-card rail-blue">
+            <div class="stat-label" style="color:var(--brand-700);">🎯 เป้าหมาย <span style="text-transform:none;letter-spacing:0;font-weight:500;">(รวมทุกคน)</span></div>
+            <div class="stat-number num" style="color:var(--brand-700);" id="hrTargetSum">0</div>
           </div>
           <div class="stat-card rail-blue"><div class="stat-label" style="color:var(--brand-700);">% สำเร็จรวม</div><div class="stat-number num" style="color:var(--brand-700);" id="hrPercent">0%</div></div>
         </div>
@@ -1444,7 +1704,7 @@ body {
             <div class="text-2xl">🔢</div>
             <div>
               <p class="text-sm font-bold" style="color:var(--ink);">กรอกจำนวน Kaizen ที่ส่งแล้ว</p>
-              <p class="text-xs mt-1" style="color:var(--ink-faint);">ไม่ต้องกรอกฟอร์ม Kaizen เต็มรูปแบบ — เลือกเดือน/ปี แล้วพิมพ์ "จำนวนเรื่อง" ที่พนักงานแต่ละคนส่งแล้วในเดือนนั้นได้เลย ระบบจะรวมยอดสะสมทั้งปีและเทียบกับเป้าหมายให้อัตโนมัติ</p>
+              <p class="text-xs mt-1" style="color:var(--ink-faint);">ไม่ต้องกรอกฟอร์ม Kaizen เต็มรูปแบบ — เลือกเดือน/ปี แล้วพิมพ์ "จำนวนเรื่อง" ที่พนักงานแต่ละคนส่งแล้วในเดือนนั้นได้เลย ระบบจะรวมยอดสะสมทั้งปีและเทียบกับเป้าหมายให้อัตโนมัติ<br>📇 รายชื่อพนักงานในหน้านี้ดึงจากชีต <b>Employees_All</b> (รายชื่อรวมของทั้งบริษัท เป็นระบบแยกต่างหากจากฐานข้อมูล Kaizen หลัก) — ใช้ตัวกรอง Plant / แผนก ด้านล่างเพื่อดูเฉพาะกลุ่มที่ต้องการได้</p>
             </div>
           </div>
         </div>
@@ -1459,6 +1719,18 @@ body {
               <div>
                 <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">เดือนที่กรอก</label>
                 <select id="progressMonth" class="input-field w-auto min-w-[130px]" aria-label="เลือกเดือน"></select>
+              </div>
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">🏭 Plant</label>
+                <select id="progressPlantFilter" class="input-field w-auto min-w-[140px]" aria-label="กรองตาม Plant">
+                  <option value="">ทุก Plant</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">🏢 แผนก</label>
+                <select id="progressDeptFilter" class="input-field w-auto min-w-[160px]" aria-label="กรองตามแผนก">
+                  <option value="">ทุกแผนก</option>
+                </select>
               </div>
             </div>
             <button id="btnRefreshProgress" class="btn-secondary text-sm">🔄 โหลดใหม่</button>
@@ -1476,7 +1748,7 @@ body {
           <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
             <p class="text-sm font-bold" style="color:var(--ink);">รายชื่อพนักงาน <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="progEmpCount">0</span> คน)</span></p>
             <div class="flex items-center gap-2 flex-wrap">
-              <input id="progressSearch" type="text" placeholder="ค้นหารหัส/ชื่อ/แผนก..." class="input-field w-56 text-sm" aria-label="ค้นหาพนักงาน">
+              <input id="progressSearch" type="text" placeholder="ค้นหารหัส/ชื่อ/แผนก/Plant..." class="input-field w-56 text-sm" aria-label="ค้นหาพนักงาน">
             </div>
           </div>
           <div class="table-wrap">
@@ -1484,6 +1756,7 @@ body {
               <thead><tr>
                 <th>รหัส</th>
                 <th>ชื่อ-สกุล</th>
+                <th>🏭 Plant</th>
                 <th>แผนก</th>
                 <th class="text-center">เป้าหมาย/ปี</th>
                 <th class="text-center">ส่งแล้ว(สะสม)</th>
@@ -1495,6 +1768,52 @@ body {
               <tbody id="progressTableBody"></tbody>
             </table>
             <div id="progressEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
+              <div class="text-3xl mb-2">🔍</div>ไม่พบรายชื่อพนักงาน
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manager Employee Manage View -->
+      <div id="mgrEmpManageView" class="hidden fade-in" role="tabpanel" aria-label="จัดการข้อมูลพนักงาน">
+        <div class="card p-5 mb-6">
+          <div class="flex items-start gap-3">
+            <div class="text-2xl">✏️</div>
+            <div>
+              <p class="text-sm font-bold" style="color:var(--ink);">จัดการข้อมูลพนักงานทั้งหมด</p>
+              <p class="text-xs mt-1" style="color:var(--ink-faint);">แก้ไขคำนำหน้า ชื่อ-สกุล แผนก ตำแหน่ง Plant อีเมล เป้าหมาย (Tasks) และจำนวนที่ทำสำเร็จ (Done) ของพนักงานแต่ละคนได้โดยตรงจากตารางด้านล่าง แก้เสร็จแล้วกด "บันทึก" ที่แถวนั้น ๆ การเปลี่ยนแปลงจะมีผลทันทีในชีต HR_Employees<br>⚠️ <b>รหัสพนักงาน (EmpID) แก้ไขไม่ได้</b> เพื่อป้องกันประวัติ Kaizen เดิมหลุดจากบัญชี หากต้องการเปลี่ยนรหัส กรุณาลบแล้วเพิ่มพนักงานใหม่แทน</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <p class="text-sm font-bold" style="color:var(--ink);">รายชื่อพนักงานทั้งหมด <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="empMgrCount">0</span> คน)</span></p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <input id="empMgrSearch" type="text" placeholder="🔎 ค้นหารหัส/ชื่อ/แผนก..." class="input-field w-56 text-sm" aria-label="ค้นหาพนักงาน">
+              <button id="btnAddEmployee" class="btn-primary text-sm py-2 px-4" aria-label="เพิ่มพนักงานใหม่">➕ เพิ่มพนักงาน</button>
+              <button id="btnRefreshEmpMgr" class="btn-secondary text-sm">🔄 โหลดใหม่</button>
+            </div>
+          </div>
+
+          <div class="table-wrap mt-4">
+            <table class="data-table">
+              <thead><tr>
+                <th>รหัสพนักงาน</th>
+                <th>คำนำหน้า</th>
+                <th>ชื่อ</th>
+                <th>นามสกุล</th>
+                <th>แผนก</th>
+                <th>ตำแหน่ง</th>
+                <th>Plant</th>
+                <th>อีเมล</th>
+                <th class="text-center">เป้าหมาย (Tasks)</th>
+                <th class="text-center">ทำแล้ว (Done)</th>
+                <th class="text-center">จัดการ</th>
+              </tr></thead>
+              <tbody id="empMgrTableBody"></tbody>
+            </table>
+            <div id="empMgrEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
               <div class="text-3xl mb-2">🔍</div>ไม่พบรายชื่อพนักงาน
             </div>
           </div>
@@ -1624,8 +1943,8 @@ body {
                   <div class="panel-body">
                     <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);" for="beforeImageInput">📎 แนบรูปภาพ</label>
                     <input id="beforeImageInput" type="file" accept="image/*" class="input-field text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-red-50 file:text-red-700 file:font-medium" aria-label="อัปโหลดรูปภาพก่อนปรับปรุง">
-                    <div id="beforeImageContainer" class="mt-2 hidden">
-                      <img id="beforeImagePreview" class="w-full max-h-32 object-cover rounded-lg img-loading" style="border:1px solid var(--line);" alt="รูปภาพก่อนปรับปรุง" loading="lazy">
+                    <div id="beforeImageContainer" class="mt-2 hidden img-frame sm">
+                      <img id="beforeImagePreview" class="img-loading" alt="รูปภาพก่อนปรับปรุง" loading="lazy">
                     </div>
                     <label class="text-xs font-semibold block mt-2" style="color:var(--ink-soft);" for="beforeProblem">1. ปัญหาที่พบ</label>
                     <textarea id="beforeProblem" rows="3" class="input-field resize-y text-sm" placeholder="อธิบายปัญหาที่พบ..."></textarea>
@@ -1636,8 +1955,8 @@ body {
                   <div class="panel-body">
                     <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);" for="afterImageInput">📎 แนบรูปภาพ</label>
                     <input id="afterImageInput" type="file" accept="image/*" class="input-field text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:text-emerald-700 file:font-medium" aria-label="อัปโหลดรูปภาพหลังปรับปรุง">
-                    <div id="afterImageContainer" class="mt-2 hidden">
-                      <img id="afterImagePreview" class="w-full max-h-32 object-cover rounded-lg img-loading" style="border:1px solid var(--line);" alt="รูปภาพหลังปรับปรุง" loading="lazy">
+                    <div id="afterImageContainer" class="mt-2 hidden img-frame sm">
+                      <img id="afterImagePreview" class="img-loading" alt="รูปภาพหลังปรับปรุง" loading="lazy">
                     </div>
                     <label class="text-xs font-semibold block mt-2" style="color:var(--ink-soft);" for="afterSolution">2. แก้ไขด้วยวิธีใด</label>
                     <textarea id="afterSolution" rows="3" class="input-field resize-y text-sm" placeholder="อธิบายวิธีการแก้ไข..."></textarea>
@@ -1688,7 +2007,7 @@ body {
   </div>
 
   <!-- Detail Modal -->
-  <div id="detailModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+  <div id="detailModal" class="fixed inset-0 modal-backdrop z-50 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
     <div class="w-full h-full sm:h-auto max-w-5xl xl:max-w-6xl max-h-full sm:max-h-[92vh] overflow-y-auto sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
       <div class="flex items-center justify-between px-6 py-4 sticky top-0 z-10" style="background:rgba(255,255,255,.95); backdrop-filter:blur(6px); border-bottom:1px solid var(--line-soft);">
         <h2 class="font-bold text-lg" style="color:var(--ink);" id="detailModalTitle">รายละเอียด Kaizen</h2>
@@ -1700,7 +2019,7 @@ body {
   </div>
 
   <!-- Comment Modal -->
-  <div id="commentModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="commentModalTitle">
+  <div id="commentModal" class="fixed inset-0 modal-backdrop z-50 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="commentModalTitle">
     <div class="w-full h-full sm:h-auto max-w-3xl xl:max-w-4xl max-h-full sm:max-h-[85vh] overflow-hidden sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
       <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--line-soft);">
         <h2 class="font-bold text-lg" style="color:var(--ink);" id="commentModalTitle">💬 ความคิดเห็น</h2>
@@ -1745,7 +2064,7 @@ body {
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcoxPrSB2DRBCengbcCUWVPWpLPB9Yfgpqy97Drn45GO-jHWgNviAun_9_oWeKXi9ZUg/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZlYiKFBJYG-bQEbu2yYCOSTyZRGumCE8i59Unr5FTpecRQrAAVg-uYOi3neol51LlqA/exec';
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
     const CONFIG_MAX_FILES_PER_KAIZEN = 10; // ต้องตรงกับ CONFIG.MAX_FILES_PER_KAIZEN ฝั่ง Code.gs
@@ -1794,10 +2113,17 @@ body {
     let progressBeYear = null;
     let progressCurrentMonth = null;
     let progressSelectedMonth = null;
+    let progressPlantFilter = '';
+    let progressDeptFilter = '';
     let currentTransactionId = null;
     let isSubmitting = false;
     let selectedRole = 'employee';
     let debounceTimers = {};
+    let EMP_MANAGE_LIST = [];
+    // ✅ ใช้ติดตามว่า Modal "ประวัติ Kaizen ของพนักงาน" (จาก Dashboard HR) กำลังเปิดดูของใครอยู่
+    // เพื่อรีเฟรชรายการ/ตัวนับให้ทันทีหลังกดอนุมัติ/ตีกลับจาก Modal รายละเอียดที่ซ้อนอยู่ด้านบน
+    let currentEmpHistoryEmpId = null;
+    let currentEmpHistoryEmpName = null;
 
     // ============================================================
     // UTILITY FUNCTIONS
@@ -2346,7 +2672,8 @@ body {
         bar.innerHTML =
           '<button class="tab-btn active" data-view="mgrQueue" role="tab" aria-selected="true">คิวตรวจ Kaizen</button>' +
           '<button class="tab-btn" data-view="mgrHrDash" role="tab" aria-selected="false">📊 Dashboard HR</button>' +
-          (isDirector ? '<button class="tab-btn" data-view="mgrBulk" role="tab" aria-selected="false">🔢 ความคืบหน้า Kaizen</button>' : '');
+          (isDirector ? '<button class="tab-btn" data-view="mgrBulk" role="tab" aria-selected="false">🔢 ความคืบหน้า Kaizen</button>' : '') +
+          '<button class="tab-btn" data-view="mgrEmpManage" role="tab" aria-selected="false">✏️ จัดการพนักงาน</button>';
       }
       bar.querySelectorAll('.tab-btn').forEach(function(btn) {
         btn.addEventListener('click', function() { switchView(this.dataset.view); });
@@ -2358,6 +2685,7 @@ body {
       document.getElementById('mgrQueueView').classList.toggle('hidden', view !== 'mgrQueue');
       document.getElementById('mgrHrDashView').classList.toggle('hidden', view !== 'mgrHrDash');
       document.getElementById('mgrBulkView').classList.toggle('hidden', view !== 'mgrBulk');
+      document.getElementById('mgrEmpManageView').classList.toggle('hidden', view !== 'mgrEmpManage');
 
       document.querySelectorAll('#tabBar .tab-btn').forEach(function(b) {
         var isActive = b.dataset.view === view;
@@ -2367,6 +2695,7 @@ body {
 
       if (view === 'mgrHrDash') loadHrDashboard();
       if (view === 'mgrBulk' && PROGRESS_EMPLOYEES.length === 0) loadMonthlyProgress();
+      if (view === 'mgrEmpManage') loadEmployeeManage();
     }
 
     // ============================================================
@@ -2506,6 +2835,7 @@ body {
         '<button type="button" class="btn-secondary" onclick="Swal.close();repairDepartmentNames();">🏢 ซ่อมชื่อแผนกใน Data</button>' +
         '<button type="button" class="btn-secondary" onclick="Swal.close();syncManagerDepartments();">🔄 ซิงค์แผนกใน Managers</button>' +
         '<button type="button" class="btn-secondary" onclick="Swal.close();fixColumnAlignment();">🧩 ซ่อมตำแหน่งคอลัมน์ Status/หมวดหมู่</button>' +
+        '<button type="button" class="btn-secondary" onclick="Swal.close();autoRepairAllSheetsUI();">🩹 ซ่อมแซมหัวตารางทุกชีตอัตโนมัติ</button>' +
         '<button type="button" class="btn-secondary" onclick="Swal.close();setupDatabaseUI();">🗄️ ตั้งค่า/ซ่อม Header ทุกชีต</button>' +
         '</div>';
       Swal.fire({
@@ -2600,6 +2930,42 @@ body {
               hideLoading();
               if (res.success) {
                 showSuccess(res.message);
+                loadQueue();
+                DASHBOARD_DATA = null;
+                loadHrDashboard();
+              } else showError(res.message);
+            })
+            .catch(function(err) {
+              hideLoading();
+              showError(err);
+            });
+        }
+      });
+    }
+
+    function autoRepairAllSheetsUI() {
+      Swal.fire({
+        title: 'ยืนยันการซ่อมแซมหัวตารางทุกชีต',
+        text: 'ระบบจะตรวจสอบและตั้งหัวตาราง (Header) ของชีต Data / History / Comments ให้ถูกต้องตามมาตรฐาน และแก้ไขชื่อพนักงานในชีต HR_Employees ที่ยังเป็นสูตรค้างอยู่ ไม่กระทบข้อมูลรายการอื่น ต้องการดำเนินการต่อหรือไม่?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ดำเนินการ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#1B6E4C',
+        cancelButtonColor: '#8695B4'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          showLoading();
+          callAppsScript('autoRepairAllSheets', {})
+            .then(function(res) {
+              hideLoading();
+              if (res.success) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'ซ่อมแซมเรียบร้อยแล้ว',
+                  html: '<pre style="text-align:left;white-space:pre-wrap;font-size:12px;">' + escapeHtml(res.message || '') + '</pre>',
+                  confirmButtonColor: '#1B6E4C'
+                });
                 loadQueue();
                 DASHBOARD_DATA = null;
                 loadHrDashboard();
@@ -2763,84 +3129,215 @@ body {
       if (modal) modal.remove();
     }
 
-    function buildFullDetailHtml(r) {
-      var html = '';
+    // ✅ สร้างการ์ดรายละเอียด Kaizen สำหรับ "Modal ดูรายละเอียด" — ใช้ layout เดียวกับการ์ดในหน้า
+    // "คิวตรวจ Kaizen" (kz-card 3 คอลัมน์: ข้อมูล / รูป Before-After / ไฟล์แนบ+การดำเนินการ)
+    // ใช้ร่วมกันทั้งปุ่ม "ดูรายละเอียด" ของพนักงาน (รายการ Kaizen ของฉัน) และปุ่ม "ดูรายละเอียด"
+    // ใน Dashboard HR (ประวัติ Kaizen ของพนักงานแต่ละคน) ให้แสดงผลหน้าตาเหมือนกันทุกที่
+    function buildDetailModalCardHtml(r) {
+      var isPending = r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR;
+      var isManagerRole = !!(CURRENT_USER && CURRENT_USER.role === 'manager');
+      var isDirectorUser = isManagerRole && (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
+      var isHeadUser = isManagerRole && (CURRENT_USER.approverType || []).indexOf('หัวหน้าแผนก') > -1;
+      var canApproveThis = (isHeadUser && r.status === STATUS_PENDING_HEAD) || (isDirectorUser && r.status === STATUS_PENDING_DIRECTOR);
 
-      html += '<div class="detail-grid">' +
-        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">📋 รหัส</span><div class="font-semibold text-sm">' + escapeHtml(r.id) + '</div></div>' +
-        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">📅 วันที่</span><div class="text-sm">' + escapeHtml(r.dateDisplay) + '</div></div>' +
-        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">👤 ชื่อ-สกุล</span><div class="text-sm font-semibold">' + escapeHtml(r.name) + '</div></div>' +
-        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">🏢 แผนก</span><div class="text-sm">' + escapeHtml(r.department) + '</div></div>' +
+      var html = '<div class="kz-card" style="border:none;box-shadow:none;">';
+
+      // ---- Header: รหัส + หัวข้อ + สถานะ ----
+      html += '<div class="kz-card-header" style="border-radius:12px 12px 0 0;">' +
+        '<span class="kz-card-id">' + escapeHtml(r.id) + '</span>' +
+        '<span class="kz-card-title" title="' + escapeHtml(r.title) + '">' + escapeHtml(r.title) + '</span>' +
+        statusPill(r.status) +
         '</div>';
 
-      html += '<div class="mt-2"><span class="text-xs font-semibold" style="color:var(--ink-faint);">📝 หัวข้อ</span><div class="text-sm font-semibold">' + escapeHtml(r.title) + '</div></div>';
-      html += '<div class="mt-1"><span class="text-xs font-semibold" style="color:var(--ink-faint);">🏷️ ประเภท</span><span class="text-sm ml-2">' + escapeHtml(getTypeLabel(r.kaizenType)) + '</span></div>';
+      html += '<div class="kz-card-body">';
 
-      html += '<div class="mt-2"><span class="text-xs font-semibold" style="color:var(--ink-faint);">🏷️ หมวดหมู่</span> ' +
-        '<div class="detail-cats mt-1">' + catTags(r.categories) + '</div></div>';
+      // ---- คอลัมน์ที่ 1: ข้อมูลพนักงาน/แผนก/วันที่/ประเภท/หมวดหมู่/ผลลัพธ์ ----
+      html += '<div class="kz-card-col">' +
+        '<div class="kz-info-row"><span class="kz-info-label">👤 พนักงาน</span><span class="kz-info-value">' + escapeHtml(r.name) + '</span></div>' +
+        '<div class="kz-info-row"><span class="kz-info-label">🏢 แผนก</span><span class="kz-info-value">' + escapeHtml(r.department) + '</span></div>' +
+        '<div class="kz-info-row"><span class="kz-info-label">📅 วันที่ทำ Kaizen</span><span class="kz-info-value">' + escapeHtml(r.dateDisplay) + '</span></div>' +
+        '<div class="kz-info-row"><span class="kz-info-label">🏷️ ประเภท</span><span class="kz-info-value">' + escapeHtml(getTypeLabel(r.kaizenType)) + '</span></div>' +
+        '<div class="kz-info-row"><span class="kz-info-label">🏷️ หมวดหมู่</span><div class="kz-info-value">' + catBadges(r.categories) + '</div></div>';
 
       if (r.detail) {
-        html += '<div class="mt-2"><span class="text-xs font-semibold" style="color:var(--ink-faint);">📝 รายละเอียด</span>' +
-          '<div class="whitespace-pre-wrap text-sm mt-1 p-2 rounded" style="background:var(--surface-tint); border:1px solid var(--line-soft);">' + escapeHtml(r.detail) + '</div></div>';
+        html += '<span class="kz-result-label">📈 ผลลัพธ์การปรับปรุง</span><div class="kz-result-box">' + escapeHtml(r.detail) + '</div>';
       }
-
       if (r.result) {
-        html += '<div class="mt-2"><span class="text-xs font-semibold" style="color:var(--ink-faint);">📊 ผลลัพธ์</span>' +
-          '<div class="whitespace-pre-wrap text-sm mt-1 p-2 rounded" style="background:var(--surface-tint); border:1px solid var(--line-soft);">' + escapeHtml(r.result) + '</div></div>';
+        html += '<span class="kz-result-label">📊 ผลลัพธ์เพิ่มเติม</span><div class="kz-result-box">' + escapeHtml(r.result) + '</div>';
       }
 
-      html += '<div class="detail-ba-grid mt-2">' +
-        '<div class="detail-ba-item before"><div class="ba-header">🔴 ก่อนปรับปรุง (Before)</div><div class="ba-body">' +
-        (r.beforeImageUrl ? 
-          '<div class="relative"><img src="' + driveImageSrc(r.beforeImageUrl) + '" alt="รูปก่อนปรับปรุง" class="w-full max-h-40 object-cover rounded cursor-pointer" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.beforeImageUrl) + '\', \'Before\')" onerror="this.parentElement.innerHTML=&#39;&lt;div class=&quot;ba-empty&quot;&gt;ไม่สามารถโหลดรูปภาพได้&lt;/div&gt;&#39;"><div class="text-xs text-center mt-1" style="color:var(--ink-faint);">คลิกที่รูปเพื่อดูขนาดใหญ่</div></div>' :
-          '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
-        (r.beforeProblem ? '<p class="text-xs mt-1" style="color:var(--ink-soft);"><b>ปัญหาที่พบ:</b> ' + escapeHtml(r.beforeProblem) + '</p>' : '') +
-        '</div></div>' +
-        '<div class="detail-ba-item after"><div class="ba-header">🟢 หลังปรับปรุง (After)</div><div class="ba-body">' +
-        (r.afterImageUrl ? 
-          '<div class="relative"><img src="' + driveImageSrc(r.afterImageUrl) + '" alt="รูปหลังปรับปรุง" class="w-full max-h-40 object-cover rounded cursor-pointer" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.afterImageUrl) + '\', \'After\')" onerror="this.parentElement.innerHTML=&#39;&lt;div class=&quot;ba-empty&quot;&gt;ไม่สามารถโหลดรูปภาพได้&lt;/div&gt;&#39;"><div class="text-xs text-center mt-1" style="color:var(--ink-faint);">คลิกที่รูปเพื่อดูขนาดใหญ่</div></div>' :
-          '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
-        (r.afterSolution ? '<p class="text-xs mt-1" style="color:var(--ink-soft);"><b>วิธีแก้ไข:</b> ' + escapeHtml(r.afterSolution) + '</p>' : '') +
-        '</div></div></div>';
-
-      if (r.fileUrls && r.fileUrls.length > 0) {
-        html += '<div class="mt-2"><span class="text-xs font-semibold" style="color:var(--ink-faint);">📎 ไฟล์แนบ:</span>' + renderFileAttachments(r.fileUrls) + '</div>';
-      }
-
-      var extraDocs = [];
-      if (r.formPdfUrl) extraDocs.push('<a href="' + encodeURI(r.formPdfUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📋 ฟอร์ม PDF</a>');
-      if (r.pdfUrl) extraDocs.push('<a href="' + encodeURI(r.pdfUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📄 PDF</a>');
-      if (r.excelUrl) extraDocs.push('<a href="' + encodeURI(r.excelUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📊 Excel</a>');
-      if (extraDocs.length > 0) {
-        html += '<div class="mt-2 flex gap-2 flex-wrap">' + extraDocs.join('') + '</div>';
-      }
-
-      if (r.status !== STATUS_PENDING_HEAD && r.status !== STATUS_PENDING_DIRECTOR) {
-        html +=
-          '<div class="mt-2 grid grid-cols-2 gap-2 p-2 rounded text-xs" style="background:#fff; border:1px solid var(--line-soft);">' +
-          '<div><span style="color:var(--ink-faint);">ตรวจโดย:</span> ' + escapeHtml(r.reviewedBy || '-') + '</div>' +
-          '<div><span style="color:var(--ink-faint);">วันที่ตรวจ:</span> ' + escapeHtml(r.reviewedDate || '-') + '</div>' +
-          (r.status === STATUS_REJECTED && r.rejectReason ? '<div class="col-span-2" style="color:var(--bad-600);"><b>เหตุผลที่ตีกลับ:</b> ' + escapeHtml(r.rejectReason) + '</div>' : '') +
+      if (!isPending) {
+        html += '<div class="kz-reviewed-box">' +
+          '<div><b style="color:var(--ink-soft);">ตรวจโดย:</b> ' + escapeHtml(r.reviewedBy || '-') + '</div>' +
+          '<div><b style="color:var(--ink-soft);">วันที่ตรวจ:</b> ' + escapeHtml(r.reviewedDate || '-') + '</div>' +
+          (r.status === STATUS_REJECTED && r.rejectReason ? '<div style="color:var(--bad-600);"><b>เหตุผลที่ตีกลับ:</b> ' + escapeHtml(r.rejectReason) + '</div>' : '') +
           '</div>';
       }
+      html += '</div>';
 
-      if (r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR) {
-        var isDirector = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
-        var isHead = (CURRENT_USER.approverType || []).indexOf('หัวหน้าแผนก') > -1;
-        var canApprove = false;
-        if (isHead && r.status === STATUS_PENDING_HEAD) canApprove = true;
-        if (isDirector && r.status === STATUS_PENDING_DIRECTOR) canApprove = true;
+      // ---- คอลัมน์ที่ 2: เปรียบเทียบรูป Before / After ----
+      html += '<div class="kz-card-col">' +
+        '<div class="kz-ba-row">' +
+        '<div class="detail-ba-item before"><div class="ba-header">🔴 Before</div><div class="ba-body">' +
+        (r.beforeImageUrl ?
+          '<div class="img-frame clickable"><img src="' + driveImageSrc(r.beforeImageUrl) + '" alt="รูปก่อนปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.beforeImageUrl) + '\', \'Before\')" onerror="this.parentElement.outerHTML=&#39;&lt;div class=&quot;ba-empty&quot;&gt;โหลดรูปไม่ได้&lt;/div&gt;&#39;"></div>' :
+          '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
+        '</div></div>' +
+        '<div class="kz-ba-arrow">➜</div>' +
+        '<div class="detail-ba-item after"><div class="ba-header">🟢 After</div><div class="ba-body">' +
+        (r.afterImageUrl ?
+          '<div class="img-frame clickable"><img src="' + driveImageSrc(r.afterImageUrl) + '" alt="รูปหลังปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.afterImageUrl) + '\', \'After\')" onerror="this.parentElement.outerHTML=&#39;&lt;div class=&quot;ba-empty&quot;&gt;โหลดรูปไม่ได้&lt;/div&gt;&#39;"></div>' :
+          '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
+        '</div></div>' +
+        '</div>';
 
-        if (canApprove) {
-          html +=
-            '<div class="mt-3 detail-actions-split">' +
-            '<button class="act-approve" onclick="reviewRecord(' + r.rowIndex + ', \'approve\')" aria-label="อนุมัติ">✅ อนุมัติ</button>' +
-            '<button class="act-reject" onclick="promptReject(' + r.rowIndex + ')" aria-label="ตีกลับ">❌ ตีกลับ</button>' +
-            '</div>';
-        } else {
-          html += '<div class="mt-2 text-xs text-center" style="color:var(--ink-faint);">⏳ รอผู้ตรวจสอบที่เกี่ยวข้อง</div>';
-        }
+      if (r.beforeProblem || r.afterSolution) {
+        html += '<div class="grid grid-cols-2 gap-2 mt-2 text-xs" style="color:var(--ink-soft);">' +
+          '<div>' + (r.beforeProblem ? '<b>ปัญหา:</b> ' + escapeHtml(r.beforeProblem) : '') + '</div>' +
+          '<div>' + (r.afterSolution ? '<b>วิธีแก้:</b> ' + escapeHtml(r.afterSolution) : '') + '</div>' +
+          '</div>';
       }
+      html += '</div>';
+
+      // ---- คอลัมน์ที่ 3: ไฟล์แนบ + การดำเนินการ ----
+      html += '<div class="kz-card-col">';
+      html += '<span class="kz-files-label">📎 ไฟล์แนบ' + (r.fileUrls && r.fileUrls.length ? ' (' + r.fileUrls.length + ' ไฟล์)' : '') + '</span>';
+
+      var fileHtml = '';
+      if (r.formPdfUrl) fileHtml += '<a href="' + encodeURI(r.formPdfUrl) + '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">📋 ฟอร์ม PDF</a>';
+      if (r.pdfUrl) fileHtml += '<a href="' + encodeURI(r.pdfUrl) + '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">📄 PDF</a>';
+      if (r.excelUrl) fileHtml += '<a href="' + encodeURI(r.excelUrl) + '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">📊 Excel</a>';
+      if (r.fileUrls && r.fileUrls.length > 0) fileHtml += renderFileAttachments(r.fileUrls);
+
+      html += fileHtml ? '<div class="kz-files-list">' + fileHtml + '</div>' : '<div class="kz-files-empty">ไม่มีไฟล์แนบ</div>';
+
+      html += '<span class="kz-actions-label" style="margin-top:14px;">⚙️ การดำเนินการ</span>';
+      html += '<div class="kz-actions" style="margin-top:0;padding-top:0;border-top:none;">';
+
+      if (isManagerRole && isPending && canApproveThis) {
+        html += '<button type="button" class="btn-success" onclick="reviewRecord(' + r.rowIndex + ', \'approve\')" aria-label="อนุมัติ">✅ อนุมัติ</button>';
+        html += '<button type="button" class="btn-danger" onclick="document.getElementById(\'detailModal\').classList.add(\'hidden\');promptReject(' + r.rowIndex + ')" aria-label="ตีกลับ">❌ ตีกลับ</button>';
+      } else if (isManagerRole && isPending && !canApproveThis) {
+        html += '<div class="kz-waiting-note">⏳ รอผู้ตรวจสอบที่เกี่ยวข้อง</div>';
+      }
+
+      html += '<div class="kz-act-secondary">' +
+        '<button type="button" class="btn-secondary" onclick="showVersionHistory(\'' + r.id + '\')" aria-label="ดูประวัติการแก้ไข">📜 ดูประวัติ</button>' +
+        '<button type="button" class="btn-secondary" onclick="openCommentModal(\'' + r.id + '\')" aria-label="แสดงความคิดเห็น">💬 ความคิดเห็น</button>' +
+        '</div>';
+
+      html += '</div>'; // .kz-actions
+      html += '</div>'; // col 3
+
+      html += '</div>'; // .kz-card-body
+      html += '</div>'; // .kz-card
+
+      return html;
+    }
+
+    // ✅ สร้างการ์ด Kaizen 1 ใบสำหรับหน้า "คิวตรวจ Kaizen" — แสดงข้อมูลครบในที่เดียว
+    // (พนักงาน/แผนก/วันที่/ประเภท/หมวดหมู่/ผลลัพธ์ + รูป Before-After + ไฟล์แนบ + ปุ่มดำเนินการ)
+    // ไม่ต้องคลิกขยายแถวเหมือนตารางแบบเดิมอีกต่อไป
+    function buildMgrCardHtml(r) {
+      var isPending = r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR;
+      // ✅ เช็คสิทธิ์ตามบทบาทจริง (หัวหน้าแผนก/ผู้จัดการ) เทียบกับสถานะของรายการนี้
+      // เพื่อไม่ให้ปุ่มอนุมัติ/ตีกลับ แสดงในรายการที่ผู้ใช้คนนี้ไม่มีสิทธิ์ตรวจ
+      var isDirectorUser = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
+      var isHeadUser = (CURRENT_USER.approverType || []).indexOf('หัวหน้าแผนก') > -1;
+      var canApproveThis = (isHeadUser && r.status === STATUS_PENDING_HEAD) || (isDirectorUser && r.status === STATUS_PENDING_DIRECTOR);
+
+      var html = '<div class="kz-card" data-row="' + r.rowIndex + '">';
+
+      // ---- Header: รหัส + หัวข้อ + สถานะ ----
+      html += '<div class="kz-card-header">' +
+        '<span class="kz-card-id">' + escapeHtml(r.id) + '</span>' +
+        '<span class="kz-card-title" title="' + escapeHtml(r.title) + '">' + escapeHtml(r.title) + '</span>' +
+        statusPill(r.status) +
+        '</div>';
+
+      html += '<div class="kz-card-body">';
+
+      // ---- คอลัมน์ที่ 1: ข้อมูลพนักงาน/แผนก/วันที่/ประเภท/หมวดหมู่/ผลลัพธ์ ----
+      html += '<div class="kz-card-col">' +
+        '<div class="kz-info-row"><span class="kz-info-label">👤 พนักงาน</span><span class="kz-info-value">' + escapeHtml(r.name) + '</span></div>' +
+        '<div class="kz-info-row"><span class="kz-info-label">🏢 แผนก</span><span class="kz-info-value">' + escapeHtml(r.department) + '</span></div>' +
+        '<div class="kz-info-row"><span class="kz-info-label">📅 วันที่ทำ Kaizen</span><span class="kz-info-value">' + escapeHtml(r.dateDisplay) + '</span></div>' +
+        '<div class="kz-info-row"><span class="kz-info-label">🏷️ ประเภท</span><span class="kz-info-value">' + escapeHtml(getTypeLabel(r.kaizenType)) + '</span></div>' +
+        '<div class="kz-info-row"><span class="kz-info-label">🏷️ หมวดหมู่</span><div class="kz-info-value">' + catBadges(r.categories) + '</div></div>';
+
+      if (r.detail) {
+        html += '<span class="kz-result-label">📈 ผลลัพธ์การปรับปรุง</span><div class="kz-result-box">' + escapeHtml(r.detail) + '</div>';
+      }
+      if (r.result) {
+        html += '<span class="kz-result-label">📊 ผลลัพธ์เพิ่มเติม</span><div class="kz-result-box">' + escapeHtml(r.result) + '</div>';
+      }
+
+      if (!isPending) {
+        html += '<div class="kz-reviewed-box">' +
+          '<div><b style="color:var(--ink-soft);">ตรวจโดย:</b> ' + escapeHtml(r.reviewedBy || '-') + '</div>' +
+          '<div><b style="color:var(--ink-soft);">วันที่ตรวจ:</b> ' + escapeHtml(r.reviewedDate || '-') + '</div>' +
+          (r.status === STATUS_REJECTED && r.rejectReason ? '<div style="color:var(--bad-600);"><b>เหตุผลที่ตีกลับ:</b> ' + escapeHtml(r.rejectReason) + '</div>' : '') +
+          '</div>';
+      }
+      html += '</div>';
+
+      // ---- คอลัมน์ที่ 2: เปรียบเทียบรูป Before / After ----
+      html += '<div class="kz-card-col">' +
+        '<div class="kz-ba-row">' +
+        '<div class="detail-ba-item before"><div class="ba-header">🔴 Before</div><div class="ba-body">' +
+        (r.beforeImageUrl ?
+          '<div class="img-frame clickable"><img src="' + driveImageSrc(r.beforeImageUrl) + '" alt="รูปก่อนปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.beforeImageUrl) + '\', \'Before\')" onerror="this.parentElement.outerHTML=&#39;&lt;div class=&quot;ba-empty&quot;&gt;โหลดรูปไม่ได้&lt;/div&gt;&#39;"></div>' :
+          '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
+        '</div></div>' +
+        '<div class="kz-ba-arrow">➜</div>' +
+        '<div class="detail-ba-item after"><div class="ba-header">🟢 After</div><div class="ba-body">' +
+        (r.afterImageUrl ?
+          '<div class="img-frame clickable"><img src="' + driveImageSrc(r.afterImageUrl) + '" alt="รูปหลังปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.afterImageUrl) + '\', \'After\')" onerror="this.parentElement.outerHTML=&#39;&lt;div class=&quot;ba-empty&quot;&gt;โหลดรูปไม่ได้&lt;/div&gt;&#39;"></div>' :
+          '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
+        '</div></div>' +
+        '</div>';
+
+      if (r.beforeProblem || r.afterSolution) {
+        html += '<div class="grid grid-cols-2 gap-2 mt-2 text-xs" style="color:var(--ink-soft);">' +
+          '<div>' + (r.beforeProblem ? '<b>ปัญหา:</b> ' + escapeHtml(r.beforeProblem) : '') + '</div>' +
+          '<div>' + (r.afterSolution ? '<b>วิธีแก้:</b> ' + escapeHtml(r.afterSolution) : '') + '</div>' +
+          '</div>';
+      }
+      html += '</div>';
+
+      // ---- คอลัมน์ที่ 3: ไฟล์แนบ + การดำเนินการ ----
+      html += '<div class="kz-card-col">';
+      html += '<span class="kz-files-label">📎 ไฟล์แนบ' + (r.fileUrls && r.fileUrls.length ? ' (' + r.fileUrls.length + ' ไฟล์)' : '') + '</span>';
+
+      var fileHtml = '';
+      if (r.formPdfUrl) fileHtml += '<a href="' + encodeURI(r.formPdfUrl) + '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">📋 ฟอร์ม PDF</a>';
+      if (r.pdfUrl) fileHtml += '<a href="' + encodeURI(r.pdfUrl) + '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">📄 PDF</a>';
+      if (r.excelUrl) fileHtml += '<a href="' + encodeURI(r.excelUrl) + '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">📊 Excel</a>';
+      if (r.fileUrls && r.fileUrls.length > 0) fileHtml += renderFileAttachments(r.fileUrls);
+
+      html += fileHtml ? '<div class="kz-files-list">' + fileHtml + '</div>' : '<div class="kz-files-empty">ไม่มีไฟล์แนบ</div>';
+
+      html += '<span class="kz-actions-label" style="margin-top:14px;">⚙️ การดำเนินการ</span>';
+      html += '<div class="kz-actions" style="margin-top:0;padding-top:0;border-top:none;">';
+
+      if (isPending && canApproveThis) {
+        html += '<button type="button" class="btnApprove btn-success" data-row="' + r.rowIndex + '" aria-label="อนุมัติ">✅ อนุมัติ</button>';
+        html += '<button type="button" class="btnReject btn-danger" data-row="' + r.rowIndex + '" aria-label="ตีกลับ">❌ ตีกลับ</button>';
+      } else if (isPending && !canApproveThis) {
+        html += '<div class="kz-waiting-note">⏳ รอผู้ตรวจสอบที่เกี่ยวข้อง</div>';
+      }
+
+      html += '<div class="kz-act-secondary">' +
+        '<button type="button" class="btnHistory btn-secondary" data-row="' + r.rowIndex + '" aria-label="ดูประวัติการแก้ไข">📜 ดูประวัติ</button>' +
+        '<button type="button" class="btnComment btn-secondary" data-row="' + r.rowIndex + '" aria-label="แสดงความคิดเห็น">💬 ความคิดเห็น</button>' +
+        '</div>';
+      html += '<button type="button" class="btnDeleteMgr btn-secondary" style="color:var(--bad-600);" data-row="' + r.rowIndex + '" aria-label="ลบรายการ">🗑️ ลบรายการ</button>';
+
+      html += '</div>'; // .kz-actions
+      html += '</div>'; // col 3
+
+      html += '</div>'; // .kz-card-body
+      html += '</div>'; // .kz-card
 
       return html;
     }
@@ -2862,102 +3359,21 @@ body {
         return matchSearch && matchStatus;
       });
 
-      var tbody = document.getElementById('mgrTableBody');
-      tbody.innerHTML = '';
+      // ℹ️ ไม่เรียงลำดับซ้ำที่นี่ — คิวปกติจาก getReviewQueue() มีแต่รายการ "รอตรวจ" อยู่แล้ว (เรียงวันที่ล่าสุดจากฝั่งเซิร์ฟเวอร์)
+      // และผลลัพธ์จาก "ค้นหาขั้นสูง" อาจมีทั้งอนุมัติ/ตีกลับปนอยู่ตามลำดับที่ผู้ใช้เลือกไว้เอง (เรียงตาม/ลำดับ)
+      // การ sort ซ้ำที่นี่จะไปทับลำดับที่ผู้ใช้ตั้งใจเลือกจากหน้าค้นหาขั้นสูง จึงตัดออก
+
+      var container = document.getElementById('mgrCardsContainer');
       document.getElementById('mgrRowCount').textContent = filtered.length;
       document.getElementById('mgrEmptyState').classList.toggle('hidden', filtered.length > 0);
 
-      filtered.forEach(function(r, i) {
-        var rowId = 'mgr_row_' + i + '_' + Date.now();
-
-        var thumbsHtml = '<div class="thumb-grid">';
-        if (r.beforeImageUrl || r.afterImageUrl) {
-          if (r.beforeImageUrl) {
-            thumbsHtml += '<img src="' + driveImageThumb(r.beforeImageUrl) + '" class="thumb-img clickable-thumb" data-url="' + encodeURI(r.beforeImageUrl) + '" data-label="Before" title="คลิกเพื่อดูรูป Before" alt="รูปก่อนปรับปรุง" loading="lazy" onerror="this.className=\'thumb-img no-img\';this.alt=\'ไม่สามารถโหลดรูปได้\'">';
-          }
-          if (r.afterImageUrl) {
-            thumbsHtml += '<img src="' + driveImageThumb(r.afterImageUrl) + '" class="thumb-img clickable-thumb" data-url="' + encodeURI(r.afterImageUrl) + '" data-label="After" title="คลิกเพื่อดูรูป After" alt="รูปหลังปรับปรุง" loading="lazy" onerror="this.className=\'thumb-img no-img\';this.alt=\'ไม่สามารถโหลดรูปได้\'">';
-          }
-        } else {
-          thumbsHtml += '<span class="thumb-img no-img" aria-label="ไม่มีรูปภาพ">-</span>';
-        }
-        thumbsHtml += '</div>';
-
-        var fileLinks = [];
-        if (r.formPdfUrl) fileLinks.push('<a href="' + encodeURI(r.formPdfUrl) + '" target="_blank" rel="noopener noreferrer" class="text-xs" style="color:var(--brand-600);" title="ฟอร์ม PDF" aria-label="เปิดฟอร์ม PDF">📋</a>');
-        if (r.pdfUrl) fileLinks.push('<a href="' + encodeURI(r.pdfUrl) + '" target="_blank" rel="noopener noreferrer" class="text-xs" style="color:var(--brand-600);" title="PDF" aria-label="เปิด PDF">📄</a>');
-        if (r.excelUrl) fileLinks.push('<a href="' + encodeURI(r.excelUrl) + '" target="_blank" rel="noopener noreferrer" class="text-xs" style="color:var(--brand-600);" title="Excel" aria-label="เปิด Excel">📊</a>');
-        if (r.fileUrls && r.fileUrls.length > 0) {
-          fileLinks.push('<span class="text-xs" style="color:var(--ink-faint);" title="มีไฟล์แนบ ' + r.fileUrls.length + ' ไฟล์" aria-label="มีไฟล์แนบ ' + r.fileUrls.length + ' ไฟล์">📎' + r.fileUrls.length + '</span>');
-        }
-        var fileCell = fileLinks.length ? fileLinks.join(' ') : '<span class="text-slate-300" aria-label="ไม่มีไฟล์แนบ">-</span>';
-
-        var actionHtml = '';
-        var isPending = r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR;
-        // ✅ เช็คสิทธิ์ตามบทบาทจริง (หัวหน้าแผนก/ผู้จัดการ) เทียบกับสถานะของรายการนี้
-        // เพื่อไม่ให้ปุ่มอนุมัติ/ตีกลับ แสดงในรายการที่ผู้ใช้คนนี้ไม่มีสิทธิ์ตรวจ
-        // (เช่น หัวหน้าแผนกเห็นรายการ "รอผู้จัดการตรวจ" ของแผนกอื่นในตาราง แต่ไม่มีสิทธิ์กดอนุมัติ)
-        var isDirectorUser = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
-        var isHeadUser = (CURRENT_USER.approverType || []).indexOf('หัวหน้าแผนก') > -1;
-        var canApproveThis = (isHeadUser && r.status === STATUS_PENDING_HEAD) || (isDirectorUser && r.status === STATUS_PENDING_DIRECTOR);
-
-        if (isPending && canApproveThis) {
-          actionHtml =
-            '<div class="flex gap-1 flex-wrap">' +
-            '<button class="btnApprove btn-success text-xs py-1 px-2" data-row="' + r.rowIndex + '" aria-label="อนุมัติ" title="อนุมัติ">✅</button>' +
-            '<button class="btnReject btn-danger text-xs py-1 px-2" data-row="' + r.rowIndex + '" aria-label="ตีกลับ" title="ตีกลับ">❌</button>' +
-            '<button class="btnHistory text-xs" style="color:#7C5CE0;" data-row="' + r.rowIndex + '" aria-label="ประวัติ" title="ประวัติ">📜</button>' +
-            '<button class="btnComment text-xs" style="color:var(--good-600);" data-row="' + r.rowIndex + '" aria-label="ความคิดเห็น" title="ความคิดเห็น">💬</button>' +
-            '<button class="btnDeleteMgr text-xs" style="color:var(--bad-600);" data-row="' + r.rowIndex + '" aria-label="ลบ" title="ลบ">🗑️</button>' +
-            '</div>';
-        } else {
-          actionHtml =
-            '<div class="flex gap-1 flex-wrap">' +
-            '<button class="btnViewMgr text-xs font-semibold" style="color:var(--brand-600);" data-row="' + r.rowIndex + '" aria-label="ดูรายละเอียด">ดู</button>' +
-            '<button class="btnHistory text-xs" style="color:#7C5CE0;" data-row="' + r.rowIndex + '" aria-label="ประวัติ" title="ประวัติ">📜</button>' +
-            '<button class="btnComment text-xs" style="color:var(--good-600);" data-row="' + r.rowIndex + '" aria-label="ความคิดเห็น" title="ความคิดเห็น">💬</button>' +
-            '<button class="btnDeleteMgr text-xs" style="color:var(--bad-600);" data-row="' + r.rowIndex + '" aria-label="ลบ" title="ลบ">🗑️</button>' +
-            '</div>';
-        }
-
-        var tr = document.createElement('tr');
-        tr.className = 'row-clickable';
-        tr.setAttribute('data-target', rowId);
-        tr.setAttribute('tabindex', '0');
-        tr.setAttribute('role', 'button');
-        tr.setAttribute('aria-expanded', 'false');
-        tr.innerHTML =
-          '<td><span class="toggle-detail" data-target="' + rowId + '" onclick="event.stopPropagation();toggleDetailRow(this)" aria-label="แสดงรายละเอียด">▶</span></td>' +
-          '<td class="font-semibold" style="color:var(--ink);">' + escapeHtml(r.id) + '</td>' +
-          '<td style="color:var(--ink-faint);">' + escapeHtml(r.dateDisplay) + '</td>' +
-          '<td>' + escapeHtml(r.name) + '</td>' +
-          '<td>' + escapeHtml(r.department) + '</td>' +
-          '<td class="max-w-xs truncate" title="' + escapeHtml(r.title) + '">' + escapeHtml(r.title) + '</td>' +
-          '<td class="text-xs" style="color:var(--ink-faint);">' + escapeHtml(getTypeLabel(r.kaizenType)) + '</td>' +
-          '<td>' + thumbsHtml + '</td>' +
-          '<td>' + catBadges(r.categories) + '</td>' +
-          '<td>' + fileCell + '</td>' +
-          '<td>' + statusPill(r.status) + (r.status === STATUS_REJECTED && r.rejectReason ? '<div class="text-xs mt-1" style="color:var(--bad-600);">' + escapeHtml(r.rejectReason) + '</div>' : '') + '</td>' +
-          '<td>' + actionHtml + '</td>';
-        tbody.appendChild(tr);
-
-        var detailTr = document.createElement('tr');
-        detailTr.id = rowId;
-        detailTr.className = 'detail-row';
-        detailTr.innerHTML = '<td colspan="12"><div class="detail-content">' + buildFullDetailHtml(r) + '</div></td>';
-        tbody.appendChild(detailTr);
+      var html = '';
+      filtered.forEach(function(r) {
+        html += buildMgrCardHtml(r);
       });
+      container.innerHTML = html;
 
-      tbody.querySelectorAll('.clickable-thumb').forEach(function(img) {
-        img.addEventListener('click', function(e) {
-          e.stopPropagation();
-          var url = this.dataset.url;
-          var label = this.dataset.label || 'รูปภาพ';
-          if (url) openImageViewer(url, label);
-        });
-      });
-
-      bindMgrTableEvents(tbody);
+      bindMgrTableEvents(container);
     }
 
     function toggleDetailRow(el) {
@@ -3075,6 +3491,11 @@ body {
             DASHBOARD_DATA = null;
             loadQueue();
             loadHrDashboard();
+            // ✅ ถ้ากดอนุมัติ/ตีกลับจาก Modal รายละเอียดที่เปิดซ้อนอยู่บน "ประวัติ Kaizen ของพนักงาน"
+            // (Dashboard HR -> ดูประวัติ) ให้รีเฟรชรายการ/ตัวนับในนั้นด้วย ไม่ให้ค้างสถานะเก่า
+            if (currentEmpHistoryEmpId && !document.getElementById('empHistoryModal').classList.contains('hidden')) {
+              showEmployeeHistory(currentEmpHistoryEmpId, currentEmpHistoryEmpName);
+            }
           } else showError(res.message);
         })
         .catch(function(err) { hideLoading(); showError(err); });
@@ -3085,103 +3506,16 @@ body {
     // ============================================================
     function showDetail(r, allowReview) {
       var body = document.getElementById('detailBody');
+      body.innerHTML = buildDetailModalCardHtml(r);
 
-      var html = '';
-      html +=
-        '<div class="flex items-center gap-3 pb-3 flex-wrap" style="border-bottom:1px solid var(--line-soft);">' +
-        '<span class="px-3 py-1 rounded-lg text-sm font-bold" style="background:var(--brand-50); color:var(--brand-700);">' + escapeHtml(r.id) + '</span>' +
-        '<span class="text-sm" style="color:var(--ink-faint);">' + escapeHtml(r.dateDisplay) + '</span>' +
-        statusPill(r.status) +
-        '</div>';
-
-      if (r.categories) {
-        html += '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">หมวดหมู่</span><div class="flex flex-wrap gap-1 mt-1">';
-        Object.keys(r.categories).forEach(function(k) {
-          if (r.categories[k] && CATEGORIES[k]) {
-            html += '<span class="cat-badge cat-' + k + '" style="padding:2px 10px;border-radius:6px;width:auto;">' + CATEGORIES[k] + '</span>';
-          }
-        });
-        html += '</div></div>';
-      }
-
-      html += '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">📋 ประเภท</span><span class="text-sm ml-2">' + escapeHtml(getTypeLabel(r.kaizenType)) + '</span></div>';
-
-      html += '<div class="grid grid-cols-2 gap-3">' +
-        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">พนักงาน</span><p class="font-semibold" style="color:var(--ink);">' + escapeHtml(r.name) + '</p></div>' +
-        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">แผนก</span><p class="font-semibold" style="color:var(--ink);">' + escapeHtml(r.department) + '</p></div>' +
-        '</div>' +
-        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">หัวข้อ</span><p class="font-semibold" style="color:var(--ink);">' + escapeHtml(r.title) + '</p></div>';
-
-      if (r.beforeImageUrl || r.afterImageUrl || r.beforeProblem || r.afterSolution) {
-        html += '<div class="grid grid-cols-2 gap-3">' +
-          '<div class="panel-before"><div class="panel-head" style="font-size:.7rem;">🔴 Before</div><div class="panel-body">' +
-          (r.beforeImageUrl ? '<img src="' + driveImageSrc(r.beforeImageUrl) + '" class="w-full max-h-28 object-cover rounded" alt="รูปก่อนปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.beforeImageUrl) + '\', \'Before\')" onerror="this.style.display=\'none\'">' :
-            '<div class="text-xs" style="color:var(--ink-faint);">ไม่มีรูป</div>') +
-          (r.beforeProblem ? '<p class="text-xs mt-1" style="color:var(--ink-soft);">' + escapeHtml(r.beforeProblem) + '</p>' : '') +
-          '</div></div>' +
-          '<div class="panel-after"><div class="panel-head" style="font-size:.7rem;">🟢 After</div><div class="panel-body">' +
-          (r.afterImageUrl ? '<img src="' + driveImageSrc(r.afterImageUrl) + '" class="w-full max-h-28 object-cover rounded" alt="รูปหลังปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.afterImageUrl) + '\', \'After\')" onerror="this.style.display=\'none\'">' :
-            '<div class="text-xs" style="color:var(--ink-faint);">ไม่มีรูป</div>') +
-          (r.afterSolution ? '<p class="text-xs mt-1" style="color:var(--ink-soft);">' + escapeHtml(r.afterSolution) + '</p>' : '') +
-          '</div></div></div>';
-      }
-
-      if (r.fileUrls && r.fileUrls.length > 0) {
-        html += '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">📎 ไฟล์แนบ</span>' + renderFileAttachments(r.fileUrls) + '</div>';
-      }
-
-      html +=
-        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">ทำแล้วดีขึ้นอย่างไร</span><div class="rounded-xl p-3 whitespace-pre-wrap" style="background:var(--surface-tint); border:1px solid var(--line-soft);">' +
-        escapeHtml(r.detail || '-') + '</div></div>' +
-        '<div><span class="text-xs font-semibold" style="color:var(--ink-faint);">ผลลัพธ์</span><div class="rounded-xl p-3 whitespace-pre-wrap" style="background:var(--surface-tint); border:1px solid var(--line-soft);">' +
-        escapeHtml(r.result || '-') + '</div></div>';
-
-      if (r.status !== STATUS_PENDING_HEAD && r.status !== STATUS_PENDING_DIRECTOR) {
-        html +=
-          '<div class="rounded-xl p-3 text-xs" style="background:var(--surface-tint); border:1px solid var(--line-soft);"><div><span style="color:var(--ink-faint);">ตรวจโดย:</span> ' +
-          escapeHtml(r.reviewedBy || '-') + '</div>' +
-          '<div><span style="color:var(--ink-faint);">วันที่ตรวจ:</span> ' + escapeHtml(r.reviewedDate || '-') + '</div>' +
-          (r.status === STATUS_REJECTED ? '<div style="color:var(--bad-600);"><span style="color:var(--ink-faint);">เหตุผล:</span> ' + escapeHtml(r.rejectReason || '-') + '</div>' : '') +
-          '</div>';
-      }
-
-      if (r.formPdfUrl || r.pdfUrl || r.excelUrl) {
-        html += '<div class="flex gap-2 flex-wrap">';
-        if (r.formPdfUrl) html += '<a href="' + encodeURI(r.formPdfUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📋 ฟอร์ม PDF</a>';
-        if (r.pdfUrl) html += '<a href="' + encodeURI(r.pdfUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📄 PDF</a>';
-        if (r.excelUrl) html += '<a href="' + encodeURI(r.excelUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-1 px-3">📊 Excel</a>';
-        html += '</div>';
-      }
-
-      body.innerHTML = html;
-
+      // ✅ ปุ่มอนุมัติ/ตีกลับ/ดูประวัติ/ความคิดเห็น ถูกฝังไว้ในการ์ด (buildDetailModalCardHtml) แล้ว
+      // ไม่ต้องใช้แถบปุ่มแยกด้านล่าง modal อีกต่อไป (ทั้งหน้า "รายการ Kaizen ของฉัน" ของพนักงาน
+      // และ "ดูประวัติ" ใน Dashboard HR จะได้ layout เดียวกันกับหน้าคิวตรวจ Kaizen)
       var actions = document.getElementById('detailReviewActions');
-      if (allowReview && (r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR)) {
-        var isDirector = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
-        var isHead = (CURRENT_USER.approverType || []).indexOf('หัวหน้าแผนก') > -1;
-        var canApprove = false;
-        if (isHead && r.status === STATUS_PENDING_HEAD) canApprove = true;
-        if (isDirector && r.status === STATUS_PENDING_DIRECTOR) canApprove = true;
+      actions.classList.add('hidden');
+      actions.innerHTML = '';
 
-        if (canApprove) {
-          actions.classList.remove('hidden');
-          actions.innerHTML =
-            '<button id="detailApprove" class="btn-success flex-1" aria-label="อนุมัติ">✅ อนุมัติ</button>' +
-            '<button id="detailReject" class="btn-danger flex-1" aria-label="ตีกลับ">❌ ตีกลับ</button>';
-          document.getElementById('detailApprove').addEventListener('click', function() { reviewRecord(r.rowIndex, 'approve'); });
-          document.getElementById('detailReject').addEventListener('click', function() {
-            document.getElementById('detailModal').classList.add('hidden');
-            promptReject(r.rowIndex);
-          });
-        } else {
-          actions.classList.add('hidden');
-          actions.innerHTML = '';
-        }
-      } else {
-        actions.classList.add('hidden');
-        actions.innerHTML = '';
-      }
-
+      document.getElementById('detailModalTitle').textContent = 'รายละเอียด Kaizen';
       document.getElementById('detailModal').classList.remove('hidden');
     }
 
@@ -3452,9 +3786,9 @@ body {
       document.getElementById('hrTotalEmp').textContent = summary.totalEmployees || 0;
       // ✅ Status: จำนวนพนักงานที่ "ส่งและอนุมัติผ่าน" อย่างน้อย 1 เรื่อง (ไม่ใช่จำนวนที่ถึงเป้าหมายแบบเดิม)
       document.getElementById('hrAchieved').textContent = summary.submittedApprovedCount || 0;
-      // ✅ "ยังไม่ถึงเป้า" = (เป้าหมายรวมทุกคน - ทำแล้วรวมทุกคน) / เป้าหมายรวมทุกคน เช่น "0/96"
-      var targetSum = summary.totalTargetSum || 0;
-      document.getElementById('hrNotAchieved').textContent = (summary.notAchievedCount || 0) + '/' + targetSum;
+      // ✅ "เป้าหมาย (รวมทุกคน)" = ผลรวมเป้าหมายของพนักงานทุกคน ดึงจากคอลัมน์ "Tasks" ในชีต HR_Employees
+      // (ถ้าไม่ได้ระบุ Tasks ไว้ ระบบจะ fallback ไปใช้เป้าหมายตามตำแหน่งให้อัตโนมัติ ดูฟังก์ชัน getTargetForPosition_ ฝั่ง Code.gs)
+      document.getElementById('hrTargetSum').textContent = summary.totalTargetSum || 0;
       document.getElementById('hrPercent').textContent = (summary.achievedPercent || 0) + '%';
     }
 
@@ -3512,6 +3846,8 @@ body {
     // ============================================================
     function showEmployeeHistory(empId, empName) {
       var beYear = document.getElementById('hrDashYear').value;
+      currentEmpHistoryEmpId = empId;
+      currentEmpHistoryEmpName = empName;
 
       showLoading();
       callAppsScript('getEmployeeKaizenHistory', { empId: empId, beYear: beYear || null })
@@ -3592,12 +3928,41 @@ body {
       sel.value = progressSelectedMonth;
     }
 
+    function populateProgressFilterOptions(plants, departments) {
+      var plantSel = document.getElementById('progressPlantFilter');
+      var deptSel = document.getElementById('progressDeptFilter');
+      var prevPlant = progressPlantFilter || plantSel.value || '';
+      var prevDept = progressDeptFilter || deptSel.value || '';
+
+      plantSel.innerHTML = '<option value="">ทุก Plant</option>';
+      (plants || []).forEach(function(p) {
+        var opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p;
+        plantSel.appendChild(opt);
+      });
+
+      deptSel.innerHTML = '<option value="">ทุกแผนก</option>';
+      (departments || []).forEach(function(d) {
+        var opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        deptSel.appendChild(opt);
+      });
+
+      if (prevPlant && plants && plants.indexOf(prevPlant) > -1) plantSel.value = prevPlant;
+      if (prevDept && departments && departments.indexOf(prevDept) > -1) deptSel.value = prevDept;
+
+      progressPlantFilter = plantSel.value;
+      progressDeptFilter = deptSel.value;
+    }
+
     function loadMonthlyProgress(beYear) {
       if (isLoading) return;
       showLoading();
 
       document.getElementById('progressTableBody').innerHTML =
-        '<tr><td colspan="9" class="text-center py-8" style="color:var(--ink-faint);">⏳ กำลังโหลดข้อมูล...</td></tr>';
+        '<tr><td colspan="10" class="text-center py-8" style="color:var(--ink-faint);">⏳ กำลังโหลดข้อมูล...</td></tr>';
 
       callAppsScript('getMonthlyProgressForManager', { reviewerId: CURRENT_USER.id, beYear: beYear || null })
         .then(function(res) {
@@ -3611,6 +3976,7 @@ body {
 
           populateProgressYearOptions(res.availableYears, res.beYear);
           populateProgressMonthOptions(res.currentMonth);
+          populateProgressFilterOptions(res.availablePlants, res.availableDepartments);
           renderProgressSummary(res.summary);
           renderProgressTable();
         })
@@ -3627,12 +3993,18 @@ body {
     function renderProgressTable() {
       var search = document.getElementById('progressSearch').value.trim().toLowerCase();
       var month = Number(document.getElementById('progressMonth').value) || progressSelectedMonth;
+      progressPlantFilter = document.getElementById('progressPlantFilter').value || '';
+      progressDeptFilter = document.getElementById('progressDeptFilter').value || '';
 
       var filtered = PROGRESS_EMPLOYEES.filter(function(e) {
-        return !search ||
+        var matchSearch = !search ||
           (e.name || '').toLowerCase().indexOf(search) > -1 ||
           (e.department || '').toLowerCase().indexOf(search) > -1 ||
+          (e.plant || '').toLowerCase().indexOf(search) > -1 ||
           (e.empId || '').toLowerCase().indexOf(search) > -1;
+        var matchPlant = !progressPlantFilter || e.plant === progressPlantFilter;
+        var matchDept = !progressDeptFilter || e.department === progressDeptFilter;
+        return matchSearch && matchPlant && matchDept;
       });
 
       var tbody = document.getElementById('progressTableBody');
@@ -3650,6 +4022,7 @@ body {
         tr.innerHTML =
           '<td class="font-semibold" style="color:var(--ink);">' + escapeHtml(e.empId) + '</td>' +
           '<td>' + escapeHtml(e.name) + '</td>' +
+          '<td class="text-xs" style="color:var(--ink-faint);">' + escapeHtml(e.plant || '-') + '</td>' +
           '<td>' + escapeHtml(e.department) + '</td>' +
           '<td class="text-center font-semibold num">' + e.target + '</td>' +
           '<td class="text-center font-bold num" style="color:' + (e.achieved ? 'var(--brand-600)' : 'var(--ink)') + ';">' + e.total + '</td>' +
@@ -3739,6 +4112,225 @@ body {
           btn.textContent = originalText;
           showError(err);
         });
+    }
+
+    // ============================================================
+    // ✏️ MANAGER: จัดการข้อมูลพนักงานทั้งหมด (HR_Employees)
+    // ============================================================
+    function loadEmployeeManage() {
+      if (isLoading) return;
+      showLoading();
+      callAppsScript('getAllEmployeesRaw', { reviewerId: CURRENT_USER.id })
+        .then(function(res) {
+          hideLoading();
+          if (!res.success) { showError(res.message); return; }
+          EMP_MANAGE_LIST = res.employees || [];
+          renderEmployeeManageTable();
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
+    }
+
+    function renderEmployeeManageTable() {
+      var searchInput = document.getElementById('empMgrSearch');
+      var search = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+      var filtered = EMP_MANAGE_LIST.filter(function(e) {
+        return !search ||
+          (e.empId || '').toLowerCase().indexOf(search) > -1 ||
+          (e.firstName || '').toLowerCase().indexOf(search) > -1 ||
+          (e.lastName || '').toLowerCase().indexOf(search) > -1 ||
+          (e.department || '').toLowerCase().indexOf(search) > -1;
+      });
+
+      var tbody = document.getElementById('empMgrTableBody');
+      tbody.innerHTML = '';
+      document.getElementById('empMgrCount').textContent = filtered.length;
+      document.getElementById('empMgrEmptyState').classList.toggle('hidden', filtered.length > 0);
+
+      var isDirector = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
+
+      filtered.forEach(function(e) {
+        var tr = document.createElement('tr');
+        tr.dataset.rowIndex = e.rowIndex;
+        tr.innerHTML =
+          '<td><input type="text" class="input-field text-xs emp-field" data-field="empId" value="' + escapeHtml(e.empId) + '" style="min-width:90px;background:var(--surface-sunken);color:var(--ink-faint);cursor:not-allowed;" readonly aria-label="รหัสพนักงาน (แก้ไขไม่ได้)" title="ไม่สามารถแก้ไขรหัสพนักงานได้ที่นี่ เพื่อป้องกันประวัติ Kaizen เดิมหลุดจากบัญชี หากต้องการเปลี่ยนรหัส ให้ลบแล้วเพิ่มพนักงานใหม่แทน"></td>' +
+          '<td><input type="text" class="input-field text-xs emp-field" data-field="prefix" value="' + escapeHtml(e.prefix) + '" style="min-width:70px;" aria-label="คำนำหน้า"></td>' +
+          '<td><input type="text" class="input-field text-xs emp-field" data-field="firstName" value="' + escapeHtml(e.firstName) + '" style="min-width:100px;" aria-label="ชื่อ"></td>' +
+          '<td><input type="text" class="input-field text-xs emp-field" data-field="lastName" value="' + escapeHtml(e.lastName) + '" style="min-width:100px;" aria-label="นามสกุล"></td>' +
+          '<td><input type="text" class="input-field text-xs emp-field" data-field="department" value="' + escapeHtml(e.department) + '" style="min-width:130px;" aria-label="แผนก"></td>' +
+          '<td><input type="text" class="input-field text-xs emp-field" data-field="position" value="' + escapeHtml(e.position) + '" style="min-width:110px;" aria-label="ตำแหน่ง"></td>' +
+          '<td><input type="text" class="input-field text-xs emp-field" data-field="plant" value="' + escapeHtml(e.plant) + '" style="min-width:110px;" aria-label="Plant"></td>' +
+          '<td><input type="text" class="input-field text-xs emp-field" data-field="email" value="' + escapeHtml(e.email) + '" style="min-width:160px;" aria-label="อีเมล"></td>' +
+          '<td class="text-center"><input type="number" min="0" step="1" class="count-input emp-field" data-field="tasks" value="' + escapeHtml(String(e.tasks === '' ? '' : e.tasks)) + '" aria-label="เป้าหมาย"></td>' +
+          '<td class="text-center"><input type="number" min="0" step="1" class="count-input emp-field" data-field="done" value="' + escapeHtml(String(e.done === '' ? '' : e.done)) + '" aria-label="ทำแล้ว"></td>' +
+          '<td class="text-center"><div class="flex gap-1 justify-center flex-wrap">' +
+            '<button type="button" class="count-save-btn btnSaveEmp" aria-label="บันทึก">💾 บันทึก</button>' +
+            (isDirector ? '<button type="button" class="count-save-btn btnDeleteEmp2" style="background:var(--bad-600);" aria-label="ลบพนักงาน">🗑️ ลบ</button>' : '') +
+          '</div></td>';
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll('.emp-field').forEach(function(input) {
+        input.addEventListener('input', function() {
+          var tr = this.closest('tr');
+          if (tr) tr.classList.add('count-row-dirty');
+        });
+      });
+
+      tbody.querySelectorAll('.btnSaveEmp').forEach(function(btn) {
+        btn.addEventListener('click', function() { saveEmployeeRow(this); });
+      });
+
+      tbody.querySelectorAll('.btnDeleteEmp2').forEach(function(btn) {
+        btn.addEventListener('click', function() { confirmDeleteEmployeeRow(this); });
+      });
+    }
+
+    function collectEmployeeRowData(tr) {
+      var data = { rowIndex: tr.dataset.rowIndex };
+      tr.querySelectorAll('.emp-field').forEach(function(input) {
+        data[input.dataset.field] = input.value.trim();
+      });
+      return data;
+    }
+
+    function saveEmployeeRow(btn) {
+      var tr = btn.closest('tr');
+      if (!tr) return;
+      var data = collectEmployeeRowData(tr);
+
+      if (!data.empId) {
+        Swal.fire({ icon: 'warning', title: 'กรุณากรอกรหัสพนักงาน', confirmButtonColor: '#1B6E4C' });
+        return;
+      }
+
+      btn.disabled = true;
+      var originalText = btn.textContent;
+      btn.textContent = '...';
+
+      callAppsScript('updateEmployeeRecord', {
+          reviewerId: CURRENT_USER.id,
+          rowIndex: data.rowIndex,
+          empId: data.empId,
+          prefix: data.prefix,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          department: data.department,
+          position: data.position,
+          plant: data.plant,
+          email: data.email,
+          tasks: data.tasks,
+          done: data.done
+        })
+        .then(function(res) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+          if (res.success) {
+            tr.classList.remove('count-row-dirty');
+            showSuccess(res.message);
+            loadEmployeeManage();
+          } else {
+            showError(res.message);
+          }
+        })
+        .catch(function(err) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+          showError(err);
+        });
+    }
+
+    function confirmDeleteEmployeeRow(btn) {
+      var tr = btn.closest('tr');
+      if (!tr) return;
+      var empIdInput = tr.querySelector('.emp-field[data-field="empId"]');
+      var empId = empIdInput ? empIdInput.value : '';
+
+      Swal.fire({
+        title: 'ยืนยันการลบพนักงาน',
+        html: 'คุณต้องการลบข้อมูลพนักงาน <b>' + escapeHtml(empId) + '</b> ใช่หรือไม่?<br>' +
+          '<span style="color:var(--bad-600);font-size:.8rem;">⚠️ การลบจะไม่สามารถกู้คืนได้ พนักงานคนนี้จะไม่สามารถเข้าสู่ระบบได้อีก ' +
+          'แต่ประวัติ Kaizen ที่เคยส่งไว้จะยังคงอยู่ในระบบ (จะกลายเป็นรายการที่ไม่มีเจ้าของผูกอยู่)</span>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ลบ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#B0392C',
+        cancelButtonColor: '#8695B4'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          showLoading();
+          callAppsScript('deleteEmployeeRecord', { reviewerId: CURRENT_USER.id, rowIndex: tr.dataset.rowIndex })
+            .then(function(res) {
+              hideLoading();
+              if (res.success) {
+                showSuccess(res.message);
+                loadEmployeeManage();
+              } else showError(res.message);
+            })
+            .catch(function(err) { hideLoading(); showError(err); });
+        }
+      });
+    }
+
+    function openAddEmployeeModal() {
+      var html =
+        '<div class="grid grid-cols-2 gap-3 text-left" style="padding-top:4px;">' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">รหัสพนักงาน *</label><input id="newEmpId" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">คำนำหน้า</label><input id="newEmpPrefix" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ชื่อ</label><input id="newEmpFirstName" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">นามสกุล</label><input id="newEmpLastName" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">แผนก</label><input id="newEmpDept" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ตำแหน่ง</label><input id="newEmpPosition" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">Plant</label><input id="newEmpPlant" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">อีเมล</label><input id="newEmpEmail" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">เป้าหมาย (Tasks)</label><input id="newEmpTasks" type="number" min="0" class="input-field text-sm"></div>' +
+        '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ทำแล้ว (Done)</label><input id="newEmpDone" type="number" min="0" class="input-field text-sm"></div>' +
+        '</div>';
+
+      Swal.fire({
+        title: '➕ เพิ่มพนักงานใหม่',
+        html: html,
+        showCancelButton: true,
+        confirmButtonText: 'เพิ่ม',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#1B6E4C',
+        cancelButtonColor: '#8695B4',
+        width: '640px',
+        padding: '1.5rem',
+        preConfirm: function() {
+          var empId = document.getElementById('newEmpId').value.trim();
+          if (!empId) {
+            Swal.showValidationMessage('กรุณากรอกรหัสพนักงาน');
+            return false;
+          }
+          return {
+            empId: empId,
+            prefix: document.getElementById('newEmpPrefix').value.trim(),
+            firstName: document.getElementById('newEmpFirstName').value.trim(),
+            lastName: document.getElementById('newEmpLastName').value.trim(),
+            department: document.getElementById('newEmpDept').value.trim(),
+            position: document.getElementById('newEmpPosition').value.trim(),
+            plant: document.getElementById('newEmpPlant').value.trim(),
+            email: document.getElementById('newEmpEmail').value.trim(),
+            tasks: document.getElementById('newEmpTasks').value.trim(),
+            done: document.getElementById('newEmpDone').value.trim()
+          };
+        }
+      }).then(function(result) {
+        if (result.isConfirmed && result.value) {
+          showLoading();
+          callAppsScript('addEmployeeRecord', Object.assign({ reviewerId: CURRENT_USER.id }, result.value))
+            .then(function(res) {
+              hideLoading();
+              if (res.success) {
+                showSuccess(res.message);
+                loadEmployeeManage();
+              } else showError(res.message);
+            })
+            .catch(function(err) { hideLoading(); showError(err); });
+        }
+      });
     }
 
     function openForm(recordToEdit) {
@@ -4084,9 +4676,15 @@ body {
 
       document.getElementById('btnCloseEmpHistory').addEventListener('click', function() {
         document.getElementById('empHistoryModal').classList.add('hidden');
+        currentEmpHistoryEmpId = null;
+        currentEmpHistoryEmpName = null;
       });
       document.getElementById('empHistoryModal').addEventListener('click', function(ev) {
-        if (ev.target === this) this.classList.add('hidden');
+        if (ev.target === this) {
+          this.classList.add('hidden');
+          currentEmpHistoryEmpId = null;
+          currentEmpHistoryEmpName = null;
+        }
       });
 
       document.getElementById('btnRefreshEmp').addEventListener('click', loadMyRecords);
@@ -4110,12 +4708,24 @@ body {
         progressSelectedMonth = Number(this.value);
         renderProgressTable();
       });
+      document.getElementById('progressPlantFilter').addEventListener('change', function() {
+        progressPlantFilter = this.value;
+        renderProgressTable();
+      });
+      document.getElementById('progressDeptFilter').addEventListener('change', function() {
+        progressDeptFilter = this.value;
+        renderProgressTable();
+      });
 
       document.getElementById('hrDashYear').addEventListener('change', function() {
         loadHrDashboard(this.value);
       });
       document.getElementById('hrDashSearch').addEventListener('input', debounce(renderHrDashTable, 300));
       document.getElementById('hrDashStatus').addEventListener('change', renderHrDashTable);
+
+      document.getElementById('empMgrSearch').addEventListener('input', debounce(renderEmployeeManageTable, 300));
+      document.getElementById('btnAddEmployee').addEventListener('click', openAddEmployeeModal);
+      document.getElementById('btnRefreshEmpMgr').addEventListener('click', loadEmployeeManage);
 
       document.getElementById('dMonth').addEventListener('change', updateDayOptions);
       document.getElementById('dYear').addEventListener('change', updateDayOptions);
