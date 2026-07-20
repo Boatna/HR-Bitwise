@@ -2064,10 +2064,10 @@ body {
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZlYiKFBJYG-bQEbu2yYCOSTyZRGumCE8i59Unr5FTpecRQrAAVg-uYOi3neol51LlqA/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7ZflPykE9BHQ6VhsCDc_E_tXmG7lnj3i4k3UtFfHaFdqkMIBU7t_fsiCaZQvQH_6aPw/exec';
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
-    const CONFIG_MAX_FILES_PER_KAIZEN = 10; // ต้องตรงกับ CONFIG.MAX_FILES_PER_KAIZEN ฝั่ง Code.gs
+    const CONFIG_MAX_FILES_PER_KAIZEN = 10;
     const monthNamesTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
     const STORAGE_KEY = 'kaizenUserSession_v2';
 
@@ -2106,7 +2106,7 @@ body {
     let DASHBOARD_DATA = null;
     let currentDashboardYear = null;
     let selectedFiles = [];
-    let existingFileUrlsForEdit = []; // ✅ ไฟล์แนบเดิม (ตอนแก้ไข/ส่งใหม่) ใช้แสดงผลเฉยๆ ฝั่งเซิร์ฟเวอร์จะเก็บไว้ให้อัตโนมัติ
+    let existingFileUrlsForEdit = [];
     let currentCommentKaizenId = null;
     let isLoading = false;
     let PROGRESS_EMPLOYEES = [];
@@ -2120,14 +2120,10 @@ body {
     let selectedRole = 'employee';
     let debounceTimers = {};
     let EMP_MANAGE_LIST = [];
-    // ✅ ใช้ติดตามว่า Modal "ประวัติ Kaizen ของพนักงาน" (จาก Dashboard HR) กำลังเปิดดูของใครอยู่
-    // เพื่อรีเฟรชรายการ/ตัวนับให้ทันทีหลังกดอนุมัติ/ตีกลับจาก Modal รายละเอียดที่ซ้อนอยู่ด้านบน
     let currentEmpHistoryEmpId = null;
     let currentEmpHistoryEmpName = null;
 
-    // ============================================================
     // UTILITY FUNCTIONS
-    // ============================================================
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)
@@ -2196,9 +2192,7 @@ body {
       };
     }
 
-    // ============================================================
     // API CALL
-    // ============================================================
     function callAppsScript(action, payload) {
       return fetch(APPS_SCRIPT_URL, {
           method: 'POST',
@@ -2217,9 +2211,7 @@ body {
         });
     }
 
-    // ============================================================
     // FILE HANDLING
-    // ============================================================
     function readFileAsDataUrl(file) {
       return new Promise(function(resolve, reject) {
         if (file.size > MAX_FILE_SIZE) {
@@ -2258,9 +2250,7 @@ body {
       });
     }
 
-    // ============================================================
     // RENDER HELPERS
-    // ============================================================
     function statusPill(status) {
       if (status === STATUS_APPROVED) return '<span class="badge badge-approved">✅ ผ่าน</span>';
       if (status === STATUS_REJECTED) return '<span class="badge badge-rejected">❌ ตีกลับ</span>';
@@ -2382,9 +2372,7 @@ body {
       }
     }
 
-    // ============================================================
     // DATE FUNCTIONS
-    // ============================================================
     function daysInMonth(beYear, month) {
       return new Date(beYear - 543, month, 0).getDate();
     }
@@ -2432,9 +2420,7 @@ body {
       return (y - 543) + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
     }
 
-    // ============================================================
     // CATEGORY FUNCTIONS
-    // ============================================================
     function getSelectedCategories() {
       var cats = {};
       document.querySelectorAll('.category-checkbox[data-cat].checked').forEach(function(el) {
@@ -2522,9 +2508,7 @@ body {
       document.getElementById('kaizenTypeData').value = '';
     }
 
-    // ============================================================
     // SESSION MANAGEMENT
-    // ============================================================
     function saveSession(user) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
@@ -2557,9 +2541,7 @@ body {
       document.getElementById('loginId').focus();
     }
 
-    // ============================================================
     // LOGIN / LOGOUT
-    // ============================================================
     function handleLogin(e) {
       e.preventDefault();
       var id = document.getElementById('loginId').value.trim();
@@ -2628,9 +2610,7 @@ body {
       });
     }
 
-    // ============================================================
     // APP START
-    // ============================================================
     function startApp(user) {
       CURRENT_USER = user;
       document.getElementById('loginScreen').classList.add('hidden');
@@ -2649,9 +2629,6 @@ body {
         switchView('emp');
         loadMyRecords();
       } else {
-        // ✅ FIX: ปุ่ม "เครื่องมือระบบ" เดิมไม่มีอยู่ในหน้าเว็บเลย ทำให้ฟังก์ชันซ่อมแซมระบบ
-        // (repairDepartmentNames, syncManagerDepartments, fixColumnAlignment, setupDatabaseUI,
-        // debugReviewQueue) ที่เขียนไว้ในโค้ดไม่สามารถเรียกใช้งานได้จากหน้าเว็บเลย
         var isDirector = (user.approverType || []).indexOf('ผู้จัดการ') > -1;
         document.getElementById('btnAdminTools').classList.toggle('hidden', !isDirector);
         switchView('mgrQueue');
@@ -2659,9 +2636,7 @@ body {
       }
     }
 
-    // ============================================================
     // TAB MANAGEMENT
-    // ============================================================
     function buildTabs() {
       var bar = document.getElementById('tabBar');
       bar.innerHTML = '';
@@ -2698,9 +2673,7 @@ body {
       if (view === 'mgrEmpManage') loadEmployeeManage();
     }
 
-    // ============================================================
     // EMPLOYEE VIEW
-    // ============================================================
     function loadMyRecords() {
       if (isLoading) return;
       showLoading();
@@ -2787,9 +2760,7 @@ body {
       });
     }
 
-    // ============================================================
     // DELETE RECORD
-    // ============================================================
     function confirmDeleteRecord(rowIndex, type) {
       Swal.fire({
         title: 'ยืนยันการลบ',
@@ -2823,11 +2794,6 @@ body {
         .catch(function(err) { hideLoading(); showError(err); });
     }
 
-    // ============================================================
-    // ✅ FIX: เมนูเครื่องมือระบบสำหรับผู้จัดการ
-    // (ฟังก์ชันซ่อมแซมด้านล่างมีอยู่แล้วในโค้ดเดิม แต่ไม่เคยถูกผูกกับปุ่มใดๆ ในหน้าเว็บ
-    // ทำให้เรียกใช้งานไม่ได้เลยนอกจากพิมพ์ชื่อฟังก์ชันเองใน console ของเบราว์เซอร์)
-    // ============================================================
     function showAdminToolsMenu() {
       var html =
         '<div style="text-align:left;display:flex;flex-direction:column;gap:8px;">' +
@@ -2847,9 +2813,7 @@ body {
       });
     }
 
-    // ============================================================
     // REPAIR FUNCTIONS
-    // ============================================================
     function repairDepartmentNames() {
       Swal.fire({
         title: 'ยืนยันการซ่อมแซม',
@@ -3064,9 +3028,7 @@ body {
         });
     }
 
-    // ============================================================
     // MANAGER QUEUE
-    // ============================================================
     function loadQueue() {
       if (isLoading) return;
       showLoading();
@@ -3129,10 +3091,6 @@ body {
       if (modal) modal.remove();
     }
 
-    // ✅ สร้างการ์ดรายละเอียด Kaizen สำหรับ "Modal ดูรายละเอียด" — ใช้ layout เดียวกับการ์ดในหน้า
-    // "คิวตรวจ Kaizen" (kz-card 3 คอลัมน์: ข้อมูล / รูป Before-After / ไฟล์แนบ+การดำเนินการ)
-    // ใช้ร่วมกันทั้งปุ่ม "ดูรายละเอียด" ของพนักงาน (รายการ Kaizen ของฉัน) และปุ่ม "ดูรายละเอียด"
-    // ใน Dashboard HR (ประวัติ Kaizen ของพนักงานแต่ละคน) ให้แสดงผลหน้าตาเหมือนกันทุกที่
     function buildDetailModalCardHtml(r) {
       var isPending = r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR;
       var isManagerRole = !!(CURRENT_USER && CURRENT_USER.role === 'manager');
@@ -3142,7 +3100,7 @@ body {
 
       var html = '<div class="kz-card" style="border:none;box-shadow:none;">';
 
-      // ---- Header: รหัส + หัวข้อ + สถานะ ----
+
       html += '<div class="kz-card-header" style="border-radius:12px 12px 0 0;">' +
         '<span class="kz-card-id">' + escapeHtml(r.id) + '</span>' +
         '<span class="kz-card-title" title="' + escapeHtml(r.title) + '">' + escapeHtml(r.title) + '</span>' +
@@ -3151,7 +3109,6 @@ body {
 
       html += '<div class="kz-card-body">';
 
-      // ---- คอลัมน์ที่ 1: ข้อมูลพนักงาน/แผนก/วันที่/ประเภท/หมวดหมู่/ผลลัพธ์ ----
       html += '<div class="kz-card-col">' +
         '<div class="kz-info-row"><span class="kz-info-label">👤 พนักงาน</span><span class="kz-info-value">' + escapeHtml(r.name) + '</span></div>' +
         '<div class="kz-info-row"><span class="kz-info-label">🏢 แผนก</span><span class="kz-info-value">' + escapeHtml(r.department) + '</span></div>' +
@@ -3175,7 +3132,6 @@ body {
       }
       html += '</div>';
 
-      // ---- คอลัมน์ที่ 2: เปรียบเทียบรูป Before / After ----
       html += '<div class="kz-card-col">' +
         '<div class="kz-ba-row">' +
         '<div class="detail-ba-item before"><div class="ba-header">🔴 Before</div><div class="ba-body">' +
@@ -3199,7 +3155,6 @@ body {
       }
       html += '</div>';
 
-      // ---- คอลัมน์ที่ 3: ไฟล์แนบ + การดำเนินการ ----
       html += '<div class="kz-card-col">';
       html += '<span class="kz-files-label">📎 ไฟล์แนบ' + (r.fileUrls && r.fileUrls.length ? ' (' + r.fileUrls.length + ' ไฟล์)' : '') + '</span>';
 
@@ -3226,29 +3181,23 @@ body {
         '<button type="button" class="btn-secondary" onclick="openCommentModal(\'' + r.id + '\')" aria-label="แสดงความคิดเห็น">💬 ความคิดเห็น</button>' +
         '</div>';
 
-      html += '</div>'; // .kz-actions
-      html += '</div>'; // col 3
+      html += '</div>'; 
+      html += '</div>';
 
-      html += '</div>'; // .kz-card-body
-      html += '</div>'; // .kz-card
+      html += '</div>';
+      html += '</div>';
 
       return html;
     }
 
-    // ✅ สร้างการ์ด Kaizen 1 ใบสำหรับหน้า "คิวตรวจ Kaizen" — แสดงข้อมูลครบในที่เดียว
-    // (พนักงาน/แผนก/วันที่/ประเภท/หมวดหมู่/ผลลัพธ์ + รูป Before-After + ไฟล์แนบ + ปุ่มดำเนินการ)
-    // ไม่ต้องคลิกขยายแถวเหมือนตารางแบบเดิมอีกต่อไป
     function buildMgrCardHtml(r) {
       var isPending = r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR;
-      // ✅ เช็คสิทธิ์ตามบทบาทจริง (หัวหน้าแผนก/ผู้จัดการ) เทียบกับสถานะของรายการนี้
-      // เพื่อไม่ให้ปุ่มอนุมัติ/ตีกลับ แสดงในรายการที่ผู้ใช้คนนี้ไม่มีสิทธิ์ตรวจ
       var isDirectorUser = (CURRENT_USER.approverType || []).indexOf('ผู้จัดการ') > -1;
       var isHeadUser = (CURRENT_USER.approverType || []).indexOf('หัวหน้าแผนก') > -1;
       var canApproveThis = (isHeadUser && r.status === STATUS_PENDING_HEAD) || (isDirectorUser && r.status === STATUS_PENDING_DIRECTOR);
 
       var html = '<div class="kz-card" data-row="' + r.rowIndex + '">';
 
-      // ---- Header: รหัส + หัวข้อ + สถานะ ----
       html += '<div class="kz-card-header">' +
         '<span class="kz-card-id">' + escapeHtml(r.id) + '</span>' +
         '<span class="kz-card-title" title="' + escapeHtml(r.title) + '">' + escapeHtml(r.title) + '</span>' +
@@ -3257,7 +3206,6 @@ body {
 
       html += '<div class="kz-card-body">';
 
-      // ---- คอลัมน์ที่ 1: ข้อมูลพนักงาน/แผนก/วันที่/ประเภท/หมวดหมู่/ผลลัพธ์ ----
       html += '<div class="kz-card-col">' +
         '<div class="kz-info-row"><span class="kz-info-label">👤 พนักงาน</span><span class="kz-info-value">' + escapeHtml(r.name) + '</span></div>' +
         '<div class="kz-info-row"><span class="kz-info-label">🏢 แผนก</span><span class="kz-info-value">' + escapeHtml(r.department) + '</span></div>' +
@@ -3281,7 +3229,6 @@ body {
       }
       html += '</div>';
 
-      // ---- คอลัมน์ที่ 2: เปรียบเทียบรูป Before / After ----
       html += '<div class="kz-card-col">' +
         '<div class="kz-ba-row">' +
         '<div class="detail-ba-item before"><div class="ba-header">🔴 Before</div><div class="ba-body">' +
@@ -3305,7 +3252,6 @@ body {
       }
       html += '</div>';
 
-      // ---- คอลัมน์ที่ 3: ไฟล์แนบ + การดำเนินการ ----
       html += '<div class="kz-card-col">';
       html += '<span class="kz-files-label">📎 ไฟล์แนบ' + (r.fileUrls && r.fileUrls.length ? ' (' + r.fileUrls.length + ' ไฟล์)' : '') + '</span>';
 
@@ -3333,11 +3279,11 @@ body {
         '</div>';
       html += '<button type="button" class="btnDeleteMgr btn-secondary" style="color:var(--bad-600);" data-row="' + r.rowIndex + '" aria-label="ลบรายการ">🗑️ ลบรายการ</button>';
 
-      html += '</div>'; // .kz-actions
-      html += '</div>'; // col 3
+      html += '</div>'; 
+      html += '</div>'; 
 
-      html += '</div>'; // .kz-card-body
-      html += '</div>'; // .kz-card
+      html += '</div>'; 
+      html += '</div>';
 
       return html;
     }
@@ -3358,10 +3304,6 @@ body {
         var matchStatus = !statusFilter || r.status === statusFilter;
         return matchSearch && matchStatus;
       });
-
-      // ℹ️ ไม่เรียงลำดับซ้ำที่นี่ — คิวปกติจาก getReviewQueue() มีแต่รายการ "รอตรวจ" อยู่แล้ว (เรียงวันที่ล่าสุดจากฝั่งเซิร์ฟเวอร์)
-      // และผลลัพธ์จาก "ค้นหาขั้นสูง" อาจมีทั้งอนุมัติ/ตีกลับปนอยู่ตามลำดับที่ผู้ใช้เลือกไว้เอง (เรียงตาม/ลำดับ)
-      // การ sort ซ้ำที่นี่จะไปทับลำดับที่ผู้ใช้ตั้งใจเลือกจากหน้าค้นหาขั้นสูง จึงตัดออก
 
       var container = document.getElementById('mgrCardsContainer');
       document.getElementById('mgrRowCount').textContent = filtered.length;
@@ -3455,9 +3397,7 @@ body {
       });
     }
 
-    // ============================================================
     // REVIEW RECORD
-    // ============================================================
     function promptReject(rowIndex) {
       Swal.fire({
         icon: 'warning',
@@ -3491,8 +3431,6 @@ body {
             DASHBOARD_DATA = null;
             loadQueue();
             loadHrDashboard();
-            // ✅ ถ้ากดอนุมัติ/ตีกลับจาก Modal รายละเอียดที่เปิดซ้อนอยู่บน "ประวัติ Kaizen ของพนักงาน"
-            // (Dashboard HR -> ดูประวัติ) ให้รีเฟรชรายการ/ตัวนับในนั้นด้วย ไม่ให้ค้างสถานะเก่า
             if (currentEmpHistoryEmpId && !document.getElementById('empHistoryModal').classList.contains('hidden')) {
               showEmployeeHistory(currentEmpHistoryEmpId, currentEmpHistoryEmpName);
             }
@@ -3501,16 +3439,10 @@ body {
         .catch(function(err) { hideLoading(); showError(err); });
     }
 
-    // ============================================================
     // DETAIL VIEW
-    // ============================================================
     function showDetail(r, allowReview) {
       var body = document.getElementById('detailBody');
       body.innerHTML = buildDetailModalCardHtml(r);
-
-      // ✅ ปุ่มอนุมัติ/ตีกลับ/ดูประวัติ/ความคิดเห็น ถูกฝังไว้ในการ์ด (buildDetailModalCardHtml) แล้ว
-      // ไม่ต้องใช้แถบปุ่มแยกด้านล่าง modal อีกต่อไป (ทั้งหน้า "รายการ Kaizen ของฉัน" ของพนักงาน
-      // และ "ดูประวัติ" ใน Dashboard HR จะได้ layout เดียวกันกับหน้าคิวตรวจ Kaizen)
       var actions = document.getElementById('detailReviewActions');
       actions.classList.add('hidden');
       actions.innerHTML = '';
@@ -3519,9 +3451,8 @@ body {
       document.getElementById('detailModal').classList.remove('hidden');
     }
 
-    // ============================================================
+
     // VERSION HISTORY
-    // ============================================================
     function showVersionHistory(kaizenId) {
       showLoading();
       callAppsScript('getKaizenHistory', { kaizenId: kaizenId })
@@ -3577,9 +3508,7 @@ body {
         .catch(function(err) { hideLoading(); showError(err); });
     }
 
-    // ============================================================
     // COMMENT FUNCTIONS
-    // ============================================================
     function openCommentModal(kaizenId) {
       currentCommentKaizenId = kaizenId;
       document.getElementById('commentModal').classList.remove('hidden');
@@ -3677,9 +3606,7 @@ body {
       });
     }
 
-    // ============================================================
     // ADVANCED SEARCH
-    // ============================================================
     function showAdvancedSearch() {
       var depts = [];
       QUEUE_RECORDS.forEach(function(r) {
@@ -3784,10 +3711,7 @@ body {
 
     function renderHrDashKPI(summary) {
       document.getElementById('hrTotalEmp').textContent = summary.totalEmployees || 0;
-      // ✅ Status: จำนวนพนักงานที่ "ส่งและอนุมัติผ่าน" อย่างน้อย 1 เรื่อง (ไม่ใช่จำนวนที่ถึงเป้าหมายแบบเดิม)
       document.getElementById('hrAchieved').textContent = summary.submittedApprovedCount || 0;
-      // ✅ "เป้าหมาย (รวมทุกคน)" = ผลรวมเป้าหมายของพนักงานทุกคน ดึงจากคอลัมน์ "Tasks" ในชีต HR_Employees
-      // (ถ้าไม่ได้ระบุ Tasks ไว้ ระบบจะ fallback ไปใช้เป้าหมายตามตำแหน่งให้อัตโนมัติ ดูฟังก์ชัน getTargetForPosition_ ฝั่ง Code.gs)
       document.getElementById('hrTargetSum').textContent = summary.totalTargetSum || 0;
       document.getElementById('hrPercent').textContent = (summary.achievedPercent || 0) + '%';
     }
@@ -3841,9 +3765,7 @@ body {
       });
     }
 
-    // ============================================================
     // EMPLOYEE HISTORY MODAL
-    // ============================================================
     function showEmployeeHistory(empId, empName) {
       var beYear = document.getElementById('hrDashYear').value;
       currentEmpHistoryEmpId = empId;
@@ -4114,9 +4036,6 @@ body {
         });
     }
 
-    // ============================================================
-    // ✏️ MANAGER: จัดการข้อมูลพนักงานทั้งหมด (HR_Employees)
-    // ============================================================
     function loadEmployeeManage() {
       if (isLoading) return;
       showLoading();
