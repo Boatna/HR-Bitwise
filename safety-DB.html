@@ -1385,12 +1385,12 @@ body {
       </div>
       
       <div class="panel">
-        <h3>⚖️ สรุปสถานะกฎหมาย</h3>
+        <h3>📮 รายงานส่งราชการ</h3>
         <div id="legalDonut"></div>
         <div style="overflow-x:auto;margin-top:12px;">
           <table class="data-table" id="legalTable">
             <thead>
-              <tr><th>รายการ</th><th>กำหนดครบกำหนด</th><th>สถานะ</th></tr>
+              <tr><th>ชื่อรายงาน</th><th>วันที่ต้องส่ง</th><th>สถานะ</th></tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -1486,7 +1486,8 @@ const CONFIG = {
     LEGAL:        "Legal_Compliance",
     RISKS:        "TopRisks",
     HIGHLIGHTS:   "Highlights_Actions",
-    EMPLOYEE:     "Employee"
+    EMPLOYEE:     "Employee",
+    ACCIDENT:     "AccidentReport"
   },
   PLANTS: ["Bitwise (thailand) co. ltd", "Bitwise heat exchanger co. ltd", "Thai tasaki engineering co. ltd"],
   TIMEOUT: 30000,
@@ -1579,9 +1580,9 @@ function escapeHtml(value) {
 
 function legalBadge(status) {
   const s = (status || "").toLowerCase();
-  if (s.includes("ปกติ")  || s === "good")   return `<span class="badge badge-good">✅ ปกติ</span>`;
-  if (s.includes("ใกล้")  || s === "warn")   return `<span class="badge badge-warn">⚠️ ใกล้ครบกำหนด</span>`;
-  if (s.includes("เกิน")  || s === "bad")    return `<span class="badge badge-bad">❌ เกินกำหนด</span>`;
+  if (s.includes("ส่งแล้ว") || s.includes("ปกติ") || s === "good") return `<span class="badge badge-good">✅ ส่งแล้ว</span>`;
+  if (s.includes("ใกล้")    || s === "warn") return `<span class="badge badge-warn">⚠️ ใกล้ครบกำหนดส่ง</span>`;
+  if (s.includes("เกิน")    || s === "bad")  return `<span class="badge badge-bad">❌ เกินกำหนดส่ง</span>`;
   return status || "-";
 }
 
@@ -1657,6 +1658,24 @@ async function postToSheet(payload) {
 const addSheetRow    = (sheet, data)             => postToSheet({ action: "add",    sheet, data });
 const updateSheetRow = (sheet, rowIndex, data)   => postToSheet({ action: "update", sheet, rowIndex, data });
 const deleteSheetRow = (sheet, rowIndex)         => postToSheet({ action: "delete", sheet, rowIndex });
+
+// ✅ NEW: วันปลอดอุบัติเหตุ คำนวณอัตโนมัติจากวันที่เกิดอุบัติเหตุล่าสุดในชีต AccidentReport
+// หยุดนับทันทีที่มีการกรอกอุบัติเหตุใหม่ แล้วเริ่มนับ 1 ใหม่นับจากวันถัดไป
+async function fetchDaysNoIncident(plant) {
+  const qs = new URLSearchParams({ calc: "daysNoIncident" });
+  if (plant) qs.set("plant", plant);
+  const url = `${CONFIG.APPS_SCRIPT_URL}?${qs.toString()}`;
+  try {
+    const response = await fetchWithRetry(url);
+    const text = await response.text();
+    const json = JSON.parse(text);
+    if (json.error) return { days: null, lastAccidentDate: null };
+    return { days: json.days, lastAccidentDate: json.lastAccidentDate };
+  } catch (err) {
+    console.error("fetchDaysNoIncident error:", err);
+    return { days: null, lastAccidentDate: null };
+  }
+}
 
 // ============ Filter Functions ============
 function populatePlantOptions(selectEl) {
@@ -1946,6 +1965,13 @@ async function loadKpi() {
     const latest = grouped[idx];
     const prev   = grouped[idx - 1] || latest;
     document.getElementById("dataDate").textContent = `📅 ข้อมูล ณ เดือน ${formatMonthThai(latest.month)}`;
+
+    // ✅ NEW: วันปลอดอุบัติเหตุ คำนวณอัตโนมัติจาก AccidentReport (ไม่ใช้ค่าที่กรอกมือใน KPI_Monthly อีกต่อไป)
+    const daysAuto = await fetchDaysNoIncident(filterState.plant);
+    const daysNoIncidentValue = (daysAuto.days !== null && daysAuto.days !== undefined) ? daysAuto.days : latest.days_no_incident;
+    const daysNoIncidentMeta = daysAuto.lastAccidentDate
+      ? `นับจากอุบัติเหตุล่าสุด ${formatDateThai(daysAuto.lastAccidentDate)}`
+      : "ยังไม่มีอุบัติเหตุบันทึกไว้";
     function calcChange(current, previous) {
       const c = Number(current) || 0;
       const p = Number(previous) || 0;
@@ -1974,10 +2000,10 @@ async function loadKpi() {
         target: `เป้าหมาย ≥ ${latest.target_near_miss ?? "-"}`,
         status: numStatus(latest.near_miss, latest.target_near_miss, "min"),
         icon: "🔍", change: changeHTML(calcChange(latest.near_miss, prev.near_miss), false) },
-      { label: "วันปลอดอุบัติเหตุ", value: latest.days_no_incident,
-        target: "เพิ่มขึ้นต่อเนื่อง",
+      { label: "วันปลอดอุบัติเหตุ (อัตโนมัติ)", value: daysNoIncidentValue,
+        target: daysNoIncidentMeta,
         status: "good",
-        icon: "🏆", change: changeHTML(calcChange(latest.days_no_incident, prev.days_no_incident), false) },
+        icon: "🏆", change: "" },
       { label: "LTIFR", value: latest.ltifr,
         target: `เป้าหมาย < ${latest.target_ltifr ?? "1.00"}`,
         status: numStatus(latest.ltifr, latest.target_ltifr, "max"),
@@ -2256,7 +2282,7 @@ async function loadLegal() {
     }
     const norm = (s) => {
       const v = (s || "").toLowerCase();
-      if (v.includes("ปกติ") || v === "good") return "good";
+      if (v.includes("ส่งแล้ว") || v.includes("ปกติ") || v === "good") return "good";
       if (v.includes("ใกล้") || v === "warn") return "warn";
       if (v.includes("เกิน") || v === "bad")  return "bad";
       return "good";
@@ -2409,12 +2435,12 @@ const SCHEMAS = {
   },
   LEGAL: {
     sheet: CONFIG.SHEETS.LEGAL,
-    label: "⚖️ กฎหมาย",
+    label: "📮 รายงานส่งราชการ",
     fields: [
-      { key: "item",     label: "รายการ",          type: "text",   required: true },
-      { key: "plant",    label: "Plant",            type: "plant",  required: true },
-      { key: "due_date", label: "กำหนดครบกำหนด",   type: "date" },
-      { key: "status",   label: "สถานะ",            type: "select", options: ["ปกติ","ใกล้ครบกำหนด","เกินกำหนด"] },
+      { key: "item",     label: "ชื่อรายงานที่ต้องส่ง", type: "text",   required: true },
+      { key: "plant",    label: "Plant",                type: "plant",  required: true },
+      { key: "due_date", label: "วันที่ต้องส่ง",        type: "date" },
+      { key: "status",   label: "สถานะการส่ง",          type: "select", options: ["ส่งแล้ว","ใกล้ครบกำหนดส่ง","เกินกำหนดส่ง"] },
     ],
   },
   RISKS: {
@@ -2446,7 +2472,301 @@ const SCHEMAS = {
       { key: "Plant",        label: "Plant",          type: "plant" },
     ],
   },
+  // ✅ NEW: รายงานอุบัติเหตุแบบเต็มรูปแบบ (custom renderer ด้านล่าง — ไม่ใช้ fields[] ทั่วไป)
+  ACCIDENT: {
+    sheet: CONFIG.SHEETS.ACCIDENT,
+    label: "🚑 รายงานอุบัติเหตุ",
+    custom: true,
+    fields: [
+      // รายชื่อคีย์ทั้งหมด ใช้สำหรับตารางแสดงข้อมูล/ลบ (ไม่ใช้ render ฟอร์มอัตโนมัติ)
+      { key: "accident_date",   label: "วันที่เกิดอุบัติเหตุ" },
+      { key: "accident_time",   label: "เวลา" },
+      { key: "company",         label: "บริษัท" },
+      { key: "emp_code",        label: "รหัสพนักงาน" },
+      { key: "emp_name",        label: "ชื่อพนักงาน" },
+      { key: "department",      label: "ฝ่าย/หน่วยงาน" },
+      { key: "severity_type",   label: "ความรุนแรง" },
+      { key: "lost_time",       label: "หยุดงาน" },
+      { key: "leave_actual_days", label: "จำนวนวันหยุด" },
+    ],
+  },
 };
+
+// รายการตัวเลือกสำหรับฟอร์มรายงานอุบัติเหตุ (ตามแบบฟอร์มที่ใช้งานจริง)
+const ACCIDENT_OPTIONS = {
+  injured_parts: ["ตา","หู","คอ ศีรษะ","ใบหน้า","มือ","นิ้วมือ","แขน","ลำตัว เอว","หลัง","ไหล่","เท้า","นิ้วเท้า","ขา","บาดเจ็บหลายส่วน","อวัยวะอื่นๆ"],
+  cause: ["ยานพาหนะ","เครื่องจักร","ตกจากที่สูง","ของหล่นทับ","ลื่นล้ม","ความร้อน","ไฟฟ้า","สิ่งมีพิษ สารเคมี","ระเบิด","เศษวัสดุ","ถูกทำร้ายร่างกาย","เสียงในโรงงาน","วัตถุหรือสิ่งของทับ กระแทก","โรคเนื่องจากการทำงาน","ยกของหนัก","อื่นๆ"],
+  nature: ["ตกจากที่สูง","หกล้ม ลื่นล้ม","อาคารหรือสิ่งก่อสร้างพังทับ","วัตถุหรือสิ่งของพังทลาย/หล่น","วัตถุหรือสิ่งของหนีบทับ","วัตถุหรือสิ่งของตัด บาด ทิ่ม","วัตถุหรือสิ่งของกระเด็นเข้าตา","ยกหรือเคลื่อนย้ายของหนัก","อาการเจ็บป่วยจากท่าทางการทำงาน","อุบัติเหตุจากยานพาหนะ","วัตถุหรือสิ่งของระเบิด","ไฟฟ้าช็อต","ผลจากความร้อนสูงหรือสัมผัสความร้อน","ผลจากความเย็นจัดหรือสัมผัสความเย็น","สัมผัสสิ่งมีพิษ สารเคมี","แพ้จากการสัมผัสสิ่งของ","อันตรายจากแสง","อันตรายจากรังสี","ถูกทำร้ายร่างกาย","ถูกสัตว์ทำร้าย","โรคเนื่องจากการทำงาน","อื่นๆ"],
+  severity_type: ["ปฐมพยาบาล (First Aid)","รักษาพยาบาล (Medical Treatment)","หยุดงาน (Lost Time Injury)","ทุพพลภาพ (Disability)","เสียชีวิต (Fatality)"]
+};
+
+// แคชรายชื่อพนักงานสำหรับค้นหา/ดึงข้อมูลอัตโนมัติ
+let employeeCache = null;
+async function getEmployeeCache(forceReload = false) {
+  if (employeeCache && !forceReload) return employeeCache;
+  try {
+    employeeCache = await fetchSheetData(CONFIG.SHEETS.EMPLOYEE);
+  } catch (err) {
+    employeeCache = [];
+  }
+  return employeeCache;
+}
+
+function findEmployeeMatches(term) {
+  if (!employeeCache || !term) return [];
+  const t = term.trim().toLowerCase();
+  if (!t) return [];
+  return employeeCache.filter(e =>
+    String(e["รหัสพนักงาน"] || "").toLowerCase().includes(t) ||
+    String(e["ชื่อ-นามสกุล"] || "").toLowerCase().includes(t)
+  ).slice(0, 8);
+}
+
+// ============ Accident Report — Custom Form (ตามแบบฟอร์มที่แนบมา) ============
+function checkboxGroupHtml(groupName, options, selected) {
+  const sel = selected || [];
+  return options.map(o => `
+    <label style="display:inline-flex;align-items:center;gap:5px;margin:3px 14px 3px 0;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer;">
+      <input type="checkbox" data-group="${groupName}" value="${escapeHtml(o)}" ${sel.includes(o) ? "checked" : ""}> ${escapeHtml(o)}
+    </label>`).join("");
+}
+
+function getCheckedGroup(groupName) {
+  return Array.from(document.querySelectorAll(`input[type="checkbox"][data-group="${groupName}"]:checked`)).map(el => el.value);
+}
+
+function renderAccidentForm() {
+  const plantOpts = CONFIG.PLANTS.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+  document.getElementById("fieldGrid").innerHTML = `
+    <div class="field"><label>บริษัท</label>
+      <select id="acc_company"><option value="">-- เลือกบริษัท --</option>${plantOpts}</select>
+    </div>
+    <div class="field wide">
+      <label>🔍 ค้นหาพนักงาน (พิมพ์รหัสหรือชื่อ แล้วเลือกจากรายการ)</label>
+      <input id="acc_emp_search" type="text" list="acc_emp_datalist" placeholder="พิมพ์รหัสพนักงานหรือชื่อ-นามสกุล...">
+      <datalist id="acc_emp_datalist"></datalist>
+      <div class="hint">เลือกพนักงานจากรายการเพื่อดึงรหัส/ตำแหน่ง/หน่วยงานอัตโนมัติจากชีต Employee</div>
+    </div>
+    <div class="field"><label>รหัสพนักงาน</label><input id="acc_emp_code" type="text"></div>
+    <div class="field"><label>ชื่อพนักงาน <span style="color:var(--red)">*</span></label><input id="acc_emp_name" type="text"></div>
+    <div class="field"><label>ตำแหน่ง</label><input id="acc_position" type="text"></div>
+    <div class="field"><label>ฝ่าย/หน่วยงาน</label><input id="acc_department" type="text"></div>
+    <div class="field"><label>อายุ</label><input id="acc_age" type="number" step="1"></div>
+    <div class="field"><label>สัญชาติ</label><input id="acc_nationality" type="text"></div>
+    <div class="field"><label>อายุงาน (ปี)</label><input id="acc_tenure_years" type="number" step="1"></div>
+    <div class="field"><label>อายุงาน (เดือน)</label><input id="acc_tenure_months" type="number" step="1"></div>
+    <div class="field"><label>อายุงาน (วัน)</label><input id="acc_tenure_days" type="number" step="1"></div>
+
+    <div class="field wide">
+      <label>🔍 ค้นหา ผจก./หัวหน้างาน</label>
+      <input id="acc_sup_search" type="text" list="acc_sup_datalist" placeholder="พิมพ์รหัสหรือชื่อหัวหน้างาน...">
+      <datalist id="acc_sup_datalist"></datalist>
+    </div>
+    <div class="field"><label>รหัสผจก./หัวหน้างาน</label><input id="acc_supervisor_code" type="text"></div>
+    <div class="field"><label>ชื่อผจก./หัวหน้างาน</label><input id="acc_supervisor_name" type="text"></div>
+
+    <div class="field"><label>วันที่เกิดอุบัติเหตุ <span style="color:var(--red)">*</span></label><input id="acc_accident_date" type="date"></div>
+    <div class="field"><label>เวลาที่เกิดอุบัติเหตุ</label><input id="acc_accident_time" type="time"></div>
+
+    <div class="field wide"><label>รายละเอียดของอุบัติเหตุที่เกิดขึ้น</label><textarea id="acc_incident_detail"></textarea></div>
+    <div class="field wide"><label>ผลของอุบัติเหตุ</label><textarea id="acc_incident_result"></textarea></div>
+    <div class="field wide"><label>รายละเอียดการรักษา</label><textarea id="acc_treatment_detail"></textarea></div>
+
+    <div class="field wide"><label>อวัยวะที่ได้รับบาดเจ็บ</label>
+      <div id="acc_injured_parts_group">${checkboxGroupHtml("injured_parts", ACCIDENT_OPTIONS.injured_parts)}</div>
+    </div>
+    <div class="field wide"><label>อวัยวะอื่นๆ (โปรดระบุ)</label><input id="acc_injured_parts_other" type="text"></div>
+
+    <div class="field"><label>เครื่องจักร เครื่องมือ/อุปกรณ์ที่เกี่ยวข้อง</label><input id="acc_equipment" type="text"></div>
+    <div class="field"><label>สถานที่เกิดอุบัติเหตุ</label><input id="acc_location" type="text"></div>
+
+    <div class="field wide"><label>สิ่งที่ทำให้เกิดอุบัติเหตุ</label>
+      <div id="acc_cause_group">${checkboxGroupHtml("cause", ACCIDENT_OPTIONS.cause)}</div>
+    </div>
+    <div class="field wide"><label>อื่นๆ (โปรดระบุ) — สิ่งที่ทำให้เกิดอุบัติเหตุ</label><input id="acc_cause_other" type="text"></div>
+
+    <div class="field wide"><label>ลักษณะการเกิดอุบัติเหตุ</label>
+      <div id="acc_nature_group">${checkboxGroupHtml("nature", ACCIDENT_OPTIONS.nature)}</div>
+    </div>
+    <div class="field wide"><label>อื่นๆ (โปรดระบุ) — ลักษณะการเกิดอุบัติเหตุ</label><input id="acc_nature_other" type="text"></div>
+
+    <div class="field"><label>ประเภทความรุนแรงของการเกิดอุบัติเหตุ</label>
+      <select id="acc_severity_type"><option value="">-- เลือก --</option>${ACCIDENT_OPTIONS.severity_type.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join("")}</select>
+    </div>
+    <div class="field"><label>หยุดงานหรือไม่หยุด</label>
+      <select id="acc_lost_time"><option value="">-- เลือก --</option><option value="หยุดงาน">หยุดงาน</option><option value="ไม่หยุดงาน">ไม่หยุดงาน</option></select>
+    </div>
+    <div class="field"><label>วันที่เริ่มหยุดงาน</label><input id="acc_leave_start_date" type="date"></div>
+    <div class="field"><label>หยุดงานถึงวันที่</label><input id="acc_leave_end_date" type="date"></div>
+    <div class="field"><label>จำนวนวันที่หยุดจริง</label><input id="acc_leave_actual_days" type="number" step="1"></div>
+
+    <div class="field"><label>ผู้ทำรายการ</label><input id="acc_submitted_by" type="text"></div>
+    <div class="field"><label>วันที่ทำรายการ</label><input id="acc_submitted_date" type="text" disabled placeholder="บันทึกอัตโนมัติเมื่อกดบันทึก"></div>
+  `;
+
+  getEmployeeCache().then(refreshAccidentEmployeeDatalists);
+
+  const empSearch = document.getElementById("acc_emp_search");
+  if (empSearch) {
+    empSearch.addEventListener("change", () => {
+      const match = matchEmployeeFromDatalistValue(empSearch.value);
+      if (match) {
+        document.getElementById("acc_emp_code").value   = match["รหัสพนักงาน"] || "";
+        document.getElementById("acc_emp_name").value   = match["ชื่อ-นามสกุล"] || "";
+        document.getElementById("acc_position").value   = match["ตำแหน่ง"] || "";
+        document.getElementById("acc_department").value = match["แผนก"] || "";
+        if (match["Plant"] && document.getElementById("acc_company")) {
+          document.getElementById("acc_company").value = match["Plant"];
+        }
+        showToast(`✅ ดึงข้อมูลพนักงาน: ${match["ชื่อ-นามสกุล"] || ""}`);
+      }
+    });
+  }
+  const supSearch = document.getElementById("acc_sup_search");
+  if (supSearch) {
+    supSearch.addEventListener("change", () => {
+      const match = matchEmployeeFromDatalistValue(supSearch.value);
+      if (match) {
+        document.getElementById("acc_supervisor_code").value = match["รหัสพนักงาน"] || "";
+        document.getElementById("acc_supervisor_name").value = match["ชื่อ-นามสกุล"] || "";
+        showToast(`✅ ดึงข้อมูลหัวหน้างาน: ${match["ชื่อ-นามสกุล"] || ""}`);
+      }
+    });
+  }
+}
+
+function refreshAccidentEmployeeDatalists() {
+  const opts = (employeeCache || []).map(e =>
+    `<option value="${escapeHtml((e["รหัสพนักงาน"] || "") + " - " + (e["ชื่อ-นามสกุล"] || ""))}">`
+  ).join("");
+  const empDl = document.getElementById("acc_emp_datalist");
+  const supDl = document.getElementById("acc_sup_datalist");
+  if (empDl) empDl.innerHTML = opts;
+  if (supDl) supDl.innerHTML = opts;
+}
+
+function matchEmployeeFromDatalistValue(value) {
+  if (!value || !employeeCache) return null;
+  const code = value.split(" - ")[0].trim();
+  return employeeCache.find(e => String(e["รหัสพนักงาน"] || "").trim() === code) ||
+         employeeCache.find(e => String(e["ชื่อ-นามสกุล"] || "").trim().toLowerCase() === value.trim().toLowerCase()) ||
+         null;
+}
+
+function validateAccidentForm() {
+  let isValid = true;
+  const req = [
+    { id: "acc_emp_name",      label: "ชื่อพนักงาน" },
+    { id: "acc_accident_date", label: "วันที่เกิดอุบัติเหตุ" },
+  ];
+  req.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (!el) return;
+    if (!el.value || el.value.trim() === "") {
+      el.classList.add("error");
+      isValid = false;
+    } else {
+      el.classList.remove("error");
+    }
+  });
+  if (!isValid) showToast(`กรุณากรอก ${req.map(r => r.label).join(", ")} ให้ครบถ้วน`, true);
+  return isValid;
+}
+
+function getAccidentFormData() {
+  const val = (id) => { const el = document.getElementById(id); return el ? el.value : ""; };
+  const num = (id) => { const v = val(id); return v === "" ? "" : Number(v); };
+  return {
+    company:              val("acc_company"),
+    emp_code:              val("acc_emp_code"),
+    emp_name:              val("acc_emp_name"),
+    position:              val("acc_position"),
+    department:            val("acc_department"),
+    age:                   num("acc_age"),
+    nationality:           val("acc_nationality"),
+    tenure_years:          num("acc_tenure_years"),
+    tenure_months:         num("acc_tenure_months"),
+    tenure_days:           num("acc_tenure_days"),
+    supervisor_code:       val("acc_supervisor_code"),
+    supervisor_name:       val("acc_supervisor_name"),
+    accident_date:         val("acc_accident_date"),
+    accident_time:         val("acc_accident_time"),
+    incident_detail:       val("acc_incident_detail"),
+    incident_result:       val("acc_incident_result"),
+    treatment_detail:      val("acc_treatment_detail"),
+    injured_parts:         getCheckedGroup("injured_parts").join(", "),
+    injured_parts_other:   val("acc_injured_parts_other"),
+    equipment:             val("acc_equipment"),
+    location:              val("acc_location"),
+    cause:                 getCheckedGroup("cause").join(", "),
+    cause_other:           val("acc_cause_other"),
+    nature:                getCheckedGroup("nature").join(", "),
+    nature_other:          val("acc_nature_other"),
+    severity_type:         val("acc_severity_type"),
+    lost_time:             val("acc_lost_time"),
+    leave_start_date:      val("acc_leave_start_date"),
+    leave_end_date:        val("acc_leave_end_date"),
+    leave_actual_days:     num("acc_leave_actual_days"),
+    submitted_by:          val("acc_submitted_by"),
+    // submitted_date ถูกประทับอัตโนมัติที่ฝั่งเซิร์ฟเวอร์ (Code.gs) ทุกครั้งที่เพิ่มรายการใหม่
+  };
+}
+
+function resetAccidentForm() {
+  const ids = [
+    "acc_company","acc_emp_search","acc_emp_code","acc_emp_name","acc_position","acc_department",
+    "acc_age","acc_nationality","acc_tenure_years","acc_tenure_months","acc_tenure_days",
+    "acc_sup_search","acc_supervisor_code","acc_supervisor_name",
+    "acc_accident_date","acc_accident_time","acc_incident_detail","acc_incident_result","acc_treatment_detail",
+    "acc_injured_parts_other","acc_equipment","acc_location","acc_cause_other","acc_nature_other",
+    "acc_severity_type","acc_lost_time","acc_leave_start_date","acc_leave_end_date","acc_leave_actual_days",
+    "acc_submitted_by","acc_submitted_date"
+  ];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) { el.value = ""; el.classList.remove("error"); } });
+  document.querySelectorAll('input[type="checkbox"][data-group]').forEach(el => { el.checked = false; });
+}
+
+function startAccidentEdit(row) {
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v !== undefined && v !== null) ? v : ""; };
+  setVal("acc_company", row.company);
+  setVal("acc_emp_code", row.emp_code);
+  setVal("acc_emp_name", row.emp_name);
+  setVal("acc_position", row.position);
+  setVal("acc_department", row.department);
+  setVal("acc_age", row.age);
+  setVal("acc_nationality", row.nationality);
+  setVal("acc_tenure_years", row.tenure_years);
+  setVal("acc_tenure_months", row.tenure_months);
+  setVal("acc_tenure_days", row.tenure_days);
+  setVal("acc_supervisor_code", row.supervisor_code);
+  setVal("acc_supervisor_name", row.supervisor_name);
+  setVal("acc_accident_date", toISODateString(row.accident_date) || row.accident_date);
+  setVal("acc_accident_time", row.accident_time);
+  setVal("acc_incident_detail", row.incident_detail);
+  setVal("acc_incident_result", row.incident_result);
+  setVal("acc_treatment_detail", row.treatment_detail);
+  setVal("acc_injured_parts_other", row.injured_parts_other);
+  setVal("acc_equipment", row.equipment);
+  setVal("acc_location", row.location);
+  setVal("acc_cause_other", row.cause_other);
+  setVal("acc_nature_other", row.nature_other);
+  setVal("acc_severity_type", row.severity_type);
+  setVal("acc_lost_time", row.lost_time);
+  setVal("acc_leave_start_date", toISODateString(row.leave_start_date) || row.leave_start_date);
+  setVal("acc_leave_end_date", toISODateString(row.leave_end_date) || row.leave_end_date);
+  setVal("acc_leave_actual_days", row.leave_actual_days);
+  setVal("acc_submitted_by", row.submitted_by);
+  setVal("acc_submitted_date", row.submitted_date ? formatDateThai(row.submitted_date) : "");
+
+  const injuredArr = String(row.injured_parts || "").split(",").map(s => s.trim()).filter(Boolean);
+  const causeArr   = String(row.cause || "").split(",").map(s => s.trim()).filter(Boolean);
+  const natureArr  = String(row.nature || "").split(",").map(s => s.trim()).filter(Boolean);
+  document.querySelectorAll('input[type="checkbox"][data-group="injured_parts"]').forEach(el => el.checked = injuredArr.includes(el.value));
+  document.querySelectorAll('input[type="checkbox"][data-group="cause"]').forEach(el => el.checked = causeArr.includes(el.value));
+  document.querySelectorAll('input[type="checkbox"][data-group="nature"]').forEach(el => el.checked = natureArr.includes(el.value));
+
+  document.querySelector(".form-card").scrollIntoView({ behavior: "smooth" });
+}
 
 let activeSchemaKey  = "KPI";
 let editingRowIndex  = null;
@@ -2495,10 +2815,12 @@ function switchSchema(key) {
   resetForm();
   renderFormFields();
   loadTableData();
+  if (key === "ACCIDENT") getEmployeeCache();
 }
 
 function renderFormFields() {
   const schema = SCHEMAS[activeSchemaKey];
+  if (schema.custom) { renderAccidentForm(); return; }
   document.getElementById("fieldGrid").innerHTML = schema.fields.map(f => {
     let inputHtml;
     if (f.type === "select") {
@@ -2527,6 +2849,7 @@ function renderFormFields() {
 
 function validateForm() {
   const schema = SCHEMAS[activeSchemaKey];
+  if (schema.custom) return validateAccidentForm();
   let isValid = true;
   schema.fields.forEach(f => {
     const el    = document.getElementById(`f_${f.key}`);
@@ -2546,6 +2869,7 @@ function validateForm() {
 
 function getFormData() {
   const schema = SCHEMAS[activeSchemaKey];
+  if (schema.custom) return getAccidentFormData();
   const data = {};
   schema.fields.forEach(f => {
     const el = document.getElementById(`f_${f.key}`);
@@ -2572,7 +2896,7 @@ async function loadTableData() {
       else if (editFilterState.year) rows = rows.filter(r => { const m = rowMonthValue(r); return m && m.slice(0,4) === editFilterState.year; });
     }
     if (editFilterState.plant) {
-      rows = rows.filter(r => samePlant(r.plant, editFilterState.plant));
+      rows = rows.filter(r => samePlant(r.plant || r.company, editFilterState.plant));
     }
     if (!rows.length) {
       tbody.innerHTML = `<tr><td colspan="${schema.fields.length + 1}" class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</td></tr>`;
@@ -2581,7 +2905,7 @@ async function loadTableData() {
     tbody.innerHTML = rows.map(row => `
       <tr>
         ${schema.fields.map(f => {
-          const isDateField = f.key === 'date' || f.key === 'due_date';
+          const isDateField = ['date','due_date','accident_date','leave_start_date','leave_end_date'].includes(f.key);
           const isMonthField = f.key === 'month';
           let val = row[f.key] ?? "-";
           if (isDateField && val !== "-") val = formatDateThai(val);
@@ -2614,6 +2938,7 @@ function startEdit(row) {
   editingRowIndex = row._rowIndex;
   document.getElementById("formTitle").textContent      = "✏️ แก้ไขข้อมูล";
   document.getElementById("cancelEditBtn").style.display = "inline-block";
+  if (schema.custom) { startAccidentEdit(row); return; }
   schema.fields.forEach(f => {
     const el = document.getElementById(`f_${f.key}`);
     if (!el) return;
@@ -2632,7 +2957,9 @@ function resetForm() {
   editingRowIndex = null;
   document.getElementById("formTitle").textContent      = "➕ เพิ่มข้อมูลใหม่";
   document.getElementById("cancelEditBtn").style.display = "none";
-  SCHEMAS[activeSchemaKey].fields.forEach(f => {
+  const schema = SCHEMAS[activeSchemaKey];
+  if (schema && schema.custom) { resetAccidentForm(); return; }
+  schema.fields.forEach(f => {
     const el = document.getElementById(`f_${f.key}`);
     if (el) { el.value = ""; el.classList.remove('error'); }
   });

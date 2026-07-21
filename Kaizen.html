@@ -1414,16 +1414,11 @@ body {
   100% { background-position: -200% 0; }
 }
 
-/* ============================================================
-   RESPONSIVE — โน้ตบุ๊ก/เดสก์ท็อปจอเล็ก (1025px–1279px)
-   ============================================================ */
 @media (max-width: 1279px) {
   .stat-number { font-size: 1.7rem; }
 }
 
-/* ============================================================
-   RESPONSIVE — iPad / แท็บเล็ต (768px–1024px)
-   ============================================================ */
+
 @media (min-width: 768px) and (max-width: 1024px) {
   .form-header { grid-template-columns: 1fr 1.6fr 1fr; }
   .category-grid { grid-template-columns: repeat(3, 1fr); }
@@ -1433,14 +1428,10 @@ body {
   .ba-grid { gap: 14px; }
 }
 
-/* iPad แนวตั้ง (ประมาณ 768px) ให้ตารางไม่แน่นเกินไป */
 @media (min-width: 768px) and (max-width: 850px) {
   .data-table { font-size: .8rem; }
 }
 
-/* ============================================================
-   RESPONSIVE — มือถือ/แท็บเล็ตแนวตั้งขนาดเล็ก (สูงสุด 767px)
-   ============================================================ */
 @media (max-width: 767px) {
   .form-header { grid-template-columns: 1fr; }
   .form-header>div { border-left: none; border-top: 1px solid var(--line-soft); }
@@ -1459,9 +1450,6 @@ body {
   .btn-primary, .btn-secondary, .btn-success, .btn-danger { font-size: .82rem; }
 }
 
-/* ============================================================
-   RESPONSIVE — มือถือจอเล็กมาก (สูงสุด 400px เช่น iPhone SE)
-   ============================================================ */
 @media (max-width: 400px) {
   .stat-number { font-size: 1.3rem; }
   .stat-label { font-size: .62rem; }
@@ -1475,10 +1463,6 @@ body {
   h1.text-base, h1.text-lg { font-size: .95rem !important; }
 }
 
-/* ============================================================
-   RESPONSIVE — จอเดสก์ท็อป/มอนิเตอร์ขนาดใหญ่ (1536px ขึ้นไป)
-   เน้นให้แสดงผลได้เต็มพื้นที่และอ่านง่ายขึ้นบนคอมพิวเตอร์
-   ============================================================ */
 @media (min-width: 1536px) {
   body { font-size: 16px; }
   .stat-number { font-size: 2.1rem; }
@@ -2064,7 +2048,7 @@ body {
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaACnEhYYJHD-wLaRWkRYThpBBIYTCSK4NHwuLBMzrhESms9gOytoXVZKz_YLXPzDkFQ/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxhD7lKauCxXxYLWi_f45eZrrYHiYLP2Ccc3mxZ21pZWn4H-1MuUSW-xjHX0lUtPqOP6g/exec';
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
     const CONFIG_MAX_FILES_PER_KAIZEN = 10;
@@ -2097,9 +2081,6 @@ body {
       'M': 'ขวัญกำลังใจ'
     };
 
-    // ============================================================
-    // STATE
-    // ============================================================
     let CURRENT_USER = null;
     let MY_RECORDS = [];
     let QUEUE_RECORDS = [];
@@ -2531,6 +2512,18 @@ body {
       } catch (e) {}
     }
 
+    // สร้าง user object จากผลลัพธ์ identifyUser โดยใช้ "รหัสมาตรฐาน" จากฝั่งเซิร์ฟเวอร์เสมอ
+    // (profile.empId สำหรับพนักงาน / profile.id สำหรับหัวหน้างาน) แทนข้อความดิบที่พิมพ์ตอนล็อกอิน
+    // เดิมโค้ดใช้ Object.assign({ id: rawTypedId }, res.profile, ...) ซึ่งสำหรับ "พนักงาน" จะไม่ถูกเขียนทับ
+    // เพราะ object พนักงานไม่มีคีย์ "id" (มีแต่ "empId") ทำให้ CURRENT_USER.id ค้างเป็นค่าที่พิมพ์เอง
+    // ถ้าพิมพ์ไม่ตรงรูปแบบเป๊ะ (เช่น ไม่ใส่เลข 0 นำหน้า) รหัสนี้จะถูกบันทึกลง Data sheet
+    // และไม่ตรงกับ HR_Employees อีกต่อไป ทำให้ทั้งอีเมลแจ้งผลอนุมัติและยอดสะสมใน Dashboard ของคนนั้นพังไปเงียบๆ
+    function buildUserFromIdentifyResult_(rawTypedId, res) {
+      var profile = res.profile || {};
+      var canonicalId = profile.empId || profile.id || rawTypedId;
+      return Object.assign({}, profile, { id: canonicalId, role: res.role });
+    }
+
     function setSelectedRole(role) {
       selectedRole = role;
       document.getElementById('roleEmployeeBtn').classList.toggle('active', role === 'employee');
@@ -2567,7 +2560,7 @@ body {
             errEl.classList.remove('hidden');
             return;
           }
-          var user = Object.assign({ id: id }, res.profile, { role: res.role });
+          var user = buildUserFromIdentifyResult_(id, res);
           saveSession(user);
           startApp(user);
         })
@@ -2797,6 +2790,7 @@ body {
     function showAdminToolsMenu() {
       var html =
         '<div style="text-align:left;display:flex;flex-direction:column;gap:8px;">' +
+        '<button type="button" class="btn-secondary" onclick="Swal.close();showEmailLogs();">📧 ตรวจสอบอีเมลที่ส่งไม่สำเร็จ</button>' +
         '<button type="button" class="btn-secondary" onclick="Swal.close();debugReviewQueue();">🐛 ตรวจสอบคิวตรวจสอบ (Debug Review Queue)</button>' +
         '<button type="button" class="btn-secondary" onclick="Swal.close();repairDepartmentNames();">🏢 ซ่อมชื่อแผนกใน Data</button>' +
         '<button type="button" class="btn-secondary" onclick="Swal.close();syncManagerDepartments();">🔄 ซิงค์แผนกใน Managers</button>' +
@@ -2972,6 +2966,57 @@ body {
             });
         }
       });
+    }
+
+    function showEmailLogs() {
+      showLoading();
+      callAppsScript('getEmailLogs', { limit: 200 })
+        .then(function(res) {
+          hideLoading();
+          if (!res.success) { showError(res.message); return; }
+
+          var logs = res.logs || [];
+          var html = '<div style="text-align:left;font-size:12px;max-height:440px;overflow-y:auto;">';
+
+          if (logs.length === 0) {
+            html += '<p style="color:var(--ink-faint);">ยังไม่มีประวัติการส่งอีเมล (หากเพิ่งกดปุ่มนี้ครั้งแรก ให้ลองกด "ตั้งค่า/ซ่อม Header ทุกชีต" ก่อน เพื่อสร้างชีต EmailLog)</p>';
+          } else {
+            var failCount = logs.filter(function(l){ return l.status !== 'SENT'; }).length;
+            html += '<p style="margin-bottom:10px;">แสดง <b>' + logs.length + '</b> รายการล่าสุด · ' +
+              '<span style="color:' + (failCount > 0 ? 'var(--bad-600)' : 'var(--good-600)') + ';font-weight:700;">ล้มเหลว/ไม่มีผู้รับ ' + failCount + ' รายการ</span></p>';
+
+            logs.forEach(function(l) {
+              var ok = l.status === 'SENT';
+              var bg = ok ? 'var(--good-50)' : 'var(--bad-50)';
+              var border = ok ? '#A7E0C0' : '#F3C6C2';
+              var statusLabel = ok ? '✅ ส่งสำเร็จ' :
+                (l.status === 'NO_RECIPIENTS' ? '⚠️ ไม่มีผู้รับ (ไม่พบอีเมล)' : '❌ ส่งไม่สำเร็จ');
+
+              html += '<div style="background:' + bg + ';border:1px solid ' + border + ';border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
+                '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">' +
+                '<b>' + escapeHtml(l.kaizenId || '-') + '</b>' +
+                '<span style="color:var(--ink-faint);">' + escapeHtml(l.type || '') + '</span>' +
+                '<span>' + statusLabel + '</span>' +
+                '</div>' +
+                '<div style="color:var(--ink-faint);margin-top:2px;">' + escapeHtml(l.timestamp) + '</div>' +
+                (l.recipients ? '<div style="margin-top:2px;">ผู้รับ: ' + escapeHtml(l.recipients) + '</div>' : '') +
+                (l.errorMessage ? '<div style="color:var(--bad-600);margin-top:2px;">เหตุผล: ' + escapeHtml(l.errorMessage) + '</div>' : '') +
+                '</div>';
+            });
+          }
+          html += '</div>';
+          html += '<p style="font-size:11px;color:var(--ink-faint);margin-top:10px;">💡 "ไม่มีผู้รับ" หมายถึงระบบหาอีเมลของพนักงาน/ผู้ตรวจสอบไม่พบ (ตรวจสอบคอลัมน์อีเมลในชีต HR_Employees / Managers) ส่วน "ส่งไม่สำเร็จ" มักเกิดจากโควตาการส่งอีเมลของ Google เต็มในวันนั้น</p>';
+
+          Swal.fire({
+            title: '📧 ประวัติการส่งอีเมล',
+            html: html,
+            confirmButtonColor: '#1B6E4C',
+            width: '760px',
+            padding: '1.5rem',
+            confirmButtonText: 'ปิด'
+          });
+        })
+        .catch(function(err) { hideLoading(); showError(err); });
     }
 
     function debugReviewQueue() {
@@ -4725,7 +4770,7 @@ body {
           .then(function(res) {
             hideLoading();
             if (res.success) {
-              var user = Object.assign({ id: saved.id }, res.profile, { role: res.role });
+              var user = buildUserFromIdentifyResult_(saved.id, res);
               saveSession(user);
               startApp(user);
             } else {
