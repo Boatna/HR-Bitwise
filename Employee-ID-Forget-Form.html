@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Noto+Sans+Myanmar:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -23,17 +23,22 @@
       --bs-link-color-rgb: 37,99,235;
       --bs-link-hover-color: #1D6FCC;
       --bs-link-hover-color-rgb: 29,111,204;
-      --bs-body-font-family: 'Noto Sans Thai', 'Outfit', sans-serif;
+      --bs-body-font-family: 'Noto Sans Thai', 'Noto Sans Myanmar', 'Outfit', sans-serif;
     }
     .btn-primary { --bs-btn-bg:#2563EB; --bs-btn-border-color:#2563EB; --bs-btn-hover-bg:#1D6FCC; --bs-btn-hover-border-color:#1D6FCC; --bs-btn-active-bg:#1D6FCC; --bs-btn-active-border-color:#1D6FCC; --bs-btn-disabled-bg:#2563EB; --bs-btn-disabled-border-color:#2563EB; }
     .btn-outline-primary { --bs-btn-color:#2563EB; --bs-btn-border-color:#2563EB; --bs-btn-hover-bg:#2563EB; --bs-btn-hover-border-color:#2563EB; --bs-btn-active-bg:#2563EB; --bs-btn-active-border-color:#2563EB; }
     .text-primary { color: #2563EB !important; }
     .bg-primary { background-color: #2563EB !important; }
 
-    body { font-family: 'Noto Sans Thai', 'Outfit', sans-serif; background: linear-gradient(135deg, #F0F6FF 0%, #DCEEFF 100%); min-height: 100vh; }
+    body { font-family: 'Noto Sans Thai', 'Noto Sans Myanmar', 'Outfit', sans-serif; background: linear-gradient(135deg, #F0F6FF 0%, #DCEEFF 100%); min-height: 100vh; }
+
+    /* ── Language switcher ── */
+    .lang-switcher { position: fixed; top: 10px; right: 10px; z-index: 1050; background: rgba(255,255,255,0.95); border-radius: 30px; padding: 4px; box-shadow: 0 4px 12px rgba(29,111,204,0.18); display: flex; gap: 2px; }
+    .lang-switcher button { border: none; background: transparent; padding: 5px 10px; font-size: 0.72rem; font-weight: 600; border-radius: 20px; color: #4A7CB5; transition: all .2s; }
+    .lang-switcher button.active { background: #2563EB; color: #fff; }
 
     .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; background: white; border-top: 1px solid rgba(29,111,204,0.15); display: flex; box-shadow: 0 -2px 10px rgba(29,111,204,0.08); }
-    .bottom-nav button { flex: 1; border: none; background: transparent; padding: 10px 0 8px; font-family: 'Noto Sans Thai', 'Outfit', sans-serif; font-size: 0.72rem; color: #4A7CB5; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: color 0.2s; }
+    .bottom-nav button { flex: 1; border: none; background: transparent; padding: 10px 0 8px; font-family: 'Noto Sans Thai', 'Noto Sans Myanmar', 'Outfit', sans-serif; font-size: 0.72rem; color: #4A7CB5; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: color 0.2s; }
     .bottom-nav button i { font-size: 1.2rem; }
     .bottom-nav button.active { color: #2563EB; font-weight: 600; }
     .bottom-nav button.active i { color: #2563EB; }
@@ -50,9 +55,11 @@
 
     .btn-morning { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; border: none; font-weight: 600; }
     .btn-evening { background: linear-gradient(135deg, #4B0082, #8A2BE2); color: #fff; border: none; font-weight: 600; }
+    .btn-ot { background: linear-gradient(135deg, #009975, #00C896); color: #fff; border: none; font-weight: 600; }
     .btn-morning:hover:not(:disabled) { background: linear-gradient(135deg, #FFC107, #FF9800); color: #000; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,165,0,0.4); }
     .btn-evening:hover:not(:disabled) { background: linear-gradient(135deg, #3A0066, #6A1B9A); color: #fff; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(138,43,226,0.4); }
-    .btn-morning:disabled, .btn-evening:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-ot:hover:not(:disabled) { background: linear-gradient(135deg, #00785D, #00A67E); color: #fff; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,150,120,0.4); }
+    .btn-morning:disabled, .btn-evening:disabled, .btn-ot:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .stat-card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s; }
     .stat-card:hover { transform: translateY(-5px); }
@@ -67,22 +74,32 @@
     .table tbody td { white-space: nowrap; vertical-align: middle; }
 
     .status-card { background: white; border-radius: 10px; padding: 12px; border: 1px solid #e9ecef; }
-    .status-icon { font-size: 2rem; }
+    .status-icon { font-size: 1.7rem; }
     .status-done { color: #198754; }
     .status-pending { color: #dc3545; }
 
     @media (max-width: 576px) {
       .main-card { padding: 20px; border-radius: 15px; }
       .icon-bg { width: 50px; height: 50px; font-size: 20px; }
+      .lang-switcher { top: 6px; right: 6px; }
+      .lang-switcher button { padding: 4px 7px; font-size: 0.65rem; }
     }
   </style>
 </head>
 <body>
+
+  <!-- ══════ LANGUAGE SWITCHER ══════ -->
+  <div class="lang-switcher">
+    <button type="button" id="langBtnTh" onclick="setLanguage('th')" class="active">ไทย</button>
+    <button type="button" id="langBtnEn" onclick="setLanguage('en')">EN</button>
+    <button type="button" id="langBtnMm" onclick="setLanguage('mm')">မြန်မာ</button>
+  </div>
+
   <!-- ══════ PAGE: FORM ══════ -->
   <div id="formPage" class="page active">
     <div class="main-card">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="mb-0 fw-bold text-primary"><i class="fa-solid fa-id-badge me-2"></i>บันทึกลืมบัตร</h5>
+        <h5 class="mb-0 fw-bold text-primary"><i class="fa-solid fa-id-badge me-2"></i><span data-i18n="form_title">บันทึกลืมบัตร</span></h5>
       </div>
 
       <div class="text-center mb-4">
@@ -91,62 +108,74 @@
 
       <div class="mb-4 position-relative">
         <div class="d-flex justify-content-between align-items-end mb-2">
-          <label class="form-label fw-bold mb-0">ค้นหาพนักงาน</label>
+          <label class="form-label fw-bold mb-0" data-i18n="search_label">ค้นหาพนักงาน</label>
           <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#addEmpModal">
-            <i class="fa-solid fa-user-plus"></i> เพิ่มพนักงานใหม่
+            <i class="fa-solid fa-user-plus"></i> <span data-i18n="add_employee_btn">เพิ่มพนักงานใหม่</span>
           </button>
         </div>
         <div class="input-group input-group-lg shadow-sm rounded">
           <span class="input-group-text bg-light text-primary"><i class="fa-solid fa-magnifying-glass"></i></span>
-          <input type="text" id="searchInput" class="form-control" oninput="onSearchInput()" placeholder="พิมพ์รหัส หรือ ชื่อ-สกุล..." autocomplete="off" disabled>
+          <input type="text" id="searchInput" class="form-control" oninput="onSearchInput()" data-i18n-placeholder="search_placeholder" placeholder="พิมพ์รหัส หรือ ชื่อ-สกุล..." autocomplete="off" disabled>
         </div>
         <div id="autocompleteResults" class="list-group autocomplete-results"></div>
         <div id="searchStatus" class="form-text text-warning mt-2">
-          <div class="spinner-border spinner-border-sm me-1"></div> กำลังโหลดฐานข้อมูล...
+          <div class="spinner-border spinner-border-sm me-1"></div> <span data-i18n="loading_db">กำลังโหลดฐานข้อมูล...</span>
         </div>
       </div>
 
       <div id="employeeCard" class="mb-4 shadow-sm">
         <div class="row g-2">
-          <div class="col-6"><label class="small text-muted">รหัส</label><input type="text" id="empId" class="form-control form-control-sm bg-white" readonly></div>
-          <div class="col-6"><label class="small text-muted">ชื่อ-สกุล</label><input type="text" id="empName" class="form-control form-control-sm bg-white" readonly></div>
-          <div class="col-6"><label class="small text-muted">แผนก</label><input type="text" id="empDept" class="form-control form-control-sm bg-white" readonly></div>
-          <div class="col-6"><label class="small text-muted">ตำแหน่ง</label><input type="text" id="empPos" class="form-control form-control-sm bg-white" readonly></div>
-          <div class="col-12"><label class="small text-muted">Plant</label><input type="text" id="empPlant" class="form-control form-control-sm bg-white" readonly></div>
+          <div class="col-6"><label class="small text-muted" data-i18n="field_id">รหัส</label><input type="text" id="empId" class="form-control form-control-sm bg-white" readonly></div>
+          <div class="col-6"><label class="small text-muted" data-i18n="field_fullname_short">ชื่อ-สกุล</label><input type="text" id="empName" class="form-control form-control-sm bg-white" readonly></div>
+          <div class="col-6"><label class="small text-muted" data-i18n="field_dept">แผนก</label><input type="text" id="empDept" class="form-control form-control-sm bg-white" readonly></div>
+          <div class="col-6"><label class="small text-muted" data-i18n="field_pos">ตำแหน่ง</label><input type="text" id="empPos" class="form-control form-control-sm bg-white" readonly></div>
+          <div class="col-12"><label class="small text-muted" data-i18n="field_plant">Plant</label><input type="text" id="empPlant" class="form-control form-control-sm bg-white" readonly></div>
         </div>
         
         <!-- สถานะการบันทึกวันนี้ -->
         <div class="mt-3" id="todayStatus" style="display:none;">
-          <h6 class="fw-bold mb-2"><i class="fa-solid fa-circle-info text-primary me-1"></i>สถานะการบันทึกวันนี้</h6>
+          <h6 class="fw-bold mb-2"><i class="fa-solid fa-circle-info text-primary me-1"></i><span data-i18n="today_status_title">สถานะการบันทึกวันนี้</span></h6>
           <div class="row g-2">
-            <div class="col-6">
+            <div class="col-4">
               <div class="status-card text-center">
                 <div class="status-icon mb-1">🌅</div>
-                <div class="fw-bold small">เวลาเช้า</div>
+                <div class="fw-bold small" data-i18n="label_morning">เวลาเช้า</div>
                 <div id="statusMorning" class="small mt-1">-</div>
               </div>
             </div>
-            <div class="col-6">
+            <div class="col-4">
               <div class="status-card text-center">
                 <div class="status-icon mb-1">🌆</div>
-                <div class="fw-bold small">เวลาเย็น</div>
+                <div class="fw-bold small" data-i18n="label_evening">เวลาเย็น</div>
                 <div id="statusEvening" class="small mt-1">-</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="status-card text-center">
+                <div class="status-icon mb-1">🕗</div>
+                <div class="fw-bold small" data-i18n="label_ot">เวลา OT</div>
+                <div id="statusOT" class="small mt-1">-</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ปุ่มบันทึกเช้า/เย็น -->
+      <!-- ปุ่มบันทึกเช้า/เย็น/OT -->
       <div class="row g-2">
-        <div class="col-6">
+        <div class="col-4">
           <button type="button" class="btn btn-morning w-100 py-3 rounded-pill shadow" id="morningBtn" disabled onclick="submitForm('morning')" title="บันทึกเวลาเช้า">
-            <i class="fa-solid fa-sun me-2"></i>บันทึกเวลาเช้า
+            <i class="fa-solid fa-sun me-1"></i><span data-i18n="btn_morning">บันทึกเวลาเช้า</span>
           </button>
         </div>
-        <div class="col-6">
+        <div class="col-4">
           <button type="button" class="btn btn-evening w-100 py-3 rounded-pill shadow" id="eveningBtn" disabled onclick="submitForm('evening')" title="บันทึกเวลาเย็น">
-            <i class="fa-solid fa-moon me-2"></i>บันทึกเวลาเย็น
+            <i class="fa-solid fa-moon me-1"></i><span data-i18n="btn_evening">บันทึกเวลาเย็น</span>
+          </button>
+        </div>
+        <div class="col-4">
+          <button type="button" class="btn btn-ot w-100 py-3 rounded-pill shadow" id="otBtn" disabled onclick="submitForm('ot')" title="บันทึกเวลา OT">
+            <i class="fa-solid fa-business-time me-1"></i><span data-i18n="btn_ot">บันทึกเวลา OT</span>
           </button>
         </div>
       </div>
@@ -157,47 +186,47 @@
   <div id="dashboardPage" class="page">
     <div class="container-fluid" style="max-width:1200px; margin:0 auto;">
       <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-        <h5 class="fw-bold mb-0"><i class="fa-solid fa-chart-pie text-primary me-2"></i>สถิติการลืมบัตร</h5>
+        <h5 class="fw-bold mb-0"><i class="fa-solid fa-chart-pie text-primary me-2"></i><span data-i18n="dashboard_title">สถิติการลืมบัตร</span></h5>
         <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="loadDashboard()">
-          <i class="fa-solid fa-rotate-right"></i> รีเฟรช
+          <i class="fa-solid fa-rotate-right"></i> <span data-i18n="refresh_btn">รีเฟรช</span>
         </button>
       </div>
 
       <div class="filter-card mb-4">
         <div class="row g-2 align-items-end">
           <div class="col-md-3 col-6">
-            <label class="form-label small fw-bold mb-1">Plant</label>
+            <label class="form-label small fw-bold mb-1" data-i18n="filter_plant">Plant</label>
             <select id="dashFilterPlant" class="form-select form-select-sm" onchange="applyDashboardFilters()">
-              <option value="">ทั้งหมด</option>
+              <option value="" data-i18n="filter_all">ทั้งหมด</option>
             </select>
           </div>
           <div class="col-md-3 col-6">
-            <label class="form-label small fw-bold mb-1">แผนก</label>
+            <label class="form-label small fw-bold mb-1" data-i18n="field_dept">แผนก</label>
             <select id="dashFilterDept" class="form-select form-select-sm" onchange="applyDashboardFilters()">
-              <option value="">ทั้งหมด</option>
+              <option value="" data-i18n="filter_all">ทั้งหมด</option>
             </select>
           </div>
           <div class="col-md-3 col-6">
-            <label class="form-label small fw-bold mb-1">เดือน/ปี</label>
+            <label class="form-label small fw-bold mb-1" data-i18n="filter_month_year">เดือน/ปี</label>
             <select id="dashFilterMonthYear" class="form-select form-select-sm" onchange="onDashQuickMonthChange()">
-              <option value="">ทั้งหมด</option>
+              <option value="" data-i18n="filter_all">ทั้งหมด</option>
             </select>
           </div>
           <div class="col-md-3 col-6">
             <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="resetDashboardFilters()">
-              <i class="fa-solid fa-filter-circle-xmark"></i> ล้างตัวกรอง
+              <i class="fa-solid fa-filter-circle-xmark"></i> <span data-i18n="filter_clear">ล้างตัวกรอง</span>
             </button>
           </div>
           <div class="col-md-4 col-6 mt-2">
-            <label class="form-label small fw-bold mb-1 text-muted">ตั้งแต่</label>
+            <label class="form-label small fw-bold mb-1 text-muted" data-i18n="filter_start">ตั้งแต่</label>
             <input type="date" id="dashFilterStartDate" class="form-control form-control-sm" onchange="onDashCustomRangeChange()">
           </div>
           <div class="col-md-4 col-6 mt-2">
-            <label class="form-label small fw-bold mb-1 text-muted">ถึงวันที่</label>
+            <label class="form-label small fw-bold mb-1 text-muted" data-i18n="filter_end">ถึงวันที่</label>
             <input type="date" id="dashFilterEndDate" class="form-control form-control-sm" onchange="onDashCustomRangeChange()">
           </div>
           <div class="col-md-4 mt-2">
-            <div class="small text-muted" id="dashFilterSummary">แสดงข้อมูลทั้งหมด</div>
+            <div class="small text-muted" id="dashFilterSummary" data-i18n="filter_showing_all">แสดงข้อมูลทั้งหมด</div>
           </div>
         </div>
       </div>
@@ -207,7 +236,7 @@
           <div class="card stat-card bg-white h-100">
             <div class="card-body d-flex align-items-center">
               <div class="icon-bg bg-primary text-white bg-opacity-75 me-3"><i class="fa-solid fa-users"></i></div>
-              <div><h6 class="text-muted mb-1">ลืมบัตรทั้งหมด</h6><h3 class="fw-bold mb-0 text-dark" id="totalCount">-</h3></div>
+              <div><h6 class="text-muted mb-1" data-i18n="stat_total">ลืมบัตรทั้งหมด</h6><h3 class="fw-bold mb-0 text-dark" id="totalCount">-</h3></div>
             </div>
           </div>
         </div>
@@ -215,7 +244,7 @@
           <div class="card stat-card bg-white h-100">
             <div class="card-body d-flex align-items-center">
               <div class="icon-bg bg-warning text-dark bg-opacity-75 me-3"><i class="fa-solid fa-calendar-day"></i></div>
-              <div><h6 class="text-muted mb-1">ลืมบัตรวันนี้</h6><h3 class="fw-bold mb-0 text-dark" id="todayCount">-</h3></div>
+              <div><h6 class="text-muted mb-1" data-i18n="stat_today">ลืมบัตรวันนี้</h6><h3 class="fw-bold mb-0 text-dark" id="todayCount">-</h3></div>
             </div>
           </div>
         </div>
@@ -223,7 +252,7 @@
           <div class="card stat-card bg-white h-100">
             <div class="card-body d-flex align-items-center">
               <div class="icon-bg bg-success text-white bg-opacity-75 me-3"><i class="fa-solid fa-calendar-days"></i></div>
-              <div><h6 class="text-muted mb-1">ลืมบัตรเดือนนี้</h6><h3 class="fw-bold mb-0 text-dark" id="monthCount">-</h3></div>
+              <div><h6 class="text-muted mb-1" data-i18n="stat_month">ลืมบัตรเดือนนี้</h6><h3 class="fw-bold mb-0 text-dark" id="monthCount">-</h3></div>
             </div>
           </div>
         </div>
@@ -232,13 +261,13 @@
       <div class="row g-3 mb-4">
         <div class="col-lg-8">
           <div class="chart-container">
-            <h6 class="fw-bold text-muted mb-3"><i class="fa-solid fa-chart-bar me-2"></i>Top 5 แผนกที่ลืมบัตรมากที่สุด</h6>
+            <h6 class="fw-bold text-muted mb-3"><i class="fa-solid fa-chart-bar me-2"></i><span data-i18n="chart_dept_title">Top 5 แผนกที่ลืมบัตรมากที่สุด</span></h6>
             <canvas id="deptChart" height="100"></canvas>
           </div>
         </div>
         <div class="col-lg-4">
           <div class="chart-container">
-            <h6 class="fw-bold text-muted mb-3"><i class="fa-solid fa-industry me-2"></i>สัดส่วนแยกตาม Plant</h6>
+            <h6 class="fw-bold text-muted mb-3"><i class="fa-solid fa-industry me-2"></i><span data-i18n="chart_plant_title">สัดส่วนแยกตาม Plant</span></h6>
             <canvas id="plantChart" height="200"></canvas>
           </div>
         </div>
@@ -247,9 +276,9 @@
       <div class="row g-3">
         <div class="col-12">
           <div class="chart-container">
-            <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-trophy me-2"></i>Top 5 พนักงานที่ลืมบัตรบ่อยที่สุด</h6>
+            <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-trophy me-2"></i><span data-i18n="chart_top_emp_title">Top 5 พนักงานที่ลืมบัตรบ่อยที่สุด</span></h6>
             <ul class="list-group list-group-flush" id="topEmployeesList">
-              <li class="list-group-item text-center text-muted">กดรีเฟรชเพื่อโหลดข้อมูล</li>
+              <li class="list-group-item text-center text-muted" data-i18n="press_refresh">กดรีเฟรชเพื่อโหลดข้อมูล</li>
             </ul>
           </div>
         </div>
@@ -261,47 +290,47 @@
   <div id="dataPage" class="page">
     <div class="data-card">
       <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-2">
-        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clipboard-list text-primary me-2"></i>ประวัติคนลืมบัตร</h5>
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clipboard-list text-primary me-2"></i><span data-i18n="data_title">ประวัติคนลืมบัตร</span></h5>
         <button class="btn btn-success rounded-pill px-3 shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#exportModal">
-          <i class="fa-solid fa-file-excel me-1"></i> Export
+          <i class="fa-solid fa-file-excel me-1"></i> <span data-i18n="export_btn">Export</span>
         </button>
       </div>
 
       <div class="filter-card mb-3">
         <div class="row g-2 align-items-end">
           <div class="col-md-3 col-6">
-            <label class="form-label small fw-bold mb-1">Plant</label>
+            <label class="form-label small fw-bold mb-1" data-i18n="filter_plant">Plant</label>
             <select id="dataFilterPlant" class="form-select form-select-sm" onchange="applyDataFilters()">
-              <option value="">ทั้งหมด</option>
+              <option value="" data-i18n="filter_all">ทั้งหมด</option>
             </select>
           </div>
           <div class="col-md-3 col-6">
-            <label class="form-label small fw-bold mb-1">แผนก</label>
+            <label class="form-label small fw-bold mb-1" data-i18n="field_dept">แผนก</label>
             <select id="dataFilterDept" class="form-select form-select-sm" onchange="applyDataFilters()">
-              <option value="">ทั้งหมด</option>
+              <option value="" data-i18n="filter_all">ทั้งหมด</option>
             </select>
           </div>
           <div class="col-md-3 col-6">
-            <label class="form-label small fw-bold mb-1">เดือน/ปี</label>
+            <label class="form-label small fw-bold mb-1" data-i18n="filter_month_year">เดือน/ปี</label>
             <select id="dataFilterMonthYear" class="form-select form-select-sm" onchange="onDataQuickMonthChange()">
-              <option value="">ทั้งหมด</option>
+              <option value="" data-i18n="filter_all">ทั้งหมด</option>
             </select>
           </div>
           <div class="col-md-3 col-6">
             <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="resetDataFilters()">
-              <i class="fa-solid fa-filter-circle-xmark"></i> ล้างตัวกรอง
+              <i class="fa-solid fa-filter-circle-xmark"></i> <span data-i18n="filter_clear">ล้างตัวกรอง</span>
             </button>
           </div>
           <div class="col-md-4 col-6 mt-2">
-            <label class="form-label small fw-bold mb-1 text-muted">ตั้งแต่</label>
+            <label class="form-label small fw-bold mb-1 text-muted" data-i18n="filter_start">ตั้งแต่</label>
             <input type="date" id="dataFilterStartDate" class="form-control form-control-sm" onchange="onDataCustomRangeChange()">
           </div>
           <div class="col-md-4 col-6 mt-2">
-            <label class="form-label small fw-bold mb-1 text-muted">ถึงวันที่</label>
+            <label class="form-label small fw-bold mb-1 text-muted" data-i18n="filter_end">ถึงวันที่</label>
             <input type="date" id="dataFilterEndDate" class="form-control form-control-sm" onchange="onDataCustomRangeChange()">
           </div>
           <div class="col-md-4 mt-2">
-            <div class="small text-muted" id="dataFilterSummary">แสดงข้อมูลทั้งหมด</div>
+            <div class="small text-muted" id="dataFilterSummary" data-i18n="filter_showing_all">แสดงข้อมูลทั้งหมด</div>
           </div>
         </div>
       </div>
@@ -310,19 +339,20 @@
         <table id="dataTable" class="table table-striped table-hover table-bordered" style="width:100%">
           <thead>
             <tr>
-              <th>รหัส</th>
-              <th>ชื่อ-นามสกุล</th>
-              <th>แผนก</th>
-              <th>ตำแหน่ง</th>
-              <th>Plant</th>
-              <th>วันที่</th>
-              <th>เวลาเช้า</th>
-              <th>เวลาเย็น</th>
-              <th>พิกัดบันทึก</th>
+              <th data-i18n="th_id">รหัส</th>
+              <th data-i18n="th_name">ชื่อ-นามสกุล</th>
+              <th data-i18n="th_dept">แผนก</th>
+              <th data-i18n="th_pos">ตำแหน่ง</th>
+              <th data-i18n="th_plant">Plant</th>
+              <th data-i18n="th_date">วันที่</th>
+              <th data-i18n="th_timein">เวลาเช้า</th>
+              <th data-i18n="th_timeout">เวลาเย็น</th>
+              <th data-i18n="th_ot">เวลา OT</th>
+              <th data-i18n="th_location">พิกัดบันทึก</th>
             </tr>
           </thead>
           <tbody id="tableBody">
-            <tr><td colspan="9" class="text-center text-muted">กดแท็บ "ข้อมูล" เพื่อโหลด</td></tr>
+            <tr><td colspan="10" class="text-center text-muted" data-i18n="press_data_tab">กดแท็บ "ข้อมูล" เพื่อโหลด</td></tr>
           </tbody>
         </table>
       </div>
@@ -332,13 +362,13 @@
   <!-- ══════ BOTTOM NAV ══════ -->
   <nav class="bottom-nav">
     <button onclick="switchPage('form')" id="navForm" class="active">
-      <i class="fa-solid fa-pen-to-square"></i> ฟอร์ม
+      <i class="fa-solid fa-pen-to-square"></i> <span data-i18n="nav_form">ฟอร์ม</span>
     </button>
     <button onclick="switchPage('dashboard')" id="navDashboard">
-      <i class="fa-solid fa-chart-pie"></i> สถิติ
+      <i class="fa-solid fa-chart-pie"></i> <span data-i18n="nav_dashboard">สถิติ</span>
     </button>
     <button onclick="switchPage('data')" id="navData">
-      <i class="fa-solid fa-table-list"></i> ข้อมูล
+      <i class="fa-solid fa-table-list"></i> <span data-i18n="nav_data">ข้อมูล</span>
     </button>
   </nav>
 
@@ -347,48 +377,48 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus me-2"></i>เพิ่มพนักงานใหม่</h5>
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus me-2"></i><span data-i18n="modal_add_emp_title">เพิ่มพนักงานใหม่</span></h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body bg-light">
           <div class="row g-2">
             <div class="col-12">
-              <label class="form-label small fw-bold mb-1">รหัสพนักงาน <span class="text-muted fw-normal">(ถ้าไม่ทราบ เว้นว่างได้)</span></label>
+              <label class="form-label small fw-bold mb-1" data-i18n="field_empid_optional">รหัสพนักงาน <span class="text-muted fw-normal" data-i18n="field_empid_hint">(ถ้าไม่ทราบ เว้นว่างได้)</span></label>
               <input type="text" id="newEmpId" class="form-control" placeholder="เช่น 1673231">
             </div>
             <div class="col-4 mt-3">
-              <label class="form-label small fw-bold mb-1 text-danger">คำนำหน้า*</label>
+              <label class="form-label small fw-bold mb-1 text-danger" data-i18n="field_prefix">คำนำหน้า*</label>
               <select id="newPrefix" class="form-select" required onchange="autoFullName()">
-                <option value="">เลือก</option>
+                <option value="" data-i18n="select_choose">เลือก</option>
                 <option value="นาย">นาย</option>
                 <option value="นาง">นาง</option>
                 <option value="นางสาว">นางสาว</option>
               </select>
             </div>
             <div class="col-4 mt-3">
-              <label class="form-label small fw-bold mb-1 text-danger">ชื่อ*</label>
-              <input type="text" id="newFirstName" class="form-control" required oninput="autoFullName()" placeholder="ชื่อจริง">
+              <label class="form-label small fw-bold mb-1 text-danger" data-i18n="field_firstname">ชื่อ*</label>
+              <input type="text" id="newFirstName" class="form-control" required oninput="autoFullName()" data-i18n-placeholder="field_firstname_placeholder" placeholder="ชื่อจริง">
             </div>
             <div class="col-4 mt-3">
-              <label class="form-label small fw-bold mb-1 text-danger">นามสกุล*</label>
-              <input type="text" id="newLastName" class="form-control" required oninput="autoFullName()" placeholder="นามสกุล">
+              <label class="form-label small fw-bold mb-1 text-danger" data-i18n="field_lastname">นามสกุล*</label>
+              <input type="text" id="newLastName" class="form-control" required oninput="autoFullName()" data-i18n-placeholder="field_lastname_placeholder" placeholder="นามสกุล">
             </div>
             <div class="col-12 mt-3">
-              <label class="form-label small fw-bold mb-1 text-primary">ชื่อ-นามสกุล (สร้างอัตโนมัติ)</label>
-              <input type="text" id="newFullName" class="form-control bg-white" required readonly placeholder="ระบบจะรวมชื่อให้ตรงนี้">
+              <label class="form-label small fw-bold mb-1 text-primary" data-i18n="field_fullname_auto">ชื่อ-นามสกุล (สร้างอัตโนมัติ)</label>
+              <input type="text" id="newFullName" class="form-control bg-white" required readonly data-i18n-placeholder="field_fullname_auto_placeholder" placeholder="ระบบจะรวมชื่อให้ตรงนี้">
             </div>
             <div class="col-6 mt-3">
-              <label class="form-label small fw-bold mb-1">แผนก</label>
+              <label class="form-label small fw-bold mb-1" data-i18n="field_dept">แผนก</label>
               <input type="text" id="newDept" class="form-control" placeholder="">
             </div>
             <div class="col-6 mt-3">
-              <label class="form-label small fw-bold mb-1">ตำแหน่ง</label>
+              <label class="form-label small fw-bold mb-1" data-i18n="field_pos">ตำแหน่ง</label>
               <input type="text" id="newPos" class="form-control" placeholder="">
             </div>
             <div class="col-12 mt-3 mb-2">
-              <label class="form-label small fw-bold mb-1 text-danger">Plant*</label>
+              <label class="form-label small fw-bold mb-1 text-danger" data-i18n="field_plant_required">Plant*</label>
               <select id="newPlant" class="form-select" required>
-                <option value="">-- เลือก Plant --</option>
+                <option value="" data-i18n="select_plant">-- เลือก Plant --</option>
                 <option value="Bitwise (thailand) co. ltd">Bitwise (thailand) co. ltd</option>
                 <option value="Bitwise heat exchanger co. ltd">Bitwise heat exchanger co. ltd</option>
                 <option value="Thai tasaki engineering co. ltd">Thai tasaki engineering co. ltd</option>
@@ -397,9 +427,9 @@
           </div>
           <hr>
           <div class="text-end">
-            <button type="button" class="btn btn-secondary me-1" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="button" class="btn btn-secondary me-1" data-bs-dismiss="modal" data-i18n="cancel_btn">ยกเลิก</button>
             <button type="button" class="btn btn-primary" id="saveNewEmpBtn" onclick="submitNewEmp()">
-              <i class="fa-solid fa-save me-1"></i> บันทึกลงฐานข้อมูล
+              <i class="fa-solid fa-save me-1"></i> <span data-i18n="save_to_db_btn">บันทึกลงฐานข้อมูล</span>
             </button>
           </div>
         </div>
@@ -412,37 +442,37 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header bg-success text-white">
-          <h5 class="modal-title fw-bold"><i class="fa-solid fa-file-excel me-2"></i>Export เป็น Excel</h5>
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-file-excel me-2"></i><span data-i18n="modal_export_title">Export เป็น Excel</span></h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label fw-bold">ตั้งแต่วันที่</label>
+              <label class="form-label fw-bold" data-i18n="export_start">ตั้งแต่วันที่</label>
               <input type="date" id="exportStartDate" class="form-control">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">ถึงวันที่</label>
+              <label class="form-label fw-bold" data-i18n="export_end">ถึงวันที่</label>
               <input type="date" id="exportEndDate" class="form-control">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">Plant</label>
+              <label class="form-label fw-bold" data-i18n="filter_plant">Plant</label>
               <select id="exportFilterPlant" class="form-select">
-                <option value="">ทั้งหมด</option>
+                <option value="" data-i18n="filter_all">ทั้งหมด</option>
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">แผนก</label>
+              <label class="form-label fw-bold" data-i18n="field_dept">แผนก</label>
               <select id="exportFilterDept" class="form-select">
-                <option value="">ทั้งหมด</option>
+                <option value="" data-i18n="filter_all">ทั้งหมด</option>
               </select>
             </div>
           </div>
-          <div class="mt-3 text-muted small"><i class="fa-solid fa-circle-info text-primary me-1"></i> หากไม่ระบุ ระบบจะ Export ข้อมูลทั้งหมด</div>
+          <div class="mt-3 text-muted small"><i class="fa-solid fa-circle-info text-primary me-1"></i> <span data-i18n="export_note">หากไม่ระบุ ระบบจะ Export ข้อมูลทั้งหมด</span></div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
-          <button type="button" class="btn btn-success" onclick="downloadExcel()"><i class="fa-solid fa-download me-1"></i> ดาวน์โหลด</button>
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal" data-i18n="cancel_btn">ยกเลิก</button>
+          <button type="button" class="btn btn-success" onclick="downloadExcel()"><i class="fa-solid fa-download me-1"></i> <span data-i18n="download_btn">ดาวน์โหลด</span></button>
         </div>
       </div>
     </div>
@@ -455,10 +485,425 @@
   <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
   <script>
-// CONFIG - เปลี่ยน URL นี้เป็น Web App URL ของคุณ
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwDzXg_PN3kd424yZWYm81JgN0NZal32-gZONxBtOshX_F_7_JAfidGITeG2kA7m9wd/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwpU_Y2hQ8uYg2YUy1c899Q7OZGs14Un3mDUx-FI89Rox4K74A5y2sgZZnnSJGitazc/exec";
 
-// API Functions
+// i18n - ไทย / English / မြန်မာ (Burmese)
+const translations = {
+  th: {
+    form_title: "บันทึกลืมบัตร",
+    search_label: "ค้นหาพนักงาน",
+    add_employee_btn: "เพิ่มพนักงานใหม่",
+    search_placeholder: "พิมพ์รหัส หรือ ชื่อ-สกุล...",
+    loading_db: "กำลังโหลดฐานข้อมูล...",
+    conn_ok: "เชื่อมต่อสำเร็จ พร้อมใช้งาน",
+    conn_fail: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์",
+    retry_btn: "ลองใหม่",
+    load_ok: "โหลดสำเร็จ พร้อมใช้งาน",
+    load_fail: "โหลดข้อมูลไม่สำเร็จ",
+    field_id: "รหัส",
+    field_fullname_short: "ชื่อ-สกุล",
+    field_dept: "แผนก",
+    field_pos: "ตำแหน่ง",
+    field_plant: "Plant",
+    today_status_title: "สถานะการบันทึกวันนี้",
+    label_morning: "เวลาเช้า",
+    label_evening: "เวลาเย็น",
+    label_ot: "เวลา OT",
+    status_recorded: "✅ บันทึกแล้ว",
+    status_not_recorded: "❌ ยังไม่บันทึก",
+    btn_morning: "บันทึกเวลาเช้า",
+    btn_evening: "บันทึกเวลาเย็น",
+    btn_ot: "บันทึกเวลา OT",
+    btn_morning_done: "บันทึกเช้าแล้ว",
+    btn_evening_done: "บันทึกเย็นแล้ว",
+    btn_ot_done: "บันทึก OT แล้ว",
+    no_match_text: "ไม่พบข้อมูล",
+    no_match_in_system: "ในระบบ",
+    dashboard_title: "สถิติการลืมบัตร",
+    refresh_btn: "รีเฟรช",
+    filter_plant: "Plant",
+    filter_month_year: "เดือน/ปี",
+    filter_clear: "ล้างตัวกรอง",
+    filter_start: "ตั้งแต่",
+    filter_end: "ถึงวันที่",
+    filter_all: "ทั้งหมด",
+    filter_showing_all: "แสดงข้อมูลทั้งหมด",
+    filter_by: "กรองโดย",
+    filter_items_suffix: "รายการ",
+    stat_total: "ลืมบัตรทั้งหมด",
+    stat_today: "ลืมบัตรวันนี้",
+    stat_month: "ลืมบัตรเดือนนี้",
+    chart_dept_title: "Top 5 แผนกที่ลืมบัตรมากที่สุด",
+    chart_plant_title: "สัดส่วนแยกตาม Plant",
+    chart_top_emp_title: "Top 5 พนักงานที่ลืมบัตรบ่อยที่สุด",
+    press_refresh: "กดรีเฟรชเพื่อโหลดข้อมูล",
+    no_data_filtered: "ไม่พบข้อมูลตามตัวกรองที่เลือก",
+    times_suffix: "ครั้ง",
+    data_title: "ประวัติคนลืมบัตร",
+    export_btn: "Export",
+    press_data_tab: 'กดแท็บ "ข้อมูล" เพื่อโหลด',
+    th_id: "รหัส",
+    th_name: "ชื่อ-นามสกุล",
+    th_dept: "แผนก",
+    th_pos: "ตำแหน่ง",
+    th_plant: "Plant",
+    th_date: "วันที่",
+    th_timein: "เวลาเช้า",
+    th_timeout: "เวลาเย็น",
+    th_ot: "เวลา OT",
+    th_location: "พิกัดบันทึก",
+    map_link: "แผนที่",
+    no_location: "ไม่มีพิกัด",
+    nav_form: "ฟอร์ม",
+    nav_dashboard: "สถิติ",
+    nav_data: "ข้อมูล",
+    modal_add_emp_title: "เพิ่มพนักงานใหม่",
+    field_empid_optional: "รหัสพนักงาน",
+    field_empid_hint: "(ถ้าไม่ทราบ เว้นว่างได้)",
+    field_prefix: "คำนำหน้า*",
+    field_firstname: "ชื่อ*",
+    field_firstname_placeholder: "ชื่อจริง",
+    field_lastname: "นามสกุล*",
+    field_lastname_placeholder: "นามสกุล",
+    field_fullname_auto: "ชื่อ-นามสกุล (สร้างอัตโนมัติ)",
+    field_fullname_auto_placeholder: "ระบบจะรวมชื่อให้ตรงนี้",
+    field_plant_required: "Plant*",
+    select_choose: "เลือก",
+    select_plant: "-- เลือก Plant --",
+    cancel_btn: "ยกเลิก",
+    save_to_db_btn: "บันทึกลงฐานข้อมูล",
+    saving: "กำลังบันทึก...",
+    modal_export_title: "Export เป็น Excel",
+    export_start: "ตั้งแต่วันที่",
+    export_end: "ถึงวันที่",
+    export_note: "หากไม่ระบุ ระบบจะ Export ข้อมูลทั้งหมด",
+    download_btn: "ดาวน์โหลด",
+    swal_processing_title: "⏳ กำลังบันทึก",
+    swal_processing_text: "กรุณารอสักครู่...",
+    swal_select_emp_title: "⚠️ กรุณาเลือกพนักงาน",
+    swal_select_emp_text: "ค้นหาและเลือกพนักงานจากรายการก่อนบันทึก",
+    ok_btn: "ตกลง",
+    swal_save_success_title: "✅ บันทึกสำเร็จ!",
+    swal_save_success_html_prefix: "บันทึกเวลา",
+    swal_save_success_html_of: "ของ",
+    swal_save_success_html_suffix: "เรียบร้อยแล้ว",
+    ack_btn: "รับทราบ",
+    swal_error_title: "เกิดข้อผิดพลาด!",
+    swal_error_html: "ไม่สามารถบันทึกข้อมูลได้",
+    swal_fill_required_title: "กรุณากรอกข้อมูลให้ครบ",
+    swal_fill_required_text: "ต้องระบุ คำนำหน้า / ชื่อ / นามสกุล / Plant",
+    swal_success_title: "สำเร็จ!",
+    swal_add_emp_success: "เพิ่มพนักงานใหม่เรียบร้อยแล้ว",
+    updating_db: "อัปเดตฐานข้อมูลใหม่...",
+    db_updated: "ฐานข้อมูลอัปเดตแล้ว",
+    swal_no_data_title: "ไม่พบข้อมูล",
+    swal_no_data_text: "ไม่มีข้อมูลตรงกับตัวกรองที่คุณเลือก",
+    swal_export_success_title: "Export สำเร็จ!",
+    swal_export_partial_title: "Export สำเร็จ (มีข้อมูลบางส่วนถูกข้าม)",
+    swal_export_partial_html: "ดาวน์โหลดไฟล์เรียบร้อยแล้ว",
+    swal_export_partial_found: "รายการที่มีข้อมูลวันที่ผิดปกติ",
+    load_data_fail: "โหลดข้อมูลไม่สำเร็จ"
+  },
+  en: {
+    form_title: "Forgotten Card Log",
+    search_label: "Search Employee",
+    add_employee_btn: "Add New Employee",
+    search_placeholder: "Type ID or full name...",
+    loading_db: "Loading database...",
+    conn_ok: "Connected. Ready to use.",
+    conn_fail: "Unable to connect to the server",
+    retry_btn: "Retry",
+    load_ok: "Loaded successfully. Ready to use.",
+    load_fail: "Failed to load data",
+    field_id: "ID",
+    field_fullname_short: "Full name",
+    field_dept: "Department",
+    field_pos: "Position",
+    field_plant: "Plant",
+    today_status_title: "Today's Status",
+    label_morning: "Clock In",
+    label_evening: "Clock Out",
+    label_ot: "OT Time",
+    status_recorded: "✅ Recorded",
+    status_not_recorded: "❌ Not recorded",
+    btn_morning: "Clock In",
+    btn_evening: "Clock Out",
+    btn_ot: "Log OT",
+    btn_morning_done: "Clocked In",
+    btn_evening_done: "Clocked Out",
+    btn_ot_done: "OT Logged",
+    no_match_text: "No results for",
+    no_match_in_system: "in the system",
+    dashboard_title: "Forgotten Card Statistics",
+    refresh_btn: "Refresh",
+    filter_plant: "Plant",
+    filter_month_year: "Month/Year",
+    filter_clear: "Clear filters",
+    filter_start: "From",
+    filter_end: "To",
+    filter_all: "All",
+    filter_showing_all: "Showing all records",
+    filter_by: "Filtered by",
+    filter_items_suffix: "records",
+    stat_total: "Total occurrences",
+    stat_today: "Today",
+    stat_month: "This month",
+    chart_dept_title: "Top 5 Departments",
+    chart_plant_title: "Breakdown by Plant",
+    chart_top_emp_title: "Top 5 Employees",
+    press_refresh: "Press refresh to load data",
+    no_data_filtered: "No data matches the selected filters",
+    times_suffix: "times",
+    data_title: "Forgotten Card History",
+    export_btn: "Export",
+    press_data_tab: 'Press the "Data" tab to load',
+    th_id: "ID",
+    th_name: "Full Name",
+    th_dept: "Department",
+    th_pos: "Position",
+    th_plant: "Plant",
+    th_date: "Date",
+    th_timein: "Clock In",
+    th_timeout: "Clock Out",
+    th_ot: "OT Time",
+    th_location: "Location",
+    map_link: "Map",
+    no_location: "No location",
+    nav_form: "Form",
+    nav_dashboard: "Stats",
+    nav_data: "Data",
+    modal_add_emp_title: "Add New Employee",
+    field_empid_optional: "Employee ID",
+    field_empid_hint: "(leave blank if unknown)",
+    field_prefix: "Title*",
+    field_firstname: "First Name*",
+    field_firstname_placeholder: "First name",
+    field_lastname: "Last Name*",
+    field_lastname_placeholder: "Last name",
+    field_fullname_auto: "Full Name (auto-generated)",
+    field_fullname_auto_placeholder: "The full name will appear here",
+    field_plant_required: "Plant*",
+    select_choose: "Choose",
+    select_plant: "-- Select Plant --",
+    cancel_btn: "Cancel",
+    save_to_db_btn: "Save to Database",
+    saving: "Saving...",
+    modal_export_title: "Export to Excel",
+    export_start: "From date",
+    export_end: "To date",
+    export_note: "If left blank, all data will be exported.",
+    download_btn: "Download",
+    swal_processing_title: "⏳ Saving",
+    swal_processing_text: "Please wait...",
+    swal_select_emp_title: "⚠️ Please select an employee",
+    swal_select_emp_text: "Search and select an employee from the list before saving",
+    ok_btn: "OK",
+    swal_save_success_title: "✅ Saved successfully!",
+    swal_save_success_html_prefix: "Recorded",
+    swal_save_success_html_of: "for",
+    swal_save_success_html_suffix: "successfully",
+    ack_btn: "Got it",
+    swal_error_title: "An error occurred!",
+    swal_error_html: "Unable to save the data",
+    swal_fill_required_title: "Please complete all fields",
+    swal_fill_required_text: "Title / First name / Last name / Plant are required",
+    swal_success_title: "Success!",
+    swal_add_emp_success: "New employee added successfully",
+    updating_db: "Refreshing database...",
+    db_updated: "Database updated",
+    swal_no_data_title: "No data found",
+    swal_no_data_text: "No data matches your selected filters",
+    swal_export_success_title: "Export successful!",
+    swal_export_partial_title: "Export completed (some rows skipped)",
+    swal_export_partial_html: "File downloaded successfully",
+    swal_export_partial_found: "records had invalid date data",
+    load_data_fail: "Failed to load data"
+  },
+  mm: {
+    form_title: "ကတ်မေ့ခြင်း မှတ်တမ်း",
+    search_label: "ဝန်ထမ်းရှာဖွေရန်",
+    add_employee_btn: "ဝန်ထမ်းအသစ်ထည့်ရန်",
+    search_placeholder: "ID သို့မဟုတ် အမည်ရိုက်ထည့်ပါ...",
+    loading_db: "ဒေတာဘေ့စ်ကို ဖွင့်နေသည်...",
+    conn_ok: "ချိတ်ဆက်မှု အောင်မြင်ပါသည်",
+    conn_fail: "ဆာဗာသို့ ချိတ်ဆက်၍မရပါ",
+    retry_btn: "ထပ်စမ်းရန်",
+    load_ok: "ဒေတာဖွင့်ခြင်း အောင်မြင်ပါသည်",
+    load_fail: "ဒေတာဖွင့်ခြင်း မအောင်မြင်ပါ",
+    field_id: "ID",
+    field_fullname_short: "အမည်အပြည့်အစုံ",
+    field_dept: "ဌာန",
+    field_pos: "ရာထူး",
+    field_plant: "Plant",
+    today_status_title: "ယနေ့ မှတ်တမ်းအခြေအနေ",
+    label_morning: "မနက်ချိန်",
+    label_evening: "ညနေချိန်",
+    label_ot: "OT ချိန်",
+    status_recorded: "✅ မှတ်တမ်းတင်ပြီး",
+    status_not_recorded: "❌ မှတ်တမ်းမတင်ရသေး",
+    btn_morning: "မနက်ချိန် မှတ်တမ်းတင်ရန်",
+    btn_evening: "ညနေချိန် မှတ်တမ်းတင်ရန်",
+    btn_ot: "OT ချိန် မှတ်တမ်းတင်ရန်",
+    btn_morning_done: "မနက်ချိန် မှတ်ပြီး",
+    btn_evening_done: "ညနေချိန် မှတ်ပြီး",
+    btn_ot_done: "OT မှတ်ပြီး",
+    no_match_text: "ရှာဖွေမှုအတွက် ရလဒ်မရှိပါ",
+    no_match_in_system: "စနစ်တွင်",
+    dashboard_title: "ကတ်မေ့မှု စာရင်းအင်း",
+    refresh_btn: "ပြန်လည်ဆွဲယူရန်",
+    filter_plant: "Plant",
+    filter_month_year: "လ/နှစ်",
+    filter_clear: "စစ်ထုတ်မှု ရှင်းရန်",
+    filter_start: "မှစ၍",
+    filter_end: "အထိ",
+    filter_all: "အားလုံး",
+    filter_showing_all: "အားလုံးကို ပြသနေသည်",
+    filter_by: "စစ်ထုတ်ချက်",
+    filter_items_suffix: "ခု",
+    stat_total: "စုစုပေါင်း ကတ်မေ့မှု",
+    stat_today: "ယနေ့ ကတ်မေ့မှု",
+    stat_month: "ဒီလ ကတ်မေ့မှု",
+    chart_dept_title: "အများဆုံးဌာန ၅ ခု",
+    chart_plant_title: "Plant အလိုက် ပုံစံ",
+    chart_top_emp_title: "အများဆုံးဝန်ထမ်း ၅ ဦး",
+    press_refresh: "ဒေတာဖွင့်ရန် Refresh နှိပ်ပါ",
+    no_data_filtered: "ရွေးချယ်ထားသော စစ်ထုတ်မှုနှင့် ကိုက်ညီသောဒေတာမရှိပါ",
+    times_suffix: "ကြိမ်",
+    data_title: "ကတ်မေ့မှု မှတ်တမ်းများ",
+    export_btn: "Export",
+    press_data_tab: '"ဒေတာ" တဘ်ကို နှိပ်ပြီး ဖွင့်ပါ',
+    th_id: "ID",
+    th_name: "အမည်အပြည့်အစုံ",
+    th_dept: "ဌာန",
+    th_pos: "ရာထူး",
+    th_plant: "Plant",
+    th_date: "ရက်စွဲ",
+    th_timein: "မနက်ချိန်",
+    th_timeout: "ညနေချိန်",
+    th_ot: "OT ချိန်",
+    th_location: "တည်နေရာ",
+    map_link: "မြေပုံ",
+    no_location: "တည်နေရာ မရှိပါ",
+    nav_form: "ဖောင်",
+    nav_dashboard: "စာရင်းအင်း",
+    nav_data: "ဒေတာ",
+    modal_add_emp_title: "ဝန်ထမ်းအသစ်ထည့်ရန်",
+    field_empid_optional: "ဝန်ထမ်းအမှတ်",
+    field_empid_hint: "(မသိပါက အလွတ်ထားနိုင်သည်)",
+    field_prefix: "ဘွဲ့/ရှေ့ဆက်*",
+    field_firstname: "အမည် (ပထမ)*",
+    field_firstname_placeholder: "အမည်",
+    field_lastname: "မျိုးနွယ်အမည်*",
+    field_lastname_placeholder: "မျိုးနွယ်အမည်",
+    field_fullname_auto: "အမည်အပြည့်အစုံ (အလိုအလျောက်)",
+    field_fullname_auto_placeholder: "စနစ်မှ အမည်ကို ဤနေရာတွင် ပေါင်းပေးမည်",
+    field_plant_required: "Plant*",
+    select_choose: "ရွေးချယ်ပါ",
+    select_plant: "-- Plant ရွေးချယ်ပါ --",
+    cancel_btn: "ပယ်ဖျက်ရန်",
+    save_to_db_btn: "ဒေတာဘေ့စ်သို့ သိမ်းရန်",
+    saving: "သိမ်းနေသည်...",
+    modal_export_title: "Excel အဖြစ် Export လုပ်ရန်",
+    export_start: "စတင်သည့်ရက်",
+    export_end: "ကုန်ဆုံးသည့်ရက်",
+    export_note: "မရွေးချယ်ပါက ဒေတာအားလုံးကို Export လုပ်ပါမည်",
+    download_btn: "ဒေါင်းလုဒ်လုပ်ရန်",
+    swal_processing_title: "⏳ သိမ်းနေသည်",
+    swal_processing_text: "ခေတ္တစောင့်ပါ...",
+    swal_select_emp_title: "⚠️ ဝန်ထမ်းကို ရွေးချယ်ပါ",
+    swal_select_emp_text: "မသိမ်းမီ စာရင်းမှ ဝန်ထမ်းကို ရှာဖွေရွေးချယ်ပါ",
+    ok_btn: "အိုကေ",
+    swal_save_success_title: "✅ သိမ်းဆည်းမှု အောင်မြင်ပါသည်!",
+    swal_save_success_html_prefix: "မှတ်တမ်းတင်ပြီးပါပြီ -",
+    swal_save_success_html_of: "အတွက်",
+    swal_save_success_html_suffix: "",
+    ack_btn: "သိရှိပါပြီ",
+    swal_error_title: "အမှားတစ်ခု ဖြစ်ပေါ်ခဲ့သည်!",
+    swal_error_html: "ဒေတာကို သိမ်းဆည်း၍ မရပါ",
+    swal_fill_required_title: "အချက်အလက် အပြည့်အစုံ ဖြည့်ပါ",
+    swal_fill_required_text: "ဘွဲ့ / အမည် / မျိုးနွယ်အမည် / Plant လိုအပ်သည်",
+    swal_success_title: "အောင်မြင်ပါသည်!",
+    swal_add_emp_success: "ဝန်ထမ်းအသစ် ထည့်သွင်းမှု အောင်မြင်ပါသည်",
+    updating_db: "ဒေတာဘေ့စ်ကို ပြန်လည်ဆွဲယူနေသည်...",
+    db_updated: "ဒေတာဘေ့စ် အသစ်ဖြစ်သွားပါပြီ",
+    swal_no_data_title: "ဒေတာ မတွေ့ပါ",
+    swal_no_data_text: "ရွေးချယ်ထားသော စစ်ထုတ်မှုနှင့် ကိုက်ညီသောဒေတာမရှိပါ",
+    swal_export_success_title: "Export အောင်မြင်ပါသည်!",
+    swal_export_partial_title: "Export အောင်မြင်ပါသည် (အချို့ကျော်သွားသည်)",
+    swal_export_partial_html: "ဖိုင်ကို အောင်မြင်စွာ ဒေါင်းလုဒ်ချပြီးပါပြီ",
+    swal_export_partial_found: "ခုသည် ရက်စွဲအချက်အလက် မှားယွင်းနေသည်",
+    load_data_fail: "ဒေတာဖွင့်ခြင်း မအောင်မြင်ပါ"
+  }
+};
+
+let currentLang = "th";
+
+function t(key) {
+  return (translations[currentLang] && translations[currentLang][key]) || translations.th[key] || key;
+}
+
+function setLanguage(lang) {
+  if (!translations[lang]) return;
+  currentLang = lang;
+
+  document.getElementById('langBtnTh').classList.toggle('active', lang === 'th');
+  document.getElementById('langBtnEn').classList.toggle('active', lang === 'en');
+  document.getElementById('langBtnMm').classList.toggle('active', lang === 'mm');
+
+  document.documentElement.lang = lang === 'th' ? 'th' : (lang === 'mm' ? 'my' : 'en');
+
+  applyStaticTranslations();
+  refreshDynamicTexts();
+}
+
+function applyStaticTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.setAttribute('placeholder', t(key));
+  });
+}
+
+// รีเฟรชข้อความที่ถูกสร้างด้วย JS (ปุ่ม, สถานะ, DataTable ฯลฯ) ให้ตรงกับภาษาปัจจุบัน
+function refreshDynamicTexts() {
+  // ปุ่มบันทึกเช้า/เย็น/OT - รีเซ็ตใหม่ตามสถานะปัจจุบันของพนักงานที่เลือกอยู่ (ถ้ามี)
+  const empId = document.getElementById('empId').value.trim();
+  if (empId) {
+    checkTodayStatus(empId);
+  } else {
+    resetButtons();
+  }
+
+  // ป้ายกำกับ dropdown "ทั้งหมด" ที่สร้างด้วย JS
+  ['dash', 'data'].forEach(prefix => {
+    const plantSel = document.getElementById(`${prefix}FilterPlant`);
+    const deptSel  = document.getElementById(`${prefix}FilterDept`);
+    const myearSel = document.getElementById(`${prefix}FilterMonthYear`);
+    if (plantSel && plantSel.options.length) plantSel.options[0].textContent = t('filter_all');
+    if (deptSel && deptSel.options.length) deptSel.options[0].textContent = t('filter_all');
+    if (myearSel && myearSel.options.length) myearSel.options[0].textContent = t('filter_all');
+  });
+  ['exportFilterPlant','exportFilterDept'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel && sel.options.length) sel.options[0].textContent = t('filter_all');
+  });
+
+  // ตัวสรุปตัวกรอง
+  if (dataLoaded) applyDataFilters();
+  if (dashboardLoaded) applyDashboardFilters();
+
+  // ตาราง DataTable ภาษา
+  if (dataTableInstance) {
+    dataTableInstance.destroy();
+    dataTableInstance = null;
+    if (dataLoaded) applyDataFilters();
+  }
+}
+
+// Utility Functions
 async function apiGet(action, params = {}) {
   const queryString = new URLSearchParams({ action, ...params }).toString();
   let res;
@@ -512,7 +957,6 @@ async function apiPost(action, data) {
   return json.message;
 }
 
-// Utility Functions
 function parseDateString(dateStr) {
   if (!dateStr) return null;
   let s = dateStr.trim();
@@ -593,8 +1037,10 @@ function switchPage(page) {
 // Clock
 setInterval(() => {
   const now = new Date();
+  const localeMap = { th: 'th-TH', en: 'en-US', mm: 'en-GB' };
+  const locale = localeMap[currentLang] || 'th-TH';
   document.getElementById('clockDisplay').innerHTML =
-    `<i class="fa-regular fa-clock me-1"></i>${now.toLocaleDateString('th-TH')} ${now.toLocaleTimeString('th-TH')}`;
+    `<i class="fa-regular fa-clock me-1"></i>${now.toLocaleDateString(locale)} ${now.toLocaleTimeString(locale)}`;
 }, 1000);
 
 // Connection Check & Employee Loading
@@ -603,17 +1049,17 @@ async function checkConnection() {
     const data = await apiGet('ping');
     console.log('✅ Connection OK:', data);
     document.getElementById('searchStatus').innerHTML =
-      '<i class="fa-solid fa-circle-check text-success"></i> เชื่อมต่อสำเร็จ พร้อมใช้งาน';
+      `<i class="fa-solid fa-circle-check text-success"></i> ${t('conn_ok')}`;
     document.getElementById('searchStatus').className = "form-text text-success mt-1";
     return true;
   } catch (err) {
     console.error('❌ Connection failed:', err);
     document.getElementById('searchStatus').innerHTML =
       `<i class="fa-solid fa-circle-xmark text-danger"></i>
-       ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์<br>
+       ${t('conn_fail')}<br>
        <small class="text-danger">${escapeHtml(err.message)}</small>
        <br><button class="btn btn-sm btn-warning mt-1" onclick="checkConnection()">
-         <i class="fa-solid fa-rotate-right"></i> ลองใหม่
+         <i class="fa-solid fa-rotate-right"></i> ${t('retry_btn')}
        </button>`;
     document.getElementById('searchStatus').className = "form-text text-danger mt-1";
     return false;
@@ -621,6 +1067,7 @@ async function checkConnection() {
 }
 
 window.onload = function () {
+  applyStaticTranslations();
   checkConnection().then(connected => {
     if (connected) loadEmployees();
   });
@@ -630,14 +1077,14 @@ async function loadEmployees() {
   try {
     employeeData = await apiGet('getEmployees');
     document.getElementById('searchInput').disabled = false;
-    document.getElementById('searchStatus').innerHTML = "<i class='fa-solid fa-circle-check'></i> โหลดสำเร็จ พร้อมใช้งาน";
+    document.getElementById('searchStatus').innerHTML = `<i class='fa-solid fa-circle-check'></i> ${t('load_ok')}`;
     document.getElementById('searchStatus').className = "form-text text-success mt-1";
   } catch (err) {
     document.getElementById('searchStatus').innerHTML =
-      `<i class='fa-solid fa-circle-xmark text-danger'></i> โหลดข้อมูลไม่สำเร็จ
+      `<i class='fa-solid fa-circle-xmark text-danger'></i> ${t('load_fail')}
        <br><small class='text-danger' style='white-space:pre-wrap;word-break:break-all'>${escapeHtml(err.message)}</small>
        <br><button class='btn btn-sm btn-outline-warning mt-1' onclick='loadEmployees()'>
-         <i class='fa-solid fa-rotate-right'></i> ลองใหม่
+         <i class='fa-solid fa-rotate-right'></i> ${t('retry_btn')}
        </button>`;
     document.getElementById('searchStatus').className = "form-text mt-1";
   }
@@ -665,7 +1112,7 @@ function filterEmployees() {
   if (!employeeData || employeeData.length === 0) {
     resultsContainer.style.display = 'block';
     resultsContainer.innerHTML = `<div class="list-group-item text-center py-3 text-warning">
-      <i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังโหลดข้อมูล...
+      <i class="fa-solid fa-spinner fa-spin me-2"></i>${t('loading_db')}
     </div>`;
     return;
   }
@@ -701,9 +1148,9 @@ function filterEmployees() {
     noMatch.className = 'list-group-item text-center py-3';
     noMatch.innerHTML = `
       <i class="fa-solid fa-circle-xmark text-danger me-2"></i>
-      ไม่พบข้อมูล "${escapeHtml(inputVal)}" ในระบบ<br>
+      ${t('no_match_text')} "${escapeHtml(inputVal)}" ${t('no_match_in_system')}<br>
       <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="openAddEmpModal()">
-        <i class="fa-solid fa-user-plus"></i> เพิ่มพนักงานใหม่
+        <i class="fa-solid fa-user-plus"></i> ${t('add_employee_btn')}
       </button>
     `;
     resultsContainer.appendChild(noMatch);
@@ -728,49 +1175,62 @@ document.addEventListener('click', function (event) {
 // Today Status Check
 async function checkTodayStatus(empId) {
   if (!empId || empId === "-") {
-    updateButtonStates(false, false);
+    updateButtonStates(false, false, false);
     return;
   }
 
   try {
     const status = await apiGet('checkTodayStatus', { empId: empId });
-    updateButtonStates(status.morning, status.evening);
+    updateButtonStates(status.morning, status.evening, status.ot);
     
     document.getElementById('todayStatus').style.display = 'block';
     document.getElementById('statusMorning').innerHTML = status.morning 
-      ? `<span class="status-done fw-bold">✅ บันทึกแล้ว</span><br><small>${escapeHtml(status.timeIn)}</small>`
-      : '<span class="status-pending">❌ ยังไม่บันทึก</span>';
+      ? `<span class="status-done fw-bold">${t('status_recorded')}</span><br><small>${escapeHtml(status.timeIn)}</small>`
+      : `<span class="status-pending">${t('status_not_recorded')}</span>`;
     document.getElementById('statusEvening').innerHTML = status.evening 
-      ? `<span class="status-done fw-bold">✅ บันทึกแล้ว</span><br><small>${escapeHtml(status.timeOut)}</small>`
-      : '<span class="status-pending">❌ ยังไม่บันทึก</span>';
+      ? `<span class="status-done fw-bold">${t('status_recorded')}</span><br><small>${escapeHtml(status.timeOut)}</small>`
+      : `<span class="status-pending">${t('status_not_recorded')}</span>`;
+    document.getElementById('statusOT').innerHTML = status.ot
+      ? `<span class="status-done fw-bold">${t('status_recorded')}</span><br><small>${escapeHtml(status.timeOT)}</small>`
+      : `<span class="status-pending">${t('status_not_recorded')}</span>`;
   } catch (err) {
     console.error("checkTodayStatus error:", err);
-    updateButtonStates(false, false);
+    updateButtonStates(false, false, false);
     document.getElementById('todayStatus').style.display = 'none';
   }
 }
 
-function updateButtonStates(morningDone, eveningDone) {
+function updateButtonStates(morningDone, eveningDone, otDone) {
   const morningBtn = document.getElementById('morningBtn');
   const eveningBtn = document.getElementById('eveningBtn');
+  const otBtn = document.getElementById('otBtn');
   
-  morningBtn.disabled = morningDone;
-  eveningBtn.disabled = eveningDone;
+  morningBtn.disabled = !!morningDone;
+  eveningBtn.disabled = !!eveningDone;
+  otBtn.disabled = !!otDone;
   
   if (morningDone) {
-    morningBtn.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>บันทึกเช้าแล้ว';
+    morningBtn.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i>${t('btn_morning_done')}`;
     morningBtn.className = 'btn btn-success w-100 py-3 rounded-pill shadow';
   } else {
-    morningBtn.innerHTML = '<i class="fa-solid fa-sun me-2"></i>บันทึกเวลาเช้า';
+    morningBtn.innerHTML = `<i class="fa-solid fa-sun me-1"></i>${t('btn_morning')}`;
     morningBtn.className = 'btn btn-morning w-100 py-3 rounded-pill shadow';
   }
   
   if (eveningDone) {
-    eveningBtn.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>บันทึกเย็นแล้ว';
+    eveningBtn.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i>${t('btn_evening_done')}`;
     eveningBtn.className = 'btn btn-success w-100 py-3 rounded-pill shadow';
   } else {
-    eveningBtn.innerHTML = '<i class="fa-solid fa-moon me-2"></i>บันทึกเวลาเย็น';
+    eveningBtn.innerHTML = `<i class="fa-solid fa-moon me-1"></i>${t('btn_evening')}`;
     eveningBtn.className = 'btn btn-evening w-100 py-3 rounded-pill shadow';
+  }
+
+  if (otDone) {
+    otBtn.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i>${t('btn_ot_done')}`;
+    otBtn.className = 'btn btn-success w-100 py-3 rounded-pill shadow';
+  } else {
+    otBtn.innerHTML = `<i class="fa-solid fa-business-time me-1"></i>${t('btn_ot')}`;
+    otBtn.className = 'btn btn-ot w-100 py-3 rounded-pill shadow';
   }
 }
 
@@ -805,20 +1265,26 @@ function checkEmployee(foundEmp) {
 }
 
 function resetButtons() {
-  document.getElementById('morningBtn').disabled = true;
-  document.getElementById('eveningBtn').disabled = true;
-  document.getElementById('morningBtn').innerHTML = '<i class="fa-solid fa-sun me-2"></i>บันทึกเวลาเช้า';
-  document.getElementById('morningBtn').className = 'btn btn-morning w-100 py-3 rounded-pill shadow';
-  document.getElementById('eveningBtn').innerHTML = '<i class="fa-solid fa-moon me-2"></i>บันทึกเวลาเย็น';
-  document.getElementById('eveningBtn').className = 'btn btn-evening w-100 py-3 rounded-pill shadow';
+  const morningBtn = document.getElementById('morningBtn');
+  const eveningBtn = document.getElementById('eveningBtn');
+  const otBtn = document.getElementById('otBtn');
+  morningBtn.disabled = true;
+  eveningBtn.disabled = true;
+  otBtn.disabled = true;
+  morningBtn.innerHTML = `<i class="fa-solid fa-sun me-1"></i>${t('btn_morning')}`;
+  morningBtn.className = 'btn btn-morning w-100 py-3 rounded-pill shadow';
+  eveningBtn.innerHTML = `<i class="fa-solid fa-moon me-1"></i>${t('btn_evening')}`;
+  eveningBtn.className = 'btn btn-evening w-100 py-3 rounded-pill shadow';
+  otBtn.innerHTML = `<i class="fa-solid fa-business-time me-1"></i>${t('btn_ot')}`;
+  otBtn.className = 'btn btn-ot w-100 py-3 rounded-pill shadow';
 }
 
 // Form Submission
 function submitForm(period) {
   if (isSubmitting) {
     Swal.fire({
-      title: '⏳ กำลังบันทึก',
-      text: 'กรุณารอสักครู่...',
+      title: t('swal_processing_title'),
+      text: t('swal_processing_text'),
       icon: 'info',
       timer: 2000,
       showConfirmButton: false
@@ -831,21 +1297,22 @@ function submitForm(period) {
 
   if (!empName || !empId || empId === "-") {
     Swal.fire({
-      title: '⚠️ กรุณาเลือกพนักงาน',
-      text: 'ค้นหาและเลือกพนักงานจากรายการก่อนบันทึก',
+      title: t('swal_select_emp_title'),
+      text: t('swal_select_emp_text'),
       icon: 'warning',
-      confirmButtonText: 'ตกลง',
+      confirmButtonText: t('ok_btn'),
       confirmButtonColor: '#f59e0b'
     });
     return;
   }
 
   isSubmitting = true;
-  const periodLabel = period === 'morning' ? 'เช้า' : 'เย็น';
-  
-  const btn = document.getElementById(period === 'morning' ? 'morningBtn' : 'eveningBtn');
+  const periodLabel = period === 'morning' ? t('label_morning') : (period === 'evening' ? t('label_evening') : t('label_ot'));
+  const btnId = period === 'morning' ? 'morningBtn' : (period === 'evening' ? 'eveningBtn' : 'otBtn');
+
+  const btn = document.getElementById(btnId);
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังบันทึก...';
+  btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${t('saving')}`;
 
   var hasSubmitted = false;
 
@@ -869,10 +1336,10 @@ function submitForm(period) {
     apiPost('saveRecord', formObject)
       .then(function (msg) {
         Swal.fire({
-          title: '✅ บันทึกสำเร็จ!',
-          html: `บันทึกเวลา<b>${periodLabel}</b> ของ <b>${escapeHtml(formObject.empName)}</b><br>เรียบร้อยแล้ว`,
+          title: t('swal_save_success_title'),
+          html: `${t('swal_save_success_html_prefix')} <b>${periodLabel}</b> ${t('swal_save_success_html_of')} <b>${escapeHtml(formObject.empName)}</b><br>${t('swal_save_success_html_suffix')}`,
           icon: 'success',
-          confirmButtonText: 'รับทราบ',
+          confirmButtonText: t('ack_btn'),
           confirmButtonColor: '#2563EB',
           timer: 5000,
           timerProgressBar: true,
@@ -894,16 +1361,16 @@ function submitForm(period) {
       .catch(function (err) {
         console.error("❌ Error:", err);
         Swal.fire({
-          title: 'เกิดข้อผิดพลาด!',
-          html: 'ไม่สามารถบันทึกข้อมูลได้<br><small class="text-muted">' + escapeHtml(err.message) + '</small>',
+          title: t('swal_error_title'),
+          html: `${t('swal_error_html')}<br><small class="text-muted">` + escapeHtml(err.message) + '</small>',
           icon: 'error',
-          confirmButtonText: 'ตกลง',
+          confirmButtonText: t('ok_btn'),
           confirmButtonColor: '#dc3545'
         });
         btn.disabled = false;
-        btn.innerHTML = period === 'morning' 
-          ? '<i class="fa-solid fa-sun me-2"></i>บันทึกเวลาเช้า'
-          : '<i class="fa-solid fa-moon me-2"></i>บันทึกเวลาเย็น';
+        if (period === 'morning') btn.innerHTML = `<i class="fa-solid fa-sun me-1"></i>${t('btn_morning')}`;
+        else if (period === 'evening') btn.innerHTML = `<i class="fa-solid fa-moon me-1"></i>${t('btn_evening')}`;
+        else btn.innerHTML = `<i class="fa-solid fa-business-time me-1"></i>${t('btn_ot')}`;
         isSubmitting = false;
       });
   }
@@ -953,12 +1420,12 @@ async function submitNewEmp() {
   var empId     = document.getElementById('newEmpId').value.trim() || "-";
 
   if (!prefix || !firstName || !lastName || !plant) {
-    Swal.fire('กรุณากรอกข้อมูลให้ครบ', 'ต้องระบุ คำนำหน้า / ชื่อ / นามสกุล / Plant', 'warning');
+    Swal.fire(t('swal_fill_required_title'), t('swal_fill_required_text'), 'warning');
     return;
   }
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังบันทึก...';
+  btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${t('saving')}`;
 
   var newEmpData = {
     empId: empId,
@@ -974,20 +1441,20 @@ async function submitNewEmp() {
   try {
     await apiPost('saveEmployee', newEmpData);
     bootstrap.Modal.getInstance(document.getElementById('addEmpModal')).hide();
-    Swal.fire('สำเร็จ!', 'เพิ่มพนักงานใหม่เรียบร้อยแล้ว', 'success');
+    Swal.fire(t('swal_success_title'), t('swal_add_emp_success'), 'success');
 
     ['newEmpId','newPrefix','newFirstName','newLastName','newFullName','newDept','newPos','newPlant']
       .forEach(id => { document.getElementById(id).value = ''; });
 
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> บันทึกลงฐานข้อมูล';
+    btn.innerHTML = `<i class="fa-solid fa-save me-1"></i> ${t('save_to_db_btn')}`;
 
-    document.getElementById('searchStatus').innerHTML = "<div class='spinner-border spinner-border-sm me-1'></div> อัปเดตฐานข้อมูลใหม่...";
+    document.getElementById('searchStatus').innerHTML = `<div class='spinner-border spinner-border-sm me-1'></div> ${t('updating_db')}`;
     document.getElementById('searchStatus').className = "form-text text-warning mt-1";
 
     employeeData = await apiGet('getEmployees');
 
-    document.getElementById('searchStatus').innerHTML = "<i class='fa-solid fa-circle-check'></i> ฐานข้อมูลอัปเดตแล้ว";
+    document.getElementById('searchStatus').innerHTML = `<i class='fa-solid fa-circle-check'></i> ${t('db_updated')}`;
     document.getElementById('searchStatus').className = "form-text text-success mt-1";
 
     document.getElementById('searchInput').value = newEmpData.empId + " " + newEmpData.fullName;
@@ -1004,9 +1471,9 @@ async function submitNewEmp() {
 
   } catch (err) {
     console.error("❌ Error:", err);
-    Swal.fire('เกิดข้อผิดพลาด!', escapeHtml(err.message) || 'บันทึกไม่สำเร็จ', 'error');
+    Swal.fire(t('swal_error_title'), escapeHtml(err.message) || t('load_fail'), 'error');
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> บันทึกลงฐานข้อมูล';
+    btn.innerHTML = `<i class="fa-solid fa-save me-1"></i> ${t('save_to_db_btn')}`;
   }
 }
 
@@ -1015,7 +1482,7 @@ async function loadDashboard() {
   document.getElementById('todayCount').innerText = '...';
   document.getElementById('monthCount').innerText = '...';
   document.getElementById('topEmployeesList').innerHTML =
-    '<li class="list-group-item text-center text-muted"><div class="spinner-border spinner-border-sm me-2"></div>กำลังโหลด...</li>';
+    `<li class="list-group-item text-center text-muted"><div class="spinner-border spinner-border-sm me-2"></div>${t('loading_db')}</li>`;
 
   try {
     var data = await apiGet('getRecords');
@@ -1027,7 +1494,7 @@ async function loadDashboard() {
   } catch (err) {
     document.getElementById('topEmployeesList').innerHTML =
       `<li class="list-group-item text-center text-danger">
-        โหลดข้อมูลไม่สำเร็จ<br>
+        ${t('load_data_fail')}<br>
         <small style="white-space:pre-wrap">${escapeHtml(err.message)}</small>
       </li>`;
   }
@@ -1043,7 +1510,12 @@ function getUniqueSorted(data, colIndex) {
 }
 
 function getAvailableMonthYears(data) {
-  const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const monthsByLang = {
+    th: ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'],
+    en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+    mm: ['ဇန်နဝါရီ','ဖေဖော်ဝါရီ','မတ်','ဧပြီ','မေ','ဇွန်','ဇူလိုင်','သြဂုတ်','စက်တင်ဘာ','အောက်တိုဘာ','နိုဝင်ဘာ','ဒီဇင်ဘာ']
+  };
+  const thMonths = monthsByLang[currentLang] || monthsByLang.th;
   const map = new Map();
   data.forEach(row => {
     const dateObj = parseDateString((row[5] || '').trim());
@@ -1071,11 +1543,11 @@ function populateFilterDropdowns(prefix, data) {
   const depts  = getUniqueSorted(data, 2);
   const myears = getAvailableMonthYears(data);
 
-  plantSel.innerHTML = '<option value="">ทั้งหมด</option>' +
+  plantSel.innerHTML = `<option value="">${t('filter_all')}</option>` +
     plants.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
-  deptSel.innerHTML = '<option value="">ทั้งหมด</option>' +
+  deptSel.innerHTML = `<option value="">${t('filter_all')}</option>` +
     depts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
-  myearSel.innerHTML = '<option value="">ทั้งหมด</option>' +
+  myearSel.innerHTML = `<option value="">${t('filter_all')}</option>` +
     myears.map(m => `<option value="${m.value}">${escapeHtml(m.label)}</option>`).join('');
 
   if (plants.includes(currentPlant)) plantSel.value = currentPlant;
@@ -1116,14 +1588,14 @@ function readFilterState(prefix) {
 function buildFilterSummary({ plant, dept, startDate, endDate }, totalCount) {
   const parts = [];
   if (plant) parts.push(`Plant: ${plant}`);
-  if (dept) parts.push(`แผนก: ${dept}`);
+  if (dept) parts.push(`${t('field_dept')}: ${dept}`);
   if (startDate || endDate) {
     const s = startDate ? formatDateToDMY(startDate) : '…';
     const e = endDate ? formatDateToDMY(endDate) : '…';
-    parts.push(`ช่วงวันที่: ${s} - ${e}`);
+    parts.push(`${t('filter_start')}-${t('filter_end')}: ${s} - ${e}`);
   }
-  if (parts.length === 0) return `แสดงข้อมูลทั้งหมด (${totalCount} รายการ)`;
-  return `กรองโดย ${parts.join(' | ')} (${totalCount} รายการ)`;
+  if (parts.length === 0) return `${t('filter_showing_all')} (${totalCount} ${t('filter_items_suffix')})`;
+  return `${t('filter_by')} ${parts.join(' | ')} (${totalCount} ${t('filter_items_suffix')})`;
 }
 
 function applyQuickMonthToRange(prefix) {
@@ -1217,7 +1689,7 @@ function processDashboard(data) {
     data: {
       labels: sortedDepts.map(d => d[0]),
       datasets: [{
-        label: 'จำนวนครั้ง',
+        label: t('times_suffix'),
         data: sortedDepts.map(d => d[1]),
         backgroundColor: 'rgba(54, 162, 235, 0.6)',
         borderColor: 'rgba(54, 162, 235, 1)',
@@ -1243,20 +1715,20 @@ function processDashboard(data) {
   let sortedEmps = Object.entries(empCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
   let empListHtml = '';
   if (sortedEmps.length === 0) {
-    empListHtml = '<li class="list-group-item text-center">ไม่พบข้อมูลตามตัวกรองที่เลือก</li>';
+    empListHtml = `<li class="list-group-item text-center">${t('no_data_filtered')}</li>`;
   } else {
     const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
     sortedEmps.forEach((emp, index) => {
       empListHtml += `<li class="list-group-item d-flex justify-content-between align-items-center px-0">
         <span><span class="fs-5 me-2">${medals[index] || ''}</span>${escapeHtml(emp[0])}</span>
-        <span class="badge bg-danger rounded-pill">${emp[1]} ครั้ง</span></li>`;
+        <span class="badge bg-danger rounded-pill">${emp[1]} ${t('times_suffix')}</span></li>`;
     });
   }
   document.getElementById('topEmployeesList').innerHTML = empListHtml;
 }
 
 async function loadDataTable() {
-  $('#tableBody').html('<tr><td colspan="9" class="text-center"><div class="spinner-border text-primary my-3"></div><br>กำลังโหลดข้อมูล...</td></tr>');
+  $('#tableBody').html(`<tr><td colspan="10" class="text-center"><div class="spinner-border text-primary my-3"></div><br>${t('loading_db')}</td></tr>`);
 
   if (dataTableInstance) {
     dataTableInstance.destroy();
@@ -1272,11 +1744,11 @@ async function loadDataTable() {
     dataLoaded = true;
   } catch (err) {
     $('#tableBody').html(
-      `<tr><td colspan="9" class="text-center text-danger">
-        โหลดข้อมูลไม่สำเร็จ<br>
+      `<tr><td colspan="10" class="text-center text-danger">
+        ${t('load_data_fail')}<br>
         <small style="white-space:pre-wrap">${escapeHtml(err.message)}</small><br>
         <button class='btn btn-sm btn-outline-danger mt-2' onclick='loadDataTable()'>
-          <i class='fa-solid fa-rotate-right'></i> ลองใหม่
+          <i class='fa-solid fa-rotate-right'></i> ${t('retry_btn')}
         </button>
       </td></tr>`
     );
@@ -1321,9 +1793,9 @@ function populateExportFilterDropdowns() {
   const plants = getUniqueSorted(combinedData, 4);
   const depts  = getUniqueSorted(combinedData, 2);
 
-  plantSel.innerHTML = '<option value="">ทั้งหมด</option>' +
+  plantSel.innerHTML = `<option value="">${t('filter_all')}</option>` +
     plants.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
-  deptSel.innerHTML = '<option value="">ทั้งหมด</option>' +
+  deptSel.innerHTML = `<option value="">${t('filter_all')}</option>` +
     depts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
 
   if (plants.includes(currentPlant)) plantSel.value = currentPlant;
@@ -1339,7 +1811,7 @@ function renderDataTable(data) {
   var tbody = "";
 
   if (data.length === 0) {
-    tbody = `<tr><td colspan="9" class="text-center text-muted py-4">ไม่พบข้อมูลตามตัวกรองที่เลือก</td></tr>`;
+    tbody = `<tr><td colspan="10" class="text-center text-muted py-4">${t('no_data_filtered')}</td></tr>`;
     $('#tableBody').html(tbody);
     return;
   }
@@ -1355,27 +1827,31 @@ function renderDataTable(data) {
     tbody += `<td>${escapeHtml(row[5] || '-')}</td>`;
     tbody += `<td>${escapeHtml(row[6] || '-')}</td>`;
     tbody += `<td>${escapeHtml(row[7] || '-')}</td>`;
+    tbody += `<td>${escapeHtml(row[10] || '-')}</td>`;
     
     // พิกัดบันทึก
     if (row[8] && row[9]) {
       var mapsLink = `https://www.google.com/maps?q=${encodeURIComponent(row[8])},${encodeURIComponent(row[9])}`;
-      tbody += `<td><a href="${mapsLink}" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill"><i class="fa-solid fa-map-location-dot"></i> แผนที่</a></td>`;
+      tbody += `<td><a href="${mapsLink}" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill"><i class="fa-solid fa-map-location-dot"></i> ${t('map_link')}</a></td>`;
     } else {
-      tbody += `<td class="text-muted small">ไม่มีพิกัด</td>`;
+      tbody += `<td class="text-muted small">${t('no_location')}</td>`;
     }
     tbody += "</tr>";
   }
 
   $('#tableBody').html(tbody);
 
+  const langMap = { th: undefined, en: undefined, mm: undefined };
   dataTableInstance = $('#dataTable').DataTable({
     order: [],
     responsive: true,
-    language: {
-      search: "ค้นหา:",
-      lengthMenu: "แสดง _MENU_ รายการ",
-      info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
-      paginate: { first: "แรก", last: "สุดท้าย", next: "ถัดไป", previous: "ก่อน" }
+    language: currentLang === 'en' ? {} : {
+      search: currentLang === 'mm' ? "ရှာရန်:" : "ค้นหา:",
+      lengthMenu: currentLang === 'mm' ? "_MENU_ ခု ပြရန်" : "แสดง _MENU_ รายการ",
+      info: currentLang === 'mm' ? "_TOTAL_ ခုအနက် _START_ - _END_ ပြသနေသည်" : "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
+      paginate: currentLang === 'mm'
+        ? { first: "ပထမ", last: "နောက်ဆုံး", next: "နောက်တစ်ခု", previous: "ရှေ့" }
+        : { first: "แรก", last: "สุดท้าย", next: "ถัดไป", previous: "ก่อน" }
     }
   });
 }
@@ -1395,7 +1871,7 @@ function downloadExcel() {
   if (startDate) startDate.setHours(0, 0, 0, 0);
   if (endDate) endDate.setHours(23, 59, 59, 999);
 
-  var exportData = [["รหัสพนักงาน","ชื่อ-นามสกุล","แผนก","ตำแหน่ง","Plant","วันที่","เวลาเช้า","เวลาเย็น","Latitude","Longitude"]];
+  var exportData = [[t('th_id'), t('th_name'), t('th_dept'), t('th_pos'), t('th_plant'), t('th_date'), t('th_timein'), t('th_timeout'), t('th_ot'), "Latitude", "Longitude"]];
   var skippedDueToBadDate = 0;
 
   const sourceData = globalData.length > 0 ? globalData : dashboardRawData;
@@ -1409,7 +1885,7 @@ function downloadExcel() {
 
     if (!dateObj) {
       if (!startDate && !endDate) {
-        exportData.push([row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]]);
+        exportData.push([row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[10], row[8], row[9]]);
       } else {
         skippedDueToBadDate++;
       }
@@ -1425,13 +1901,14 @@ function downloadExcel() {
         row[0], row[1], row[2], row[3], row[4],
         formatDateToDMY(dateObj),
         row[6] || '', row[7] || '',
+        row[10] || '',
         row[8] || '', row[9] || ''
       ]);
     }
   });
 
   if (exportData.length <= 1) {
-    Swal.fire('ไม่พบข้อมูล', 'ไม่มีข้อมูลตรงกับตัวกรองที่คุณเลือก', 'warning');
+    Swal.fire(t('swal_no_data_title'), t('swal_no_data_text'), 'warning');
     return;
   }
 
@@ -1444,14 +1921,14 @@ function downloadExcel() {
 
   if (skippedDueToBadDate > 0) {
     Swal.fire({
-      title: 'Export สำเร็จ (มีข้อมูลบางส่วนถูกข้าม)',
-      html: `ดาวน์โหลดไฟล์เรียบร้อยแล้ว<br>
-             <small class="text-warning">พบ ${skippedDueToBadDate} รายการที่มีข้อมูลวันที่ผิดปกติ</small>`,
+      title: t('swal_export_partial_title'),
+      html: `${t('swal_export_partial_html')}<br>
+             <small class="text-warning">${t('no_match_text') === '' ? '' : ''}${skippedDueToBadDate} ${t('swal_export_partial_found')}</small>`,
       icon: 'warning',
-      confirmButtonText: 'รับทราบ'
+      confirmButtonText: t('ack_btn')
     });
   } else {
-    Swal.fire({ title: 'Export สำเร็จ!', icon: 'success', timer: 2000, showConfirmButton: false });
+    Swal.fire({ title: t('swal_export_success_title'), icon: 'success', timer: 2000, showConfirmButton: false });
   }
 }
 
