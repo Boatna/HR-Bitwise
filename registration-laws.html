@@ -1583,7 +1583,6 @@ body {
 <div class="toast" id="toast"></div>
 
 <script>
-// ============ Configuration ============
 const CONFIG = {
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzilMXRMyEf67jGC4RCkj-zavqKhav1X6GxY1IVyuLS1RGs5tftP1jmrZcXVT3lCB_x/exec",
   SHEET: "Registration_Laws_and_Safety",
@@ -1598,12 +1597,10 @@ let regSearchTerm = "";
 let regCurrentPage = 1;
 const REG_PAGE_SIZE = 10;
 
-// Group edit state
 let regGroupEditItems = null;   
 let regGroupEditSeq   = null;   
 let regGroupItemUidCounter = 0;
 
-// Ministry prefix map
 const MINISTRY_PREFIX = {
   'แรงงาน': 'L',
   'อุตสาหกรรม': 'I',

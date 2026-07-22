@@ -1294,7 +1294,6 @@ body {
   </div>
 </header>
 
-<!-- Values Bar -->
 <div class="values-bar">
   <div class="values-inner">
     <div class="value-item"><span class="value-dot"></span>🎯 VISION: Zero Accident</div>
@@ -1304,13 +1303,10 @@ body {
   </div>
 </div>
 
-<!-- Main Container -->
 <main class="main-container">
 
-  <!-- Dashboard View -->
   <div class="view active" id="dashboardView">
 
-    <!-- Filter Bar -->
     <div class="filter-bar">
       <div class="filter-field">
         <label for="filterYear">ปี</label>
@@ -1659,8 +1655,6 @@ const addSheetRow    = (sheet, data)             => postToSheet({ action: "add",
 const updateSheetRow = (sheet, rowIndex, data)   => postToSheet({ action: "update", sheet, rowIndex, data });
 const deleteSheetRow = (sheet, rowIndex)         => postToSheet({ action: "delete", sheet, rowIndex });
 
-// ✅ NEW: วันปลอดอุบัติเหตุ คำนวณอัตโนมัติจากวันที่เกิดอุบัติเหตุล่าสุดในชีต AccidentReport
-// หยุดนับทันทีที่มีการกรอกอุบัติเหตุใหม่ แล้วเริ่มนับ 1 ใหม่นับจากวันถัดไป
 async function fetchDaysNoIncident(plant) {
   const qs = new URLSearchParams({ calc: "daysNoIncident" });
   if (plant) qs.set("plant", plant);
@@ -1677,7 +1671,6 @@ async function fetchDaysNoIncident(plant) {
   }
 }
 
-// ============ Filter Functions ============
 function populatePlantOptions(selectEl) {
   selectEl.innerHTML = `<option value="">ทุก Plant</option>` +
     CONFIG.PLANTS.map(p => `<option value="${p}">${p}</option>`).join("");
@@ -1721,7 +1714,6 @@ function applyClientFilter(rows, { requireMonth = true } = {}) {
   return result;
 }
 
-// ============ Dashboard Functions ============
 function initFilterBar() {
   const now = new Date();
   const yearSel  = document.getElementById("filterYear");
@@ -1965,8 +1957,6 @@ async function loadKpi() {
     const latest = grouped[idx];
     const prev   = grouped[idx - 1] || latest;
     document.getElementById("dataDate").textContent = `📅 ข้อมูล ณ เดือน ${formatMonthThai(latest.month)}`;
-
-    // ✅ NEW: วันปลอดอุบัติเหตุ คำนวณอัตโนมัติจาก AccidentReport (ไม่ใช้ค่าที่กรอกมือใน KPI_Monthly อีกต่อไป)
     const daysAuto = await fetchDaysNoIncident(filterState.plant);
     const daysNoIncidentValue = (daysAuto.days !== null && daysAuto.days !== undefined) ? daysAuto.days : latest.days_no_incident;
     const daysNoIncidentMeta = daysAuto.lastAccidentDate
@@ -2472,13 +2462,11 @@ const SCHEMAS = {
       { key: "Plant",        label: "Plant",          type: "plant" },
     ],
   },
-  // ✅ NEW: รายงานอุบัติเหตุแบบเต็มรูปแบบ (custom renderer ด้านล่าง — ไม่ใช้ fields[] ทั่วไป)
   ACCIDENT: {
     sheet: CONFIG.SHEETS.ACCIDENT,
     label: "🚑 รายงานอุบัติเหตุ",
     custom: true,
     fields: [
-      // รายชื่อคีย์ทั้งหมด ใช้สำหรับตารางแสดงข้อมูล/ลบ (ไม่ใช้ render ฟอร์มอัตโนมัติ)
       { key: "accident_date",   label: "วันที่เกิดอุบัติเหตุ" },
       { key: "accident_time",   label: "เวลา" },
       { key: "company",         label: "บริษัท" },
@@ -2492,7 +2480,6 @@ const SCHEMAS = {
   },
 };
 
-// รายการตัวเลือกสำหรับฟอร์มรายงานอุบัติเหตุ (ตามแบบฟอร์มที่ใช้งานจริง)
 const ACCIDENT_OPTIONS = {
   injured_parts: ["ตา","หู","คอ ศีรษะ","ใบหน้า","มือ","นิ้วมือ","แขน","ลำตัว เอว","หลัง","ไหล่","เท้า","นิ้วเท้า","ขา","บาดเจ็บหลายส่วน","อวัยวะอื่นๆ"],
   cause: ["ยานพาหนะ","เครื่องจักร","ตกจากที่สูง","ของหล่นทับ","ลื่นล้ม","ความร้อน","ไฟฟ้า","สิ่งมีพิษ สารเคมี","ระเบิด","เศษวัสดุ","ถูกทำร้ายร่างกาย","เสียงในโรงงาน","วัตถุหรือสิ่งของทับ กระแทก","โรคเนื่องจากการทำงาน","ยกของหนัก","อื่นๆ"],
@@ -2500,7 +2487,6 @@ const ACCIDENT_OPTIONS = {
   severity_type: ["ปฐมพยาบาล (First Aid)","รักษาพยาบาล (Medical Treatment)","หยุดงาน (Lost Time Injury)","ทุพพลภาพ (Disability)","เสียชีวิต (Fatality)"]
 };
 
-// แคชรายชื่อพนักงานสำหรับค้นหา/ดึงข้อมูลอัตโนมัติ
 let employeeCache = null;
 async function getEmployeeCache(forceReload = false) {
   if (employeeCache && !forceReload) return employeeCache;
@@ -2522,7 +2508,6 @@ function findEmployeeMatches(term) {
   ).slice(0, 8);
 }
 
-// ============ Accident Report — Custom Form (ตามแบบฟอร์มที่แนบมา) ============
 function checkboxGroupHtml(groupName, options, selected) {
   const sel = selected || [];
   return options.map(o => `
@@ -2708,7 +2693,6 @@ function getAccidentFormData() {
     leave_end_date:        val("acc_leave_end_date"),
     leave_actual_days:     num("acc_leave_actual_days"),
     submitted_by:          val("acc_submitted_by"),
-    // submitted_date ถูกประทับอัตโนมัติที่ฝั่งเซิร์ฟเวอร์ (Code.gs) ทุกครั้งที่เพิ่มรายการใหม่
   };
 }
 

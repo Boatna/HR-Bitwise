@@ -8,6 +8,8 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -1545,7 +1547,6 @@ body {
 
     <div class="max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1680px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
 
-      <!-- Employee View -->
       <div id="empView" class="hidden fade-in" role="tabpanel" aria-label="รายการ Kaizen ของพนักงาน">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div class="stat-card rail-blue"><div class="stat-label">เป้าหมายปีนี้</div><div class="stat-number num" id="empTarget">0</div></div>
@@ -1581,7 +1582,6 @@ body {
         </div>
       </div>
 
-      <!-- Manager Queue View -->
       <div id="mgrQueueView" class="hidden fade-in" role="tabpanel" aria-label="คิวตรวจ Kaizen">
         <p class="text-xs font-bold uppercase tracking-wide mb-2" style="color:var(--ink-faint); letter-spacing:.07em;">ภาพรวมคิวตรวจ Kaizen</p>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -1616,7 +1616,6 @@ body {
         </div>
       </div>
 
-      <!-- Manager HR Dashboard -->
       <div id="mgrHrDashView" class="hidden fade-in" role="tabpanel" aria-label="Dashboard HR">
         <div class="card p-5 sm:p-6 mb-6">
           <div class="flex flex-wrap items-start justify-between gap-5">
@@ -1681,7 +1680,6 @@ body {
         </div>
       </div>
 
-      <!-- Manager Progress View -->
       <div id="mgrBulkView" class="hidden fade-in" role="tabpanel" aria-label="กรอกจำนวน Kaizen">
         <div class="card p-5 mb-6">
           <div class="flex items-start gap-3">
@@ -1758,7 +1756,6 @@ body {
         </div>
       </div>
 
-      <!-- Manager Employee Manage View -->
       <div id="mgrEmpManageView" class="hidden fade-in" role="tabpanel" aria-label="จัดการข้อมูลพนักงาน">
         <div class="card p-5 mb-6">
           <div class="flex items-start gap-3">
@@ -1776,6 +1773,7 @@ body {
             <div class="flex items-center gap-2 flex-wrap">
               <input id="empMgrSearch" type="text" placeholder="🔎 ค้นหารหัส/ชื่อ/แผนก..." class="input-field w-56 text-sm" aria-label="ค้นหาพนักงาน">
               <button id="btnAddEmployee" class="btn-primary text-sm py-2 px-4" aria-label="เพิ่มพนักงานใหม่">➕ เพิ่มพนักงาน</button>
+              <button id="btnExportEmpExcel" class="btn-secondary text-sm" aria-label="ส่งออกเป็น Excel">📥 Export Excel</button>
               <button id="btnRefreshEmpMgr" class="btn-secondary text-sm">🔄 โหลดใหม่</button>
             </div>
           </div>
@@ -1807,7 +1805,6 @@ body {
     </div>
   </div>
 
-  <!-- Form Modal -->
   <div id="formModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
     <div class="w-full h-full sm:h-auto max-w-4xl xl:max-w-5xl 2xl:max-w-6xl max-h-full sm:max-h-[92vh] overflow-y-auto sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
 
@@ -1857,14 +1854,11 @@ body {
           <div class="p-4">
 
             <div id="rejectBanner" class="hidden rounded-xl p-3 text-sm mb-4" style="background:var(--bad-100); border:1px solid #F3C6C2; color:var(--bad-600); font-weight:600;"></div>
-
-            <!-- หัวข้อ -->
             <div class="section-title">📝 หัวข้อ Kaizen</div>
             <div class="section-body space-y-4">
               <div><label class="text-sm font-semibold mb-1 block" style="color:var(--ink-soft);" for="title">หัวข้อ Kaizen <span style="color:var(--bad-600);">*</span></label><input id="title" required class="input-field" placeholder="ระบุหัวข้อ Kaizen" maxlength="200"></div>
             </div>
 
-            <!-- Kaizen Type -->
             <div class="section-title mt-4">🏷️ ประเภท Kaizen <span style="color:var(--bad-600);">*</span></div>
             <div class="section-body">
               <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="kaizenTypeGrid">
@@ -1901,7 +1895,6 @@ body {
               <p class="text-xs mt-2" style="color:var(--ink-faint);">เลือก 1 ประเภทเท่านั้น · 💡 เอาเมาส์ไปวางบนแต่ละตัวเลือกเพื่อดูความหมาย</p>
             </div>
 
-            <!-- หมวดหมู่ -->
             <div class="section-title mt-4">🏷️ หมวดหมู่ Kaizen <span class="font-normal text-xs opacity-90">(เลือกได้มากกว่า 1 ข้อ) <span style="color:#FFD7D2;">*</span></span></div>
             <div class="section-body">
               <div class="category-grid" id="categoryGrid">
@@ -1918,7 +1911,6 @@ body {
               <p class="text-xs mt-2" style="color:var(--ink-faint);">💡 เอาเมาส์ไปวางบนแต่ละหมวดหมู่เพื่อดูความหมาย</p>
             </div>
 
-            <!-- Before/After -->
             <div class="section-title mt-4">📷 เปรียบเทียบก่อน–หลังปรับปรุง</div>
             <div class="section-body">
               <div class="ba-grid">
@@ -1949,7 +1941,6 @@ body {
               </div>
             </div>
 
-            <!-- 📎 เอกสารแนบเพิ่มเติม -->
             <div class="section-title mt-4">📎 เอกสารแนบเพิ่มเติม <span class="font-normal text-xs opacity-90">(PDF / Excel / Word / รูปภาพ ฯลฯ ไม่เกิน 10 ไฟล์ รวมไม่เกิน 50MB)</span></div>
             <div class="section-body">
               <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);" for="multiFileInput">เลือกไฟล์แนบ (เลือกได้หลายไฟล์)</label>
@@ -1961,8 +1952,6 @@ body {
                 <p id="uploadProgressText" class="text-xs mt-1" style="color:var(--ink-faint);"></p>
               </div>
             </div>
-
-            <!-- 📈 ผลลัพธ์การปรับปรุง (detail) -->
             <div class="section-title mt-4">📈 ผลลัพธ์การปรับปรุง</div>
             <div class="section-body">
               <div>
@@ -1971,7 +1960,6 @@ body {
               </div>
             </div>
 
-            <!-- Footer -->
             <div class="flex justify-between items-center text-[0.6rem] mt-3 pt-2" style="color:var(--ink-faint); border-top:1px solid var(--line-soft);">
               <span>F-5S-30 Rev.4</span>
               <span>ระบบบันทึก Kaizen · บริษัท บิทไว้ส์ (ประเทศไทย) จำกัด</span>
@@ -1990,7 +1978,6 @@ body {
     </div>
   </div>
 
-  <!-- Detail Modal -->
   <div id="detailModal" class="fixed inset-0 modal-backdrop z-50 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
     <div class="w-full h-full sm:h-auto max-w-5xl xl:max-w-6xl max-h-full sm:max-h-[92vh] overflow-y-auto sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
       <div class="flex items-center justify-between px-6 py-4 sticky top-0 z-10" style="background:rgba(255,255,255,.95); backdrop-filter:blur(6px); border-bottom:1px solid var(--line-soft);">
@@ -2002,7 +1989,6 @@ body {
     </div>
   </div>
 
-  <!-- Comment Modal -->
   <div id="commentModal" class="fixed inset-0 modal-backdrop z-50 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="commentModalTitle">
     <div class="w-full h-full sm:h-auto max-w-3xl xl:max-w-4xl max-h-full sm:max-h-[85vh] overflow-hidden sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
       <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--line-soft);">
@@ -2019,7 +2005,6 @@ body {
     </div>
   </div>
 
-  <!-- Employee History Modal -->
   <div id="empHistoryModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="empHistoryModalTitle">
     <div class="w-full h-full sm:h-auto max-w-4xl xl:max-w-5xl max-h-full sm:max-h-[85vh] overflow-hidden sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
       <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--line-soft);">
@@ -2048,7 +2033,7 @@ body {
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxhD7lKauCxXxYLWi_f45eZrrYHiYLP2Ccc3mxZ21pZWn4H-1MuUSW-xjHX0lUtPqOP6g/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZmVWxU7cPooDd8gM67UUbNyFxeesoEGh20D3gatlPFEfmReSQj5TZsKr0JnhBLoeM7w/exec';
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
     const CONFIG_MAX_FILES_PER_KAIZEN = 10;
@@ -2104,7 +2089,6 @@ body {
     let currentEmpHistoryEmpId = null;
     let currentEmpHistoryEmpName = null;
 
-    // UTILITY FUNCTIONS
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)
@@ -2173,7 +2157,6 @@ body {
       };
     }
 
-    // API CALL
     function callAppsScript(action, payload) {
       return fetch(APPS_SCRIPT_URL, {
           method: 'POST',
@@ -2192,7 +2175,6 @@ body {
         });
     }
 
-    // FILE HANDLING
     function readFileAsDataUrl(file) {
       return new Promise(function(resolve, reject) {
         if (file.size > MAX_FILE_SIZE) {
@@ -2231,7 +2213,6 @@ body {
       });
     }
 
-    // RENDER HELPERS
     function statusPill(status) {
       if (status === STATUS_APPROVED) return '<span class="badge badge-approved">✅ ผ่าน</span>';
       if (status === STATUS_REJECTED) return '<span class="badge badge-rejected">❌ ตีกลับ</span>';
@@ -2401,7 +2382,6 @@ body {
       return (y - 543) + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
     }
 
-    // CATEGORY FUNCTIONS
     function getSelectedCategories() {
       var cats = {};
       document.querySelectorAll('.category-checkbox[data-cat].checked').forEach(function(el) {
@@ -2489,7 +2469,6 @@ body {
       document.getElementById('kaizenTypeData').value = '';
     }
 
-    // SESSION MANAGEMENT
     function saveSession(user) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
@@ -2512,12 +2491,6 @@ body {
       } catch (e) {}
     }
 
-    // สร้าง user object จากผลลัพธ์ identifyUser โดยใช้ "รหัสมาตรฐาน" จากฝั่งเซิร์ฟเวอร์เสมอ
-    // (profile.empId สำหรับพนักงาน / profile.id สำหรับหัวหน้างาน) แทนข้อความดิบที่พิมพ์ตอนล็อกอิน
-    // เดิมโค้ดใช้ Object.assign({ id: rawTypedId }, res.profile, ...) ซึ่งสำหรับ "พนักงาน" จะไม่ถูกเขียนทับ
-    // เพราะ object พนักงานไม่มีคีย์ "id" (มีแต่ "empId") ทำให้ CURRENT_USER.id ค้างเป็นค่าที่พิมพ์เอง
-    // ถ้าพิมพ์ไม่ตรงรูปแบบเป๊ะ (เช่น ไม่ใส่เลข 0 นำหน้า) รหัสนี้จะถูกบันทึกลง Data sheet
-    // และไม่ตรงกับ HR_Employees อีกต่อไป ทำให้ทั้งอีเมลแจ้งผลอนุมัติและยอดสะสมใน Dashboard ของคนนั้นพังไปเงียบๆ
     function buildUserFromIdentifyResult_(rawTypedId, res) {
       var profile = res.profile || {};
       var canonicalId = profile.empId || profile.id || rawTypedId;
@@ -2603,7 +2576,6 @@ body {
       });
     }
 
-    // APP START
     function startApp(user) {
       CURRENT_USER = user;
       document.getElementById('loginScreen').classList.add('hidden');
@@ -2629,7 +2601,6 @@ body {
       }
     }
 
-    // TAB MANAGEMENT
     function buildTabs() {
       var bar = document.getElementById('tabBar');
       bar.innerHTML = '';
@@ -4094,17 +4065,21 @@ body {
         .catch(function(err) { hideLoading(); showError(err); });
     }
 
-    function renderEmployeeManageTable() {
+    function getFilteredEmployeeManageList_() {
       var searchInput = document.getElementById('empMgrSearch');
       var search = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-      var filtered = EMP_MANAGE_LIST.filter(function(e) {
+      return EMP_MANAGE_LIST.filter(function(e) {
         return !search ||
           (e.empId || '').toLowerCase().indexOf(search) > -1 ||
           (e.firstName || '').toLowerCase().indexOf(search) > -1 ||
           (e.lastName || '').toLowerCase().indexOf(search) > -1 ||
           (e.department || '').toLowerCase().indexOf(search) > -1;
       });
+    }
+
+    function renderEmployeeManageTable() {
+      var filtered = getFilteredEmployeeManageList_();
 
       var tbody = document.getElementById('empMgrTableBody');
       tbody.innerHTML = '';
@@ -4148,6 +4123,63 @@ body {
       tbody.querySelectorAll('.btnDeleteEmp2').forEach(function(btn) {
         btn.addEventListener('click', function() { confirmDeleteEmployeeRow(this); });
       });
+    }
+
+    // EXPORT พนักงาน (ชีต HR_Employees) เป็นไฟล์ Excel (.xlsx)
+    // ใช้ข้อมูลชุดเดียวกับที่แสดงในตาราง "จัดการข้อมูลพนักงาน" (ซึ่งดึงมาจาก HR_Employees ผ่าน getAllEmployeesRaw)
+    // และ export เฉพาะรายการที่ผ่านการค้นหา/กรองอยู่ในขณะนั้น ให้ตรงกับสิ่งที่เห็นบนหน้าจอ
+    function exportEmployeeManageToExcel() {
+      if (typeof XLSX === 'undefined') {
+        Swal.fire({ icon: 'error', title: 'ไม่สามารถโหลดไลบรารี Excel ได้', text: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่อีกครั้ง', confirmButtonColor: '#1B6E4C' });
+        return;
+      }
+
+      if (!EMP_MANAGE_LIST || EMP_MANAGE_LIST.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'ยังไม่มีข้อมูลพนักงาน', text: 'กรุณากดโหลดข้อมูลก่อน export', confirmButtonColor: '#1B6E4C' });
+        return;
+      }
+
+      var rows = getFilteredEmployeeManageList_();
+      if (rows.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'ไม่พบข้อมูลที่จะ export', text: 'ลองล้างคำค้นหาแล้วลองใหม่อีกครั้ง', confirmButtonColor: '#1B6E4C' });
+        return;
+      }
+
+      var headers = ['รหัสพนักงาน', 'คำนำหน้า', 'ชื่อ', 'นามสกุล', 'ชื่อ-สกุล', 'แผนก', 'ตำแหน่ง', 'Plant', 'อีเมล', 'เป้าหมาย (Tasks)', 'ทำแล้ว (Done)'];
+      var aoa = [headers];
+
+      rows.forEach(function(e) {
+        var fullName = [e.prefix, e.firstName, e.lastName].filter(Boolean).join(' ');
+        aoa.push([
+          e.empId || '',
+          e.prefix || '',
+          e.firstName || '',
+          e.lastName || '',
+          fullName,
+          e.department || '',
+          e.position || '',
+          e.plant || '',
+          e.email || '',
+          (e.tasks === '' || e.tasks === null || e.tasks === undefined) ? '' : Number(e.tasks),
+          (e.done === '' || e.done === null || e.done === undefined) ? '' : Number(e.done)
+        ]);
+      });
+
+      var ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = [
+        { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 28 },
+        { wch: 22 }, { wch: 18 }, { wch: 18 }, { wch: 26 }, { wch: 12 }, { wch: 12 }
+      ];
+
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'HR_Employees');
+
+      var now = new Date();
+      var pad = function(n) { return String(n).padStart(2, '0'); };
+      var stamp = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '_' + pad(now.getHours()) + pad(now.getMinutes());
+      var fileName = 'HR_Employees_' + stamp + '.xlsx';
+
+      XLSX.writeFile(wb, fileName);
     }
 
     function collectEmployeeRowData(tr) {
@@ -4689,6 +4721,7 @@ body {
 
       document.getElementById('empMgrSearch').addEventListener('input', debounce(renderEmployeeManageTable, 300));
       document.getElementById('btnAddEmployee').addEventListener('click', openAddEmployeeModal);
+      document.getElementById('btnExportEmpExcel').addEventListener('click', exportEmployeeManageToExcel);
       document.getElementById('btnRefreshEmpMgr').addEventListener('click', loadEmployeeManage);
 
       document.getElementById('dMonth').addEventListener('change', updateDayOptions);
