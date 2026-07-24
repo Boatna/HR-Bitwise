@@ -122,6 +122,10 @@
       </div>
 
       <div id="employeeCard" class="mb-4 shadow-sm">
+        <div id="noIdNotice" class="alert alert-warning py-2 px-3 small mb-3 d-flex align-items-center gap-2" style="display:none;">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span data-i18n="need_id_hint">พนักงานคนนี้ยังไม่มีรหัสพนักงานในระบบ ยังบันทึกเวลาได้ตามปกติ แต่แนะนำให้เพิ่มรหัสภายหลัง</span>
+        </div>
         <div class="row g-2">
           <div class="col-6"><label class="small text-muted" data-i18n="field_id">รหัส</label><input type="text" id="empId" class="form-control form-control-sm bg-white" readonly></div>
           <div class="col-6"><label class="small text-muted" data-i18n="field_fullname_short">ชื่อ-สกุล</label><input type="text" id="empName" class="form-control form-control-sm bg-white" readonly></div>
@@ -475,7 +479,7 @@
   <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
   <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwpU_Y2hQ8uYg2YUy1c899Q7OZGs14Un3mDUx-FI89Rox4K74A5y2sgZZnnSJGitazc/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzF09Pp89DcaE5iniCghRiCToucu2SPgPElUoj-V2lrl7JybfagF25hSTLFLdqvtehY/exec";
 const translations = {
   th: {
     form_title: "บันทึกลืมบัตร",
@@ -570,6 +574,7 @@ const translations = {
     swal_processing_text: "กรุณารอสักครู่...",
     swal_select_emp_title: "⚠️ กรุณาเลือกพนักงาน",
     swal_select_emp_text: "ค้นหาและเลือกพนักงานจากรายการก่อนบันทึก",
+    need_id_hint: "พนักงานคนนี้ยังไม่มีรหัสพนักงานในระบบ ยังบันทึกเวลาได้ตามปกติ แต่แนะนำให้ HR เพิ่มรหัสภายหลัง",
     ok_btn: "ตกลง",
     swal_save_success_title: "✅ บันทึกสำเร็จ!",
     swal_save_success_html_prefix: "บันทึกเวลา",
@@ -685,6 +690,7 @@ const translations = {
     swal_processing_text: "Please wait...",
     swal_select_emp_title: "⚠️ Please select an employee",
     swal_select_emp_text: "Search and select an employee from the list before saving",
+    need_id_hint: "This employee doesn't have an ID in the system yet. You can still record time as usual, but please ask HR to add an ID later.",
     ok_btn: "OK",
     swal_save_success_title: "✅ Saved successfully!",
     swal_save_success_html_prefix: "Recorded",
@@ -800,6 +806,7 @@ const translations = {
     swal_processing_text: "ခေတ္တစောင့်ပါ...",
     swal_select_emp_title: "⚠️ ဝန်ထမ်းကို ရွေးချယ်ပါ",
     swal_select_emp_text: "မသိမ်းမီ စာရင်းမှ ဝန်ထမ်းကို ရှာဖွေရွေးချယ်ပါ",
+    need_id_hint: "ဤဝန်ထမ်းအတွက် ID မရှိသေးပါ။ ပုံမှန်အတိုင်း အချိန်မှတ်တမ်းတင်နိုင်ပါသည်၊ သို့သော် နောက်ပိုင်းတွင် HR မှ ID ထည့်ပေးပါရန် အကြံပြုပါသည်။",
     ok_btn: "အိုကေ",
     swal_save_success_title: "✅ သိမ်းဆည်းမှု အောင်မြင်ပါသည်!",
     swal_save_success_html_prefix: "မှတ်တမ်းတင်ပြီးပါပြီ -",
@@ -857,33 +864,47 @@ function applyStaticTranslations() {
 
 function refreshDynamicTexts() {
   const empId = document.getElementById('empId').value.trim();
+  const empName = document.getElementById('empName').value.trim();
   if (empId) {
-    checkTodayStatus(empId);
+    document.getElementById('noIdNotice').style.display = (empId === "-") ? 'flex' : 'none';
+    checkTodayStatus(empId, empName);
   } else {
+    document.getElementById('noIdNotice').style.display = 'none';
     resetButtons();
   }
 
-  ['dash', 'data'].forEach(prefix => {
-    const plantSel = document.getElementById(`${prefix}FilterPlant`);
-    const deptSel  = document.getElementById(`${prefix}FilterDept`);
-    const myearSel = document.getElementById(`${prefix}FilterMonthYear`);
-    if (plantSel && plantSel.options.length) plantSel.options[0].textContent = t('filter_all');
-    if (deptSel && deptSel.options.length) deptSel.options[0].textContent = t('filter_all');
-    if (myearSel && myearSel.options.length) myearSel.options[0].textContent = t('filter_all');
-  });
   ['exportFilterPlant','exportFilterDept'].forEach(id => {
     const sel = document.getElementById(id);
     if (sel && sel.options.length) sel.options[0].textContent = t('filter_all');
   });
 
+  // เดือน/ปี ใน dropdown ถูก generate เป็นข้อความภาษาเดิมตอนโหลดข้อมูล (เช่น "มกราคม 2026")
+  // เดิมโค้ดนี้แก้แค่ label ของ option แรก ("ทั้งหมด") แล้วปล่อยชื่อเดือนที่เหลือค้างภาษาเก่า
+  // ไว้จนกว่าจะกดรีเฟรช จึง populate ใหม่ทั้งชุดจากข้อมูลดิบที่เก็บไว้แล้วแทน
+  if (dashboardRawData.length) populateFilterDropdowns('dash', dashboardRawData);
+  else {
+    const myearSel = document.getElementById('dashFilterMonthYear');
+    if (myearSel && myearSel.options.length) myearSel.options[0].textContent = t('filter_all');
+    const plantSel = document.getElementById('dashFilterPlant');
+    if (plantSel && plantSel.options.length) plantSel.options[0].textContent = t('filter_all');
+    const deptSel = document.getElementById('dashFilterDept');
+    if (deptSel && deptSel.options.length) deptSel.options[0].textContent = t('filter_all');
+  }
+  if (globalData.length) populateFilterDropdowns('data', globalData);
+  else {
+    const myearSel = document.getElementById('dataFilterMonthYear');
+    if (myearSel && myearSel.options.length) myearSel.options[0].textContent = t('filter_all');
+    const plantSel = document.getElementById('dataFilterPlant');
+    if (plantSel && plantSel.options.length) plantSel.options[0].textContent = t('filter_all');
+    const deptSel = document.getElementById('dataFilterDept');
+    if (deptSel && deptSel.options.length) deptSel.options[0].textContent = t('filter_all');
+  }
+
+  // เดิมมี logic ที่ destroy + rebuild ตาราง DataTable ซ้ำอีกรอบตรงนี้ (ทั้งที่
+  // applyDataFilters() ด้านล่างก็ destroy+rebuild อยู่แล้วภายใน renderDataTable)
+  // ทำให้ตารางถูกสร้างซ้ำ 2 รอบทุกครั้งที่สลับภาษาโดยไม่จำเป็น จึงตัดออก
   if (dataLoaded) applyDataFilters();
   if (dashboardLoaded) applyDashboardFilters();
-
-  if (dataTableInstance) {
-    dataTableInstance.destroy();
-    dataTableInstance = null;
-    if (dataLoaded) applyDataFilters();
-  }
 }
 
 async function apiGet(action, params = {}) {
@@ -895,18 +916,22 @@ async function apiGet(action, params = {}) {
     throw new Error("เชื่อมต่อ server ไม่ได้: " + networkErr.message);
   }
 
+  // อ่าน body เป็น text แค่ครั้งเดียว แล้วค่อย parse JSON จาก string นั้น
+  // (เดิมโค้ดเรียก res.text() ก่อน แล้วเรียก res.json() ต่อ ซึ่ง stream ของ
+  //  response ถูกอ่านไปแล้วครั้งแรก ทำให้ res.json() พังเสมอในกรณีที่เข้าเงื่อนไขนี้
+  //  และ error message ที่โชว์ผู้ใช้กลายเป็น "(อ่านไม่ได้)" ที่ไม่มีประโยชน์)
+  const rawText = await res.text();
+
   const contentType = res.headers.get("content-type") || "";
-  if (!contentType.includes("application/json") && !contentType.includes("text/plain")) {
-    const text = await res.text();
-    if (text.trim().startsWith("<")) throw new Error("GAS ส่ง HTML กลับมาแทน JSON — อาจเกิดจาก Script ยังไม่ได้ Deploy หรือตั้งค่า Anyone ไม่ถูกต้อง");
+  if (!contentType.includes("application/json") && !contentType.includes("text/plain") && rawText.trim().startsWith("<")) {
+    throw new Error("GAS ส่ง HTML กลับมาแทน JSON — อาจเกิดจาก Script ยังไม่ได้ Deploy หรือตั้งค่า Anyone ไม่ถูกต้อง");
   }
 
   let json;
   try {
-    json = await res.json();
+    json = JSON.parse(rawText);
   } catch (parseErr) {
-    const text = await res.clone().text().catch(() => "(อ่านไม่ได้)");
-    throw new Error("Server ตอบกลับมาไม่ใช่ JSON:\n" + text.substring(0, 200));
+    throw new Error("Server ตอบกลับมาไม่ใช่ JSON:\n" + rawText.substring(0, 200));
   }
 
   if (json.status !== "ok") {
@@ -1152,14 +1177,16 @@ document.addEventListener('click', function (event) {
 });
 
 // Today Status Check
-async function checkTodayStatus(empId) {
-  if (!empId || empId === "-") {
+async function checkTodayStatus(empId, empName) {
+  if (!empId) {
     updateButtonStates(false, false, false);
     return;
   }
 
   try {
-    const status = await apiGet('checkTodayStatus', { empId: empId });
+    const params = { empId: empId };
+    if (empId === "-" && empName) params.empName = empName;
+    const status = await apiGet('checkTodayStatus', params);
     updateButtonStates(status.morning, status.evening, status.ot);
     
     document.getElementById('todayStatus').style.display = 'block';
@@ -1216,8 +1243,8 @@ function updateButtonStates(morningDone, eveningDone, otDone) {
 function checkEmployee(foundEmp) {
   var card = document.getElementById('employeeCard');
 
-  if (foundEmp && foundEmp.id && foundEmp.id !== "-" && foundEmp.name) {
-    document.getElementById('empId').value = foundEmp.id || "";
+  if (foundEmp && foundEmp.name) {
+    document.getElementById('empId').value = foundEmp.id || "-";
     document.getElementById('empName').value = foundEmp.name || "";
     document.getElementById('empDept').value = foundEmp.dept || "-";
     document.getElementById('empPos').value = foundEmp.pos || "-";
@@ -1225,8 +1252,12 @@ function checkEmployee(foundEmp) {
 
     card.style.display = 'block';
     setTimeout(() => card.style.opacity = 1, 10);
-    
-    checkTodayStatus(foundEmp.id);
+
+    // พนักงานที่ยังไม่มีรหัส (id = "-") ยังคงบันทึกเวลาได้ตามปกติ
+    // แต่โชว์ข้อความแจ้งเตือนแบบไม่บล็อกไว้ตลอด ให้ไปเพิ่มรหัสทีหลังได้
+    const noId = !foundEmp.id || foundEmp.id === "-";
+    document.getElementById('noIdNotice').style.display = noId ? 'flex' : 'none';
+    checkTodayStatus(foundEmp.id || "-", foundEmp.name);
   } else {
     card.style.opacity = 0;
     setTimeout(() => {
@@ -1234,6 +1265,7 @@ function checkEmployee(foundEmp) {
       document.getElementById('todayStatus').style.display = 'none';
     }, 300);
     
+    document.getElementById('noIdNotice').style.display = 'none';
     resetButtons();
     
     ['empId','empName','empDept','empPos','empPlant'].forEach(id => {
@@ -1270,9 +1302,9 @@ function submitForm(period) {
   }
 
   const empName = document.getElementById("empName").value.trim();
-  const empId = document.getElementById("empId").value.trim();
+  const empId = document.getElementById("empId").value.trim() || "-";
 
-  if (!empName || !empId || empId === "-") {
+  if (!empName) {
     Swal.fire({
       title: t('swal_select_emp_title'),
       text: t('swal_select_emp_text'),
@@ -1322,7 +1354,7 @@ function submitForm(period) {
           timerProgressBar: true,
         });
 
-        checkTodayStatus(empId);
+        checkTodayStatus(empId, empName);
         
         dataLoaded = false;
         dashboardLoaded = false;
