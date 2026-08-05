@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สมุดแสตมป์ของฉัน · สมุดสะสมแสตมป์</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="sparkle-field" id="sparkleField"></div>
+  <div class="app-shell">
+
+    <nav class="navbar navbar-expand navbar-magic px-3 px-md-4">
+      <span class="navbar-brand d-flex align-items-center gap-2">
+        <img src="images/logo-bitwise.png" alt="Bitwise Group" class="navbar-logo">
+        สมุดพกสะสมแสตมป์ดิจิตอล
+      </span>
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <span class="text-muted-parchment small d-none d-sm-inline" id="welcomeName"></span>
+        <button class="btn btn-magic-outline btn-sm" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</button>
+      </div>
+    </nav>
+
+    <div class="container py-4" id="pageContent">
+
+      <!-- Profile + Passport -->
+      <div class="passport-book mb-4" id="passportBook">
+        <div class="passport-header d-flex flex-wrap align-items-center gap-3">
+          <div class="seal"><img src="images/logo-bitwise.png" alt="Bitwise Group" class="seal-logo"></div>
+          <div class="flex-grow-1">
+            <div class="eyebrow">Employee Passport</div>
+            <h2 class="mb-0" id="empName">กำลังโหลด...</h2>
+            <div class="text-muted-parchment small" id="empMeta"></div>
+          </div>
+          <div class="text-center">
+            <div class="level-badge" id="levelBadge"><i class="fa-solid fa-star"></i> —</div>
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="d-flex justify-content-between align-items-end mb-2">
+            <div>
+              <div class="text-muted small fw-bold">แสตมป์สะสมทั้งหมด</div>
+              <div style="font-family:var(--font-heading); font-size:2.4rem; font-weight:700; color:var(--royal-blue);">
+                <span id="stampCount">0</span> <i class="fa-solid fa-stamp" style="color:var(--gold)"></i>
+              </div>
+            </div>
+            <div class="text-end small text-muted" id="nextLevelHint"></div>
+          </div>
+          <div class="journey-track mb-1">
+            <div class="journey-fill" id="journeyFill" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard stats -->
+      <div class="row g-3 mb-4">
+        <div class="col-4">
+          <div class="stat-tile">
+            <div class="stat-value" id="statTotalStamps">0</div>
+            <div class="stat-label">แสตมป์ทั้งหมด</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="stat-tile">
+            <div class="stat-value" id="statActivities">0</div>
+            <div class="stat-label">กิจกรรมที่ร่วม</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="stat-tile">
+            <div class="stat-value" id="statRedeemed">0</div>
+            <div class="stat-label">รางวัลที่แลกแล้ว</div>
+          </div>
+        </div>
+      </div>
+      <div class="stampbook-title"><i class="fa-solid fa-stamp me-2"></i>สมุดสะสมแสตมป์ของฉัน</div>
+      <div class="stampbook mb-4" id="stampbook">
+        <div class="stampbook-spread">
+          <div class="stampbook-page stampbook-page-left">
+            <div class="stampbook-page-header" id="stampPageLeftHeader">ปกหน้า</div>
+            <div class="stampbook-grid" id="stampPageLeft"></div>
+          </div>
+          <div class="stampbook-spine"></div>
+          <div class="stampbook-page stampbook-page-right">
+            <div class="stampbook-page-header" id="stampPageRightHeader">หน้า 1</div>
+            <div class="stampbook-grid" id="stampPageRight"></div>
+          </div>
+        </div>
+        <div class="stampbook-nav">
+          <button class="btn btn-magic-outline btn-sm" id="prevPageBtn"><i class="fa-solid fa-chevron-left"></i> แผ่นก่อน</button>
+          <span class="stampbook-pageindicator" id="pageIndicator">แผ่นที่ 1 / 1</span>
+          <button class="btn btn-magic-outline btn-sm" id="nextPageBtn">แผ่นถัดไป <i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      </div>
+
+
+      <div class="row g-4">
+        <div class="col-12">
+          <div class="card-magic mb-4">
+            <div class="card-header-magic"><i class="fa-solid fa-gift me-2"></i>ประวัติการแลกรางวัล</div>
+            <div id="redemptionHistoryList">
+              <div class="text-center text-muted py-4">กำลังโหลด...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-magic">
+        <div class="card-header-magic"><i class="fa-solid fa-shop me-2"></i>คลังของรางวัลเวทมนตร์</div>
+        <div class="p-3">
+          <div class="row g-3" id="rewardsGrid">
+            <div class="text-center text-muted py-4">กำลังโหลด...</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-magic">Magic Stamp Passport · Internal Employee Engagement System</div>
+  </div>
+  <div class="modal fade" id="redeemModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: var(--radius-md);">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa-solid fa-wand-sparkles me-2"></i>ยืนยันการแลกรางวัล</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="redeemModalBody"></div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button class="btn btn-magic-gold" id="confirmRedeemBtn">ยืนยันการแลก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/employee.js"></script>
+</body>
+</html>
