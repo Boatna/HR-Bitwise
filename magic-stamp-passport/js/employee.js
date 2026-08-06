@@ -1,14 +1,33 @@
 const LEVELS = [
-  { name: 'Explorer',   th: 'อ่อนวะ',      min: 0,   icon: 'fa-compass' },
-  { name: 'Dreamer',    th: 'ใช้ได้',         min: 10,  icon: 'fa-cloud-moon' },
-  { name: 'Adventurer', th: 'กลางๆ',      min: 25,  icon: 'fa-map' },
-  { name: 'Hero',       th: 'วีรบุรุษ',        min: 50,  icon: 'fa-shield-heart' },
-  { name: 'Legend',     th: 'ตำนาน',          min: 100, icon: 'fa-crown' }
+  { name: 'Beginner',   th: 'นักสะสมมือใหม่',      min: 0,   icon: 'fa-compass' },
+  { name: 'Collector',    th: 'นักสะสม',         min: 10,  icon: 'fa-cloud-moon' },
+  { name: 'Curator', th: 'ภัณฑารักษ์',      min: 25,  icon: 'fa-map' },
+  { name: 'Connoisseur',       th: 'ผู้เชี่ยวชาญ',        min: 50,  icon: 'fa-shield-heart' },
+  { name: 'Grandmaster',     th: 'ปรมาจารย์แห่งการสะสม',          min: 100, icon: 'fa-crown' }
 ];
+
+const STAMPS_PER_BOOK_PAGE = 9; // 3x3 grid
+const FLIP_DURATION_MS = 700;
+
+let session = null;
+let rewardsCache = [];
+let employeeCache = null;
+let stampHistoryCache = [];
+let redemptionHistoryCache = [];
+let stampbookPages = [];
+let spreadIndex = 0;
+let totalSpreadsCache = 1;
+let isFlipping = false;
+let pendingRewardId = null;
+
+const REWARD_IMAGE_FOLDER = 'images/rewards/';
+const STAMP_IMAGE_DEFAULT = 'images/stamps/stamp.png';
+
+// ===== Utility Functions =====
 
 function getLevelInfo(stamps) {
   let current = LEVELS[0];
-  let next = LEVELS[1] || null;
+  let next = null;
   for (let i = 0; i < LEVELS.length; i++) {
     if (stamps >= LEVELS[i].min) {
       current = LEVELS[i];
@@ -17,13 +36,6 @@ function getLevelInfo(stamps) {
   }
   return { current, next };
 }
-
-let session;
-let rewardsCache = [];
-let employeeCache = null;
-
-const REWARD_IMAGE_FOLDER = 'images/rewards/';
-const STAMP_IMAGE_DEFAULT = 'images/stamps/stamp-default.svg';
 
 function resolveRewardImage(value) {
   if (!value) return REWARD_IMAGE_FOLDER + 'reward-placeholder.svg';
@@ -36,50 +48,82 @@ function resolveRewardImage(value) {
   return REWARD_IMAGE_FOLDER + filename;
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  session = Session.requireEmployee();
-  if (!session) return;
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
-  document.getElementById('welcomeName').textContent = 'สวัสดี, ' + session.name;
+// NOTE: Code.gs already formats DateTime / RedemptionDate as 'dd/MM/yyyy HH:mm'
+// strings before sending them to the front end. Do NOT re-parse them with
+// `new Date(...)` here — that format is not reliably parseable by JS Date
+// and produces "Invalid Date" / wrong dates. Just display the string as-is.
+function displayDate(dateStr) {
+  return dateStr || '';
+}
 
-  showLoading('กำลังเปิดสมุดแสตมป์เวทมนตร์...');
-  try {
-    await loadRewards();
-    await loadProfile();
-    await Promise.all([loadHistory(), loadRedemptionHistory(), loadDashboard()]);
-  } catch (err) {
-    showAlert('pageContent', err.message, 'danger');
-  } finally {
-    hideLoading();
-  }
+function showLoading(message) {
+  const existing = document.querySelector('.loading-overlay');
+  if (existing) existing.remove();
 
-  document.getElementById('confirmRedeemBtn').addEventListener('click', doRedeem);
-  document.getElementById('prevPageBtn').addEventListener('click', () => {
-    if (spreadIndex > 0) { spreadIndex--; renderStampbook(); }
-  });
-  document.getElementById('nextPageBtn').addEventListener('click', () => {
-    if (spreadIndex < totalSpreadsCache - 1) { spreadIndex++; renderStampbook(); }
-  });
+  const overlay = document.createElement('div');
+  overlay.className = 'loading-overlay';
+  overlay.innerHTML = `
+    <div class="spinner-magic"></div>
+    <div>${escapeHtml(message)}</div>
+  `;
+  document.body.appendChild(overlay);
+}
 
-  const field = document.getElementById('sparkleField');
-  for (let i = 0; i < 20; i++) {
-    const s = document.createElement('div');
-    s.className = 'sparkle';
-    s.style.left = Math.random() * 100 + '%';
-    s.style.top = Math.random() * 100 + '%';
-    s.style.animationDelay = (Math.random() * 3) + 's';
-    field.appendChild(s);
-  }
-});
+function hideLoading() {
+  const overlay = document.querySelector('.loading-overlay');
+  if (overlay) overlay.remove();
+}
+
+function showAlert(containerId, message, type = 'info') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const alertDiv = document.createElement('div');
+  alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+  alertDiv.innerHTML = `
+    ${escapeHtml(message)}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  container.prepend(alertDiv);
+
+  setTimeout(() => {
+    alertDiv.remove();
+  }, 5000);
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function updateStackedLayout() {
+  const spreadEl = document.querySelector('.stampbook-spread');
+  if (!spreadEl) return;
+  spreadEl.classList.toggle('is-stacked', window.innerWidth < 768);
+}
+
+// ===== Load Functions (all via API -> Google Apps Script) =====
 
 async function loadProfile() {
-  const emp = await API.getEmployee(session.employeeId);
-  employeeCache = emp;
-  document.getElementById('empName').textContent = emp.FullName;
-  document.getElementById('empMeta').textContent = `${emp.Position} · ${emp.Department}`;
+  employeeCache = await API.getEmployee(session.employeeId);
 
-  const stamps = emp.TotalStamps || 0;
+  document.getElementById('empName').textContent = employeeCache.FullName || 'ไม่ระบุชื่อ';
+  document.getElementById('empMeta').textContent = `${employeeCache.Position || ''} · ${employeeCache.Department || ''}`;
+  document.getElementById('coverName').textContent = employeeCache.FullName || '——';
+
+  const stamps = employeeCache.TotalStamps || 0;
   document.getElementById('stampCount').textContent = stamps;
+  document.getElementById('coverCount').textContent = stamps + ' แสตมป์';
+  document.getElementById('statTotalStamps').textContent = stamps;
 
   const { current, next } = getLevelInfo(stamps);
   document.getElementById('levelBadge').innerHTML =
@@ -96,27 +140,169 @@ async function loadProfile() {
   document.getElementById('nextLevelHint').textContent = hint;
 }
 
-// ---- Stamp collection album: a real book with front cover, numbered pages
-// (6 stamps each), and a back cover — flipped through two pages at a time.
-const STAMPS_PER_BOOK_PAGE = 6;
+async function loadStampHistory() {
+  const data = await API.getStampHistory(session.employeeId);
 
-let stampHistoryCache = [];
-let stampbookPages = [];   // [{type:'cover'}, {type:'stamps', pageNumber, items}, ..., {type:'back'}]
-let spreadIndex = 0;       // which left/right spread is currently shown
-let totalSpreadsCache = 1;
+  // Code.gs returns this sorted NEWEST-first. To correctly figure out which
+  // individual stamp cards are still "in the album" we need to replay the
+  // ledger in chronological (oldest-first) order: every positive grant
+  // pushes stamp cards into a collection, and every redemption (negative
+  // StampAmount) must remove that many cards from the collection — otherwise
+  // stamps that were already spent on a reward keep showing up in the book
+  // forever, even though the employee no longer "has" them.
+  const chronological = (data || []).slice().reverse();
 
-async function loadHistory() {
-  const history = await API.getStampHistory(session.employeeId);
-  // The album only shows stamps actually earned — redemption/refund entries
-  // are logged with negative amounts server-side to keep the balance
-  // accurate, but they belong in "ประวัติการแลกรางวัล", not the collection.
-  stampHistoryCache = (history || []).filter(h => Number(h.StampAmount) > 0);
+  // Queue of individually-collected stamp cards, oldest collected first.
+  let collected = [];
+
+  chronological.forEach(item => {
+    const amount = Number(item.StampAmount) || 0;
+
+    if (amount > 0) {
+      // A grant (or a refund from a rejected redemption) — add one stamp
+      // card per point, so a grant of 3 becomes 3 separate collectible cards.
+      const units = Math.floor(amount);
+      for (let i = 0; i < units; i++) {
+        collected.push({
+          ActivityName: item.ActivityName,
+          DateTime: item.DateTime,
+          GrantedBy: item.GrantedBy,
+          Remark: item.Remark,
+          StampAmount: 1
+        });
+      }
+    } else if (amount < 0) {
+      // A redemption — spend (remove) that many cards, oldest-earned first,
+      // exactly like handing over the oldest stamps in a physical booklet.
+      let toRemove = Math.floor(Math.abs(amount));
+      while (toRemove > 0 && collected.length > 0) {
+        collected.shift();
+        toRemove--;
+      }
+    }
+    // amount === 0 rows (shouldn't normally happen) are ignored.
+  });
+
+  // Keep the album's existing newest-first display order.
+  stampHistoryCache = collected.reverse();
+
   spreadIndex = 0;
   renderStampbook();
 }
 
+async function loadRewards() {
+  rewardsCache = await API.getRewards();
+  renderRewards();
+}
+
+function renderRewards() {
+  const grid = document.getElementById('rewardsGrid');
+  const active = rewardsCache.filter(r => r.Status === 'Active');
+
+  if (active.length === 0) {
+    grid.innerHTML = `<div class="text-center text-muted-light py-4 w-100">ยังไม่มีรางวัลในขณะนี้</div>`;
+    return;
+  }
+
+  const employeeStamps = employeeCache ? (employeeCache.TotalStamps || 0) : 0;
+
+  grid.innerHTML = active.map(r => {
+    const id = r.RewardID;
+    const name = r.RewardName;
+    const desc = r.Description || '';
+    const cost = r.RequiredStamps || 0;
+    const qty = r.RemainingQuantity || 0;
+    const img = resolveRewardImage(r.RewardImage);
+    const canRedeem = employeeStamps >= cost && qty > 0;
+
+    return `
+    <div class="col-sm-6 col-lg-4">
+      <div class="reward-card">
+        <div class="reward-image">
+          <img src="${img}" alt="${escapeHtml(name)}"
+               onerror="this.src='${REWARD_IMAGE_FOLDER}reward-placeholder.svg'">
+        </div>
+        <div class="reward-body">
+          <h5 class="font-heading" style="color:var(--primary-blue)">${escapeHtml(name)}</h5>
+          <p class="small text-muted-light flex-grow-1">${escapeHtml(desc)}</p>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="reward-req"><i class="fa-solid fa-stamp"></i> ${cost} แสตมป์</span>
+            <span class="small text-muted-light">เหลือ ${qty} ชิ้น</span>
+          </div>
+          <button class="btn btn-magic-gold w-100" onclick="openRedeemModal('${id}')"
+            ${!canRedeem ? 'disabled' : ''}>
+            ${qty <= 0 ? 'ของหมด' : (employeeStamps < cost ? 'แสตมป์ไม่พอ' : 'แลกรางวัลนี้')}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+
+async function loadRedemptionHistory() {
+  redemptionHistoryCache = await API.getRedemptionHistory(session.employeeId);
+  renderRedemptionHistory();
+}
+
+// Renders into the <tbody id="redemptionHistoryList"> table body in
+// employee.html — matches the table layout used for redemptions in the HR
+// portal (js/hr.js -> loadRedemptions()).
+function renderRedemptionHistory() {
+  const box = document.getElementById('redemptionHistoryList');
+
+  if (!redemptionHistoryCache || redemptionHistoryCache.length === 0) {
+    box.innerHTML = `<tr><td colspan="5" class="text-center text-muted-light py-4">ยังไม่มีการแลกรางวัล</td></tr>`;
+    return;
+  }
+
+  const statusClass = s => {
+    const status = (s || '').toLowerCase();
+    if (status === 'approved') return 'badge-status-active';
+    if (status === 'rejected') return 'badge-status-rejected';
+    return 'badge-status-pending';
+  };
+
+  const statusLabel = s => {
+    const status = (s || '').toLowerCase();
+    if (status === 'approved') return 'อนุมัติแล้ว';
+    if (status === 'rejected') return 'ถูกปฏิเสธ';
+    return 'รอดำเนินการ';
+  };
+
+  box.innerHTML = redemptionHistoryCache.map(r => {
+    const reward = rewardsCache.find(x => String(x.RewardID) === String(r.RewardID));
+    const imgSrc = resolveRewardImage(reward ? reward.RewardImage : '');
+    const usedStamps = r.UsedStamps || 0;
+
+    return `
+    <tr>
+      <td>
+        <img src="${imgSrc}" alt="${escapeHtml(r.RewardName || 'reward')}"
+             style="width:44px;height:44px;object-fit:cover;border-radius:8px;"
+             onerror="this.src='${REWARD_IMAGE_FOLDER}reward-placeholder.svg'">
+      </td>
+      <td class="fw-bold" style="color:var(--primary-blue)">${escapeHtml(r.RewardName || 'รางวัล')}</td>
+      <td class="small text-muted-light">${escapeHtml(displayDate(r.RedemptionDate))}</td>
+      <td>${usedStamps}</td>
+      <td><span class="badge ${statusClass(r.ApprovalStatus)}">${statusLabel(r.ApprovalStatus)}</span></td>
+    </tr>
+  `;
+  }).join('');
+}
+
+async function loadDashboard() {
+  const stats = await API.getEmployeeDashboard(session.employeeId);
+  document.getElementById('statTotalStamps').textContent = stats.totalStamps || 0;
+  document.getElementById('statActivities').textContent = stats.totalActivities || 0;
+  document.getElementById('statRedeemed').textContent = stats.totalRedeemed || 0;
+}
+
+// ===== Stampbook Functions =====
+
 function buildStampbookPages() {
   const pages = [{ type: 'cover' }];
+
   if (!stampHistoryCache || stampHistoryCache.length === 0) {
     pages.push({ type: 'empty' });
   } else {
@@ -129,13 +315,14 @@ function buildStampbookPages() {
       });
     }
   }
+
   pages.push({ type: 'back' });
   return pages;
 }
 
 function renderStampbook() {
-  const leftEl = document.getElementById('stampPageLeft');
-  const rightEl = document.getElementById('stampPageRight');
+  const leftEl = document.getElementById('stampPageLeftGrid');
+  const rightEl = document.getElementById('stampPageRightGrid');
   const leftHeader = document.getElementById('stampPageLeftHeader');
   const rightHeader = document.getElementById('stampPageRightHeader');
   const indicatorEl = document.getElementById('pageIndicator');
@@ -149,15 +336,24 @@ function renderStampbook() {
   const leftPage = stampbookPages[spreadIndex * 2];
   const rightPage = stampbookPages[spreadIndex * 2 + 1];
 
-  renderBookPage(leftEl, leftHeader, leftPage);
-  renderBookPage(rightEl, rightHeader, rightPage);
+  renderBookPage(leftEl, leftHeader, leftPage, 'left');
+  renderBookPage(rightEl, rightHeader, rightPage, 'right');
 
   indicatorEl.textContent = `แผ่นที่ ${spreadIndex + 1} / ${totalSpreadsCache}`;
-  prevBtn.disabled = spreadIndex === 0;
-  nextBtn.disabled = spreadIndex >= totalSpreadsCache - 1;
+  prevBtn.disabled = isFlipping || spreadIndex === 0;
+  nextBtn.disabled = isFlipping || spreadIndex >= totalSpreadsCache - 1;
+
+  const leftPageWrap = document.querySelector('.stampbook-page-left');
+  const rightPageWrap = document.querySelector('.stampbook-page-right');
+  if (leftPageWrap) {
+    leftPageWrap.style.cursor = (isFlipping || spreadIndex === 0) ? 'default' : 'pointer';
+  }
+  if (rightPageWrap) {
+    rightPageWrap.style.cursor = (isFlipping || spreadIndex >= totalSpreadsCache - 1) ? 'default' : 'pointer';
+  }
 }
 
-function renderBookPage(container, headerEl, page) {
+function renderBookPage(container, headerEl, page, side) {
   if (!page) {
     headerEl.textContent = '';
     container.className = 'stampbook-grid is-cover';
@@ -169,13 +365,14 @@ function renderBookPage(container, headerEl, page) {
     headerEl.textContent = 'ปกหน้า';
     container.className = 'stampbook-grid is-cover';
     const stamps = employeeCache ? (employeeCache.TotalStamps || 0) : 0;
-    const name = employeeCache ? employeeCache.FullName : '';
+    const name = employeeCache ? (employeeCache.FullName || '') : '';
     container.innerHTML = `
       <i class="fa-solid fa-book-bookmark stampbook-cover-icon"></i>
       <div class="stampbook-cover-title">สมุดสะสมแสตมป์</div>
       <div class="stampbook-cover-name">${escapeHtml(name)}</div>
       <div class="stampbook-cover-count"><i class="fa-solid fa-stamp"></i> ${stamps} แสตมป์สะสม</div>
-      <div class="stampbook-cover-hint">พลิกดูแสตมป์ทั้งหมดที่สะสมไว้ →</div>`;
+      <div class="stampbook-cover-hint">${side === 'left' ? 'พลิกดูแสตมป์ทั้งหมดที่สะสมไว้ →' : '← กลับไปหน้าแรก'}</div>
+    `;
     return;
   }
 
@@ -185,7 +382,8 @@ function renderBookPage(container, headerEl, page) {
     container.innerHTML = `
       <i class="fa-solid fa-wand-magic-sparkles stampbook-cover-icon"></i>
       <div class="stampbook-cover-title" style="font-size:1rem;">สะสมแสตมป์ต่อไปเรื่อยๆ</div>
-      <div class="stampbook-cover-hint">เข้าร่วมกิจกรรมเพิ่มเพื่อเปิดหน้าใหม่ในสมุดของคุณ ✨</div>`;
+      <div class="stampbook-cover-hint">เข้าร่วมกิจกรรมเพิ่มเพื่อเปิดหน้าใหม่ในสมุดของคุณ ✨</div>
+    `;
     return;
   }
 
@@ -195,13 +393,14 @@ function renderBookPage(container, headerEl, page) {
     container.innerHTML = `
       <i class="fa-solid fa-feather-pointed stampbook-cover-icon"></i>
       <div class="stampbook-cover-title" style="font-size:1rem;">ยังไม่มีแสตมป์</div>
-      <div class="stampbook-cover-hint">เข้าร่วมกิจกรรมของบริษัทเพื่อเริ่มสะสมแสตมป์เวทมนตร์!</div>`;
+      <div class="stampbook-cover-hint">เข้าร่วมกิจกรรมของบริษัทเพื่อเริ่มสะสมแสตมป์เวทมนตร์!</div>
+    `;
     return;
   }
 
   // page.type === 'stamps'
   headerEl.textContent = `หน้า ${page.pageNumber}`;
-  container.className = 'stampbook-grid';
+  container.className = 'stampbook-grid page-fade-in';
   let html = '';
   for (let i = 0; i < STAMPS_PER_BOOK_PAGE; i++) {
     const item = page.items[i];
@@ -211,16 +410,21 @@ function renderBookPage(container, headerEl, page) {
 }
 
 function stampCardHtml(item, tone) {
+  const amount = item.StampAmount || 1;
+  const activity = item.ActivityName || 'กิจกรรม';
+  const date = item.DateTime;
+  const icon = STAMP_IMAGE_DEFAULT;
+
   return `
     <div class="postage-stamp ${tone}">
-      <div class="postage-stamp-value">+${item.StampAmount}</div>
+      ${amount > 1 ? `<div class="postage-stamp-value">+${amount}</div>` : ''}
       <div class="postage-stamp-inner">
         <div class="postage-stamp-icon">
-          <img src="${STAMP_IMAGE_DEFAULT}" alt="stamp"
+          <img src="${icon}" alt="stamp"
                onerror="this.replaceWith(Object.assign(document.createElement('i'), {className:'fa-solid fa-stamp', style:'font-size:0.9rem;color:var(--gold)'}))">
         </div>
-        <div class="postage-stamp-caption" title="${escapeHtml(item.ActivityName)}">${escapeHtml(item.ActivityName)}</div>
-        <div class="postage-stamp-date">${escapeHtml(item.DateTime)}</div>
+        <div class="postage-stamp-caption" title="${escapeHtml(activity)}">${escapeHtml(activity)}</div>
+        <div class="postage-stamp-date">${escapeHtml(displayDate(date))}</div>
       </div>
     </div>`;
 }
@@ -228,120 +432,200 @@ function stampCardHtml(item, tone) {
 function emptyStampCardHtml() {
   return `
     <div class="postage-stamp-empty">
-      <i class="fa-solid fa-stamp"></i>
+      <i class="fa-regular fa-square"></i>
       <span>ว่าง</span>
     </div>`;
 }
 
-async function loadRedemptionHistory() {
-  const list = await API.getRedemptionHistory(session.employeeId);
-  const box = document.getElementById('redemptionHistoryList');
-  if (!list || list.length === 0) {
-    box.innerHTML = `<div class="text-center text-muted py-4">ยังไม่มีการแลกรางวัล</div>`;
+function goToSpread(delta) {
+  if (isFlipping) return;
+  const newIndex = spreadIndex + delta;
+  if (newIndex < 0 || newIndex > totalSpreadsCache - 1) return;
+  playPageFlip(delta > 0 ? 'next' : 'prev', newIndex);
+}
+
+function playPageFlip(direction, newIndex) {
+  const spreadEl = document.querySelector('.stampbook-spread');
+  if (!spreadEl || prefersReducedMotion()) {
+    spreadIndex = newIndex;
+    renderStampbook();
     return;
   }
-  const statusClass = s => s === 'Approved' ? 'badge-status-active' : (s === 'Rejected' ? 'badge-status-rejected' : 'badge-status-pending');
-  const statusLabel = s => s === 'Approved' ? 'อนุมัติแล้ว' : (s === 'Rejected' ? 'ถูกปฏิเสธ' : 'รอดำเนินการ');
-  box.innerHTML = list.map(r => {
-    const reward = rewardsCache.find(x => String(x.RewardID) === String(r.RewardID));
-    const imgSrc = resolveRewardImage(reward ? reward.RewardImage : '');
-    return `
-    <div class="stamp-row">
-      <div class="stamp-icon">
-        <img src="${imgSrc}" alt="reward" onerror="this.src='${REWARD_IMAGE_FOLDER}reward-placeholder.svg'">
-      </div>
-      <div class="flex-grow-1">
-        <div class="fw-bold" style="color:var(--royal-blue)">${escapeHtml(r.RewardName)}</div>
-        <div class="small text-muted">${escapeHtml(r.RedemptionDate)}</div>
-      </div>
-      <span class="badge ${statusClass(r.ApprovalStatus)}">${statusLabel(r.ApprovalStatus)}</span>
-    </div>
-  `;
-  }).join('');
+
+  isFlipping = true;
+  document.getElementById('prevPageBtn').disabled = true;
+  document.getElementById('nextPageBtn').disabled = true;
+
+  const overlay = document.createElement('div');
+  overlay.className = `page-flip-overlay ${direction === 'next' ? 'flip-right animate-next' : 'flip-left animate-prev'}`;
+
+  const clone = spreadEl.cloneNode(true);
+  clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+  overlay.appendChild(clone);
+  spreadEl.appendChild(overlay);
+
+  spreadIndex = newIndex;
+  renderStampbook();
+
+  let done = false;
+  const cleanup = () => {
+    if (done) return;
+    done = true;
+    overlay.remove();
+    isFlipping = false;
+    renderStampbook();
+  };
+  overlay.addEventListener('animationend', cleanup);
+  setTimeout(cleanup, FLIP_DURATION_MS + 150);
 }
 
-async function loadRewards() {
-  const rewards = await API.getRewards();
-  rewardsCache = rewards;
-  const grid = document.getElementById('rewardsGrid');
-  const active = rewards.filter(r => r.Status === 'Active');
-  if (active.length === 0) {
-    grid.innerHTML = `<div class="text-center text-muted py-4 w-100">ยังไม่มีรางวัลในขณะนี้</div>`;
-    return;
-  }
-  grid.innerHTML = active.map(r => `
-    <div class="col-sm-6 col-lg-4">
-      <div class="reward-card">
-        <div class="reward-image">
-          <img src="${resolveRewardImage(r.RewardImage)}" alt="${escapeHtml(r.RewardName)}"
-               onerror="this.src='${REWARD_IMAGE_FOLDER}reward-placeholder.svg'">
-        </div>
-        <div class="reward-body">
-          <h5 class="font-heading" style="color:var(--royal-blue)">${escapeHtml(r.RewardName)}</h5>
-          <p class="small text-muted flex-grow-1">${escapeHtml(r.Description || '')}</p>
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="reward-req"><i class="fa-solid fa-stamp"></i> ${r.RequiredStamps} แสตมป์</span>
-            <span class="small text-muted">เหลือ ${r.RemainingQuantity} ชิ้น</span>
-          </div>
-          <button class="btn btn-magic-gold w-100" onclick="openRedeemModal('${r.RewardID}')"
-            ${r.RemainingQuantity <= 0 ? 'disabled' : ''}>
-            ${r.RemainingQuantity <= 0 ? 'ของหมด' : 'แลกรางวัลนี้'}
-          </button>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
+// ===== Redeem Functions =====
 
-async function loadDashboard() {
-  const stats = await API.getEmployeeDashboard(session.employeeId);
-  document.getElementById('statTotalStamps').textContent = stats.totalStamps;
-  document.getElementById('statActivities').textContent = stats.totalActivities;
-  document.getElementById('statRedeemed').textContent = stats.totalRedeemed;
-}
-
-let pendingRewardId = null;
 function openRedeemModal(rewardId) {
   const reward = rewardsCache.find(r => String(r.RewardID) === String(rewardId));
   if (!reward) return;
+
   const stamps = employeeCache ? (employeeCache.TotalStamps || 0) : 0;
+  const cost = reward.RequiredStamps || 0;
+  const qty = reward.RemainingQuantity || 0;
 
   pendingRewardId = rewardId;
   const body = document.getElementById('redeemModalBody');
-  if (stamps < reward.RequiredStamps) {
-    body.innerHTML = `<div class="alert alert-warning mb-0">แสตมป์ของคุณไม่เพียงพอสำหรับรางวัลนี้ (ต้องการ ${reward.RequiredStamps} มีอยู่ ${stamps})</div>`;
+
+  if (qty <= 0) {
+    body.innerHTML = `<div class="alert alert-warning mb-0">รางวัลนี้หมดแล้ว!</div>`;
+    document.getElementById('confirmRedeemBtn').disabled = true;
+  } else if (stamps < cost) {
+    body.innerHTML = `
+      <div class="alert alert-warning mb-0">
+        แสตมป์ของคุณไม่เพียงพอสำหรับรางวัลนี้
+        (ต้องการ ${cost} มีอยู่ ${stamps})
+      </div>
+    `;
     document.getElementById('confirmRedeemBtn').disabled = true;
   } else {
+    const name = reward.RewardName || 'รางวัล';
     body.innerHTML = `
-      <p>คุณต้องการแลก <strong>${escapeHtml(reward.RewardName)}</strong> ด้วย <strong>${reward.RequiredStamps}</strong> แสตมป์ใช่หรือไม่?</p>
-      <p class="text-muted small mb-0">แสตมป์คงเหลือหลังแลก: ${stamps - reward.RequiredStamps}</p>`;
+      <div class="text-center mb-3">
+        <div style="font-size:3rem; color:var(--primary-blue);">
+          <img src="${resolveRewardImage(reward.RewardImage)}"
+               style="width:80px;height:80px;object-fit:cover;border-radius:10px;"
+               onerror="this.style.display='none'">
+        </div>
+        <h5>${escapeHtml(name)}</h5>
+        <p class="text-muted-light">${escapeHtml(reward.Description || '')}</p>
+      </div>
+      <div class="alert alert-info">
+        <i class="fa-regular fa-stamp"></i> ต้องใช้ ${cost} แสตมป์
+      </div>
+      <p class="small text-muted-light">
+        คุณมี <strong>${stamps}</strong> แสตมป์
+        (เหลือหลังแลก: <strong>${stamps - cost}</strong>)
+      </p>
+    `;
     document.getElementById('confirmRedeemBtn').disabled = false;
   }
+
   new bootstrap.Modal(document.getElementById('redeemModal')).show();
 }
 
 async function doRedeem() {
   if (!pendingRewardId) return;
+
   const modalEl = document.getElementById('redeemModal');
+  const confirmBtn = document.getElementById('confirmRedeemBtn');
+  if (confirmBtn) confirmBtn.disabled = true;
   showLoading('กำลังร่ายเวทมนตร์แลกรางวัล...');
+
   try {
     await API.redeemReward(session.employeeId, pendingRewardId);
+
     bootstrap.Modal.getInstance(modalEl).hide();
+
+    // Refresh all data (profile first, since rewards/stampbook rendering
+    // depends on employeeCache being up to date)
     await loadProfile();
-    await Promise.all([loadRewards(), loadRedemptionHistory(), loadDashboard()]);
-    renderStampbook(); // refresh cover's stamp count with the new balance
-    showAlert('pageContent', 'แลกรางวัลสำเร็จ! กรุณารอการอนุมัติจากฝ่าย HR', 'success');
+    await Promise.all([
+      loadStampHistory(),
+      loadRewards(),
+      loadRedemptionHistory(),
+      loadDashboard()
+    ]);
+
+    showAlert('pageContent', 'แลกรางวัลสำเร็จ! 🎉 กรุณารอการอนุมัติจากฝ่าย HR', 'success');
   } catch (err) {
     bootstrap.Modal.getInstance(modalEl).hide();
-    showAlert('pageContent', err.message, 'danger');
+    showAlert('pageContent', err.message || 'เกิดข้อผิดพลาดในการแลกรางวัล', 'danger');
   } finally {
     hideLoading();
+    if (confirmBtn) confirmBtn.disabled = false;
+    pendingRewardId = null;
   }
 }
 
-function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-}
+// ===== Initialize =====
+// NOTE: logout() is intentionally NOT redefined here — auth.js already
+// provides the correct implementation (clears the sessionStorage session
+// and redirects to login.html). Redefining it here previously shadowed
+// that implementation with a broken localStorage-based version.
+
+document.addEventListener('DOMContentLoaded', async () => {
+  session = Session.requireEmployee();
+  if (!session) return; // requireEmployee() already redirected to login.html
+
+  document.getElementById('welcomeName').textContent = 'สวัสดี, ' + (session.name || 'พนักงาน');
+
+  // Create sparkles
+  const field = document.getElementById('sparkleField');
+  if (field) {
+    for (let i = 0; i < 20; i++) {
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      s.style.left = Math.random() * 100 + '%';
+      s.style.top = Math.random() * 100 + '%';
+      s.style.animationDelay = (Math.random() * 3) + 's';
+      field.appendChild(s);
+    }
+  }
+
+  showLoading('กำลังเปิดสมุดแสตมป์เวทมนตร์...');
+
+  try {
+    // Load profile first — rewards/stampbook rendering reads employeeCache.
+    await loadProfile();
+    await Promise.all([
+      loadStampHistory(),
+      loadRewards(),
+      loadRedemptionHistory(),
+      loadDashboard()
+    ]);
+  } catch (err) {
+    console.error('Error loading data:', err);
+    showAlert('pageContent', err.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล', 'danger');
+  } finally {
+    hideLoading();
+  }
+
+  // Event listeners
+  document.getElementById('confirmRedeemBtn').addEventListener('click', doRedeem);
+  document.getElementById('prevPageBtn').addEventListener('click', () => goToSpread(-1));
+  document.getElementById('nextPageBtn').addEventListener('click', () => goToSpread(1));
+
+  const leftPageEl = document.querySelector('.stampbook-page-left');
+  const rightPageEl = document.querySelector('.stampbook-page-right');
+  if (leftPageEl) {
+    leftPageEl.addEventListener('click', (e) => {
+      if (e.target.closest('button, a, .postage-stamp')) return;
+      if (!isFlipping && spreadIndex > 0) goToSpread(-1);
+    });
+  }
+  if (rightPageEl) {
+    rightPageEl.addEventListener('click', (e) => {
+      if (e.target.closest('button, a, .postage-stamp')) return;
+      if (!isFlipping && spreadIndex < totalSpreadsCache - 1) goToSpread(1);
+    });
+  }
+
+  updateStackedLayout();
+  window.addEventListener('resize', updateStackedLayout);
+});

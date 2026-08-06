@@ -18,7 +18,7 @@
         สมุดพกสะสมแสตมป์ดิจิตอล
       </span>
       <div class="ms-auto d-flex align-items-center gap-3">
-        <span class="text-muted-parchment small d-none d-sm-inline" id="welcomeName"></span>
+        <span class="text-muted-light small d-none d-sm-inline" id="welcomeName"></span>
         <button class="btn btn-magic-outline btn-sm" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</button>
       </div>
     </nav>
@@ -32,7 +32,7 @@
           <div class="flex-grow-1">
             <div class="eyebrow">Employee Passport</div>
             <h2 class="mb-0" id="empName">กำลังโหลด...</h2>
-            <div class="text-muted-parchment small" id="empMeta"></div>
+            <div class="text-muted-light small" id="empMeta"></div>
           </div>
           <div class="text-center">
             <div class="level-badge" id="levelBadge"><i class="fa-solid fa-star"></i> —</div>
@@ -41,12 +41,12 @@
         <div class="p-4">
           <div class="d-flex justify-content-between align-items-end mb-2">
             <div>
-              <div class="text-muted small fw-bold">แสตมป์สะสมทั้งหมด</div>
-              <div style="font-family:var(--font-heading); font-size:2.4rem; font-weight:700; color:var(--royal-blue);">
-                <span id="stampCount">0</span> <i class="fa-solid fa-stamp" style="color:var(--gold)"></i>
+              <div class="text-muted-light small fw-bold">แสตมป์สะสมทั้งหมด</div>
+              <div style="font-family:var(--font-heading); font-size:2.2rem; font-weight:700; color:var(--primary-blue);">
+                <span id="stampCount">0</span> <i class="fa-solid fa-stamp" style="color:var(--gold);"></i>
               </div>
             </div>
-            <div class="text-end small text-muted" id="nextLevelHint"></div>
+            <div class="text-end small text-muted-light" id="nextLevelHint"></div>
           </div>
           <div class="journey-track mb-1">
             <div class="journey-fill" id="journeyFill" style="width:0%"></div>
@@ -75,42 +75,72 @@
           </div>
         </div>
       </div>
+
+      <!-- ===== STAMPBOOK ===== -->
       <div class="stampbook-title"><i class="fa-solid fa-stamp me-2"></i>สมุดสะสมแสตมป์ของฉัน</div>
       <div class="stampbook mb-4" id="stampbook">
-        <div class="stampbook-spread">
-          <div class="stampbook-page stampbook-page-left">
+        <div class="stampbook-spread" id="stampbookSpread">
+          <!-- Left Page -->
+          <div class="stampbook-page stampbook-page-left" id="stampPageLeft">
             <div class="stampbook-page-header" id="stampPageLeftHeader">ปกหน้า</div>
-            <div class="stampbook-grid" id="stampPageLeft"></div>
+            <div class="stampbook-grid is-cover" id="stampPageLeftGrid">
+              <div class="stampbook-cover-icon"><i class="fa-solid fa-book-open"></i></div>
+              <div class="stampbook-cover-title">สมุดสะสมแสตมป์</div>
+              <div class="stampbook-cover-name" id="coverName">——</div>
+              <div class="stampbook-cover-count" id="coverCount">0 แสตมป์</div>
+              <div class="stampbook-cover-hint">สะสมให้ครบทุกดวง เพื่อรับรางวัลพิเศษ</div>
+            </div>
           </div>
+          
           <div class="stampbook-spine"></div>
-          <div class="stampbook-page stampbook-page-right">
+          
+          <!-- Right Page -->
+          <div class="stampbook-page stampbook-page-right" id="stampPageRight">
             <div class="stampbook-page-header" id="stampPageRightHeader">หน้า 1</div>
-            <div class="stampbook-grid" id="stampPageRight"></div>
+            <div class="stampbook-grid" id="stampPageRightGrid">
+              <!-- 9 slots will be rendered by JavaScript -->
+            </div>
           </div>
         </div>
+        
         <div class="stampbook-nav">
-          <button class="btn btn-magic-outline btn-sm" id="prevPageBtn"><i class="fa-solid fa-chevron-left"></i> แผ่นก่อน</button>
+          <button class="btn btn-outline-primary btn-sm" id="prevPageBtn"><i class="fa-solid fa-chevron-left"></i> แผ่นก่อน</button>
           <span class="stampbook-pageindicator" id="pageIndicator">แผ่นที่ 1 / 1</span>
-          <button class="btn btn-magic-outline btn-sm" id="nextPageBtn">แผ่นถัดไป <i class="fa-solid fa-chevron-right"></i></button>
+          <button class="btn btn-outline-primary btn-sm" id="nextPageBtn">แผ่นถัดไป <i class="fa-solid fa-chevron-right"></i></button>
         </div>
       </div>
 
-
+      <!-- Redemption History -->
       <div class="row g-4">
         <div class="col-12">
           <div class="card-magic mb-4">
             <div class="card-header-magic"><i class="fa-solid fa-gift me-2"></i>ประวัติการแลกรางวัล</div>
-            <div id="redemptionHistoryList">
-              <div class="text-center text-muted py-4">กำลังโหลด...</div>
+            <div class="table-responsive">
+              <table class="table align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>รูป</th>
+                    <th>รางวัล</th>
+                    <th>วันที่</th>
+                    <th>แสตมป์ที่ใช้</th>
+                    <th>สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody id="redemptionHistoryList">
+                  <tr><td colspan="5" class="text-center text-muted-light py-4">กำลังโหลด...</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Rewards Shop -->
       <div class="card-magic">
-        <div class="card-header-magic"><i class="fa-solid fa-shop me-2"></i>คลังของรางวัลเวทมนตร์</div>
+        <div class="card-header-magic"><i class="fa-solid fa-shop me-2"></i>คลังของรางวัล</div>
         <div class="p-3">
           <div class="row g-3" id="rewardsGrid">
-            <div class="text-center text-muted py-4">กำลังโหลด...</div>
+            <div class="text-center text-muted-light py-4">กำลังโหลด...</div>
           </div>
         </div>
       </div>
@@ -119,6 +149,8 @@
 
     <div class="footer-magic">Magic Stamp Passport · Internal Employee Engagement System</div>
   </div>
+
+  <!-- Redeem Modal -->
   <div class="modal fade" id="redeemModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content" style="border-radius: var(--radius-md);">

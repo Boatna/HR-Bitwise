@@ -70,6 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const employeeId = document.getElementById('employeeIdInput').value.trim();
     if (!employeeId) return;
+    const submitBtn = employeeForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
     showLoading('กำลังตรวจสอบรหัสพนักงาน...');
     try {
       const employee = await API.loginEmployee(employeeId);
@@ -77,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = 'employee.html';
     } catch (err) {
       hideLoading();
+      if (submitBtn) submitBtn.disabled = false;
       showAlert('employeeAlertBox', err.message, 'danger');
     }
   });
@@ -86,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const managerId = document.getElementById('managerIdInput').value.trim();
     const pin = document.getElementById('managerPinInput').value.trim();
     if (!managerId || !pin) return;
+    const submitBtn = managerForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
     showLoading('กำลังตรวจสอบสิทธิ์ผู้ดูแล...');
     try {
       const manager = await API.loginManager(managerId, pin);
@@ -98,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = 'hr.html';
     } catch (err) {
       hideLoading();
+      if (submitBtn) submitBtn.disabled = false;
       showAlert('managerAlertBox', err.message, 'danger');
     }
   });

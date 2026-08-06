@@ -1,5 +1,6 @@
 let hrSession;
 let rewardsManageCache = [];
+let grantEmployeePreviewData = null; // last employee fetched for the grant-stamp preview
 
 const REWARD_IMAGE_FOLDER = 'images/rewards/';
 function resolveRewardImage(value) {
@@ -45,16 +46,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     clearTimeout(debounce);
     const val = e.target.value.trim();
     const preview = document.getElementById('grantEmployeePreview');
+    grantEmployeePreviewData = null;
     if (!val) { preview.textContent = ''; return; }
+    preview.innerHTML = `<span class="text-muted-light"><i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจสอบ...</span>`;
     debounce = setTimeout(async () => {
       try {
         const emp = await API.getEmployee(val);
-        preview.innerHTML = `<span class="text-success"><i class="fa-solid fa-circle-check"></i> ${escapeHtml(emp.FullName)} — ${escapeHtml(emp.Department)} (แสตมป์ปัจจุบัน: ${emp.TotalStamps})</span>`;
+        grantEmployeePreviewData = emp;
+        renderGrantPreview();
       } catch (err) {
+        grantEmployeePreviewData = null;
         preview.innerHTML = `<span class="text-danger"><i class="fa-solid fa-circle-xmark"></i> ไม่พบพนักงาน</span>`;
       }
     }, 450);
   });
+
+  // Live-update the "แต้มหลังบันทึก" figure whenever the stamp amount changes,
+  // as long as we already have a confirmed employee loaded.
+  document.getElementById('grantAmount').addEventListener('input', renderGrantPreview);
 
   const field = document.getElementById('sparkleField');
   for (let i = 0; i < 20; i++) {
@@ -66,6 +75,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     field.appendChild(s);
   }
 });
+
+function renderGrantPreview() {
+  const preview = document.getElementById('grantEmployeePreview');
+  if (!grantEmployeePreviewData) return; // nothing confirmed yet — leave whatever message is already shown
+
+  const emp = grantEmployeePreviewData;
+  const amountRaw = document.getElementById('grantAmount').value;
+  const amount = Number(amountRaw);
+  const hasValidAmount = amountRaw !== '' && !isNaN(amount) && amount > 0;
+  const current = Number(emp.TotalStamps) || 0;
+
+  if (hasValidAmount) {
+    const newTotal = current + amount;
+    preview.innerHTML = `
+      <span class="text-success">
+        <i class="fa-solid fa-circle-check"></i> ${escapeHtml(emp.FullName)} — ${escapeHtml(emp.Department)}
+      </span><br>
+      <span class="text-muted-light">แสตมป์ปัจจุบัน: <strong>${current}</strong> ➜ หลังบันทึก: <strong class="text-success">${newTotal}</strong> (+${amount})</span>
+    `;
+  } else {
+    preview.innerHTML = `<span class="text-success"><i class="fa-solid fa-circle-check"></i> ${escapeHtml(emp.FullName)} — ${escapeHtml(emp.Department)} (แสตมป์ปัจจุบัน: ${current})</span>`;
+  }
+}
 
 function switchTab(tab) {
   document.querySelectorAll('#hrTabs .nav-link').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -86,6 +118,8 @@ async function submitGrantStamp(e) {
     grantedById: hrSession.managerId,
     grantedByName: hrSession.name
   };
+  const submitBtn = document.querySelector('#grantStampForm button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
   showLoading('กำลังประทับตราเวทมนตร์...');
   try {
     await API.addStamp(payload);
@@ -93,16 +127,21 @@ async function submitGrantStamp(e) {
     showAlert('grantAlertBox', `มอบแสตมป์ให้พนักงาน ${payload.employeeId} สำเร็จ!`, 'success');
     document.getElementById('grantStampForm').reset();
     document.getElementById('grantEmployeePreview').textContent = '';
+    grantEmployeePreviewData = null;
     loadHrDashboard();
   } catch (err) {
     hideLoading();
     showAlert('grantAlertBox', err.message, 'danger');
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 
 async function doSearch() {
   const q = document.getElementById('searchInput').value.trim();
   const body = document.getElementById('searchResultsBody');
+  const searchBtn = document.getElementById('searchBtn');
+  if (searchBtn) searchBtn.disabled = true;
   body.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">กำลังค้นหา...</td></tr>`;
   try {
     const results = await API.searchEmployees(q);
@@ -120,6 +159,8 @@ async function doSearch() {
       </tr>`).join('');
   } catch (err) {
     body.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3">${escapeHtml(err.message)}</td></tr>`;
+  } finally {
+    if (searchBtn) searchBtn.disabled = false;
   }
 }
 
@@ -189,6 +230,8 @@ async function saveReward() {
     rewardImage: document.getElementById('rewardImageField').value.trim(),
     status: document.getElementById('rewardStatusField').value
   };
+  const saveBtn = document.getElementById('saveRewardBtn');
+  if (saveBtn) saveBtn.disabled = true;
   showLoading('กำลังบันทึกรางวัล...');
   try {
     if (rewardId) { await API.updateReward(payload); } else { await API.createReward(payload); }
@@ -198,6 +241,7 @@ async function saveReward() {
     alert(err.message);
   } finally {
     hideLoading();
+    if (saveBtn) saveBtn.disabled = false;
   }
 }
 

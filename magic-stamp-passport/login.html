@@ -11,42 +11,83 @@
 <body>
   <div class="sparkle-field" id="sparkleField"></div>
 
-  <div class="login-wrap">
-    <div class="login-card">
-      <div class="mb-3">
-        <img src="images/logo-bitwise.png" alt="Bitwise Group" class="login-logo">
+  <div class="stamp-login-stage">
+    <div class="stamp-login-shell">
+
+      <!-- LEFT: explains the concept in plain terms -->
+      <div class="stamp-login-info">
+        <div class="eyebrow">Bitwise Group</div>
+        <h1>สมุดสะสมแสตมป์</h1>
+        <p class="lead-text">
+          สมุดสะสมแสตมป์ดิจิทัลสำหรับพนักงาน — ทุกครั้งที่เข้าร่วมกิจกรรมของบริษัท
+          หรือได้รับรางวัลพิเศษ คุณจะได้แสตมป์เก็บไว้ในสมุดเล่มนี้
+        </p>
+
+        <ol class="how-it-works">
+          <li>
+            <span class="step-num">1</span>
+            <span class="step-text"><strong>เข้าร่วมกิจกรรม</strong> หรือได้รับรางวัลจากบริษัท</span>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <span class="step-text"><strong>รับแสตมป์</strong> เก็บสะสมไว้ในสมุดของคุณ</span>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <span class="step-text">สะสมครบตามเงื่อนไข <strong>แลกของรางวัลได้ทันที</strong></span>
+          </li>
+        </ol>
+
+        <div class="stamp-pin" aria-hidden="true">
+          <div class="postage-stamp">
+            <div class="postage-stamp-value">+1</div>
+            <div class="postage-stamp-inner">
+              <div class="postage-stamp-icon">
+                <img src="images/stamps/stamp.png" alt=""
+                     onerror="this.replaceWith(Object.assign(document.createElement('i'), {className:'fa-solid fa-stamp', style:'font-size:0.9rem;color:var(--gold)'}))">
+              </div>
+              <div class="postage-stamp-caption">กิจกรรม</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="eyebrow mb-1">Bitwise Group</div>
-      <h1 class="brand-title mb-1" style="color:var(--royal-blue); text-shadow:none;">✨สมุดสะสมแสตมป์✨</h1>
 
-      <div class="role-toggle btn-group mb-4" role="group">
-        <button type="button" id="roleEmployeeBtn" class="btn btn-magic-gold px-4"><i class="fa-solid fa-user"></i> พนักงาน</button>
-        <button type="button" id="roleManagerBtn" class="btn btn-magic-outline px-4"><i class="fa-solid fa-user-tie"></i> ผู้ดูแล / HR</button>
+      <!-- RIGHT: sign in -->
+      <div class="stamp-login-form-panel">
+        <div class="form-logo-wrap">
+          <img src="images/logo-bitwise.png" alt="Bitwise Group" class="login-logo">
+        </div>
+
+        <div class="role-toggle btn-group" role="group">
+          <button type="button" id="roleEmployeeBtn" class="btn btn-magic-gold px-4"><i class="fa-solid fa-user"></i> พนักงาน</button>
+          <button type="button" id="roleManagerBtn" class="btn btn-magic-outline px-4"><i class="fa-solid fa-user-tie"></i> ผู้ดูแล / HR</button>
+        </div>
+
+        <div id="employeeAlertBox"></div>
+        <form id="employeeLoginForm">
+          <div class="mb-3 text-start">
+            <label class="form-label fw-bold" for="employeeIdInput">รหัสพนักงาน</label>
+            <input type="text" class="form-control form-control-magic" id="employeeIdInput" placeholder="กรุณาใส่รหัสพนักงานของตัวเอง" required>
+          </div>
+          <button type="submit" class="btn btn-magic-gold w-100 py-2"><i class="fa-solid fa-book-sparkles"></i> เปิดสมุดแสตมป์ของฉัน</button>
+        </form>
+
+        <div id="managerAlertBox"></div>
+        <form id="managerLoginForm" class="d-none">
+          <div class="mb-3 text-start">
+            <label class="form-label fw-bold" for="managerIdInput">รหัสผู้ดูแล (Manager/HR ID)</label>
+            <input type="text" class="form-control form-control-magic" id="managerIdInput" placeholder="กรุณาใส่รหัสพนักงานของตัวเอง" required>
+          </div>
+          <div class="mb-3 text-start">
+            <label class="form-label fw-bold" for="managerPinInput">PIN</label>
+            <input type="password" class="form-control form-control-magic" id="managerPinInput" placeholder="รหัส PIN 6 หลัก" required>
+          </div>
+          <button type="submit" class="btn btn-purple w-100 py-2"><i class="fa-solid fa-shield-halved"></i> เข้าสู่ระบบผู้ดูแล</button>
+        </form>
+
+        <p class="mt-4 mb-0 text-muted small text-center">ระบบสมุดพกสะสมแสตมป์ดิจิตอลสำหรับพนักงาน</p>
       </div>
 
-      <div id="employeeAlertBox"></div>
-      <form id="employeeLoginForm">
-        <div class="mb-3 text-start">
-          <label class="form-label fw-bold" style="color:var(--royal-blue)">รหัสพนักงาน</label>
-          <input type="text" class="form-control form-control-magic" id="employeeIdInput" placeholder="กรุณาใส่รหัสพนักงานของตัวเอง" required>
-        </div>
-        <button type="submit" class="btn btn-magic-gold w-100 py-2"><i class="fa-solid fa-book-sparkles"></i> เปิดสมุดแสตมป์ของฉัน</button>
-      </form>
-
-      <div id="managerAlertBox"></div>
-      <form id="managerLoginForm" class="d-none">
-        <div class="mb-3 text-start">
-          <label class="form-label fw-bold" style="color:var(--royal-blue)">รหัสผู้ดูแล (Manager/HR ID)</label>
-          <input type="text" class="form-control form-control-magic" id="managerIdInput" placeholder="เช่น 1673231" required>
-        </div>
-        <div class="mb-3 text-start">
-          <label class="form-label fw-bold" style="color:var(--royal-blue)">PIN</label>
-          <input type="password" class="form-control form-control-magic" id="managerPinInput" placeholder="รหัส PIN 6 หลัก" required>
-        </div>
-        <button type="submit" class="btn btn-purple w-100 py-2"><i class="fa-solid fa-shield-halved"></i> เข้าสู่ระบบผู้ดูแล</button>
-      </form>
-
-      <p class="mt-4 mb-0 text-muted small">ระบบสมุดพกสะสมแสตมป์ดิจิตอลสำหรับพนักงาน</p>
     </div>
   </div>
 
