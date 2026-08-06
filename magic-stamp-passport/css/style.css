@@ -262,6 +262,14 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   overflow: hidden;
   perspective: 2000px;
+  transform-style: preserve-3d;
+}
+
+/* Mobile fallback crossfade (used instead of the 3D flip when the spread
+   is stacked into a single column — see the <576px media query below). */
+.stampbook-spread.is-page-fading .stampbook-page {
+  transition: opacity 0.18s ease;
+  opacity: 0;
 }
 
 /* Left & Right Pages */
@@ -522,6 +530,89 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--gray-400);
   font-style: italic;
   max-width: 200px;
+}
+
+/* ===== PAGE FLIP (EPUB-style 3D page turn) ===== */
+/* The flipping "leaf" sits exactly on top of the real right/left page while
+   it turns, showing the outgoing content on its front face and the
+   incoming content (already committed to the real DOM underneath) on its
+   back face — so when the rotation finishes and the leaf is removed, the
+   real page underneath lines up perfectly. */
+.page-flip-overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 20;
+  transform-style: preserve-3d;
+  pointer-events: none;
+  transition-property: transform;
+  transition-duration: 700ms;
+  transition-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+.page-flip-overlay.flip-forward {
+  transform-origin: left center; /* hinge = spine, on the leaf's left edge */
+  transform: rotateY(0deg);
+}
+.page-flip-overlay.flip-forward.is-flipping {
+  transform: rotateY(-180deg);
+}
+.page-flip-overlay.flip-backward {
+  transform-origin: right center; /* hinge = spine, on the leaf's right edge */
+  transform: rotateY(0deg);
+}
+.page-flip-overlay.flip-backward.is-flipping {
+  transform: rotateY(180deg);
+}
+
+.page-flip-face {
+  position: absolute;
+  inset: 0;
+  padding: 20px 18px;
+  background: var(--white);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+.page-flip-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(26, 140, 216, 0.03) 0%, transparent 60%),
+    radial-gradient(circle at 80% 50%, rgba(26, 140, 216, 0.03) 0%, transparent 60%);
+  pointer-events: none;
+}
+.page-flip-face.page-flip-back {
+  transform: rotateY(180deg);
+}
+
+/* Soft shadow that sweeps across the leaf mid-turn, like light catching a
+   real page as it curls off the spine. */
+.page-flip-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(90deg, rgba(10, 40, 70, 0.30), transparent 40%, transparent 60%, rgba(10, 40, 70, 0.30));
+  opacity: 0;
+  transition: opacity 350ms ease-in-out;
+  pointer-events: none;
+}
+.page-flip-overlay.is-flipping::before {
+  opacity: 1;
+}
+
+/* A faint contact shadow cast by the lifted leaf onto the page(s) beneath. */
+.page-flip-overlay {
+  box-shadow: 0 0 0 rgba(0,0,0,0);
+  transition-property: transform, box-shadow;
+}
+.page-flip-overlay.is-flipping {
+  box-shadow: 0 20px 40px rgba(10, 40, 70, 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-flip-overlay { transition: none !important; }
 }
 
 /* ===== STAMPBOOK NAVIGATION ===== */
@@ -895,6 +986,7 @@ h1, h2, h3, h4, h5, h6 {
   .stampbook-spine { width: 100%; height: 10px; }
   .stampbook-spine::after { display: none; }
   .stampbook-page { padding: 14px 12px; }
+  .page-flip-face { padding: 14px 12px; }
   .stampbook-grid { gap: 8px; }
   .stampbook-nav { justify-content: center; }
   .stampbook-pageindicator { order: -1; flex-basis: 100%; text-align: center; }
@@ -916,6 +1008,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Desktop: 992px - 1439px */
 @media (min-width: 992px) and (max-width: 1439.98px) {
   .stampbook-page { padding: 24px 22px; }
+  .page-flip-face { padding: 24px 22px; }
 }
 
 /* Wide: >=1440px */
@@ -924,6 +1017,7 @@ h1, h2, h3, h4, h5, h6 {
   .passport-header { padding: 30px 38px; }
   .stampbook-spread { min-height: 420px; }
   .stampbook-page { padding: 28px 28px; }
+  .page-flip-face { padding: 28px 28px; }
   .stampbook-grid { gap: 14px; }
   .stat-tile .stat-value { font-size: 2.2rem; }
 }
