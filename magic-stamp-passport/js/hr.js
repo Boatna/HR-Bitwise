@@ -169,19 +169,20 @@ async function loadRewardsManage() {
   rewardsManageCache = rewards;
   const body = document.getElementById('rewardsManageBody');
   if (!rewards || rewards.length === 0) {
-    body.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">ยังไม่มีรางวัล</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-3">ยังไม่มีรางวัล</td></tr>`;
     return;
   }
   body.innerHTML = rewards.map(r => `
     <tr>
       <td>
         <img src="${resolveRewardImage(r.RewardImage)}" alt="${escapeHtml(r.RewardName)}"
-             style="width:44px;height:44px;object-fit:cover;border-radius:8px;"
+             style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:var(--sky-1);padding:3px;"
              onerror="this.src='${REWARD_IMAGE_FOLDER}reward-placeholder.svg'">
       </td>
       <td>${escapeHtml(r.RewardName)}</td>
       <td>${r.RequiredStamps}</td>
       <td>${r.RemainingQuantity}</td>
+      <td>${r.RedemptionCode ? `<code>${escapeHtml(r.RedemptionCode)}</code>` : '<span class="text-muted-light">—</span>'}</td>
       <td><span class="badge ${r.Status === 'Active' ? 'badge-status-active' : 'badge-status-rejected'}">${r.Status === 'Active' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}</span></td>
       <td>
         <button class="btn btn-sm btn-purple" onclick="openRewardEditor('${r.RewardID}')"><i class="fa-solid fa-pen"></i></button>
@@ -202,6 +203,7 @@ function openRewardEditor(rewardId) {
       document.getElementById('rewardDescField').value = r.Description || '';
       document.getElementById('rewardStampsField').value = r.RequiredStamps;
       document.getElementById('rewardQtyField').value = r.RemainingQuantity;
+      document.getElementById('rewardCodeField').value = r.RedemptionCode || '';
       document.getElementById('rewardImageField').value = r.RewardImage || '';
       document.getElementById('rewardStatusField').value = r.Status;
     }
@@ -227,6 +229,7 @@ async function saveReward() {
     description: document.getElementById('rewardDescField').value.trim(),
     requiredStamps: Number(document.getElementById('rewardStampsField').value),
     remainingQuantity: Number(document.getElementById('rewardQtyField').value),
+    redemptionCode: document.getElementById('rewardCodeField').value.trim(),
     rewardImage: document.getElementById('rewardImageField').value.trim(),
     status: document.getElementById('rewardStatusField').value
   };

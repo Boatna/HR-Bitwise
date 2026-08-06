@@ -102,8 +102,8 @@
           </div>
           <div class="table-responsive">
             <table class="table align-middle">
-              <thead><tr><th>รูป</th><th>ชื่อรางวัล</th><th>ต้องการแสตมป์</th><th>คงเหลือ</th><th>สถานะ</th><th></th></tr></thead>
-              <tbody id="rewardsManageBody"><tr><td colspan="6" class="text-center text-muted py-3">กำลังโหลด...</td></tr></tbody>
+              <thead><tr><th>รูป</th><th>ชื่อรางวัล</th><th>ต้องการแสตมป์</th><th>คงเหลือ</th><th>รหัสของแลก</th><th>สถานะ</th><th></th></tr></thead>
+              <tbody id="rewardsManageBody"><tr><td colspan="7" class="text-center text-muted py-3">กำลังโหลด...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -174,12 +174,17 @@
               <div class="col-6"><label class="form-label fw-bold">จำนวนคงเหลือ</label><input type="number" min="0" step="1" class="form-control form-control-magic" id="rewardQtyField" required></div>
             </div>
             <div class="mb-3 mt-2">
+              <label class="form-label fw-bold">รหัสของแลก <span class="fw-normal text-muted-light">(ถ้ามี)</span></label>
+              <input class="form-control form-control-magic" id="rewardCodeField" placeholder="เช่น 123456">
+              <div class="form-text">รหัสนี้จะแสดงให้พนักงานเห็นในประวัติการแลกรางวัล หลังจาก HR อนุมัติคำขอแลกแล้วเท่านั้น</div>
+            </div>
+            <div class="mb-3 mt-2">
               <label class="form-label fw-bold">รูปภาพ</label>
               <input class="form-control form-control-magic" id="rewardImageField"
                      placeholder="ชื่อไฟล์ใน images/rewards/ เช่น mug.jpg หรือวาง URL เต็ม">
               <div class="form-text">ใส่แค่ชื่อไฟล์ถ้ารูปอยู่ในโฟลเดอร์ <code>images/rewards/</code> ของโปรเจกต์ หรือวาง URL เต็มก็ได้</div>
               <img id="rewardImagePreview" src="" alt="preview"
-                   style="display:none; width:90px; height:90px; object-fit:cover; border-radius:10px; margin-top:8px; border:1px solid var(--parchment-dark);">
+                   style="display:none; width:90px; height:90px; object-fit:contain; border-radius:10px; margin-top:8px; border:1px solid var(--parchment-dark); background:var(--sky-1); padding:6px;">
             </div>
             <div class="mb-1">
               <label class="form-label fw-bold">สถานะ</label>

@@ -1,6 +1,6 @@
 const API = (() => {
   // TODO: replace with your deployed Apps Script Web App URL
-  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby365DFtVxygc1i0Ulyt2RRdh--W6hcLpncfpvaWxxyXuzcOYfcoN0thKTM8X0KYdvDWA/exec';
+  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxOcsFA-0RbqIhTANIw5A2nPNr3mj64AojPOnaXqCg7ZpOPtISXXocfaBsBGd0oC7xqxQ/exec';
 
   async function call(action, payload = {}) {
     if (WEB_APP_URL.indexOf('YOUR_DEPLOYMENT_ID') !== -1) {

@@ -72,12 +72,22 @@ a negative `จำนวนแสตมป์`), so this sheet is the single sou
 balance and full history.
 
 ### Sheet: `Rewards`
-| RewardID | ชื่อของรางวัล | แสตมป์ที่ใช้แลก | จำนวนคงเหลือ | สถานะ | รูปภาพ |
-|---|---|---|---|---|---|
+| RewardID | ชื่อของรางวัล | แสตมป์ที่ใช้แลก | จำนวนคงเหลือ | สถานะ | รูปภาพ | คำอธิบาย | รหัสของรางวัล |
+|---|---|---|---|---|---|---|---|
 
 - `สถานะ` is `Active` or `Disabled`.
 - `รูปภาพ` is an image URL (optional — a placeholder icon is shown if blank).
-- An optional `Description` (or `คำอธิบาย`) column can be added for reward blurb text.
+- `คำอธิบาย` (or `Description`) holds the reward blurb text shown on the employee's reward
+  card. **You don't need to add this column yourself** — `createReward()` /
+  `updateReward()` in `Code.gs` now auto-create it (and `รหัสของรางวัล`, below) on the
+  sheet the first time a reward is saved if it isn't already there. This also fixes an
+  earlier bug where a reward's description could silently fail to save (and look like it
+  "disappeared") on sheets that were set up before that column existed.
+- `รหัสของรางวัล` (or `RedemptionCode`) is an optional voucher/redeem code (e.g. `123456`)
+  entered by HR in the Add/Edit Reward form. It's kept hidden from the employee until
+  their redemption request is **Approved** — it then appears in a "รหัสของแลก" column in
+  their redemption history (`employee.html` / `js/employee.js`) and in the HR "จัดการ
+  รางวัล" table (`hr.html` / `js/hr.js`) for reference.
 
 ### Sheet: `Redemptions`
 | RedemptionID | Timestamp | รหัสพนักงาน | ชื่อพนักงาน | RewardID | ชื่อของรางวัล | แสตมป์ที่ใช้ | สถานะ | ผู้ดำเนินการ | หมายเหตุ |
@@ -195,11 +205,14 @@ change the thresholds:
 
 | Level | Thai | Stamps required |
 |---|---|---|
-| Explorer | นักสำรวจ | 0 |
-| Dreamer | นักฝัน | 10 |
-| Adventurer | นักผจญภัย | 25 |
-| Hero | วีรบุรุษ | 50 |
-| Legend | ตำนาน | 100 |
+| Beginner | นักสะสมมือใหม่ | 0 |
+| Collector | นักสะสม | 10 |
+| Curator | ภัณฑารักษ์ | 25 |
+| Connoisseur | ผู้เชี่ยวชาญ | 50 |
+| Grandmaster | ปรมาจารย์แห่งการสะสม | 100 |
+| Luminary | ผู้ทรงคุณวุฒิ | 300 |
+| Legend | ตำนาน | 500 |
+| Mythic | ผู้วิเศษ | 1000 |
 
 ---
 
