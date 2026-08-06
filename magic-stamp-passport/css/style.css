@@ -265,11 +265,21 @@ h1, h2, h3, h4, h5, h6 {
   transform-style: preserve-3d;
 }
 
-/* Mobile fallback crossfade (used instead of the 3D flip when the spread
-   is stacked into a single column — see the <576px media query below). */
 .stampbook-spread.is-page-fading .stampbook-page {
   transition: opacity 0.18s ease;
   opacity: 0;
+}
+
+.stampbook-spread.is-mobile-single {
+  flex-direction: column;
+}
+.stampbook-spread.is-mobile-single .stampbook-page-left,
+.stampbook-spread.is-mobile-single .stampbook-spine {
+  display: none;
+}
+.stampbook-spread.is-mobile-single .stampbook-page-right {
+  width: 100%;
+  flex: none;
 }
 
 /* Left & Right Pages */
@@ -532,12 +542,6 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 200px;
 }
 
-/* ===== PAGE FLIP (EPUB-style 3D page turn) ===== */
-/* The flipping "leaf" sits exactly on top of the real right/left page while
-   it turns, showing the outgoing content on its front face and the
-   incoming content (already committed to the real DOM underneath) on its
-   back face — so when the rotation finishes and the leaf is removed, the
-   real page underneath lines up perfectly. */
 .page-flip-overlay {
   position: absolute;
   top: 0;
@@ -586,8 +590,6 @@ h1, h2, h3, h4, h5, h6 {
   transform: rotateY(180deg);
 }
 
-/* Soft shadow that sweeps across the leaf mid-turn, like light catching a
-   real page as it curls off the spine. */
 .page-flip-overlay::before {
   content: "";
   position: absolute;
@@ -931,11 +933,6 @@ h1, h2, h3, h4, h5, h6 {
   padding: 30px 0 10px;
 }
 
-/* ===== LOADING OVERLAY ===== */
-/* Full-screen blocking overlay used by showLoading()/hideLoading() in
-   auth.js and employee.js. Sits above Bootstrap modals (z-index 1050-1060)
-   so it also blocks re-clicks on a confirm button inside an open modal
-   (e.g. "ยืนยันการแลกรางวัล" / "มอบแสตมป์") while a request is in flight. */
 .loading-overlay {
   position: fixed;
   inset: 0;
