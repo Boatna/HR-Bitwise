@@ -9,7 +9,7 @@ const LEVELS = [
   { name: 'Mythic',       th: 'ผู้วิเศษ',           min: 1000, icon: 'fa-hat-wizard' }
 ];
 
-const STAMPS_PER_BOOK_PAGE = 9; // 3x3 grid
+const STAMPS_PER_BOOK_PAGE = 9;
 const FLIP_DURATION_MS = 700;
 
 let session = null;
@@ -22,12 +22,10 @@ let spreadIndex = 0;
 let totalSpreadsCache = 1;
 let isFlipping = false;
 let pendingRewardId = null;
-let lastMobileSingleState = null; // tracks isMobileSingle() so resize can re-layout the book
+let lastMobileSingleState = null;
 
 const REWARD_IMAGE_FOLDER = 'images/rewards/';
 const STAMP_IMAGE_DEFAULT = 'images/stamps/stamp.png';
-
-// ===== Utility Functions =====
 
 function getLevelInfo(stamps) {
   let current = LEVELS[0];
@@ -62,10 +60,6 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-// NOTE: Code.gs already formats DateTime / RedemptionDate as 'dd/MM/yyyy HH:mm'
-// strings before sending them to the front end. Do NOT re-parse them with
-// `new Date(...)` here — that format is not reliably parseable by JS Date
-// and produces "Invalid Date" / wrong dates. Just display the string as-is.
 function displayDate(dateStr) {
   return dateStr || '';
 }
@@ -115,17 +109,9 @@ function updateStackedLayout() {
   spreadEl.classList.toggle('is-stacked', window.innerWidth < 768);
 }
 
-// Below ~576px we no longer show a two-page "spread" (left+right stacked
-// vertically = 18 stamp slots at once, which made the page extremely tall
-// and pushed the แผ่นก่อน/แผ่นถัดไป buttons far below the fold — on some
-// phones it looked like the page was "stuck" because nothing tappable was
-// on screen). Instead, on small screens we show exactly ONE page at a time
-// (9 slots max), so the content is short and the nav buttons stay visible.
 function isMobileSingle() {
   return window.innerWidth < 576;
 }
-
-// ===== Load Functions (all via API -> Google Apps Script) =====
 
 async function loadProfile() {
   employeeCache = await API.getEmployee(session.employeeId);
@@ -156,25 +142,13 @@ async function loadProfile() {
 
 async function loadStampHistory() {
   const data = await API.getStampHistory(session.employeeId);
-
-  // Code.gs returns this sorted NEWEST-first. To correctly figure out which
-  // individual stamp cards are still "in the album" we need to replay the
-  // ledger in chronological (oldest-first) order: every positive grant
-  // pushes stamp cards into a collection, and every redemption (negative
-  // StampAmount) must remove that many cards from the collection — otherwise
-  // stamps that were already spent on a reward keep showing up in the book
-  // forever, even though the employee no longer "has" them.
   const chronological = (data || []).slice().reverse();
-
-  // Queue of individually-collected stamp cards, oldest collected first.
   let collected = [];
 
   chronological.forEach(item => {
     const amount = Number(item.StampAmount) || 0;
 
     if (amount > 0) {
-      // A grant (or a refund from a rejected redemption) — add one stamp
-      // card per point, so a grant of 3 becomes 3 separate collectible cards.
       const units = Math.floor(amount);
       for (let i = 0; i < units; i++) {
         collected.push({
@@ -186,18 +160,14 @@ async function loadStampHistory() {
         });
       }
     } else if (amount < 0) {
-      // A redemption — spend (remove) that many cards, oldest-earned first,
-      // exactly like handing over the oldest stamps in a physical booklet.
       let toRemove = Math.floor(Math.abs(amount));
       while (toRemove > 0 && collected.length > 0) {
         collected.shift();
         toRemove--;
       }
     }
-    // amount === 0 rows (shouldn't normally happen) are ignored.
   });
 
-  // Keep the album's existing newest-first display order.
   stampHistoryCache = collected.reverse();
 
   spreadIndex = 0;
@@ -259,9 +229,6 @@ async function loadRedemptionHistory() {
   renderRedemptionHistory();
 }
 
-// Renders into the <tbody id="redemptionHistoryList"> table body in
-// employee.html — matches the table layout used for redemptions in the HR
-// portal (js/hr.js -> loadRedemptions()).
 function renderRedemptionHistory() {
   const box = document.getElementById('redemptionHistoryList');
 
@@ -315,8 +282,6 @@ async function loadDashboard() {
   document.getElementById('statRedeemed').textContent = stats.totalRedeemed || 0;
 }
 
-// ===== Stampbook Functions =====
-
 function buildStampbookPages() {
   const pages = [{ type: 'cover' }];
 
@@ -348,10 +313,6 @@ function renderStampbook() {
   const spreadEl = document.querySelector('.stampbook-spread');
 
   stampbookPages = buildStampbookPages();
-
-  // Desktop/tablet: a "spread" is 2 pages (left+right) shown side by side.
-  // Mobile (<576px): a "spread" is just 1 page, shown full-width, so the
-  // whole book is roughly half as tall and the nav buttons stay reachable.
   const mobileSingle = isMobileSingle();
   const pagesPerView = mobileSingle ? 1 : 2;
   totalSpreadsCache = Math.ceil(stampbookPages.length / pagesPerView);
@@ -360,8 +321,6 @@ function renderStampbook() {
   if (spreadEl) spreadEl.classList.toggle('is-mobile-single', mobileSingle);
 
   if (mobileSingle) {
-    // Only the right-hand slot is shown (CSS hides the left page + spine);
-    // reuse it as the single visible page.
     const page = stampbookPages[spreadIndex];
     renderBookPage(rightEl, rightHeader, page, 'right', true);
     if (leftHeader) leftHeader.textContent = '';
@@ -435,7 +394,6 @@ function renderBookPage(container, headerEl, page, side, singleMode) {
     return;
   }
 
-  // page.type === 'stamps'
   headerEl.textContent = `หน้า ${page.pageNumber}`;
   container.className = 'stampbook-grid page-fade-in';
   let html = '';
@@ -481,13 +439,6 @@ function goToSpread(delta) {
   playPageFlip(delta > 0 ? 'next' : 'prev', newIndex);
 }
 
-// Real 3D "book" page turn: we snapshot the page that's about to change
-// (its current HTML + on-screen position/size), silently update the real
-// DOM to its final state underneath, then lay a two-sided flipping leaf
-// (front = old content, back = new content) on top and rotate it around
-// the spine edge with CSS 3D transforms. When the rotation finishes the
-// leaf is removed and the already-updated real page is exactly what's
-// left showing — no visible seam.
 function playPageFlip(direction, newIndex) {
   const spreadEl = document.querySelector('.stampbook-spread');
   if (!spreadEl || prefersReducedMotion()) {
@@ -496,9 +447,6 @@ function playPageFlip(direction, newIndex) {
     return;
   }
 
-  // Below ~576px only one page is shown at a time (see isMobileSingle() /
-  // renderStampbook()) — a left/right spine flip doesn't make sense there,
-  // so use a quick crossfade instead.
   if (isMobileSingle()) {
     isFlipping = true;
     document.getElementById('prevPageBtn').disabled = true;
@@ -506,10 +454,6 @@ function playPageFlip(direction, newIndex) {
     spreadEl.classList.add('is-page-fading');
     setTimeout(() => {
       spreadIndex = newIndex;
-      // Reset isFlipping BEFORE renderStampbook() — it reads isFlipping to
-      // decide whether the nav buttons should be disabled, so calling it
-      // while isFlipping was still true left the buttons stuck disabled
-      // forever (page looked "frozen" after the very first mobile flip).
       isFlipping = false;
       renderStampbook();
       spreadEl.classList.remove('is-page-fading');
@@ -531,13 +475,9 @@ function playPageFlip(direction, newIndex) {
   document.getElementById('prevPageBtn').disabled = true;
   document.getElementById('nextPageBtn').disabled = true;
 
-  // Snapshot the outgoing content + exact geometry before we touch the DOM.
   const frontHtml = flippingPageEl.innerHTML;
   const leafLeft = flippingPageEl.offsetLeft;
   const leafWidth = flippingPageEl.offsetWidth;
-
-  // Update the real page(s) to their final state now — the flipping leaf
-  // will cover this change and reveal it underneath as it turns.
   spreadIndex = newIndex;
   renderStampbook();
 
@@ -562,10 +502,6 @@ function playPageFlip(direction, newIndex) {
   overlay.appendChild(front);
   overlay.appendChild(back);
   spreadEl.appendChild(overlay);
-
-  // Force a reflow so the browser registers the starting transform before
-  // we add the class that animates it — otherwise the transition can get
-  // skipped entirely.
   void overlay.offsetWidth;
   overlay.classList.add('is-flipping');
 
@@ -575,15 +511,13 @@ function playPageFlip(direction, newIndex) {
     done = true;
     overlay.remove();
     isFlipping = false;
-    renderStampbook(); // re-sync nav button disabled states
+    renderStampbook();
   };
   overlay.addEventListener('transitionend', (e) => {
     if (e.propertyName === 'transform') cleanup();
   });
   setTimeout(cleanup, FLIP_DURATION_MS + 150);
 }
-
-// ===== Redeem Functions =====
 
 function openRedeemModal(rewardId) {
   const reward = rewardsCache.find(r => String(r.RewardID) === String(rewardId));
@@ -645,10 +579,6 @@ async function doRedeem() {
     await API.redeemReward(session.employeeId, pendingRewardId);
 
     bootstrap.Modal.getInstance(modalEl).hide();
-
-    // Refresh all data (profile first, since rewards/stampbook rendering
-    // depends on employeeCache being up to date; rewards before redemption
-    // history for the same reason as the initial load above).
     await loadProfile();
     await loadRewards();
     await Promise.all([
@@ -668,19 +598,12 @@ async function doRedeem() {
   }
 }
 
-// ===== Initialize =====
-// NOTE: logout() is intentionally NOT redefined here — auth.js already
-// provides the correct implementation (clears the sessionStorage session
-// and redirects to login.html). Redefining it here previously shadowed
-// that implementation with a broken localStorage-based version.
-
 document.addEventListener('DOMContentLoaded', async () => {
   session = Session.requireEmployee();
-  if (!session) return; // requireEmployee() already redirected to login.html
+  if (!session) return;
 
   document.getElementById('welcomeName').textContent = 'สวัสดี, ' + (session.name || 'พนักงาน');
 
-  // Create sparkles
   const field = document.getElementById('sparkleField');
   if (field) {
     for (let i = 0; i < 20; i++) {
@@ -696,12 +619,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   showLoading('กำลังเปิดสมุดแสตมป์เวทมนตร์...');
 
   try {
-    // Load profile first — rewards/stampbook rendering reads employeeCache.
     await loadProfile();
-    // Load rewards BEFORE the redemption history: renderRedemptionHistory()
-    // looks up each reward's image from rewardsCache, so if it ran while
-    // rewardsCache was still empty (a race when everything below ran in
-    // one Promise.all) the reward photo would silently fail to resolve.
     await loadRewards();
     await Promise.all([
       loadStampHistory(),

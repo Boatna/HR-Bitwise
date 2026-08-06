@@ -1,20 +1,20 @@
-// ---- Sheet names -------------------------------------------------------
 const SHEET_EMPLOYEE = 'Employee';
 const SHEET_MANAGERS = 'Managers';
 const SHEET_DATA = 'Data';
 const SHEET_REWARDS = 'Rewards';
 const SHEET_REDEMPTIONS = 'Redemptions';
 
-// ---- Achievement levels (must mirror js/employee.js LEVELS) -----------
 const LEVELS = [
   { name: 'Beginner',   th: 'นักสะสมมือใหม่', min: 0 },
   { name: 'Collector',    th: 'นักสะสม',    min: 10 },
   { name: 'Curator', th: 'ภัณฑารักษ์', min: 25 },
   { name: 'Connoisseur',       th: 'ผู้เชี่ยวชาญ',   min: 50 },
-  { name: 'Grandmaster',     th: 'ปรมาจารย์แห่งการสะสม',     min: 100 }
+  { name: 'Grandmaster',     th: 'ปรมาจารย์แห่งการสะสม',     min: 100 },
+  { name: 'Luminary',      th: 'ผู้ทรงคุณวุฒิ',   min: 300 },
+  { name: 'Legend',       th: 'ตำนาน',        min: 500 },
+  { name: 'Mythic',       th: 'ผู้วิเศษ',       min: 1000 }
 ];
 
-// ---- How long to wait to acquire a script lock before failing (ms) ----
 const LOCK_TIMEOUT_MS = 30000;
 
 
@@ -71,10 +71,6 @@ function jsonResponse(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// =========================================================================
-// Locking helper
-// =========================================================================
-
 function withLock(fn) {
   const lock = LockService.getScriptLock();
   const gotLock = lock.tryLock(LOCK_TIMEOUT_MS);
@@ -87,10 +83,6 @@ function withLock(fn) {
     lock.releaseLock();
   }
 }
-
-// =========================================================================
-// Sheet helpers
-// =========================================================================
 
 function getSheet(name) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -151,6 +143,17 @@ function getColumnIndexRequired(sheetName, headerName) {
   return idx;
 }
 
+function ensureColumnExists(sheetName, headerName) {
+  const sheet = getSheet(sheetName);
+  const lastCol = sheet.getLastColumn();
+  const headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+  const idx = headers.indexOf(headerName);
+  if (idx !== -1) return idx + 1; // already exists
+  const newCol = lastCol + 1;
+  sheet.getRange(1, newCol).setValue(headerName);
+  return newCol;
+}
+
 function normalizeId(v) {
   if (v === null || v === undefined) return '';
   if (typeof v === 'number') return String(Math.trunc(v));
@@ -170,10 +173,6 @@ function formatDate(value) {
   }
 }
 
-// =========================================================================
-// Employee helpers
-// =========================================================================
-
 function getLevel(stamps) {
   let current = LEVELS[0];
   for (let i = 0; i < LEVELS.length; i++) {
@@ -182,10 +181,6 @@ function getLevel(stamps) {
   return current;
 }
 
-// NOTE: reads the whole Data sheet and sums จำนวนแสตมป์ per employee in one
-// pass. Used by computeTotalStamps() (single lookup) and by
-// searchEmployees() (bulk lookup) so we don't re-read the whole Data sheet
-// once per employee in a loop (that was previously O(N employees x M rows)).
 function getStampTotalsMap() {
   const data = sheetToObjects(SHEET_DATA);
   const totals = {};
@@ -239,8 +234,6 @@ function searchEmployees(params) {
     });
   }
 
-  // Read the Data sheet once and look up totals from the map, instead of
-  // calling computeTotalStamps() (a full Data-sheet scan) once per result.
   const totalsMap = getStampTotalsMap();
 
   return filtered.slice(0, 50).map(e => {
@@ -254,10 +247,6 @@ function searchEmployees(params) {
     };
   });
 }
-
-// =========================================================================
-// Manager auth
-// =========================================================================
 
 function authenticateManager(params) {
   const managerId = normalizeId(params.managerId);
@@ -283,19 +272,11 @@ function authenticateManager(params) {
   };
 }
 
-// =========================================================================
-// Stamp history + granting
-// =========================================================================
-
 function getStampHistory(params) {
   const employeeId = normalizeId(params.employeeId);
   const data = sheetToObjects(SHEET_DATA);
   return data
     .filter(d => normalizeId(d['รหัสพนักงาน']) === employeeId)
-    // Sort on the RAW Timestamp (a real Date object from the sheet) BEFORE
-    // formatting it to a display string below. Sorting after formatting
-    // would break, since 'dd/MM/yyyy HH:mm' strings are not reliably
-    // re-parseable by `new Date(...)`.
     .sort((a, b) => new Date(b['Timestamp']) - new Date(a['Timestamp']))
     .map(d => ({
       ActivityName: d['กิจกรรม'] || '',
@@ -349,20 +330,17 @@ function addStamp(params) {
   });
 }
 
-// =========================================================================
-// Rewards
-// =========================================================================
-
 function getRewards() {
   const rewards = sheetToObjects(SHEET_REWARDS);
   return rewards.map(r => ({
     RewardID: String(r['RewardID'] || ''),
     RewardName: r['ชื่อของรางวัล'] || '',
-    Description: r['Description'] || r['คำอธิบาย'] || '',
+    Description: r['คำอธิบาย'] || r['Description'] || '',
     RequiredStamps: Number(r['แสตมป์ที่ใช้แลก']) || 0,
     RemainingQuantity: Number(r['จำนวนคงเหลือ']) || 0,
     Status: r['สถานะ'] || 'Active',
-    RewardImage: r['รูปภาพ'] || ''
+    RewardImage: r['รูปภาพ'] || '',
+    RedemptionCode: r['รหัสของรางวัล'] || r['RedemptionCode'] || ''
   }));
 }
 
@@ -373,12 +351,18 @@ function createReward(params) {
   const status = params.status || 'Active';
   const rewardImage = String(params.rewardImage || '');
   const description = String(params.description || '');
+  const redemptionCode = String(params.redemptionCode || '').trim();
 
   if (!rewardName) throw new Error('กรุณาระบุชื่อรางวัล');
   if (requiredStamps <= 0) throw new Error('จำนวนแสตมป์ที่ใช้แลกต้องมากกว่า 0');
 
   return withLock(() => {
     const sheet = getSheet(SHEET_REWARDS);
+    // Auto-create these columns if the underlying sheet doesn't have them
+    // yet, so description / redemption-code values always have somewhere
+    // to be written instead of silently vanishing.
+    ensureColumnExists(SHEET_REWARDS, 'คำอธิบาย');
+    ensureColumnExists(SHEET_REWARDS, 'รหัสของรางวัล');
     const headers = getHeaders(SHEET_REWARDS);
     const newId = 'R' + new Date().getTime();
     
@@ -392,6 +376,8 @@ function createReward(params) {
         case 'รูปภาพ': return rewardImage;
         case 'Description': return description;
         case 'คำอธิบาย': return description;
+        case 'RedemptionCode': return redemptionCode;
+        case 'รหัสของรางวัล': return redemptionCode;
         default: return '';
       }
     });
@@ -409,6 +395,7 @@ function updateReward(params) {
   const status = params.status || 'Active';
   const rewardImage = String(params.rewardImage || '');
   const description = String(params.description || '');
+  const redemptionCode = String(params.redemptionCode || '').trim();
 
   if (!rewardId) throw new Error('กรุณาระบุรหัสรางวัล');
   if (!rewardName) throw new Error('กรุณาระบุชื่อรางวัล');
@@ -419,6 +406,8 @@ function updateReward(params) {
     if (rowIdx === -1) throw new Error('ไม่พบรางวัลนี้');
     
     const sheet = getSheet(SHEET_REWARDS);
+    ensureColumnExists(SHEET_REWARDS, 'คำอธิบาย');
+    ensureColumnExists(SHEET_REWARDS, 'รหัสของรางวัล');
     const headers = getHeaders(SHEET_REWARDS);
     
     headers.forEach((h, idx) => {
@@ -432,6 +421,8 @@ function updateReward(params) {
         case 'รูปภาพ': value = rewardImage; break;
         case 'Description': value = description; break;
         case 'คำอธิบาย': value = description; break;
+        case 'RedemptionCode': value = redemptionCode; break;
+        case 'รหัสของรางวัล': value = redemptionCode; break;
         default: return;
       }
       sheet.getRange(rowIdx, col).setValue(value);
@@ -463,10 +454,6 @@ function disableReward(params) {
   });
 }
 
-// =========================================================================
-// Redemption
-// =========================================================================
-
 function redeemReward(params) {
   const employeeId = normalizeId(params.employeeId);
   const rewardId = String(params.rewardId);
@@ -486,15 +473,12 @@ function redeemReward(params) {
       throw new Error('แสตมป์สะสมไม่เพียงพอ (ต้องการ ' + reward.RequiredStamps + ' มี ' + emp.TotalStamps + ')');
     }
 
-    // Deduct stock
     const rewardRow = findRowIndexByValue(SHEET_REWARDS, 'RewardID', rewardId);
     if (rewardRow === -1) throw new Error('ไม่พบรางวัลในระบบ');
     
     const rewardSheet = getSheet(SHEET_REWARDS);
     const qtyCol = getColumnIndexRequired(SHEET_REWARDS, 'จำนวนคงเหลือ');
     rewardSheet.getRange(rewardRow, qtyCol).setValue(reward.RemainingQuantity - 1);
-
-    // Log negative stamp transaction
     const dataSheet = getSheet(SHEET_DATA);
     const dataHeaders = getHeaders(SHEET_DATA);
     const row = dataHeaders.map(h => {
@@ -542,22 +526,6 @@ function redeemReward(params) {
   });
 }
 
-// ---- BUG FIX ------------------------------------------------------------
-// Previously, getAllRedemptions() sorted AFTER mapRedemptions() had already
-// converted Timestamp into a formatted 'dd/MM/yyyy HH:mm' display string,
-// then re-parsed that string with `new Date(...)`. That format is not
-// reliably parseable by JS Date (day/month order gets misread as
-// month/day, or becomes Invalid Date whenever day > 12), so the comparator
-// effectively returned NaN and the "sort" silently did nothing — requests
-// ended up in sheet-row order (oldest first) instead of newest-first.
-//
-// Fix: read the raw sheet rows, sort them by the RAW Timestamp (an actual
-// Date object) FIRST, and only format dates into display strings after
-// sorting — the same safe pattern getStampHistory() already used.
-// getRedemptionHistory() gets the same fix so an employee's own redemption
-// history is also shown newest-first, consistent with their stamp history.
-// ---------------------------------------------------------------------
-
 function getSortedRedemptionRows() {
   const redemptions = sheetToObjects(SHEET_REDEMPTIONS);
   return redemptions.sort((a, b) => new Date(b['Timestamp']) - new Date(a['Timestamp']));
@@ -583,12 +551,10 @@ function mapRedemptions() {
 
 function getRedemptionHistory(params) {
   const employeeId = normalizeId(params.employeeId);
-  // Already sorted newest-first by mapRedemptions() -> getSortedRedemptionRows().
   return mapRedemptions().filter(r => r.EmployeeID === employeeId);
 }
 
 function getAllRedemptions() {
-  // Already sorted newest-first — no extra (buggy) re-sort needed here.
   return mapRedemptions();
 }
 
@@ -614,7 +580,6 @@ function approveRedemption(params) {
       throw new Error('คำขอนี้ถูกดำเนินการแล้ว (' + currentStatus + ')');
     }
     
-    // Update status
     sheet.getRange(rowIdx, statusCol).setValue(status);
     
     const approverCol = getColumnIndex(SHEET_REDEMPTIONS, 'ผู้ดำเนินการ');
@@ -622,7 +587,6 @@ function approveRedemption(params) {
       sheet.getRange(rowIdx, approverCol).setValue(approverName);
     }
 
-    // If rejected, refund stamps and restock
     if (status === 'Rejected') {
       const redemptions = sheetToObjects(SHEET_REDEMPTIONS);
       const redemption = redemptions.find(r => String(r['RedemptionID']) === redemptionId);
@@ -650,8 +614,6 @@ function approveRedemption(params) {
           }
         });
         dataSheet.appendRow(row);
-
-        // Restock reward
         if (rewardId) {
           const rewardRowIdx = findRowIndexByValue(SHEET_REWARDS, 'RewardID', rewardId);
           if (rewardRowIdx !== -1) {
@@ -671,10 +633,6 @@ function approveRedemption(params) {
     };
   });
 }
-
-// =========================================================================
-// Dashboards
-// =========================================================================
 
 function getEmployeeDashboard(params) {
   const employeeId = normalizeId(params.employeeId);
@@ -724,7 +682,6 @@ function getHrDashboard() {
     .sort((a, b) => b.stamps - a.stamps)
     .slice(0, 5);
 
-  // Top rewards by redemption count
   const countByReward = {};
   redemptions.forEach(r => {
     countByReward[r.RewardName] = (countByReward[r.RewardName] || 0) + 1;
@@ -735,7 +692,6 @@ function getHrDashboard() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  // Monthly activity summary
   const monthlyMap = {};
   data.forEach(d => {
     const amount = Number(d['จำนวนแสตมป์']) || 0;

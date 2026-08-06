@@ -1,8 +1,3 @@
-/* ==========================================================================
-   Magic Stamp Passport — Auth
-   Handles role toggle + login submission on login.html
-   ========================================================================== */
-
 const Session = {
   KEY: 'msp_session',
   save(session) { sessionStorage.setItem(this.KEY, JSON.stringify(session)); },

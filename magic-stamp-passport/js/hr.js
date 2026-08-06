@@ -1,6 +1,6 @@
 let hrSession;
 let rewardsManageCache = [];
-let grantEmployeePreviewData = null; // last employee fetched for the grant-stamp preview
+let grantEmployeePreviewData = null;
 
 const REWARD_IMAGE_FOLDER = 'images/rewards/';
 function resolveRewardImage(value) {
@@ -61,8 +61,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 450);
   });
 
-  // Live-update the "แต้มหลังบันทึก" figure whenever the stamp amount changes,
-  // as long as we already have a confirmed employee loaded.
   document.getElementById('grantAmount').addEventListener('input', renderGrantPreview);
 
   const field = document.getElementById('sparkleField');
@@ -78,7 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function renderGrantPreview() {
   const preview = document.getElementById('grantEmployeePreview');
-  if (!grantEmployeePreviewData) return; // nothing confirmed yet — leave whatever message is already shown
+  if (!grantEmployeePreviewData) return;
 
   const emp = grantEmployeePreviewData;
   const amountRaw = document.getElementById('grantAmount').value;
