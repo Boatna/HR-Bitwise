@@ -844,6 +844,8 @@ body {
 .ministry-pill.ministry-สาธารณสุข { background: #FEF2F2; color: #DC2626; }
 .ministry-pill.ministry-พลังงาน { background: #FFFBEB; color: #D97706; }
 .ministry-pill.ministry-มหาดไทย { background: #F5F3FF; color: #7C3AED; }
+.ministry-pill.ministry-govlocal { background: #ECFEFF; color: #0E7490; }
+.ministry-pill.ministry-customer { background: #FDF4FF; color: #A21CAF; }
 .ministry-pill.ministry-ไม่ระบุ { background: #F1F5F9; color: #94A3B8; }
 
 /* ============ Legal Registry Table ============ */
@@ -1441,8 +1443,8 @@ body {
       <label for="regFilterResult">ผลการประเมิน</label>
       <select id="regFilterResult">
         <option value="">ทุกผล</option>
-        <option value="Yes">Yes (ผ่าน)</option>
-        <option value="No">No (ไม่ผ่าน)</option>
+        <option value="Yes">สอดคล้อง (Yes)</option>
+        <option value="No">ไม่สอดคล้อง (No)</option>
         <option value="NA">NA (ไม่ระบุ)</option>
       </select>
     </div>
@@ -1478,11 +1480,6 @@ body {
         <label for="gf_กระทรวง">กระทรวง</label>
         <select id="gf_กระทรวง">
           <option value="">-- เลือกกระทรวง --</option>
-          <option value="แรงงาน">แรงงาน (L)</option>
-          <option value="อุตสาหกรรม">อุตสาหกรรม (I)</option>
-          <option value="สาธารณสุข">สาธารณสุข (H)</option>
-          <option value="พลังงาน">พลังงาน (E)</option>
-          <option value="มหาดไทย">มหาดไทย (In)</option>
         </select>
       </div>
       <div class="field">
@@ -1546,7 +1543,7 @@ body {
           <th style="width:70px">ความถี่</th>
           <th style="width:70px">กำหนดการ</th>
           <th style="width:80px">ผลการประเมิน</th>
-          <th style="width:80px">อัปเดตล่าสุด</th>
+          <th style="width:80px">วันที่ประเมินล่าสุด</th>
           <th style="width:90px">ผู้รับผิดชอบ</th>
           <th style="min-width:100px">หมายเหตุ</th>
           <th style="width:70px">ไฟล์แนบ</th>
@@ -1584,7 +1581,7 @@ body {
 
 <script>
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzilMXRMyEf67jGC4RCkj-zavqKhav1X6GxY1IVyuLS1RGs5tftP1jmrZcXVT3lCB_x/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxLZdjd0qiM3RIG-HaLaV6-NBfVOHQ5wnww51X4cM0-LAlTV_GZSgVuS39bo9JMJWkS/exec",
   SHEET: "Registration_Laws_and_Safety",
   TIMEOUT: 30000,
   RETRY: 3
@@ -1606,7 +1603,9 @@ const MINISTRY_PREFIX = {
   'อุตสาหกรรม': 'I',
   'สาธารณสุข': 'H',
   'พลังงาน': 'E',
-  'มหาดไทย': 'In'
+  'มหาดไทย': 'In',
+  'อบต./เทศบาล': 'M',
+  'ลูกค้า': 'C'
 };
 const MINISTRY_OPTIONS = Object.keys(MINISTRY_PREFIX);
 
@@ -1628,7 +1627,11 @@ const REG_SCHEMA = {
     { key: "รายละเอียดข้อกำหนดกฎหมาย", label: "รายละเอียดข้อกำหนดกฎหมาย",  type: "textarea", wide: true },
     { key: "ความถี่",                  label: "ความถี่",                   type: "text" },
     { key: "กำหนดการ",                 label: "กำหนดการ",                  type: "text" },
-    { key: "ผลการประเมิน",             label: "ผลการประเมิน",              type: "select",   options: ["Yes","No","NA"] },
+    { key: "ผลการประเมิน",             label: "ผลการประเมิน",              type: "select",   options: [
+      { value: "Yes", label: "สอดคล้อง (Yes)" },
+      { value: "No",  label: "ไม่สอดคล้อง (No)" },
+      { value: "NA",  label: "NA (ไม่ระบุ)" },
+    ] },
     { key: "ผู้รับผิดชอบ",             label: "ผู้รับผิดชอบ",              type: "text" },
     { key: "หมายเหตุ",                 label: "หมายเหตุ",                  type: "text" },
     {
@@ -1671,7 +1674,8 @@ function formatDateThai(value) {
   if (!dateObj || isNaN(dateObj.getTime())) return String(value);
   const d = dateObj.getUTCDate();
   const m = dateObj.getUTCMonth();
-  const y = dateObj.getUTCFullYear() + 543;
+  const rawYear = dateObj.getUTCFullYear();
+  const y = rawYear > 2400 ? rawYear : rawYear + 543;
   return `${d} ${MONTH_NAMES_TH[m]} ${y}`;
 }
 
@@ -1698,20 +1702,21 @@ function showLoading(el) { el.innerHTML = `<div class="skeleton-row">⏳ กำ�
 
 function evalBadge(result) {
   const s = String(result || "").trim().toLowerCase();
-  if (s === "yes") return `<span class="result-badge yes">✅ Yes</span>`;
-  if (s === "no")  return `<span class="result-badge no">❌ No</span>`;
+  if (s === "yes") return `<span class="result-badge yes">✅ สอดคล้อง</span>`;
+  if (s === "no")  return `<span class="result-badge no">❌ ไม่สอดคล้อง</span>`;
   return `<span class="result-badge na">NA</span>`;
 }
 
 function getMinistryIcon(ministry) {
-  const icons = { 'แรงงาน': '⚙️', 'อุตสาหกรรม': '🏭', 'สาธารณสุข': '🏥', 'พลังงาน': '⚡', 'มหาดไทย': '🏛️' };
+  const icons = { 'แรงงาน': '⚙️', 'อุตสาหกรรม': '🏭', 'สาธารณสุข': '🏥', 'พลังงาน': '⚡', 'มหาดไทย': '🏛️', 'อบต./เทศบาล': '🏘️', 'ลูกค้า': '🤝' };
   return icons[ministry] || '📋';
 }
 
 function getMinistryClass(ministry) {
   const map = {
     'แรงงาน': 'ministry-แรงงาน', 'อุตสาหกรรม': 'ministry-อุตสาหกรรม',
-    'สาธารณสุข': 'ministry-สาธารณสุข', 'พลังงาน': 'ministry-พลังงาน', 'มหาดไทย': 'ministry-มหาดไทย'
+    'สาธารณสุข': 'ministry-สาธารณสุข', 'พลังงาน': 'ministry-พลังงาน', 'มหาดไทย': 'ministry-มหาดไทย',
+    'อบต./เทศบาล': 'ministry-govlocal', 'ลูกค้า': 'ministry-customer'
   };
   return map[ministry] || 'ministry-ไม่ระบุ';
 }
@@ -2086,8 +2091,8 @@ function renderGroupEditRows() {
           <label>ผลการประเมิน</label>
           <select data-uid="${item.uid}" data-field="result">
             <option value="" ${item.result === '' ? 'selected' : ''}>-- เลือก --</option>
-            <option value="Yes" ${item.result === 'Yes' ? 'selected' : ''}>Yes</option>
-            <option value="No" ${item.result === 'No' ? 'selected' : ''}>No</option>
+            <option value="Yes" ${item.result === 'Yes' ? 'selected' : ''}>สอดคล้อง</option>
+            <option value="No" ${item.result === 'No' ? 'selected' : ''}>ไม่สอดคล้อง</option>
             <option value="NA" ${item.result === 'NA' ? 'selected' : ''}>NA</option>
           </select>
           ${item.reviewDate ? `<div class="file-current-note">🕓 ประเมินล่าสุด: ${formatDateThai(item.reviewDate)}</div>` : ''}
@@ -2188,7 +2193,6 @@ async function handleGroupSave() {
     if (item && field !== 'attachFile') item[field] = el.value;
   });
   
-  // Collect file objects
   document.querySelectorAll('#regGroupItemsContainer input[type="file"][data-uid]').forEach(el => {
     const uid = Number(el.dataset.uid);
     const item = regGroupEditItems.find(it => it.uid === uid);
@@ -2214,21 +2218,25 @@ async function handleGroupSave() {
     const keptRowIndexes = new Set(regGroupEditItems.filter(it => it.rowIndex !== null).map(it => it.rowIndex));
     const toDelete = [...originalRowIndexes].filter(idx => !keptRowIndexes.has(idx));
     
-    // Update existing
+    // ✅ FIX: อัปเดต item ที่มีอยู่แล้ว
     for (const item of regGroupEditItems.filter(it => it.rowIndex !== null)) {
       let attachUrl = item.attachUrl || '';
       if (item.attachFileObj) attachUrl = await uploadAttachmentFileObject(item.attachFileObj, item.attachUrl, seqVal);
       await updateSheetRow(item.rowIndex, { ...sharedData, "รายละเอียดข้อกำหนดกฎหมาย": item.detail, "ความถี่": item.freq, "กำหนดการ": item.sched, "ผลการประเมิน": item.result, "ผู้รับผิดชอบ": item.owner, "หมายเหตุ": item.note, "ไฟล์แนบ": attachUrl });
     }
     
-    // Add new
+    // ✅ FIX: เพิ่ม item ใหม่ และดึง rowIndex กลับมาเพื่อป้องกันการบันทึกซ้ำ
     for (const item of regGroupEditItems.filter(it => it.rowIndex === null)) {
       let attachUrl = '';
       if (item.attachFileObj) attachUrl = await uploadAttachmentFileObject(item.attachFileObj, '', seqVal);
-      await addSheetRow({ ...sharedData, "รายละเอียดข้อกำหนดกฎหมาย": item.detail, "ความถี่": item.freq, "กำหนดการ": item.sched, "ผลการประเมิน": item.result, "ผู้รับผิดชอบ": item.owner, "หมายเหตุ": item.note, "ไฟล์แนบ": attachUrl });
+      const addResult = await addSheetRow({ ...sharedData, "รายละเอียดข้อกำหนดกฎหมาย": item.detail, "ความถี่": item.freq, "กำหนดการ": item.sched, "ผลการประเมิน": item.result, "ผู้รับผิดชอบ": item.owner, "หมายเหตุ": item.note, "ไฟล์แนบ": attachUrl });
+      // ✅ สิ่งที่ต้องเพิ่ม: อัปเดต item.rowIndex ด้วยค่าที่ได้จากเซิร์ฟเวอร์
+      if (addResult && addResult.rowIndex) item.rowIndex = addResult.rowIndex;
+      item.attachUrl = attachUrl;
+      item.attachFileObj = null;
     }
     
-    // Delete removed
+    // ลบรายการที่ถูกเอาออก
     for (const rowIndex of [...toDelete].sort((a, b) => b - a)) {
       await deleteSheetRow(rowIndex);
     }
@@ -2237,7 +2245,9 @@ async function handleGroupSave() {
     cancelGroupEdit();
     await loadRegistrationData();
   } catch (err) {
-    showToast(`❌ ${err.message}`, true);
+    showToast(`❌ ${err.message} — บางรายการอาจถูกบันทึกไปแล้วบางส่วน กรุณาตรวจสอบรายการก่อนกดบันทึกซ้ำ`, true);
+    // ✅ FIX: รีเฟรชข้อมูลเพื่อให้เห็นสถานะล่าสุดแม้เกิด Error
+    await loadRegistrationData();
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = "💾 บันทึกทั้งฉบับ";
@@ -2377,8 +2387,8 @@ function renderRegSummary(rows) {
 
   const cards = [
     { label: "ข้อกำหนดทั้งหมด",    value: total,     icon: "📜", status: "good", subtitle: `${uniqueLaws} ฉบับ` },
-    { label: "ผ่านการประเมิน",     value: counts.yes, icon: "✅", status: counts.yes > 0 ? "good" : "warn", subtitle: `${compliancePct}%` },
-    { label: "ไม่ผ่านการประเมิน",  value: counts.no,  icon: "❌", status: counts.no > 0 ? "bad" : "good", subtitle: counts.no > 0 ? 'ต้องดำเนินการ' : 'ไม่มี' },
+    { label: "สอดคล้อง",     value: counts.yes, icon: "✅", status: counts.yes > 0 ? "good" : "warn", subtitle: `${compliancePct}%` },
+    { label: "ไม่สอดคล้อง",  value: counts.no,  icon: "❌", status: counts.no > 0 ? "bad" : "good", subtitle: counts.no > 0 ? 'ต้องดำเนินการ' : 'ไม่มี' },
     { label: "รอประเมิน (NA)",     value: counts.na,  icon: "⏳", status: counts.na > 0 ? "warn" : "good", subtitle: 'ยังไม่ประเมิน' },
   ];
 
@@ -2396,8 +2406,8 @@ function renderRegSummary(rows) {
     <div class="donut-wrap">
       ${renderDonut([{ value: counts.yes, color: "#10B981" }, { value: counts.no, color: "#EF4444" }, { value: counts.na, color: "#94A3B8" }], "ทั้งหมด", total)}
       <div class="donut-legend">
-        <div class="donut-legend-item"><span class="sw" style="background:#10B981"></span>Yes (ผ่าน) <b>${counts.yes} รายการ</b></div>
-        <div class="donut-legend-item"><span class="sw" style="background:#EF4444"></span>No (ไม่ผ่าน) <b>${counts.no} รายการ</b></div>
+        <div class="donut-legend-item"><span class="sw" style="background:#10B981"></span>สอดคล้อง (Yes) <b>${counts.yes} รายการ</b></div>
+        <div class="donut-legend-item"><span class="sw" style="background:#EF4444"></span>ไม่สอดคล้อง (No) <b>${counts.no} รายการ</b></div>
         ${counts.na ? `<div class="donut-legend-item"><span class="sw" style="background:#94A3B8"></span>NA <b>${counts.na} รายการ</b></div>` : ''}
       </div>
     </div>
@@ -2616,9 +2626,17 @@ async function loadRegistrationData() {
 }
 
 // ============ Initialization ============
+function populateGroupEditMinistrySelect() {
+  const sel = document.getElementById('gf_กระทรวง');
+  if (!sel) return;
+  sel.innerHTML = `<option value="">-- เลือกกระทรวง --</option>` +
+    MINISTRY_OPTIONS.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)} (${MINISTRY_PREFIX[m]})</option>`).join("");
+}
+
 function init() {
   renderRegFormFields();
   setupSeqAutoGenerate();
+  populateGroupEditMinistrySelect();
   
   document.getElementById("regSaveBtn").addEventListener("click", handleRegSave);
   document.getElementById("regCancelEditBtn").addEventListener("click", resetRegForm);

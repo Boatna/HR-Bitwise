@@ -432,7 +432,7 @@ body {
 /* ============ KPI Grid ============ */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 14px;
   margin-bottom: 20px;
 }
@@ -790,61 +790,6 @@ body {
   overflow-x: auto;
 }
 
-/* ============ Risk List ============ */
-.risk-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.risk-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
-  background: var(--primary-bg);
-  border-radius: 8px;
-  font-size: 13px;
-  border-left: 3px solid transparent;
-  transition: all var(--transition);
-}
-
-.risk-list li:hover {
-  border-left-color: var(--primary);
-  background: white;
-  box-shadow: var(--shadow-sm);
-}
-
-.risk-rank {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: var(--primary);
-  color: white;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 800;
-  margin-right: 10px;
-}
-
-/* ============ Highlight Item ============ */
-.highlight-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
-  background: var(--primary-bg);
-  border-radius: 8px;
-  margin-bottom: 8px;
-  gap: 10px;
-  font-size: 12.5px;
-}
-
 /* ============ Badges ============ */
 .badge {
   display: inline-block;
@@ -951,6 +896,134 @@ body {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
+}
+
+/* ============ Accident Form (sectioned layout) ============ */
+.field-grid.accident-mode {
+  display: block;
+}
+
+.accident-form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.accident-section {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow var(--transition);
+}
+
+.accident-section:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.accident-section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+  background: var(--primary-bg);
+  border-bottom: 1px solid var(--border-light);
+  border-left: 4px solid var(--accident-accent, var(--primary));
+}
+
+.accident-section-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--accident-accent, var(--primary));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.accident-section-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.accident-section-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: 0.2px;
+}
+
+.accident-section-sub {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.accident-section-body {
+  padding: 16px 18px 18px 18px;
+}
+
+.accident-section.acc-employee   { --accident-accent: #1E6FD9; }
+.accident-section.acc-supervisor { --accident-accent: #7C3AED; }
+.accident-section.acc-when       { --accident-accent: #059669; }
+.accident-section.acc-narrative  { --accident-accent: #D97706; }
+.accident-section.acc-injury     { --accident-accent: #DC2626; }
+.accident-section.acc-cause      { --accident-accent: #0E7490; }
+.accident-section.acc-severity   { --accident-accent: #BE123C; }
+.accident-section.acc-submit     { --accident-accent: #475569; }
+
+.chip-check-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-check {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.chip-check input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.chip-check span {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all var(--transition);
+  line-height: 1.3;
+}
+
+.chip-check:hover span {
+  border-color: var(--blue-400);
+}
+
+.chip-check input:checked + span {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  box-shadow: 0 2px 6px rgba(30,111,217,0.3);
+}
+
+.chip-check input:focus-visible + span {
+  box-shadow: var(--focus-ring);
 }
 
 /* Form Card */
@@ -1133,7 +1206,7 @@ body {
 /* ============ Responsive ============ */
 @media (max-width: 1200px) {
   .kpi-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 10px;
   }
   
@@ -1342,16 +1415,17 @@ body {
     <!-- Charts Row 1 -->
     <div class="grid-2">
       <div class="panel">
-        <h3>📈 แนวโน้มอุบัติเหตุสะสม <span class="badge-count" id="trendScopeLabel">—</span></h3>
+        <h3>📈 แนวโน้มอุบัติเหตุ หยุดงาน / ไม่หยุดงาน <span class="badge-count" id="trendScopeLabel">—</span></h3>
         <div class="trend-legend">
-          <div class="trend-legend-item"><span class="ln" style="border-color:#2563EB"></span>อุบัติเหตุสะสมปีนี้</div>
-          <div class="trend-legend-item"><span class="ln dashed" style="border-color:#EF4444"></span>เป้าหมายสะสม</div>
+          <div class="trend-legend-item"><span class="sw" style="background:#EF4444;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>หยุดงาน (LTI)</div>
+          <div class="trend-legend-item"><span class="sw" style="background:#F59E0B;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>ไม่หยุดงาน</div>
+          <div class="trend-legend-item"><span class="sw" style="background:#2563EB;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>รวมทั้งหมด</div>
         </div>
         <div class="trend-wrap" id="trendChart"></div>
       </div>
       
       <div class="panel">
-        <h3>🎯 อัตราความรุนแรง (TRIR / LTIFR)</h3>
+        <h3>🎯 อัตราความถี่ / ความรุนแรง (IFR / ISR)</h3>
         <div class="gauge-row" id="gaugeRow"></div>
       </div>
     </div>
@@ -1374,37 +1448,53 @@ body {
     </div>
 
     <!-- Charts Row 3 -->
-    <div class="grid-2">
-      <div class="panel">
-        <h3>🎓 Training Compliance <span class="badge-count" id="trainingDeptCount">—</span></h3>
-        <div id="trainingChart" class="bar-chart"></div>
-      </div>
-      
-      <div class="panel">
-        <h3>📮 รายงานส่งราชการ</h3>
-        <div id="legalDonut"></div>
-        <div style="overflow-x:auto;margin-top:12px;">
-          <table class="data-table" id="legalTable">
-            <thead>
-              <tr><th>ชื่อรายงาน</th><th>วันที่ต้องส่ง</th><th>สถานะ</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+    <div class="panel" style="margin-bottom:18px;">
+      <h3>📮 รายงานส่งราชการ</h3>
+      <div id="legalDonut"></div>
+      <div style="overflow-x:auto;margin-top:12px;">
+        <table class="data-table" id="legalTable">
+          <thead>
+            <tr><th>ชื่อรายงาน</th><th>หน่วยงานราชการ</th><th>กำหนดส่ง</th><th>วันที่ส่ง</th><th>สถานะ</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </div>
 
-    <!-- Charts Row 4 -->
+    <!-- Accident Insights Section -->
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <div>
+        <h2>DASHBOARD รายงานอุบัติเหตุ (ACCIDENT INSIGHTS)</h2>
+        <div class="section-subtitle">จุดบาดเจ็บ สาเหตุ และลักษณะการเกิดอุบัติเหตุ จากรายงานอุบัติเหตุ (AccidentReport)</div>
+      </div>
+    </div>
+
+    <div class="grid-2-wide">
+      <div class="panel">
+        <h3>🧍 จุดบาดเจ็บบนร่างกาย (Body Injury Map) <span class="badge-count" id="bodyMapTotal">—</span></h3>
+        <div id="bodyMapChart"></div>
+      </div>
+      <div class="panel">
+        <h3>🔍 สาเหตุการเกิดอุบัติเหตุ <span class="badge-count" id="causeDonutTotal">—</span></h3>
+        <div id="causeDonutChart"></div>
+      </div>
+    </div>
+
     <div class="grid-2">
       <div class="panel">
-        <h3>⚠️ Top 5 ความเสี่ยง</h3>
-        <ol class="risk-list" id="riskList"></ol>
+        <h3>📊 สาเหตุการเกิดอุบัติเหตุ (กราฟแท่งแนวนอน)</h3>
+        <div id="causeBarChart" class="bar-chart"></div>
       </div>
-      
       <div class="panel">
-        <h3>🌟 Highlights และ Action Plan</h3>
-        <div id="highlightsList"></div>
+        <h3>📊 ลักษณะการเกิดอุบัติเหตุ (กราฟแท่งแนวนอน)</h3>
+        <div id="natureBarChart" class="bar-chart"></div>
       </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:18px;">
+      <h3>🧩 ลักษณะการเกิดอุบัติเหตุ (Donut) <span class="badge-count" id="natureDonutTotal">—</span></h3>
+      <div id="natureDonutChart"></div>
     </div>
 
   </div>
@@ -1473,15 +1563,12 @@ body {
 <script>
 // ============ Configuration ============
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzilMXRMyEf67jGC4RCkj-zavqKhav1X6GxY1IVyuLS1RGs5tftP1jmrZcXVT3lCB_x/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxLZdjd0qiM3RIG-HaLaV6-NBfVOHQ5wnww51X4cM0-LAlTV_GZSgVuS39bo9JMJWkS/exec",
   SHEETS: {
     KPI:          "KPI_Monthly",
     INSPECTION:   "Inspection",
     CAR:          "CAR",
-    TRAINING:     "Training",
     LEGAL:        "Legal_Compliance",
-    RISKS:        "TopRisks",
-    HIGHLIGHTS:   "Highlights_Actions",
     EMPLOYEE:     "Employee",
     ACCIDENT:     "AccidentReport"
   },
@@ -1517,7 +1604,8 @@ function formatDateThai(value) {
   if (!dateObj || isNaN(dateObj.getTime())) return String(value);
   const d = dateObj.getUTCDate();
   const m = dateObj.getUTCMonth();
-  const y = dateObj.getUTCFullYear() + 543;
+  const rawYear = dateObj.getUTCFullYear();
+  const y = rawYear > 2400 ? rawYear : rawYear + 543;
   return `${d} ${MONTH_NAMES_TH[m]} ${y}`;
 }
 
@@ -1558,7 +1646,8 @@ function rowMonthValue(row) {
 function numStatus(value, target, mode) {
   const v = Number(value);
   const t = Number(target);
-  if (isNaN(v) || isNaN(t)) return "good";
+  if (isNaN(t)) return "warn";
+  if (isNaN(v)) return "warn";
   if (mode === "max") return v <= t ? "good" : (v <= t * 1.2 ? "warn" : "bad");
   if (mode === "min") return v >= t ? "good" : (v >= t * 0.8 ? "warn" : "bad");
   return "good";
@@ -1580,13 +1669,6 @@ function legalBadge(status) {
   if (s.includes("ใกล้")    || s === "warn") return `<span class="badge badge-warn">⚠️ ใกล้ครบกำหนดส่ง</span>`;
   if (s.includes("เกิน")    || s === "bad")  return `<span class="badge badge-bad">❌ เกินกำหนดส่ง</span>`;
   return status || "-";
-}
-
-function riskBadge(level) {
-  const l = (level || "").toLowerCase();
-  if (l.includes("สูง")   || l === "high")   return `<span class="badge badge-bad">🔴 สูง</span>`;
-  if (l.includes("กลาง")  || l === "medium") return `<span class="badge badge-warn">🟡 กลาง</span>`;
-  return `<span class="badge badge-good">🟢 ${escapeHtml(level || "-")}</span>`;
 }
 
 function showToast(msg, isError = false) {
@@ -1671,6 +1753,30 @@ async function fetchDaysNoIncident(plant) {
   }
 }
 
+// ✅ NEW: ดึงข้อมูลสรุปจาก AccidentReport (รายเดือน / จุดบาดเจ็บ / สาเหตุ / ลักษณะ)
+async function fetchAccidentStats(plant, month, year) {
+  const qs = new URLSearchParams({ calc: "accidentStats" });
+  if (plant) qs.set("plant", plant);
+  if (month) qs.set("month", month);
+  else if (year) qs.set("year", year);
+  const url = `${CONFIG.APPS_SCRIPT_URL}?${qs.toString()}`;
+  try {
+    const response = await fetchWithRetry(url);
+    const text = await response.text();
+    const json = JSON.parse(text);
+    if (!json || !json.success) return { months: {}, bodyParts: {}, causes: {}, natures: {} };
+    return {
+      months:    json.months    || {},
+      bodyParts: json.bodyParts || {},
+      causes:    json.causes    || {},
+      natures:   json.natures   || {},
+    };
+  } catch (err) {
+    console.error("fetchAccidentStats error:", err);
+    return { months: {}, bodyParts: {}, causes: {}, natures: {} };
+  }
+}
+
 function populatePlantOptions(selectEl) {
   selectEl.innerHTML = `<option value="">ทุก Plant</option>` +
     CONFIG.PLANTS.map(p => `<option value="${p}">${p}</option>`).join("");
@@ -1691,9 +1797,24 @@ function populateMonthOptions(selectEl) {
     }).join("");
 }
 
+// ต้องตรงกับ normalizePlant() ฝั่ง Code.gs เพื่อไม่ให้ผลการกรองไม่ตรงกันระหว่าง client/server
+const PLANT_NAME_CORRECTIONS = {
+  'bitwise (thailand) co. ltd': 'bitwise (thailand) co. ltd',
+  'bitwise thailand co ltd': 'bitwise (thailand) co. ltd',
+  'bitwise thailand co. ltd': 'bitwise (thailand) co. ltd',
+  'bitwise heat exchanger co. ltd': 'bitwise heat exchanger co. ltd',
+  'bitwise heat exchanger co ltd': 'bitwise heat exchanger co. ltd',
+  'thai tasaki engineering co. ltd': 'thai tasaki engineering co. ltd',
+  'thai tasaki engineering co ltd': 'thai tasaki engineering co. ltd',
+};
+function normalizePlantName(value) {
+  if (!value) return '';
+  const str = String(value).trim().toLowerCase();
+  return PLANT_NAME_CORRECTIONS[str] || str;
+}
 function samePlant(a, b) {
   if (a === undefined || a === null || a === '') return true;
-  return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+  return normalizePlantName(a) === normalizePlantName(b);
 }
 
 function applyClientFilter(rows, { requireMonth = true } = {}) {
@@ -1859,6 +1980,50 @@ function renderLineChart(labels, seriesList) {
   </svg>`;
 }
 
+function renderGroupedBarChart(labels, seriesList) {
+  const padL = 40, padR = 14, padT = 16, padB = 24;
+  const groupW = 74;
+  const w = Math.max(500, labels.length * groupW);
+  const h = 220;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+  const allVals = seriesList.flatMap(s => s.values).filter(v => v !== null && v !== undefined && !isNaN(v));
+  const maxVal = Math.max(...allVals, 1);
+  const niceMax = Math.ceil(maxVal * 1.15 / 5) * 5 || 5;
+  const stepX = plotW / labels.length;
+  const barGap = 3;
+  const barW = Math.max(6, (stepX - barGap * (seriesList.length + 1)) / seriesList.length);
+  const yAt = (v) => padT + plotH - (Math.max(0, Number(v) || 0) / niceMax) * plotH;
+  const gridLines = [];
+  for (let g = 0; g <= 4; g++) {
+    const gv = (niceMax / 4) * g;
+    const gy = yAt(gv);
+    gridLines.push(`<line x1="${padL}" y1="${gy}" x2="${w - padR}" y2="${gy}" stroke="#E2E8F0" stroke-width="1"/>`);
+    gridLines.push(`<text x="${padL - 8}" y="${gy + 4}" font-size="10" fill="#64748B" text-anchor="end" font-family="Sarabun, sans-serif">${Math.round(gv)}</text>`);
+  }
+  const groups = labels.map((lab, i) => {
+    const groupX = padL + stepX * i;
+    const bars = seriesList.map((s, si) => {
+      const v = Number(s.values[i]) || 0;
+      const barX = groupX + barGap + si * (barW + barGap);
+      const barY = yAt(v);
+      const barH = Math.max(0, (padT + plotH) - barY);
+      return `<rect x="${barX}" y="${barY}" width="${barW}" height="${barH}" rx="2" fill="${s.color}">
+        <title>${s.label} · ${lab}: ${v}</title>
+      </rect>
+      ${v > 0 ? `<text x="${barX + barW / 2}" y="${barY - 4}" font-size="9" fill="${s.color}" text-anchor="middle" font-family="Sarabun, sans-serif" font-weight="700">${v}</text>` : ''}`;
+    }).join("");
+    const labelX = groupX + stepX / 2;
+    return `${bars}<text x="${labelX}" y="${h - 6}" font-size="10" fill="#64748B" text-anchor="middle" font-family="Sarabun, sans-serif">${lab}</text>`;
+  }).join("");
+  return `
+  <svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="display:block;min-width:${w}px;">
+    ${gridLines.join("")}
+    <line x1="${padL}" y1="${padT + plotH}" x2="${w - padR}" y2="${padT + plotH}" stroke="#CBD5E1" stroke-width="1"/>
+    ${groups}
+  </svg>`;
+}
+
 function renderMiniBarTrend(monthLabels, series) {
   const allVals = series.flatMap(s => s.values);
   const maxVal = Math.max(...allVals, 1);
@@ -1888,12 +2053,13 @@ function groupKpiRows(rows) {
         month: m,
         total_incidents: 0, target_incidents: 0,
         lti: 0, target_lti: 0,
+        not_lti: 0, target_not_lti: 0,
         near_miss: 0, target_near_miss: 0,
         days_no_incident: 0,
-        ltifr_sum: 0, ltifr_n: 0,
-        target_ltifr_sum: 0, target_ltifr_n: 0,
-        trir_sum: 0, trir_n: 0,
-        target_trir_sum: 0, target_trir_n: 0,
+        ifr_sum: 0, ifr_n: 0,
+        target_ifr_sum: 0, target_ifr_n: 0,
+        isr_sum: 0, isr_n: 0,
+        target_isr_sum: 0, target_isr_n: 0,
       };
     }
     const g = byMonth[m];
@@ -1901,13 +2067,15 @@ function groupKpiRows(rows) {
     g.target_incidents += Number(r.target_incidents) || 0;
     g.lti               += Number(r.lti)              || 0;
     g.target_lti         += Number(r.target_lti)        || 0;
-    g.near_miss           += Number(r.near_miss)          || 0;
-    g.target_near_miss     += Number(r.target_near_miss)    || 0;
-    g.days_no_incident      = Math.max(g.days_no_incident, Number(r.days_no_incident) || 0);
-    if (r.ltifr !== undefined && r.ltifr !== '') { g.ltifr_sum += Number(r.ltifr) || 0; g.ltifr_n++; }
-    if (r.target_ltifr !== undefined && r.target_ltifr !== '') { g.target_ltifr_sum += Number(r.target_ltifr) || 0; g.target_ltifr_n++; }
-    if (r.trir !== undefined && r.trir !== '') { g.trir_sum += Number(r.trir) || 0; g.trir_n++; }
-    if (r.target_trir !== undefined && r.target_trir !== '') { g.target_trir_sum += Number(r.target_trir) || 0; g.target_trir_n++; }
+    g.not_lti             += Number(r.not_lti)            || 0;
+    g.target_not_lti        += Number(r.target_not_lti)      || 0;
+    g.near_miss               += Number(r.near_miss)            || 0;
+    g.target_near_miss          += Number(r.target_near_miss)      || 0;
+    g.days_no_incident            = Math.max(g.days_no_incident, Number(r.days_no_incident) || 0);
+    if (r.ifr !== undefined && r.ifr !== '') { g.ifr_sum += Number(r.ifr) || 0; g.ifr_n++; }
+    if (r.target_ifr !== undefined && r.target_ifr !== '') { g.target_ifr_sum += Number(r.target_ifr) || 0; g.target_ifr_n++; }
+    if (r.isr !== undefined && r.isr !== '') { g.isr_sum += Number(r.isr) || 0; g.isr_n++; }
+    if (r.target_isr !== undefined && r.target_isr !== '') { g.target_isr_sum += Number(r.target_isr) || 0; g.target_isr_n++; }
   });
   return Object.values(byMonth)
     .map(g => ({
@@ -1916,15 +2084,46 @@ function groupKpiRows(rows) {
       target_incidents: g.target_incidents,
       lti: g.lti,
       target_lti: g.target_lti,
+      not_lti: g.not_lti,
+      target_not_lti: g.target_not_lti,
       near_miss: g.near_miss,
       target_near_miss: g.target_near_miss,
       days_no_incident: g.days_no_incident,
-      ltifr: g.ltifr_n ? g.ltifr_sum / g.ltifr_n : 0,
-      target_ltifr: g.target_ltifr_n ? g.target_ltifr_sum / g.target_ltifr_n : 0,
-      trir: g.trir_n ? g.trir_sum / g.trir_n : 0,
-      target_trir: g.target_trir_n ? g.target_trir_sum / g.target_trir_n : 0,
+      ifr: g.ifr_n ? g.ifr_sum / g.ifr_n : 0,
+      target_ifr: g.target_ifr_n ? g.target_ifr_sum / g.target_ifr_n : 0,
+      isr: g.isr_n ? g.isr_sum / g.isr_n : 0,
+      target_isr: g.target_isr_n ? g.target_isr_sum / g.target_isr_n : 0,
     }))
     .sort((a, b) => a.month.localeCompare(b.month));
+}
+
+function applyAccidentOverrides(grouped, accidentMonths) {
+  const stats = accidentMonths || {};
+  const map = {};
+  grouped.forEach(g => { map[g.month] = Object.assign({}, g); });
+  Object.keys(stats).forEach(m => {
+    if (!map[m]) {
+      map[m] = {
+        month: m,
+        total_incidents: 0, target_incidents: undefined,
+        lti: 0, target_lti: undefined,
+        not_lti: 0, target_not_lti: undefined,
+        near_miss: 0, target_near_miss: undefined,
+        days_no_incident: 0,
+        ifr: 0, target_ifr: 0,
+        isr: 0, target_isr: 0,
+      };
+    }
+  });
+
+  Object.keys(map).forEach(m => {
+    const s = stats[m] || { total_incidents: 0, lti: 0, not_lti: 0 };
+    map[m].total_incidents = s.total_incidents || 0;
+    map[m].lti             = s.lti || 0;
+    map[m].not_lti          = s.not_lti || 0;
+  });
+
+  return Object.values(map).sort((a, b) => a.month.localeCompare(b.month));
 }
 
 function pickKpiIndex(grouped) {
@@ -1947,7 +2146,8 @@ async function loadKpi() {
     const allRows = await fetchSheetData(CONFIG.SHEETS.KPI);
     let baseRows = allRows;
     if (filterState.plant) baseRows = baseRows.filter(r => samePlant(r.plant, filterState.plant));
-    const grouped = groupKpiRows(baseRows);
+    const accidentStats = await fetchAccidentStats(filterState.plant);
+    const grouped = applyAccidentOverrides(groupKpiRows(baseRows), accidentStats.months);
     const idx = pickKpiIndex(grouped);
     if (idx === -1) {
       grid.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูล KPI ตามตัวกรองที่เลือก</div>`;
@@ -1986,6 +2186,10 @@ async function loadKpi() {
         target: `เป้าหมาย = ${latest.target_lti ?? "0"}`,
         status: numStatus(latest.lti, latest.target_lti, "max"),
         icon: "🩹", change: changeHTML(calcChange(latest.lti, prev.lti), true) },
+      { label: "อุบัติเหตุไม่หยุดงาน", value: latest.not_lti,
+        target: `เป้าหมาย ≤ ${latest.target_not_lti ?? "-"}`,
+        status: numStatus(latest.not_lti, latest.target_not_lti, "max"),
+        icon: "🩺", change: changeHTML(calcChange(latest.not_lti, prev.not_lti), true) },
       { label: "Near Miss รายงาน", value: latest.near_miss,
         target: `เป้าหมาย ≥ ${latest.target_near_miss ?? "-"}`,
         status: numStatus(latest.near_miss, latest.target_near_miss, "min"),
@@ -1994,10 +2198,6 @@ async function loadKpi() {
         target: daysNoIncidentMeta,
         status: "good",
         icon: "🏆", change: "" },
-      { label: "LTIFR", value: latest.ltifr,
-        target: `เป้าหมาย < ${latest.target_ltifr ?? "1.00"}`,
-        status: numStatus(latest.ltifr, latest.target_ltifr, "max"),
-        icon: "📊", change: changeHTML(calcChange(latest.ltifr, prev.ltifr), true) },
     ];
     grid.innerHTML = cards.map(c => `
       <div class="kpi-card status-${c.status}">
@@ -2022,25 +2222,22 @@ async function loadTrendChart() {
     let rows = allRows;
     const yearScope = filterState.year || String(new Date().getFullYear());
     if (filterState.plant) rows = rows.filter(r => samePlant(r.plant, filterState.plant));
-    const grouped = groupKpiRows(rows).filter(g => g.month.slice(0, 4) === yearScope);
+    const accidentStats = await fetchAccidentStats(filterState.plant);
+    const grouped = applyAccidentOverrides(groupKpiRows(rows), accidentStats.months)
+      .filter(g => g.month.slice(0, 4) === yearScope);
     if (scopeLabel) scopeLabel.textContent = `ปี ${Number(yearScope) + 543}`;
     if (!grouped.length) {
       el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`;
       return;
     }
     const labels = grouped.map(g => MONTH_NAMES_TH[Number(g.month.slice(5, 7)) - 1]);
-    let cumActual = 0, cumTarget = 0;
-    const actualCum = [];
-    const targetCum = [];
-    grouped.forEach(g => {
-      cumActual += g.total_incidents;
-      cumTarget += g.target_incidents;
-      actualCum.push(cumActual);
-      targetCum.push(cumTarget || null);
-    });
-    el.innerHTML = renderLineChart(labels, [
-      { values: actualCum, color: "#2563EB" },
-      { values: targetCum, color: "#EF4444", dashed: true }
+    const ltiVals    = grouped.map(g => g.lti);
+    const notLtiVals = grouped.map(g => g.not_lti);
+    const totalVals  = grouped.map(g => (Number(g.lti) || 0) + (Number(g.not_lti) || 0));
+    el.innerHTML = renderGroupedBarChart(labels, [
+      { label: "หยุดงาน (LTI)", values: ltiVals,    color: "#EF4444" },
+      { label: "ไม่หยุดงาน",    values: notLtiVals, color: "#F59E0B" },
+      { label: "รวมทั้งหมด",    values: totalVals,  color: "#2563EB" }
     ]);
   } catch (err) {
     el.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
@@ -2054,28 +2251,29 @@ async function loadGauges() {
     const allRows = await fetchSheetData(CONFIG.SHEETS.KPI);
     let baseRows = allRows;
     if (filterState.plant) baseRows = baseRows.filter(r => samePlant(r.plant, filterState.plant));
-    const grouped = groupKpiRows(baseRows);
+    const accidentStats = await fetchAccidentStats(filterState.plant);
+    const grouped = applyAccidentOverrides(groupKpiRows(baseRows), accidentStats.months);
     const idx = pickKpiIndex(grouped);
     if (idx === -1) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`; return; }
     const latest = grouped[idx];
-    const ltifr = Number(latest.ltifr) || 0;
-    const ltifrTarget = Number(latest.target_ltifr) || 1;
-    const ltifrMax = Math.max(3, Math.ceil(ltifrTarget * 3));
-    const trir = latest.trir || ltifr;
-    const trirTarget = latest.target_trir || 2;
-    const trirMax = Math.max(3, Math.ceil(trirTarget * 1.5));
+    const ifr = Number(latest.ifr) || 0;
+    const ifrTarget = Number(latest.target_ifr) || 1;
+    const ifrMax = Math.max(3, Math.ceil(ifrTarget * 3));
+    const isr = Number(latest.isr) || 0;
+    const isrTarget = Number(latest.target_isr) || 2;
+    const isrMax = Math.max(3, Math.ceil(isrTarget * 1.5));
     el.innerHTML = `
       <div class="gauge-card">
-        ${renderGauge(trir, trirMax, trirTarget)}
-        <div class="gauge-value">${trir.toFixed(2)}</div>
-        <div class="gauge-target">เป้าหมาย &lt; ${trirTarget.toFixed(2)}</div>
-        <div class="gauge-card-label">TRIR</div>
+        ${renderGauge(ifr, ifrMax, ifrTarget)}
+        <div class="gauge-value">${ifr.toFixed(2)}</div>
+        <div class="gauge-target">เป้าหมาย &lt; ${ifrTarget.toFixed(2)}</div>
+        <div class="gauge-card-label">IFR</div>
       </div>
       <div class="gauge-card">
-        ${renderGauge(ltifr, ltifrMax, ltifrTarget)}
-        <div class="gauge-value">${ltifr.toFixed(2)}</div>
-        <div class="gauge-target">เป้าหมาย &lt; ${ltifrTarget.toFixed(2)}</div>
-        <div class="gauge-card-label">LTIFR</div>
+        ${renderGauge(isr, isrMax, isrTarget)}
+        <div class="gauge-value">${isr.toFixed(2)}</div>
+        <div class="gauge-target">เป้าหมาย &lt; ${isrTarget.toFixed(2)}</div>
+        <div class="gauge-card-label">ISR</div>
       </div>
     `;
   } catch (err) {
@@ -2094,7 +2292,7 @@ async function loadInspectionChart() {
     const items = [
       { label: "Safety Inspection", value: sum('safety_inspection'), color: "blue" },
       { label: "Internal Audit",    value: sum('internal_audit'),    color: "green" },
-      { label: "BBS Observation",   value: sum('bbs_observation'),   color: "amber" },
+      { label: "Monitoring",   value: sum('monitoring'),   color: "amber" },
     ];
     const maxVal = Math.max(...items.map(i => i.value), 1);
     el.innerHTML = items.map(i => `
@@ -2131,17 +2329,17 @@ async function loadInspectionMiniTrend() {
     rows.forEach(r => {
       const m = rowMonthValue(r);
       if (!m) return;
-      if (!byMonth[m]) byMonth[m] = { safety_inspection: 0, internal_audit: 0, bbs_observation: 0 };
+      if (!byMonth[m]) byMonth[m] = { safety_inspection: 0, internal_audit: 0, monitoring: 0 };
       byMonth[m].safety_inspection += Number(r.safety_inspection) || 0;
       byMonth[m].internal_audit    += Number(r.internal_audit)    || 0;
-      byMonth[m].bbs_observation   += Number(r.bbs_observation)   || 0;
+      byMonth[m].monitoring   += Number(r.monitoring)   || 0;
     });
     const months = Object.keys(byMonth).sort();
     const labels = months.map(m => MONTH_NAMES_TH[Number(m.slice(5,7)) - 1]);
     el.innerHTML = renderMiniBarTrend(labels, [
       { label: "Safety Inspection", color: "blue",  values: months.map(m => byMonth[m].safety_inspection) },
       { label: "Internal Audit",    color: "green", values: months.map(m => byMonth[m].internal_audit) },
-      { label: "BBS Observation",   color: "amber", values: months.map(m => byMonth[m].bbs_observation) },
+      { label: "Monitoring",   color: "amber", values: months.map(m => byMonth[m].monitoring) },
     ]);
   } catch (err) {
     el.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
@@ -2217,56 +2415,15 @@ async function loadCarMiniTrend() {
   }
 }
 
-async function loadTrainingChart() {
-  const el = document.getElementById("trainingChart");
-  const countEl = document.getElementById("trainingDeptCount");
-  showLoading(el);
-  try {
-    const allRows = await fetchSheetData(CONFIG.SHEETS.TRAINING);
-    const rows = applyClientFilter(allRows);
-    if (!rows.length) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`; return; }
-    const types = [
-      { key: "orientation", label: "Orientation",  color: "blue" },
-      { key: "fire_drill",  label: "Fire Drill",   color: "amber" },
-      { key: "safety",      label: "Safety",       color: "green" },
-      { key: "competency",  label: "Competency",   color: "purple" },
-    ];
-    const deptCount = rows.length;
-    if (countEl) countEl.textContent = `${deptCount} แผนก/เดือน`;
-    const items = types.map(t => {
-      const vals = rows.map(r => Number(r[t.key]) || 0).filter(v => v > 0);
-      const avg  = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-      return { ...t, avg: Math.round(avg * 10) / 10 };
-    });
-    el.innerHTML = items.map(i => `
-      <div class="bar-item">
-        <span class="bar-label">${i.label}</span>
-        <div class="bar-track">
-          <div class="bar-fill ${i.color}" style="width:${i.avg}%">
-            ${i.avg > 10 ? i.avg + '%' : ''}
-          </div>
-        </div>
-        <span class="bar-value">${i.avg}%</span>
-      </div>
-    `).join("") + `
-      <p style="font-size:11px;color:var(--text-muted);margin:8px 0 0 0;">
-        📊 ค่าเฉลี่ยจาก ${deptCount} รายการ (ตามตัวกรองที่เลือก)
-      </p>
-    `;
-  } catch (err) {
-    el.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
-  }
-}
-
 async function loadLegal() {
   const tbody = document.querySelector("#legalTable tbody");
   const donutEl = document.getElementById("legalDonut");
-  showLoading(tbody);
+  tbody.innerHTML = `<tr><td colspan="5" class="skeleton-row">⏳ กำลังโหลด...</td></tr>`;
   try {
     const allRows = await fetchSheetData(CONFIG.SHEETS.LEGAL);
     const rows = applyClientFilter(allRows, { requireMonth: false });
     if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="3" class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</td></tr>`;
       if (donutEl) donutEl.innerHTML = "";
       return;
     }
@@ -2299,51 +2456,196 @@ async function loadLegal() {
     tbody.innerHTML = rows.map(r => `
       <tr>
         <td>${escapeHtml(r.item ?? "-")}</td>
+        <td>${escapeHtml(r.agency ?? "-")}</td>
         <td>${formatDateThai(r.due_date)}</td>
+        <td>${r.sent_date ? formatDateThai(r.sent_date) : "-"}</td>
         <td>${legalBadge(r.status)}</td>
       </tr>
     `).join("");
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="3">❌ ${escapeHtml(err.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5">❌ ${escapeHtml(err.message)}</td></tr>`;
     if (donutEl) donutEl.innerHTML = "";
   }
 }
 
-async function loadRisks() {
-  const el = document.getElementById("riskList");
-  showLoading(el);
-  try {
-    const allRows = await fetchSheetData(CONFIG.SHEETS.RISKS);
-    const rows = applyClientFilter(allRows, { requireMonth: false });
-    if (!rows.length) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`; return; }
-    el.innerHTML = rows.slice(0, 5).map((r, i) => `
-      <li>
-        <span><span class="risk-rank">${i + 1}</span>${escapeHtml(r.risk_name ?? "-")}</span>
-        ${riskBadge(r.risk_level)}
-      </li>
-    `).join("");
-  } catch (err) {
-    el.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
-  }
+// ============================================================================
+// ✅ NEW: Accident Insights — จุดบาดเจ็บบนร่างกาย, สาเหตุ, ลักษณะการเกิดอุบัติเหตุ
+// ============================================================================
+
+// กราฟแท่งแนวนอน (ใช้ซ้ำได้ทั้งสาเหตุและลักษณะ) — รายการที่ไม่มีข้อมูล (0) จะไม่แสดง
+function renderHorizontalBar(dataObj, elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const entries = Object.entries(dataObj || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`; return; }
+  const maxVal = Math.max(...entries.map(e => e[1]), 1);
+  const palette = ["blue", "green", "amber", "purple", "red"];
+  el.innerHTML = entries.map(([label, value], i) => `
+    <div class="bar-item">
+      <span class="bar-label" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+      <div class="bar-track">
+        <div class="bar-fill ${palette[i % palette.length]}" style="width:${(value / maxVal) * 100}%">
+          ${value > 0 ? value : ''}
+        </div>
+      </div>
+      <span class="bar-value">${value}</span>
+    </div>
+  `).join("");
 }
 
-async function loadHighlights() {
-  const el = document.getElementById("highlightsList");
-  showLoading(el);
-  try {
-    const allRows = await fetchSheetData(CONFIG.SHEETS.HIGHLIGHTS);
-    const rows = applyClientFilter(allRows, { requireMonth: false });
-    if (!rows.length) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`; return; }
-    el.innerHTML = rows.map(r => `
-      <div class="highlight-item">
-        <span class="text">${escapeHtml(r.text ?? "-")}</span>
-        <span class="badge ${r.type === 'warning' ? 'badge-warn' : 'badge-good'}">
-          ${r.type === 'warning' ? '⚠️ ข้อสังเกต' : '✅ สำเร็จ'}
-        </span>
+// แผนภูมิวงกลม (Donut) สำหรับสาเหตุ / ลักษณะการเกิดอุบัติเหตุ — รายการที่ไม่มีข้อมูล (0) จะไม่แสดง
+function renderCauseNatureDonut(dataObj, elId, totalElId) {
+  const el = document.getElementById(elId);
+  const totalEl = document.getElementById(totalElId);
+  if (!el) return;
+  const entries = Object.entries(dataObj || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) {
+    el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`;
+    if (totalEl) totalEl.textContent = "0 รายการ";
+    return;
+  }
+  const total = entries.reduce((s, [, v]) => s + v, 0);
+  const colors = ["#2563EB", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#0E7490", "#DB2777", "#65A30D", "#D97706", "#475569", "#0891B2", "#B45309"];
+  const segments = entries.map(([label, value], i) => ({ value, color: colors[i % colors.length], label }));
+  if (totalEl) totalEl.textContent = `${total} รายการ`;
+  el.innerHTML = `
+    <div class="donut-wrap">
+      ${renderDonut(segments, "ทั้งหมด", total)}
+      <div class="donut-legend">
+        ${segments.map(s => `
+          <div class="donut-legend-item"><span class="sw" style="background:${s.color}"></span>${escapeHtml(s.label)} <b>${s.value} รายการ (${Math.round(s.value / total * 100)}%)</b></div>
+        `).join("")}
       </div>
-    `).join("");
+    </div>
+  `;
+}
+
+// ระดับความเข้มสี ตามสัดส่วนจำนวนครั้งเทียบกับโซนที่มากที่สุด (ธีมสีฟ้า-น้ำเงินของ Dashboard)
+function bodyColorFromCount(count, maxCount) {
+  if (!count) return "#E3EEFD"; // var(--blue-200) พื้นฐานเมื่อไม่มีข้อมูล
+  const stops = ["#C5D9F7", "#8BB5ED", "#5A94E0", "#3B82F6", "#1E6FD9", "#1557B0"];
+  const ratio = maxCount ? count / maxCount : 0;
+  const idx = Math.min(stops.length - 1, Math.round(ratio * (stops.length - 1)));
+  return stops[idx];
+}
+
+function bodyZoneLabelTH(key) {
+  const map = {
+    head: "ศีรษะ / ใบหน้า / ตา / หู", shoulder: "ไหล่", arm: "แขน", hand: "มือ / นิ้วมือ",
+    torso: "ลำตัว / เอว (ด้านหน้า)", back: "หลัง (ด้านหลัง)", leg: "ขา", foot: "เท้า / นิ้วเท้า"
+  };
+  return map[key] || key;
+}
+
+// วาดร่างกาย (ด้านหน้า/ด้านหลัง) แบบ heatmap สีฟ้า-น้ำเงินตามจำนวนครั้งที่บาดเจ็บในแต่ละโซน
+function bodyFigureSvg(colors, view) {
+  // view: 'front' | 'back'
+  const isFront = view === 'front';
+  const headFill     = isFront ? colors.head     : "#E3EEFD";
+  const shoulderFill  = isFront ? colors.shoulder : "#E3EEFD";
+  const armFill        = isFront ? colors.arm       : "#E3EEFD";
+  const handFill         = isFront ? colors.hand       : "#E3EEFD";
+  const torsoFill          = isFront ? colors.torso     : colors.back;
+  const legFill               = colors.leg;
+  const footFill                = colors.foot;
+  return `
+  <svg viewBox="0 0 200 340" width="170" style="display:block;">
+    <!-- ลำตัว -->
+    <rect x="68" y="86" width="64" height="104" rx="16" fill="${torsoFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <!-- ขา -->
+    <rect x="73" y="182" width="24" height="100" rx="11" fill="${legFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <rect x="103" y="182" width="24" height="100" rx="11" fill="${legFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <!-- เท้า -->
+    <ellipse cx="85" cy="292" rx="15" ry="9" fill="${footFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <ellipse cx="115" cy="292" rx="15" ry="9" fill="${footFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <!-- ไหล่ -->
+    <rect x="50" y="88" width="26" height="18" rx="8" fill="${shoulderFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <rect x="124" y="88" width="26" height="18" rx="8" fill="${shoulderFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <!-- แขน -->
+    <rect x="42" y="104" width="20" height="86" rx="10" fill="${armFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <rect x="138" y="104" width="20" height="86" rx="10" fill="${armFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <!-- มือ -->
+    <circle cx="52" cy="196" r="11" fill="${handFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <circle cx="148" cy="196" r="11" fill="${handFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <!-- คอ -->
+    <rect x="90" y="66" width="20" height="16" fill="${headFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <!-- ศีรษะ -->
+    <circle cx="100" cy="42" r="27" fill="${headFill}" stroke="#CBD5E1" stroke-width="1"/>
+  </svg>`;
+}
+
+function renderBodyMap(bodyParts) {
+  const el = document.getElementById("bodyMapChart");
+  const totalEl = document.getElementById("bodyMapTotal");
+  if (!el) return;
+
+  const counts = {
+    head:     (bodyParts["คอ ศีรษะ"] || 0) + (bodyParts["ใบหน้า"] || 0) + (bodyParts["ตา"] || 0) + (bodyParts["หู"] || 0),
+    shoulder: (bodyParts["ไหล่"] || 0),
+    arm:      (bodyParts["แขน"] || 0),
+    hand:     (bodyParts["มือ"] || 0) + (bodyParts["นิ้วมือ"] || 0),
+    torso:    (bodyParts["ลำตัว เอว"] || 0),
+    back:     (bodyParts["หลัง"] || 0),
+    leg:      (bodyParts["ขา"] || 0),
+    foot:     (bodyParts["เท้า"] || 0) + (bodyParts["นิ้วเท้า"] || 0),
+  };
+  const multi = bodyParts["บาดเจ็บหลายส่วน"] || 0;
+  const other = bodyParts["อวัยวะอื่นๆ"] || 0;
+  const totalAll = Object.values(bodyParts || {}).reduce((s, v) => s + v, 0);
+
+  if (totalEl) totalEl.textContent = `${totalAll} จุด`;
+  if (!totalAll) {
+    el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตำแหน่งบาดเจ็บตามตัวกรองที่เลือก</div>`;
+    return;
+  }
+
+  const maxCount = Math.max(...Object.values(counts), 1);
+  const colors = {};
+  Object.keys(counts).forEach(k => { colors[k] = bodyColorFromCount(counts[k], maxCount); });
+
+  const legendRows = Object.entries(counts)
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, v]) => `<div class="donut-legend-item"><span class="sw" style="background:${colors[k]}"></span>${bodyZoneLabelTH(k)} <b>${v} ครั้ง</b></div>`)
+    .join("");
+  const multiRow = multi ? `<div class="donut-legend-item"><span class="sw" style="background:${bodyColorFromCount(multi, maxCount)}"></span>บาดเจ็บหลายส่วน <b>${multi} ครั้ง</b></div>` : '';
+  const otherRow = other ? `<div class="donut-legend-item"><span class="sw" style="background:#94A3B8"></span>อวัยวะอื่นๆ <b>${other} ครั้ง</b></div>` : '';
+
+  el.innerHTML = `
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;justify-content:center;">
+      <div style="text-align:center;">
+        ${bodyFigureSvg(colors, 'front')}
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:600;">ด้านหน้า (Front)</div>
+      </div>
+      <div style="text-align:center;">
+        ${bodyFigureSvg(colors, 'back')}
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:600;">ด้านหลัง (Back)</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px;min-width:180px;">
+        ${legendRows}${multiRow}${otherRow}
+      </div>
+    </div>
+  `;
+}
+
+async function loadAccidentInsights() {
+  const bodyEl       = document.getElementById("bodyMapChart");
+  const causeDonutEl = document.getElementById("causeDonutChart");
+  const natureDonutEl= document.getElementById("natureDonutChart");
+  const causeBarEl   = document.getElementById("causeBarChart");
+  const natureBarEl  = document.getElementById("natureBarChart");
+  [bodyEl, causeDonutEl, natureDonutEl, causeBarEl, natureBarEl].forEach(el => el && showLoading(el));
+  try {
+    const stats = await fetchAccidentStats(filterState.plant, filterState.month, filterState.year);
+    renderBodyMap(stats.bodyParts);
+    renderCauseNatureDonut(stats.causes, "causeDonutChart", "causeDonutTotal");
+    renderCauseNatureDonut(stats.natures, "natureDonutChart", "natureDonutTotal");
+    renderHorizontalBar(stats.causes, "causeBarChart");
+    renderHorizontalBar(stats.natures, "natureBarChart");
   } catch (err) {
-    el.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
+    [bodyEl, causeDonutEl, natureDonutEl, causeBarEl, natureBarEl].forEach(el => {
+      if (el) el.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
+    });
   }
 }
 
@@ -2357,10 +2659,8 @@ async function loadAllDashboardData() {
       loadInspectionMiniTrend(),
       loadCarChart(),
       loadCarMiniTrend(),
-      loadTrainingChart(),
       loadLegal(),
-      loadRisks(),
-      loadHighlights()
+      loadAccidentInsights()
     ]);
   } catch (err) {
     showToast(`❌ ${err.message}`, true);
@@ -2377,13 +2677,17 @@ const SCHEMAS = {
       { key: "plant",             label: "Plant",                type: "plant",  required: true },
       { key: "total_incidents",   label: "อุบัติเหตุทั้งหมด",  type: "number" },
       { key: "target_incidents",  label: "เป้าหมายอุบัติเหตุ", type: "number" },
-      { key: "lti",               label: "LTI",                 type: "number" },
-      { key: "target_lti",        label: "เป้าหมาย LTI",        type: "number" },
+      { key: "lti",               label: "อุบัติเหตุหยุดงาน (LTI)", type: "number" },
+      { key: "target_lti",        label: "เป้าหมาย หยุดงาน (LTI)",  type: "number" },
+      { key: "not_lti",           label: "อุบัติเหตุไม่หยุดงาน",    type: "number" },
+      { key: "target_not_lti",    label: "เป้าหมาย ไม่หยุดงาน",     type: "number" },
       { key: "near_miss",         label: "Near Miss",            type: "number" },
       { key: "target_near_miss",  label: "เป้าหมาย Near Miss",  type: "number" },
       { key: "days_no_incident",  label: "วันปลอดอุบัติเหตุ",   type: "number" },
-      { key: "ltifr",             label: "LTIFR",                type: "number" },
-      { key: "target_ltifr",      label: "เป้าหมาย LTIFR",      type: "number" },
+      { key: "ifr",                label: "IFR (อัตราความถี่)",         type: "number" },
+      { key: "target_ifr",         label: "เป้าหมาย IFR",                type: "number" },
+      { key: "isr",                label: "ISR (อัตราความรุนแรง)",      type: "number" },
+      { key: "target_isr",         label: "เป้าหมาย ISR",                type: "number" },
     ],
   },
   INSPECTION: {
@@ -2394,7 +2698,7 @@ const SCHEMAS = {
       { key: "plant",              label: "Plant",                 type: "plant",  required: true },
       { key: "safety_inspection",  label: "Safety Inspection",     type: "number" },
       { key: "internal_audit",     label: "Internal Audit",        type: "number" },
-      { key: "bbs_observation",    label: "BBS Observation",       type: "number" },
+      { key: "monitoring",    label: "Monitoring",       type: "number" },
     ],
   },
   CAR: {
@@ -2409,46 +2713,16 @@ const SCHEMAS = {
       { key: "overdue",    label: "ค้าง",             type: "number" },
     ],
   },
-  TRAINING: {
-    sheet: CONFIG.SHEETS.TRAINING,
-    label: "🎓 Training Compliance",
-    fields: [
-      { key: "month",       label: "เดือน (YYYY-MM)", type: "month",  required: true },
-      { key: "plant",       label: "Plant",            type: "plant",  required: true },
-      { key: "department",  label: "แผนก",            type: "text",   required: true },
-      { key: "orientation", label: "Orientation %",   type: "number" },
-      { key: "fire_drill",  label: "Fire Drill %",    type: "number" },
-      { key: "safety",      label: "Safety %",         type: "number" },
-      { key: "competency",  label: "Competency %",     type: "number" },
-      { key: "average",     label: "Average %",        type: "number" },
-    ],
-  },
   LEGAL: {
     sheet: CONFIG.SHEETS.LEGAL,
     label: "📮 รายงานส่งราชการ",
     fields: [
-      { key: "item",     label: "ชื่อรายงานที่ต้องส่ง", type: "text",   required: true },
-      { key: "plant",    label: "Plant",                type: "plant",  required: true },
-      { key: "due_date", label: "วันที่ต้องส่ง",        type: "date" },
-      { key: "status",   label: "สถานะการส่ง",          type: "select", options: ["ส่งแล้ว","ใกล้ครบกำหนดส่ง","เกินกำหนดส่ง"] },
-    ],
-  },
-  RISKS: {
-    sheet: CONFIG.SHEETS.RISKS,
-    label: "⚠️ ความเสี่ยง",
-    fields: [
-      { key: "plant",      label: "Plant",            type: "plant",  required: true },
-      { key: "risk_name",  label: "ชื่อความเสี่ยง", type: "text",   required: true },
-      { key: "risk_level", label: "ระดับ",           type: "select", options: ["สูง","กลาง","ต่ำ"] },
-    ],
-  },
-  HIGHLIGHTS: {
-    sheet: CONFIG.SHEETS.HIGHLIGHTS,
-    label: "🌟 Highlights",
-    fields: [
-      { key: "plant", label: "Plant",     type: "plant",  required: true },
-      { key: "text",  label: "ข้อความ",  type: "text",   required: true },
-      { key: "type",  label: "ประเภท",   type: "select", options: ["success","warning"] },
+      { key: "item",      label: "ชื่อรายงานที่ต้องส่ง", type: "text",   required: true },
+      { key: "plant",     label: "Plant",                type: "plant",  required: true },
+      { key: "agency",    label: "หน่วยงานราชการ",       type: "text" },
+      { key: "due_date",  label: "กำหนดส่ง",             type: "date" },
+      { key: "sent_date", label: "วันที่ส่ง",             type: "date" },
+      { key: "status",    label: "สถานะการส่ง",          type: "select", options: ["ส่งแล้ว","ใกล้ครบกำหนดส่ง","เกินกำหนดส่ง"] },
     ],
   },
   EMPLOYEE: {
@@ -2510,10 +2784,11 @@ function findEmployeeMatches(term) {
 
 function checkboxGroupHtml(groupName, options, selected) {
   const sel = selected || [];
-  return options.map(o => `
-    <label style="display:inline-flex;align-items:center;gap:5px;margin:3px 14px 3px 0;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer;">
-      <input type="checkbox" data-group="${groupName}" value="${escapeHtml(o)}" ${sel.includes(o) ? "checked" : ""}> ${escapeHtml(o)}
-    </label>`).join("");
+  return `<div class="chip-check-group">` + options.map(o => `
+    <label class="chip-check">
+      <input type="checkbox" data-group="${groupName}" value="${escapeHtml(o)}" ${sel.includes(o) ? "checked" : ""}>
+      <span>${escapeHtml(o)}</span>
+    </label>`).join("") + `</div>`;
 }
 
 function getCheckedGroup(groupName) {
@@ -2522,71 +2797,179 @@ function getCheckedGroup(groupName) {
 
 function renderAccidentForm() {
   const plantOpts = CONFIG.PLANTS.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
-  document.getElementById("fieldGrid").innerHTML = `
-    <div class="field"><label>บริษัท</label>
-      <select id="acc_company"><option value="">-- เลือกบริษัท --</option>${plantOpts}</select>
+  const fieldGridEl = document.getElementById("fieldGrid");
+  fieldGridEl.classList.add("accident-mode");
+  fieldGridEl.innerHTML = `
+    <div class="accident-form-sections">
+
+      <div class="accident-section acc-employee">
+        <div class="accident-section-head">
+          <div class="accident-section-icon">🏢</div>
+          <div class="accident-section-titles">
+            <div class="accident-section-title">ข้อมูลบริษัทและพนักงาน</div>
+            <div class="accident-section-sub">ผู้ประสบอุบัติเหตุ — ค้นหาจากรายชื่อพนักงานเพื่อดึงข้อมูลอัตโนมัติ</div>
+          </div>
+        </div>
+        <div class="accident-section-body">
+          <div class="field-grid">
+            <div class="field"><label>บริษัท</label>
+              <select id="acc_company"><option value="">-- เลือกบริษัท --</option>${plantOpts}</select>
+            </div>
+            <div class="field wide">
+              <label>🔍 ค้นหาพนักงาน (พิมพ์รหัสหรือชื่อ แล้วเลือกจากรายการ)</label>
+              <input id="acc_emp_search" type="text" list="acc_emp_datalist" placeholder="พิมพ์รหัสพนักงานหรือชื่อ-นามสกุล...">
+              <datalist id="acc_emp_datalist"></datalist>
+              <div class="hint">เลือกพนักงานจากรายการเพื่อดึงรหัส/ตำแหน่ง/หน่วยงานอัตโนมัติจากชีต Employee</div>
+            </div>
+            <div class="field"><label>รหัสพนักงาน</label><input id="acc_emp_code" type="text"></div>
+            <div class="field"><label>ชื่อพนักงาน <span style="color:var(--red)">*</span></label><input id="acc_emp_name" type="text"></div>
+            <div class="field"><label>ตำแหน่ง</label><input id="acc_position" type="text"></div>
+            <div class="field"><label>ฝ่าย/หน่วยงาน</label><input id="acc_department" type="text"></div>
+            <div class="field"><label>อายุ</label><input id="acc_age" type="number" step="1"></div>
+            <div class="field"><label>สัญชาติ</label><input id="acc_nationality" type="text"></div>
+            <div class="field"><label>อายุงาน (ปี)</label><input id="acc_tenure_years" type="number" step="1"></div>
+            <div class="field"><label>อายุงาน (เดือน)</label><input id="acc_tenure_months" type="number" step="1"></div>
+            <div class="field"><label>อายุงาน (วัน)</label><input id="acc_tenure_days" type="number" step="1"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accident-section acc-supervisor">
+        <div class="accident-section-head">
+          <div class="accident-section-icon">👔</div>
+          <div class="accident-section-titles">
+            <div class="accident-section-title">ผู้บังคับบัญชา</div>
+            <div class="accident-section-sub">ผจก. / หัวหน้างานที่ดูแลผู้ประสบอุบัติเหตุ</div>
+          </div>
+        </div>
+        <div class="accident-section-body">
+          <div class="field-grid">
+            <div class="field wide">
+              <label>🔍 ค้นหา ผจก./หัวหน้างาน</label>
+              <input id="acc_sup_search" type="text" list="acc_sup_datalist" placeholder="พิมพ์รหัสหรือชื่อหัวหน้างาน...">
+              <datalist id="acc_sup_datalist"></datalist>
+            </div>
+            <div class="field"><label>รหัสผจก./หัวหน้างาน</label><input id="acc_supervisor_code" type="text"></div>
+            <div class="field"><label>ชื่อผจก./หัวหน้างาน</label><input id="acc_supervisor_name" type="text"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accident-section acc-when">
+        <div class="accident-section-head">
+          <div class="accident-section-icon">🗓️</div>
+          <div class="accident-section-titles">
+            <div class="accident-section-title">วัน เวลา และสถานที่เกิดเหตุ</div>
+            <div class="accident-section-sub">ระบุเวลาและอุปกรณ์ / สถานที่ที่เกี่ยวข้องกับอุบัติเหตุ</div>
+          </div>
+        </div>
+        <div class="accident-section-body">
+          <div class="field-grid">
+            <div class="field"><label>วันที่เกิดอุบัติเหตุ <span style="color:var(--red)">*</span></label><input id="acc_accident_date" type="date"></div>
+            <div class="field"><label>เวลาที่เกิดอุบัติเหตุ</label><input id="acc_accident_time" type="time"></div>
+            <div class="field"><label>เครื่องจักร เครื่องมือ/อุปกรณ์ที่เกี่ยวข้อง</label><input id="acc_equipment" type="text"></div>
+            <div class="field"><label>สถานที่เกิดอุบัติเหตุ</label><input id="acc_location" type="text"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accident-section acc-narrative">
+        <div class="accident-section-head">
+          <div class="accident-section-icon">📝</div>
+          <div class="accident-section-titles">
+            <div class="accident-section-title">รายละเอียดเหตุการณ์</div>
+            <div class="accident-section-sub">อธิบายเหตุการณ์ ผลที่เกิดขึ้น และการรักษาเบื้องต้น</div>
+          </div>
+        </div>
+        <div class="accident-section-body">
+          <div class="field-grid">
+            <div class="field wide"><label>รายละเอียดของอุบัติเหตุที่เกิดขึ้น</label><textarea id="acc_incident_detail"></textarea></div>
+            <div class="field wide"><label>ผลของอุบัติเหตุ</label><textarea id="acc_incident_result"></textarea></div>
+            <div class="field wide"><label>รายละเอียดการรักษา</label><textarea id="acc_treatment_detail"></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accident-section acc-injury">
+        <div class="accident-section-head">
+          <div class="accident-section-icon">🩹</div>
+          <div class="accident-section-titles">
+            <div class="accident-section-title">การบาดเจ็บ</div>
+            <div class="accident-section-sub">เลือกอวัยวะที่ได้รับบาดเจ็บได้มากกว่า 1 รายการ</div>
+          </div>
+        </div>
+        <div class="accident-section-body">
+          <div class="field-grid">
+            <div class="field wide"><label>อวัยวะที่ได้รับบาดเจ็บ</label>
+              <div id="acc_injured_parts_group">${checkboxGroupHtml("injured_parts", ACCIDENT_OPTIONS.injured_parts)}</div>
+            </div>
+            <div class="field wide"><label>อวัยวะอื่นๆ (โปรดระบุ)</label><input id="acc_injured_parts_other" type="text"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accident-section acc-cause">
+        <div class="accident-section-head">
+          <div class="accident-section-icon">🔍</div>
+          <div class="accident-section-titles">
+            <div class="accident-section-title">สาเหตุและลักษณะการเกิดอุบัติเหตุ</div>
+            <div class="accident-section-sub">เลือกได้มากกว่า 1 รายการในแต่ละหัวข้อ</div>
+          </div>
+        </div>
+        <div class="accident-section-body">
+          <div class="field-grid">
+            <div class="field wide"><label>สิ่งที่ทำให้เกิดอุบัติเหตุ</label>
+              <div id="acc_cause_group">${checkboxGroupHtml("cause", ACCIDENT_OPTIONS.cause)}</div>
+            </div>
+            <div class="field wide"><label>อื่นๆ (โปรดระบุ) — สิ่งที่ทำให้เกิดอุบัติเหตุ</label><input id="acc_cause_other" type="text"></div>
+            <div class="field wide"><label>ลักษณะการเกิดอุบัติเหตุ</label>
+              <div id="acc_nature_group">${checkboxGroupHtml("nature", ACCIDENT_OPTIONS.nature)}</div>
+            </div>
+            <div class="field wide"><label>อื่นๆ (โปรดระบุ) — ลักษณะการเกิดอุบัติเหตุ</label><input id="acc_nature_other" type="text"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accident-section acc-severity">
+        <div class="accident-section-head">
+          <div class="accident-section-icon">⚖️</div>
+          <div class="accident-section-titles">
+            <div class="accident-section-title">ความรุนแรงและการหยุดงาน</div>
+            <div class="accident-section-sub">ระดับความรุนแรงและระยะเวลาหยุดงาน (ถ้ามี)</div>
+          </div>
+        </div>
+        <div class="accident-section-body">
+          <div class="field-grid">
+            <div class="field"><label>ประเภทความรุนแรงของการเกิดอุบัติเหตุ</label>
+              <select id="acc_severity_type"><option value="">-- เลือก --</option>${ACCIDENT_OPTIONS.severity_type.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join("")}</select>
+            </div>
+            <div class="field"><label>หยุดงานหรือไม่หยุด</label>
+              <select id="acc_lost_time"><option value="">-- เลือก --</option><option value="หยุดงาน">หยุดงาน</option><option value="ไม่หยุดงาน">ไม่หยุดงาน</option></select>
+            </div>
+            <div class="field"><label>วันที่เริ่มหยุดงาน</label><input id="acc_leave_start_date" type="date"></div>
+            <div class="field"><label>หยุดงานถึงวันที่</label><input id="acc_leave_end_date" type="date"></div>
+            <div class="field"><label>จำนวนวันที่หยุดจริง</label><input id="acc_leave_actual_days" type="number" step="1"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accident-section acc-submit">
+        <div class="accident-section-head">
+          <div class="accident-section-icon">✅</div>
+          <div class="accident-section-titles">
+            <div class="accident-section-title">ข้อมูลผู้บันทึก</div>
+            <div class="accident-section-sub">วันที่ทำรายการจะถูกบันทึกอัตโนมัติเมื่อกดบันทึก</div>
+          </div>
+        </div>
+        <div class="accident-section-body">
+          <div class="field-grid">
+            <div class="field"><label>ผู้ทำรายการ</label><input id="acc_submitted_by" type="text"></div>
+            <div class="field"><label>วันที่ทำรายการ</label><input id="acc_submitted_date" type="text" disabled placeholder="บันทึกอัตโนมัติเมื่อกดบันทึก"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
-    <div class="field wide">
-      <label>🔍 ค้นหาพนักงาน (พิมพ์รหัสหรือชื่อ แล้วเลือกจากรายการ)</label>
-      <input id="acc_emp_search" type="text" list="acc_emp_datalist" placeholder="พิมพ์รหัสพนักงานหรือชื่อ-นามสกุล...">
-      <datalist id="acc_emp_datalist"></datalist>
-      <div class="hint">เลือกพนักงานจากรายการเพื่อดึงรหัส/ตำแหน่ง/หน่วยงานอัตโนมัติจากชีต Employee</div>
-    </div>
-    <div class="field"><label>รหัสพนักงาน</label><input id="acc_emp_code" type="text"></div>
-    <div class="field"><label>ชื่อพนักงาน <span style="color:var(--red)">*</span></label><input id="acc_emp_name" type="text"></div>
-    <div class="field"><label>ตำแหน่ง</label><input id="acc_position" type="text"></div>
-    <div class="field"><label>ฝ่าย/หน่วยงาน</label><input id="acc_department" type="text"></div>
-    <div class="field"><label>อายุ</label><input id="acc_age" type="number" step="1"></div>
-    <div class="field"><label>สัญชาติ</label><input id="acc_nationality" type="text"></div>
-    <div class="field"><label>อายุงาน (ปี)</label><input id="acc_tenure_years" type="number" step="1"></div>
-    <div class="field"><label>อายุงาน (เดือน)</label><input id="acc_tenure_months" type="number" step="1"></div>
-    <div class="field"><label>อายุงาน (วัน)</label><input id="acc_tenure_days" type="number" step="1"></div>
-
-    <div class="field wide">
-      <label>🔍 ค้นหา ผจก./หัวหน้างาน</label>
-      <input id="acc_sup_search" type="text" list="acc_sup_datalist" placeholder="พิมพ์รหัสหรือชื่อหัวหน้างาน...">
-      <datalist id="acc_sup_datalist"></datalist>
-    </div>
-    <div class="field"><label>รหัสผจก./หัวหน้างาน</label><input id="acc_supervisor_code" type="text"></div>
-    <div class="field"><label>ชื่อผจก./หัวหน้างาน</label><input id="acc_supervisor_name" type="text"></div>
-
-    <div class="field"><label>วันที่เกิดอุบัติเหตุ <span style="color:var(--red)">*</span></label><input id="acc_accident_date" type="date"></div>
-    <div class="field"><label>เวลาที่เกิดอุบัติเหตุ</label><input id="acc_accident_time" type="time"></div>
-
-    <div class="field wide"><label>รายละเอียดของอุบัติเหตุที่เกิดขึ้น</label><textarea id="acc_incident_detail"></textarea></div>
-    <div class="field wide"><label>ผลของอุบัติเหตุ</label><textarea id="acc_incident_result"></textarea></div>
-    <div class="field wide"><label>รายละเอียดการรักษา</label><textarea id="acc_treatment_detail"></textarea></div>
-
-    <div class="field wide"><label>อวัยวะที่ได้รับบาดเจ็บ</label>
-      <div id="acc_injured_parts_group">${checkboxGroupHtml("injured_parts", ACCIDENT_OPTIONS.injured_parts)}</div>
-    </div>
-    <div class="field wide"><label>อวัยวะอื่นๆ (โปรดระบุ)</label><input id="acc_injured_parts_other" type="text"></div>
-
-    <div class="field"><label>เครื่องจักร เครื่องมือ/อุปกรณ์ที่เกี่ยวข้อง</label><input id="acc_equipment" type="text"></div>
-    <div class="field"><label>สถานที่เกิดอุบัติเหตุ</label><input id="acc_location" type="text"></div>
-
-    <div class="field wide"><label>สิ่งที่ทำให้เกิดอุบัติเหตุ</label>
-      <div id="acc_cause_group">${checkboxGroupHtml("cause", ACCIDENT_OPTIONS.cause)}</div>
-    </div>
-    <div class="field wide"><label>อื่นๆ (โปรดระบุ) — สิ่งที่ทำให้เกิดอุบัติเหตุ</label><input id="acc_cause_other" type="text"></div>
-
-    <div class="field wide"><label>ลักษณะการเกิดอุบัติเหตุ</label>
-      <div id="acc_nature_group">${checkboxGroupHtml("nature", ACCIDENT_OPTIONS.nature)}</div>
-    </div>
-    <div class="field wide"><label>อื่นๆ (โปรดระบุ) — ลักษณะการเกิดอุบัติเหตุ</label><input id="acc_nature_other" type="text"></div>
-
-    <div class="field"><label>ประเภทความรุนแรงของการเกิดอุบัติเหตุ</label>
-      <select id="acc_severity_type"><option value="">-- เลือก --</option>${ACCIDENT_OPTIONS.severity_type.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join("")}</select>
-    </div>
-    <div class="field"><label>หยุดงานหรือไม่หยุด</label>
-      <select id="acc_lost_time"><option value="">-- เลือก --</option><option value="หยุดงาน">หยุดงาน</option><option value="ไม่หยุดงาน">ไม่หยุดงาน</option></select>
-    </div>
-    <div class="field"><label>วันที่เริ่มหยุดงาน</label><input id="acc_leave_start_date" type="date"></div>
-    <div class="field"><label>หยุดงานถึงวันที่</label><input id="acc_leave_end_date" type="date"></div>
-    <div class="field"><label>จำนวนวันที่หยุดจริง</label><input id="acc_leave_actual_days" type="number" step="1"></div>
-
-    <div class="field"><label>ผู้ทำรายการ</label><input id="acc_submitted_by" type="text"></div>
-    <div class="field"><label>วันที่ทำรายการ</label><input id="acc_submitted_date" type="text" disabled placeholder="บันทึกอัตโนมัติเมื่อกดบันทึก"></div>
   `;
 
   getEmployeeCache().then(refreshAccidentEmployeeDatalists);
@@ -2804,8 +3187,17 @@ function switchSchema(key) {
 
 function renderFormFields() {
   const schema = SCHEMAS[activeSchemaKey];
+  const fieldGridEl = document.getElementById("fieldGrid");
+  fieldGridEl.classList.remove("accident-mode");
   if (schema.custom) { renderAccidentForm(); return; }
-  document.getElementById("fieldGrid").innerHTML = schema.fields.map(f => {
+  const autoCalcNote = (activeSchemaKey === "KPI") ? `
+    <div class="field wide" style="background:var(--primary-bg);border:1.5px dashed var(--primary);border-radius:8px;padding:10px 14px;">
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">
+        ℹ️ กรอก "อุบัติเหตุทั้งหมด / หยุดงาน (LTI) / ไม่หยุดงาน" ได้ตามปกติ (ถ้าไม่มีให้ใส่ 0) — ข้อมูลจะถูกบันทึกไว้เป็นข้อมูลอ้างอิงเท่านั้น<br>
+        ตัวเลขที่แสดงบน Dashboard จริงจะคำนวณจากรายงานอุบัติเหตุ (แท็บ AccidentReport) โดยอัตโนมัติแยกต่างหาก
+      </div>
+    </div>` : ``;
+  fieldGridEl.innerHTML = autoCalcNote + schema.fields.map(f => {
     let inputHtml;
     if (f.type === "select") {
       inputHtml = `<select id="f_${f.key}">${f.options.map(o => `<option value="${o}">${o}</option>`).join("")}</select>`;
@@ -2875,13 +3267,36 @@ async function loadTableData() {
     const allRows = await fetchSheetData(schema.sheet);
     let rows = allRows;
     const hasMonthField = schema.fields.some(f => f.key === 'month');
+    const hasAccidentDateField = schema.fields.some(f => f.key === 'accident_date');
+    
+    // --- ✅ FIX: รองรับการกรองปี/เดือนสำหรับ AccidentReport โดยใช้ accident_date ---
     if (hasMonthField) {
       if (editFilterState.month) rows = rows.filter(r => rowMonthValue(r) === editFilterState.month);
       else if (editFilterState.year) rows = rows.filter(r => { const m = rowMonthValue(r); return m && m.slice(0,4) === editFilterState.year; });
+    } else if (hasAccidentDateField) {
+      // แปลง accident_date ให้เป็น YYYY-MM เพื่อใช้กรอง
+      const getAccidentMonth = (r) => {
+        const iso = toISODateString(r.accident_date) || (typeof r.accident_date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(r.accident_date) ? r.accident_date.slice(0, 10) : null);
+        return iso ? iso.slice(0, 7) : null;
+      };
+      if (editFilterState.month) {
+        rows = rows.filter(r => getAccidentMonth(r) === editFilterState.month);
+      } else if (editFilterState.year) {
+        rows = rows.filter(r => { const m = getAccidentMonth(r); return m && m.slice(0, 4) === editFilterState.year; });
+      }
     }
+
+    // กรอง Plant (AccidentReport ใช้ company, Employee ใช้ Plant ตัวพิมพ์ใหญ่, ชีตอื่นใช้ plant)
     if (editFilterState.plant) {
-      rows = rows.filter(r => samePlant(r.plant || r.company, editFilterState.plant));
+      let plantField = 'plant';
+      if (hasAccidentDateField) {
+        plantField = 'company';
+      } else if (schema.fields.some(f => f.key === 'Plant')) {
+        plantField = 'Plant';
+      }
+      rows = rows.filter(r => samePlant(r[plantField], editFilterState.plant));
     }
+
     if (!rows.length) {
       tbody.innerHTML = `<tr><td colspan="${schema.fields.length + 1}" class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</td></tr>`;
       return;
@@ -2889,7 +3304,7 @@ async function loadTableData() {
     tbody.innerHTML = rows.map(row => `
       <tr>
         ${schema.fields.map(f => {
-          const isDateField = ['date','due_date','accident_date','leave_start_date','leave_end_date'].includes(f.key);
+          const isDateField = ['date','due_date','sent_date','accident_date','leave_start_date','leave_end_date'].includes(f.key);
           const isMonthField = f.key === 'month';
           let val = row[f.key] ?? "-";
           if (isDateField && val !== "-") val = formatDateThai(val);
@@ -2927,7 +3342,7 @@ function startEdit(row) {
     const el = document.getElementById(`f_${f.key}`);
     if (!el) return;
     let val = row[f.key] !== undefined && row[f.key] !== null ? row[f.key] : "";
-    if ((f.key === 'date' || f.key === 'due_date') && val) {
+    if ((f.key === 'date' || f.key === 'due_date' || f.key === 'sent_date') && val) {
       const iso = toISODateString(val);
       if (iso) val = iso;
     }
