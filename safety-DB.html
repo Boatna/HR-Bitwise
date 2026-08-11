@@ -1563,7 +1563,7 @@ body {
 <script>
 // ============ Configuration ============
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxLZdjd0qiM3RIG-HaLaV6-NBfVOHQ5wnww51X4cM0-LAlTV_GZSgVuS39bo9JMJWkS/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyzq_BRpDU1EqFXFQGe61mXjgthwwi_wAjUv6wAjnEyq8J2Fq0VMuVOa6WQRyIsjTMi/exec",
   SHEETS: {
     KPI:          "KPI_Monthly",
     INSPECTION:   "Inspection",
@@ -1936,47 +1936,6 @@ function renderDonut(segments, centerLabel, centerValue) {
     ${circles}
     <text x="64" y="60" text-anchor="middle" font-size="20" font-weight="800" fill="#1A365D" font-family="Sarabun, sans-serif">${centerValue}</text>
     <text x="64" y="76" text-anchor="middle" font-size="10" fill="#64748B" font-family="Sarabun, sans-serif">${centerLabel}</text>
-  </svg>`;
-}
-
-function renderLineChart(labels, seriesList) {
-  const padL = 36, padR = 14, padT = 16, padB = 24;
-  const w = Math.max(500, labels.length * 50);
-  const h = 200;
-  const plotW = w - padL - padR;
-  const plotH = h - padT - padB;
-  const allVals = seriesList.flatMap(s => s.values).filter(v => v !== null && v !== undefined && !isNaN(v));
-  const maxVal = Math.max(...allVals, 1);
-  const niceMax = Math.ceil(maxVal * 1.15 / 5) * 5 || 5;
-  const stepX = labels.length > 1 ? plotW / (labels.length - 1) : 0;
-  const xAt = (i) => padL + stepX * i;
-  const yAt = (v) => padT + plotH - (Math.max(0, Number(v) || 0) / niceMax) * plotH;
-  const gridLines = [];
-  for (let g = 0; g <= 4; g++) {
-    const gv = (niceMax / 4) * g;
-    const gy = yAt(gv);
-    gridLines.push(`<line x1="${padL}" y1="${gy}" x2="${w - padR}" y2="${gy}" stroke="#E2E8F0" stroke-width="1"/>`);
-    gridLines.push(`<text x="${padL - 8}" y="${gy + 4}" font-size="10" fill="#64748B" text-anchor="end" font-family="Sarabun, sans-serif">${Math.round(gv)}</text>`);
-  }
-  const xLabels = labels.map((lab, i) =>
-    `<text x="${xAt(i)}" y="${h - 6}" font-size="10" fill="#64748B" text-anchor="middle" font-family="Sarabun, sans-serif">${lab}</text>`
-  ).join("");
-  const seriesSvg = seriesList.map(s => {
-    const pts = s.values.map((v, i) => `${xAt(i)},${yAt(v)}`).join(" ");
-    const dash = s.dashed ? `stroke-dasharray="5 4"` : "";
-    const dots = s.values.map((v, i) =>
-      `<circle cx="${xAt(i)}" cy="${yAt(v)}" r="3" fill="${s.color}" stroke="white" stroke-width="1.5">
-        <title>${labels[i]}: ${v}</title>
-      </circle>`
-    ).join("");
-    return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2" ${dash} stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
-  }).join("");
-  return `
-  <svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="display:block;min-width:${w}px;">
-    ${gridLines.join("")}
-    <line x1="${padL}" y1="${padT + plotH}" x2="${w - padR}" y2="${padT + plotH}" stroke="#CBD5E1" stroke-width="1"/>
-    ${seriesSvg}
-    ${xLabels}
   </svg>`;
 }
 
@@ -2678,16 +2637,11 @@ const SCHEMAS = {
       { key: "total_incidents",   label: "อุบัติเหตุทั้งหมด",  type: "number" },
       { key: "target_incidents",  label: "เป้าหมายอุบัติเหตุ", type: "number" },
       { key: "lti",               label: "อุบัติเหตุหยุดงาน (LTI)", type: "number" },
-      { key: "target_lti",        label: "เป้าหมาย หยุดงาน (LTI)",  type: "number" },
       { key: "not_lti",           label: "อุบัติเหตุไม่หยุดงาน",    type: "number" },
-      { key: "target_not_lti",    label: "เป้าหมาย ไม่หยุดงาน",     type: "number" },
       { key: "near_miss",         label: "Near Miss",            type: "number" },
-      { key: "target_near_miss",  label: "เป้าหมาย Near Miss",  type: "number" },
       { key: "days_no_incident",  label: "วันปลอดอุบัติเหตุ",   type: "number" },
       { key: "ifr",                label: "IFR (อัตราความถี่)",         type: "number" },
-      { key: "target_ifr",         label: "เป้าหมาย IFR",                type: "number" },
       { key: "isr",                label: "ISR (อัตราความรุนแรง)",      type: "number" },
-      { key: "target_isr",         label: "เป้าหมาย ISR",                type: "number" },
     ],
   },
   INSPECTION: {

@@ -1581,7 +1581,7 @@ body {
 
 <script>
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxLZdjd0qiM3RIG-HaLaV6-NBfVOHQ5wnww51X4cM0-LAlTV_GZSgVuS39bo9JMJWkS/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyzq_BRpDU1EqFXFQGe61mXjgthwwi_wAjUv6wAjnEyq8J2Fq0VMuVOa6WQRyIsjTMi/exec",
   SHEET: "Registration_Laws_and_Safety",
   TIMEOUT: 30000,
   RETRY: 3
@@ -2102,8 +2102,9 @@ function renderGroupEditRows() {
         <div class="field wide">
           <label>ไฟล์แนบ (PDF)</label>
           <input type="file" accept="application/pdf" data-uid="${item.uid}" data-field="attachFile">
-          <div class="file-current-note">
-            ${item.attachUrl ? `📎 ไฟล์เดิม: <a href="${escapeHtml(item.attachUrl)}" target="_blank" rel="noopener">เปิดดูไฟล์</a> (เลือกไฟล์ใหม่เพื่อแทนที่)` : `ยังไม่มีไฟล์แนบ`}
+          <div class="file-current-note" data-uid="${item.uid}" data-role="attach-note">
+            ${item.attachFileObj ? `✅ เลือกไฟล์ใหม่แล้ว: ${escapeHtml(item.attachFileObj.name)} (ยังไม่ได้อัปโหลด — จะอัปโหลดตอนกดบันทึกทั้งฉบับ)`
+              : (item.attachUrl ? `📎 ไฟล์เดิม: <a href="${escapeHtml(item.attachUrl)}" target="_blank" rel="noopener">เปิดดูไฟล์</a> (เลือกไฟล์ใหม่เพื่อแทนที่)` : `ยังไม่มีไฟล์แนบ`)}
           </div>
         </div>
       </div>
@@ -2116,11 +2117,26 @@ function renderGroupEditRows() {
   });
 }
 
+// ✅ BUG FIX: ก่อนหน้านี้ไฟล์ที่เลือกไว้ในแต่ละข้อกำหนดจะถูกอ่านจาก DOM ตอนกด "บันทึกทั้งฉบับ" เท่านั้น
+// ถ้าระหว่างนั้นมีการ "เพิ่ม/ลบข้อกำหนด" ซึ่งเรียก renderGroupEditRows() มา re-render container ใหม่ทั้งหมด
+// input type="file" ที่เคยเลือกไฟล์ไว้จะถูกสร้างใหม่ (ไฟล์ที่เลือกไว้หายไปจากหน้าจอ) โดยไม่มีการแจ้งเตือนใดๆ
+// วิธีแก้: จับไฟล์ที่ผู้ใช้เลือกเก็บลง item.attachFileObj ทันทีที่มีการเลือก (change event)
+// เพื่อให้ state ของไฟล์ถูกเก็บไว้ใน JS ก่อนที่ DOM จะถูก re-render ทับ
 function onGroupItemFieldChange(e) {
   const uid = Number(e.target.dataset.uid);
   const field = e.target.dataset.field;
   const item = regGroupEditItems && regGroupEditItems.find(it => it.uid === uid);
-  if (!item || field === 'attachFile') return;
+  if (!item) return;
+  if (field === 'attachFile') {
+    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    if (file) {
+      item.attachFileObj = file;
+      // อัปเดตข้อความสถานะให้ผู้ใช้เห็นทันทีว่าไฟล์ถูกจดจำไว้แล้ว แม้จะยังไม่ได้อัปโหลดจริง
+      const note = document.querySelector(`.file-current-note[data-uid="${uid}"][data-role="attach-note"]`);
+      if (note) note.innerHTML = `✅ เลือกไฟล์ใหม่แล้ว: ${escapeHtml(file.name)} (ยังไม่ได้อัปโหลด — จะอัปโหลดตอนกดบันทึกทั้งฉบับ)`;
+    }
+    return;
+  }
   item[field] = e.target.value;
 }
 
@@ -2186,17 +2202,12 @@ async function handleRegSave() {
 async function handleGroupSave() {
   if (!regGroupEditItems) return;
   
+  // เก็บค่า text/select ล่าสุดจาก DOM (ไฟล์ถูกเก็บไว้แล้วตั้งแต่ onGroupItemFieldChange จึงไม่ต้องอ่านซ้ำตรงนี้)
   document.querySelectorAll('#regGroupItemsContainer [data-uid][data-field]').forEach(el => {
     const uid = Number(el.dataset.uid);
     const field = el.dataset.field;
     const item = regGroupEditItems.find(it => it.uid === uid);
     if (item && field !== 'attachFile') item[field] = el.value;
-  });
-  
-  document.querySelectorAll('#regGroupItemsContainer input[type="file"][data-uid]').forEach(el => {
-    const uid = Number(el.dataset.uid);
-    const item = regGroupEditItems.find(it => it.uid === uid);
-    if (item && el.files && el.files[0]) item.attachFileObj = el.files[0];
   });
   
   const seqVal = document.getElementById("gf_ลำดับ").value.trim();
@@ -2218,19 +2229,18 @@ async function handleGroupSave() {
     const keptRowIndexes = new Set(regGroupEditItems.filter(it => it.rowIndex !== null).map(it => it.rowIndex));
     const toDelete = [...originalRowIndexes].filter(idx => !keptRowIndexes.has(idx));
     
-    // ✅ FIX: อัปเดต item ที่มีอยู่แล้ว
+    // อัปเดต item ที่มีอยู่แล้ว
     for (const item of regGroupEditItems.filter(it => it.rowIndex !== null)) {
       let attachUrl = item.attachUrl || '';
       if (item.attachFileObj) attachUrl = await uploadAttachmentFileObject(item.attachFileObj, item.attachUrl, seqVal);
       await updateSheetRow(item.rowIndex, { ...sharedData, "รายละเอียดข้อกำหนดกฎหมาย": item.detail, "ความถี่": item.freq, "กำหนดการ": item.sched, "ผลการประเมิน": item.result, "ผู้รับผิดชอบ": item.owner, "หมายเหตุ": item.note, "ไฟล์แนบ": attachUrl });
     }
     
-    // ✅ FIX: เพิ่ม item ใหม่ และดึง rowIndex กลับมาเพื่อป้องกันการบันทึกซ้ำ
+    // เพิ่ม item ใหม่ และดึง rowIndex กลับมาเพื่อป้องกันการบันทึกซ้ำ
     for (const item of regGroupEditItems.filter(it => it.rowIndex === null)) {
       let attachUrl = '';
       if (item.attachFileObj) attachUrl = await uploadAttachmentFileObject(item.attachFileObj, '', seqVal);
       const addResult = await addSheetRow({ ...sharedData, "รายละเอียดข้อกำหนดกฎหมาย": item.detail, "ความถี่": item.freq, "กำหนดการ": item.sched, "ผลการประเมิน": item.result, "ผู้รับผิดชอบ": item.owner, "หมายเหตุ": item.note, "ไฟล์แนบ": attachUrl });
-      // ✅ สิ่งที่ต้องเพิ่ม: อัปเดต item.rowIndex ด้วยค่าที่ได้จากเซิร์ฟเวอร์
       if (addResult && addResult.rowIndex) item.rowIndex = addResult.rowIndex;
       item.attachUrl = attachUrl;
       item.attachFileObj = null;
@@ -2246,7 +2256,6 @@ async function handleGroupSave() {
     await loadRegistrationData();
   } catch (err) {
     showToast(`❌ ${err.message} — บางรายการอาจถูกบันทึกไปแล้วบางส่วน กรุณาตรวจสอบรายการก่อนกดบันทึกซ้ำ`, true);
-    // ✅ FIX: รีเฟรชข้อมูลเพื่อให้เห็นสถานะล่าสุดแม้เกิด Error
     await loadRegistrationData();
   } finally {
     saveBtn.disabled = false;
