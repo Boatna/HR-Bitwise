@@ -1581,7 +1581,6 @@ const MONTH_NAMES_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.�
 const filterState = { year: "", month: "", plant: "" };
 const editFilterState = { year: "", month: "", plant: "" };
 
-// ============ Helper Functions ============
 function formatNum(v) {
   if (v === undefined || v === null || v === "") return "-";
   const n = Number(v);
@@ -1939,6 +1938,9 @@ function renderDonut(segments, centerLabel, centerValue) {
   </svg>`;
 }
 
+// ✅ NEW: รองรับพารามิเตอร์ totals (ทางเลือก) — ถ้าใส่มา จะแสดงเป็น "ตัวเลขรวม" อยู่ใต้กราฟ
+// แท่งคู่ของแต่ละเดือน (แทนที่จะวาดเป็นแท่งที่ 3 ซ้อนแยกต่างหากแบบเดิม) ทำให้อ่านง่ายขึ้นว่า
+// หยุดงาน (LTI) กับ ไม่หยุดงาน เทียบกันเดือนต่อเดือนอย่างไร พร้อมเห็นยอดรวมกำกับไว้ในตัว
 function renderGroupedBarChart(labels, seriesList, totals) {
   const hasTotals = Array.isArray(totals);
   const padL = 40, padR = 14, padT = 16, padB = hasTotals ? 42 : 24;
@@ -2083,14 +2085,13 @@ function applyAccidentOverrides(grouped, accidentMonths) {
   });
 
   Object.keys(map).forEach(m => {
-    const s = stats[m]; // ไม่ใส่ default {} ตรงนี้ เพื่อแยกแยะ "ไม่มีข้อมูลเลย" ออกจาก "มีข้อมูลแต่เป็น 0"
+    const s = stats[m];
     if (s) {
       map[m].total_incidents = s.total_incidents || 0;
       map[m].lti             = s.lti || 0;
       map[m].not_lti          = s.not_lti || 0;
       map[m]._source           = 'accidentReport';
     } else {
-      // ไม่มีสถิติจาก AccidentReport สำหรับเดือนนี้ -> คงค่าที่กรอกไว้ใน KPI_Monthly (ถ้ามี)
       map[m]._source = 'kpiMonthlyFallback';
     }
   });
@@ -2133,7 +2134,6 @@ function getKpiScopeAggregate(grouped) {
     lti:              sum('lti'),
     not_lti:           sum('not_lti'),
     near_miss:          sum('near_miss'),
-    // target_* และ days_no_incident ใช้ค่าของเดือนล่าสุดในขอบเขตเป็นตัวแทน (เป้าหมายปกติตั้งเท่ากันทุกเดือนอยู่แล้ว)
   });
   return { view, isAggregate: true, scopeRows };
 }
@@ -2154,9 +2154,7 @@ async function loadKpi() {
       return;
     }
     const idx  = grouped.indexOf(scopeRows[scopeRows.length - 1]);
-    const prev = isAggregate ? null : (grouped[idx - 1] || latest); // รวมยอดหลายเดือนแล้ว เทียบ "เปลี่ยนแปลงจากเดือนก่อน" ไม่ได้อีกต่อไป
-    // ✅ NEW: แสดงให้ชัดเจนว่าตัวเลขอุบัติเหตุมาจากไหน และเป็นยอดของช่วงเวลาใด เพื่อไม่ให้สับสนว่า
-    // "ข้อมูลไม่ตรงกัน" — ถ้ารวมหลายเดือน (isAggregate) จะระบุจำนวนเดือนที่ถูกรวมไว้ด้วย
+    const prev = isAggregate ? null : (grouped[idx - 1] || latest);
     const allAccidentReport = scopeRows.length > 0 && scopeRows.every(g => g._source === 'accidentReport');
     const anyFallback = scopeRows.some(g => g._source === 'kpiMonthlyFallback');
     const sourceNote = anyFallback
@@ -2181,7 +2179,7 @@ async function loadKpi() {
       return { value: diff, percent: (diff / p) * 100 };
     }
     function changeHTML(change, goodWhenNegative = false) {
-      if (isAggregate) return ''; // รวมหลายเดือนแล้ว ไม่มี "เดือนก่อนหน้า" เดี่ยวๆ ให้เทียบอย่างมีความหมาย
+      if (isAggregate) return ''; 
       if (change.value === 0) return `<span class="kpi-change">➖ ไม่เปลี่ยนแปลง</span>`;
       const isGood = goodWhenNegative ? change.value < 0 : change.value > 0;
       const cls    = isGood ? 'positive' : 'negative';
@@ -2246,8 +2244,6 @@ async function loadTrendChart() {
     const ltiVals    = grouped.map(g => g.lti);
     const notLtiVals = grouped.map(g => g.not_lti);
     const totalVals  = grouped.map(g => (Number(g.lti) || 0) + (Number(g.not_lti) || 0));
-    // ✅ แสดงเป็นกราฟแท่งคู่ หยุดงาน (LTI) / ไม่หยุดงาน เทียบกันเดือนต่อเดือน
-    // ส่วน "รวมทั้งหมด" ย้ายไปแสดงเป็นตัวเลขกำกับไว้ใต้แท่งคู่ของแต่ละเดือนแทน (ไม่วาดเป็นแท่งที่ 3)
     el.innerHTML = renderGroupedBarChart(labels, [
       { label: "หยุดงาน (LTI)", values: ltiVals,    color: "#EF4444" },
       { label: "ไม่หยุดงาน",    values: notLtiVals, color: "#F59E0B" }
@@ -2481,11 +2477,6 @@ async function loadLegal() {
   }
 }
 
-// ============================================================================
-// ✅ NEW: Accident Insights — จุดบาดเจ็บบนร่างกาย, สาเหตุ, ลักษณะการเกิดอุบัติเหตุ
-// ============================================================================
-
-// กราฟแท่งแนวนอน (ใช้ซ้ำได้ทั้งสาเหตุและลักษณะ) — รายการที่ไม่มีข้อมูล (0) จะไม่แสดง
 function renderHorizontalBar(dataObj, elId) {
   const el = document.getElementById(elId);
   if (!el) return;
@@ -2506,7 +2497,6 @@ function renderHorizontalBar(dataObj, elId) {
   `).join("");
 }
 
-// แผนภูมิวงกลม (Donut) สำหรับสาเหตุ / ลักษณะการเกิดอุบัติเหตุ — รายการที่ไม่มีข้อมูล (0) จะไม่แสดง
 function renderCauseNatureDonut(dataObj, elId, totalElId) {
   const el = document.getElementById(elId);
   const totalEl = document.getElementById(totalElId);
@@ -2533,9 +2523,9 @@ function renderCauseNatureDonut(dataObj, elId, totalElId) {
   `;
 }
 
-// ระดับความเข้มสี ตามสัดส่วนจำนวนครั้งเทียบกับโซนที่มากที่สุด (ธีมสีฟ้า-น้ำเงินของ Dashboard)
+
 function bodyColorFromCount(count, maxCount) {
-  if (!count) return "#E3EEFD"; // var(--blue-200) พื้นฐานเมื่อไม่มีข้อมูล
+  if (!count) return "#E3EEFD";
   const stops = ["#C5D9F7", "#8BB5ED", "#5A94E0", "#3B82F6", "#1E6FD9", "#1557B0"];
   const ratio = maxCount ? count / maxCount : 0;
   const idx = Math.min(stops.length - 1, Math.round(ratio * (stops.length - 1)));
@@ -2544,46 +2534,64 @@ function bodyColorFromCount(count, maxCount) {
 
 function bodyZoneLabelTH(key) {
   const map = {
-    head: "ศีรษะ / ใบหน้า / ตา / หู", shoulder: "ไหล่", arm: "แขน", hand: "มือ / นิ้วมือ",
-    torso: "ลำตัว / เอว (ด้านหน้า)", back: "หลัง (ด้านหลัง)", leg: "ขา", foot: "เท้า / นิ้วเท้า"
+    head: "ศีรษะ / ใบหน้า / หู", eye: "ตา", shoulder: "ไหล่", arm: "แขน", hand: "มือ / นิ้วมือ",
+    torso: "ลำตัว / เอว", back: "หลัง", leg: "ขา", foot: "เท้า / นิ้วเท้า"
   };
   return map[key] || key;
 }
 
-// วาดร่างกาย (ด้านหน้า/ด้านหลัง) แบบ heatmap สีฟ้า-น้ำเงินตามจำนวนครั้งที่บาดเจ็บในแต่ละโซน
-function bodyFigureSvg(colors, view) {
-  // view: 'front' | 'back'
-  const isFront = view === 'front';
-  const headFill     = isFront ? colors.head     : "#E3EEFD";
-  const shoulderFill  = isFront ? colors.shoulder : "#E3EEFD";
-  const armFill        = isFront ? colors.arm       : "#E3EEFD";
-  const handFill         = isFront ? colors.hand       : "#E3EEFD";
-  const torsoFill          = isFront ? colors.torso     : colors.back;
-  const legFill               = colors.leg;
-  const footFill                = colors.foot;
+function bodyFigureSvg(colors) {
+  const { head: headFill, eye: eyeFill, shoulder: shoulderFill, arm: armFill, hand: handFill, torso: torsoFill, leg: legFill, foot: footFill } = colors;
   return `
-  <svg viewBox="0 0 200 340" width="170" style="display:block;">
-    <!-- ลำตัว -->
-    <rect x="68" y="86" width="64" height="104" rx="16" fill="${torsoFill}" stroke="#CBD5E1" stroke-width="1"/>
-    <!-- ขา -->
-    <rect x="73" y="182" width="24" height="100" rx="11" fill="${legFill}" stroke="#CBD5E1" stroke-width="1"/>
-    <rect x="103" y="182" width="24" height="100" rx="11" fill="${legFill}" stroke="#CBD5E1" stroke-width="1"/>
+  <svg viewBox="0 0 200 380" width="190" style="display:block;">
+    <!-- เงาใต้เท้า -->
+    <ellipse cx="100" cy="371" rx="52" ry="6" fill="#1A365D" opacity="0.06"/>
+
+    <!-- ขา (เรียวลงเล็กน้อยจากสะโพกถึงข้อเท้า) -->
+    <path d="M77,231 C74,258 72,286 74,313 C74.6,326 75.6,340 77,352 L93,352
+             C92.4,338 91.8,324 91.6,308 C91.4,282 91.6,255 92,231 Z"
+          fill="${legFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <path d="M123,231 C126,258 128,286 126,313 C125.4,326 124.4,340 123,352 L107,352
+             C107.6,338 108.2,324 108.4,308 C108.6,282 108.4,255 108,231 Z"
+          fill="${legFill}" stroke="#CBD5E1" stroke-width="1"/>
+
     <!-- เท้า -->
-    <ellipse cx="85" cy="292" rx="15" ry="9" fill="${footFill}" stroke="#CBD5E1" stroke-width="1"/>
-    <ellipse cx="115" cy="292" rx="15" ry="9" fill="${footFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <ellipse cx="80" cy="357" rx="17" ry="8.5" fill="${footFill}" stroke="#CBD5E1" stroke-width="1" transform="rotate(-10 80 357)"/>
+    <ellipse cx="120" cy="357" rx="17" ry="8.5" fill="${footFill}" stroke="#CBD5E1" stroke-width="1" transform="rotate(10 120 357)"/>
+
+    <!-- ลำตัว (เข้ารูปช่วงเอว) -->
+    <path d="M100,120 C87,120 76,129 71,142 C66,157 65,175 68,196
+             C70,211 75,223 80,233 L120,233 C125,223 130,211 132,196
+             C135,175 134,157 129,142 C124,129 113,120 100,120 Z"
+          fill="${torsoFill}" stroke="#CBD5E1" stroke-width="1"/>
+
     <!-- ไหล่ -->
-    <rect x="50" y="88" width="26" height="18" rx="8" fill="${shoulderFill}" stroke="#CBD5E1" stroke-width="1"/>
-    <rect x="124" y="88" width="26" height="18" rx="8" fill="${shoulderFill}" stroke="#CBD5E1" stroke-width="1"/>
-    <!-- แขน -->
-    <rect x="42" y="104" width="20" height="86" rx="10" fill="${armFill}" stroke="#CBD5E1" stroke-width="1"/>
-    <rect x="138" y="104" width="20" height="86" rx="10" fill="${armFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <ellipse cx="61" cy="141" rx="15.5" ry="12.5" fill="${shoulderFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <ellipse cx="139" cy="141" rx="15.5" ry="12.5" fill="${shoulderFill}" stroke="#CBD5E1" stroke-width="1"/>
+
+    <!-- แขน (เรียวลงจากไหล่ถึงข้อมือ) -->
+    <path d="M52,147 C45,168 41,192 44,215 C45,224 47,233 51,240 L64,236
+             C61,220 60,202 61,184 C61.6,172 60.4,159 56,147 Z"
+          fill="${armFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <path d="M148,147 C155,168 159,192 156,215 C155,224 153,233 149,240 L136,236
+             C139,220 140,202 139,184 C138.4,172 139.6,159 144,147 Z"
+          fill="${armFill}" stroke="#CBD5E1" stroke-width="1"/>
+
     <!-- มือ -->
-    <circle cx="52" cy="196" r="11" fill="${handFill}" stroke="#CBD5E1" stroke-width="1"/>
-    <circle cx="148" cy="196" r="11" fill="${handFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <circle cx="53" cy="246" r="11.5" fill="${handFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <circle cx="147" cy="246" r="11.5" fill="${handFill}" stroke="#CBD5E1" stroke-width="1"/>
+
     <!-- คอ -->
-    <rect x="90" y="66" width="20" height="16" fill="${headFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <path d="M90,96 L110,96 L110,116 C110,122 90,122 90,116 Z" fill="${headFill}" stroke="#CBD5E1" stroke-width="1"/>
+
     <!-- ศีรษะ -->
-    <circle cx="100" cy="42" r="27" fill="${headFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <ellipse cx="100" cy="66" rx="29" ry="32" fill="${headFill}" stroke="#CBD5E1" stroke-width="1"/>
+
+    <!-- ตา -->
+    <circle cx="88" cy="62" r="5" fill="${eyeFill}" stroke="#94A3B8" stroke-width="0.75"/>
+    <circle cx="112" cy="62" r="5" fill="${eyeFill}" stroke="#94A3B8" stroke-width="0.75"/>
+    <circle cx="88" cy="62" r="1.6" fill="#1A365D" opacity="0.55"/>
+    <circle cx="112" cy="62" r="1.6" fill="#1A365D" opacity="0.55"/>
   </svg>`;
 }
 
@@ -2593,7 +2601,8 @@ function renderBodyMap(bodyParts) {
   if (!el) return;
 
   const counts = {
-    head:     (bodyParts["คอ ศีรษะ"] || 0) + (bodyParts["ใบหน้า"] || 0) + (bodyParts["ตา"] || 0) + (bodyParts["หู"] || 0),
+    head:     (bodyParts["คอ ศีรษะ"] || 0) + (bodyParts["ใบหน้า"] || 0) + (bodyParts["หู"] || 0),
+    eye:      (bodyParts["ตา"] || 0), // ✅ NEW: แยก "ตา" ออกจากศีรษะ เพื่อแสดงบนรูปหุ่นเป็นจุดต่างหาก
     shoulder: (bodyParts["ไหล่"] || 0),
     arm:      (bodyParts["แขน"] || 0),
     hand:     (bodyParts["มือ"] || 0) + (bodyParts["นิ้วมือ"] || 0),
@@ -2615,7 +2624,6 @@ function renderBodyMap(bodyParts) {
   const maxCount = Math.max(...Object.values(counts), 1);
   const colors = {};
   Object.keys(counts).forEach(k => { colors[k] = bodyColorFromCount(counts[k], maxCount); });
-
   const legendRows = Object.entries(counts)
     .filter(([, v]) => v > 0)
     .sort((a, b) => b[1] - a[1])
@@ -2627,12 +2635,8 @@ function renderBodyMap(bodyParts) {
   el.innerHTML = `
     <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;justify-content:center;">
       <div style="text-align:center;">
-        ${bodyFigureSvg(colors, 'front')}
+        ${bodyFigureSvg(colors)}
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:600;">ด้านหน้า (Front)</div>
-      </div>
-      <div style="text-align:center;">
-        ${bodyFigureSvg(colors, 'back')}
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:600;">ด้านหลัง (Back)</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:7px;min-width:180px;">
         ${legendRows}${multiRow}${otherRow}
