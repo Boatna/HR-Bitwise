@@ -1419,7 +1419,7 @@ body {
         <div class="trend-legend">
           <div class="trend-legend-item"><span class="sw" style="background:#EF4444;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>หยุดงาน (LTI)</div>
           <div class="trend-legend-item"><span class="sw" style="background:#F59E0B;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>ไม่หยุดงาน</div>
-          <div class="trend-legend-item"><span class="sw" style="background:#2563EB;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>รวมทั้งหมด</div>
+          <div class="trend-legend-item">🔢 ตัวเลข "รวม" ใต้แต่ละเดือน = หยุดงาน + ไม่หยุดงาน รวมกัน</div>
         </div>
         <div class="trend-wrap" id="trendChart"></div>
       </div>
@@ -1563,7 +1563,7 @@ body {
 <script>
 // ============ Configuration ============
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyzq_BRpDU1EqFXFQGe61mXjgthwwi_wAjUv6wAjnEyq8J2Fq0VMuVOa6WQRyIsjTMi/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwz1rAoplkLARXG29sUCSLfjurQE6pgKudOoXsLI9FGga1YAOWMCBCI-fRv0nxM8aja/exec",
   SHEETS: {
     KPI:          "KPI_Monthly",
     INSPECTION:   "Inspection",
@@ -1939,8 +1939,9 @@ function renderDonut(segments, centerLabel, centerValue) {
   </svg>`;
 }
 
-function renderGroupedBarChart(labels, seriesList) {
-  const padL = 40, padR = 14, padT = 16, padB = 24;
+function renderGroupedBarChart(labels, seriesList, totals) {
+  const hasTotals = Array.isArray(totals);
+  const padL = 40, padR = 14, padT = 16, padB = hasTotals ? 42 : 24;
   const groupW = 74;
   const w = Math.max(500, labels.length * groupW);
   const h = 220;
@@ -1973,7 +1974,13 @@ function renderGroupedBarChart(labels, seriesList) {
       ${v > 0 ? `<text x="${barX + barW / 2}" y="${barY - 4}" font-size="9" fill="${s.color}" text-anchor="middle" font-family="Sarabun, sans-serif" font-weight="700">${v}</text>` : ''}`;
     }).join("");
     const labelX = groupX + stepX / 2;
-    return `${bars}<text x="${labelX}" y="${h - 6}" font-size="10" fill="#64748B" text-anchor="middle" font-family="Sarabun, sans-serif">${lab}</text>`;
+    const monthLabelY = hasTotals ? h - 26 : h - 6;
+    let extra = `<text x="${labelX}" y="${monthLabelY}" font-size="10" fill="#64748B" text-anchor="middle" font-family="Sarabun, sans-serif">${lab}</text>`;
+    if (hasTotals) {
+      const t = Number(totals[i]) || 0;
+      extra += `<text x="${labelX}" y="${h - 10}" font-size="10.5" fill="#1A365D" text-anchor="middle" font-family="Sarabun, sans-serif" font-weight="800">รวม ${t}</text>`;
+    }
+    return `${bars}${extra}`;
   }).join("");
   return `
   <svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="display:block;min-width:${w}px;">
@@ -2076,10 +2083,16 @@ function applyAccidentOverrides(grouped, accidentMonths) {
   });
 
   Object.keys(map).forEach(m => {
-    const s = stats[m] || { total_incidents: 0, lti: 0, not_lti: 0 };
-    map[m].total_incidents = s.total_incidents || 0;
-    map[m].lti             = s.lti || 0;
-    map[m].not_lti          = s.not_lti || 0;
+    const s = stats[m]; // ไม่ใส่ default {} ตรงนี้ เพื่อแยกแยะ "ไม่มีข้อมูลเลย" ออกจาก "มีข้อมูลแต่เป็น 0"
+    if (s) {
+      map[m].total_incidents = s.total_incidents || 0;
+      map[m].lti             = s.lti || 0;
+      map[m].not_lti          = s.not_lti || 0;
+      map[m]._source           = 'accidentReport';
+    } else {
+      // ไม่มีสถิติจาก AccidentReport สำหรับเดือนนี้ -> คงค่าที่กรอกไว้ใน KPI_Monthly (ถ้ามี)
+      map[m]._source = 'kpiMonthlyFallback';
+    }
   });
 
   return Object.values(map).sort((a, b) => a.month.localeCompare(b.month));
@@ -2098,6 +2111,33 @@ function pickKpiIndex(grouped) {
   return grouped.length - 1;
 }
 
+function getKpiScopeAggregate(grouped) {
+  if (!grouped.length) return { view: null, isAggregate: false, scopeRows: [] };
+
+  if (filterState.month) {
+    const row = grouped.find(g => g.month === filterState.month);
+    return { view: row || null, isAggregate: false, scopeRows: row ? [row] : [] };
+  }
+
+  const scopeRows = filterState.year
+    ? grouped.filter(g => g.month.slice(0, 4) === filterState.year)
+    : grouped.slice(); // ไม่เลือกช่วงเวลาเลย = ทุกช่วงเวลาที่มีข้อมูลอยู่
+
+  if (!scopeRows.length) return { view: null, isAggregate: true, scopeRows: [] };
+
+  const latest = scopeRows[scopeRows.length - 1];
+  const sum = (key) => scopeRows.reduce((s, g) => s + (Number(g[key]) || 0), 0);
+
+  const view = Object.assign({}, latest, {
+    total_incidents: sum('total_incidents'),
+    lti:              sum('lti'),
+    not_lti:           sum('not_lti'),
+    near_miss:          sum('near_miss'),
+    // target_* และ days_no_incident ใช้ค่าของเดือนล่าสุดในขอบเขตเป็นตัวแทน (เป้าหมายปกติตั้งเท่ากันทุกเดือนอยู่แล้ว)
+  });
+  return { view, isAggregate: true, scopeRows };
+}
+
 async function loadKpi() {
   const grid = document.getElementById("kpiGrid");
   showLoading(grid);
@@ -2107,15 +2147,27 @@ async function loadKpi() {
     if (filterState.plant) baseRows = baseRows.filter(r => samePlant(r.plant, filterState.plant));
     const accidentStats = await fetchAccidentStats(filterState.plant);
     const grouped = applyAccidentOverrides(groupKpiRows(baseRows), accidentStats.months);
-    const idx = pickKpiIndex(grouped);
-    if (idx === -1) {
+    const { view: latest, isAggregate, scopeRows } = getKpiScopeAggregate(grouped);
+    if (!latest) {
       grid.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูล KPI ตามตัวกรองที่เลือก</div>`;
       document.getElementById("dataDate").textContent = `📅 ข้อมูล ณ —`;
       return;
     }
-    const latest = grouped[idx];
-    const prev   = grouped[idx - 1] || latest;
-    document.getElementById("dataDate").textContent = `📅 ข้อมูล ณ เดือน ${formatMonthThai(latest.month)}`;
+    const idx  = grouped.indexOf(scopeRows[scopeRows.length - 1]);
+    const prev = isAggregate ? null : (grouped[idx - 1] || latest); // รวมยอดหลายเดือนแล้ว เทียบ "เปลี่ยนแปลงจากเดือนก่อน" ไม่ได้อีกต่อไป
+    // ✅ NEW: แสดงให้ชัดเจนว่าตัวเลขอุบัติเหตุมาจากไหน และเป็นยอดของช่วงเวลาใด เพื่อไม่ให้สับสนว่า
+    // "ข้อมูลไม่ตรงกัน" — ถ้ารวมหลายเดือน (isAggregate) จะระบุจำนวนเดือนที่ถูกรวมไว้ด้วย
+    const allAccidentReport = scopeRows.length > 0 && scopeRows.every(g => g._source === 'accidentReport');
+    const anyFallback = scopeRows.some(g => g._source === 'kpiMonthlyFallback');
+    const sourceNote = anyFallback
+      ? ' <span title="บางเดือนในช่วงที่เลือกยังไม่มีข้อมูลใน AccidentReport จึงใช้ค่าที่กรอกไว้ใน KPI_Monthly แทนสำหรับเดือนนั้น">🟡 (บางเดือนใช้ค่าจาก KPI_Monthly)</span>'
+      : allAccidentReport
+        ? ' <span title="คำนวณจากแท็บ AccidentReport โดยอัตโนมัติ">🟢 (คำนวณจาก AccidentReport)</span>'
+        : '';
+    const dateLabel = isAggregate
+      ? (filterState.year ? `📅 ข้อมูลรวมทั้งปี ${Number(filterState.year) + 543} (${scopeRows.length} เดือนที่มีข้อมูล)` : `📅 ข้อมูลรวมทุกช่วงเวลา (${scopeRows.length} เดือนที่มีข้อมูล)`)
+      : `📅 ข้อมูล ณ เดือน ${formatMonthThai(latest.month)}`;
+    document.getElementById("dataDate").innerHTML = `${dateLabel}${sourceNote}`;
     const daysAuto = await fetchDaysNoIncident(filterState.plant);
     const daysNoIncidentValue = (daysAuto.days !== null && daysAuto.days !== undefined) ? daysAuto.days : latest.days_no_incident;
     const daysNoIncidentMeta = daysAuto.lastAccidentDate
@@ -2129,6 +2181,7 @@ async function loadKpi() {
       return { value: diff, percent: (diff / p) * 100 };
     }
     function changeHTML(change, goodWhenNegative = false) {
+      if (isAggregate) return ''; // รวมหลายเดือนแล้ว ไม่มี "เดือนก่อนหน้า" เดี่ยวๆ ให้เทียบอย่างมีความหมาย
       if (change.value === 0) return `<span class="kpi-change">➖ ไม่เปลี่ยนแปลง</span>`;
       const isGood = goodWhenNegative ? change.value < 0 : change.value > 0;
       const cls    = isGood ? 'positive' : 'negative';
@@ -2140,19 +2193,19 @@ async function loadKpi() {
       { label: "อุบัติเหตุทั้งหมด", value: latest.total_incidents,
         target: `เป้าหมาย ≤ ${latest.target_incidents ?? "-"}`,
         status: numStatus(latest.total_incidents, latest.target_incidents, "max"),
-        icon: "⚠️", change: changeHTML(calcChange(latest.total_incidents, prev.total_incidents), true) },
+        icon: "⚠️", change: changeHTML(calcChange(latest.total_incidents, prev && prev.total_incidents), true) },
       { label: "อุบัติเหตุหยุดงาน (LTI)", value: latest.lti,
         target: `เป้าหมาย = ${latest.target_lti ?? "0"}`,
         status: numStatus(latest.lti, latest.target_lti, "max"),
-        icon: "🩹", change: changeHTML(calcChange(latest.lti, prev.lti), true) },
+        icon: "🩹", change: changeHTML(calcChange(latest.lti, prev && prev.lti), true) },
       { label: "อุบัติเหตุไม่หยุดงาน", value: latest.not_lti,
         target: `เป้าหมาย ≤ ${latest.target_not_lti ?? "-"}`,
         status: numStatus(latest.not_lti, latest.target_not_lti, "max"),
-        icon: "🩺", change: changeHTML(calcChange(latest.not_lti, prev.not_lti), true) },
+        icon: "🩺", change: changeHTML(calcChange(latest.not_lti, prev && prev.not_lti), true) },
       { label: "Near Miss รายงาน", value: latest.near_miss,
         target: `เป้าหมาย ≥ ${latest.target_near_miss ?? "-"}`,
         status: numStatus(latest.near_miss, latest.target_near_miss, "min"),
-        icon: "🔍", change: changeHTML(calcChange(latest.near_miss, prev.near_miss), false) },
+        icon: "🔍", change: changeHTML(calcChange(latest.near_miss, prev && prev.near_miss), false) },
       { label: "วันปลอดอุบัติเหตุ (อัตโนมัติ)", value: daysNoIncidentValue,
         target: daysNoIncidentMeta,
         status: "good",
@@ -2193,11 +2246,12 @@ async function loadTrendChart() {
     const ltiVals    = grouped.map(g => g.lti);
     const notLtiVals = grouped.map(g => g.not_lti);
     const totalVals  = grouped.map(g => (Number(g.lti) || 0) + (Number(g.not_lti) || 0));
+    // ✅ แสดงเป็นกราฟแท่งคู่ หยุดงาน (LTI) / ไม่หยุดงาน เทียบกันเดือนต่อเดือน
+    // ส่วน "รวมทั้งหมด" ย้ายไปแสดงเป็นตัวเลขกำกับไว้ใต้แท่งคู่ของแต่ละเดือนแทน (ไม่วาดเป็นแท่งที่ 3)
     el.innerHTML = renderGroupedBarChart(labels, [
       { label: "หยุดงาน (LTI)", values: ltiVals,    color: "#EF4444" },
-      { label: "ไม่หยุดงาน",    values: notLtiVals, color: "#F59E0B" },
-      { label: "รวมทั้งหมด",    values: totalVals,  color: "#2563EB" }
-    ]);
+      { label: "ไม่หยุดงาน",    values: notLtiVals, color: "#F59E0B" }
+    ], totalVals);
   } catch (err) {
     el.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
   }
@@ -2637,11 +2691,16 @@ const SCHEMAS = {
       { key: "total_incidents",   label: "อุบัติเหตุทั้งหมด",  type: "number" },
       { key: "target_incidents",  label: "เป้าหมายอุบัติเหตุ", type: "number" },
       { key: "lti",               label: "อุบัติเหตุหยุดงาน (LTI)", type: "number" },
+      { key: "target_lti",        label: "เป้าหมาย LTI",         type: "number" },
       { key: "not_lti",           label: "อุบัติเหตุไม่หยุดงาน",    type: "number" },
+      { key: "target_not_lti",    label: "เป้าหมายไม่หยุดงาน",   type: "number" },
       { key: "near_miss",         label: "Near Miss",            type: "number" },
+      { key: "target_near_miss",  label: "เป้าหมาย Near Miss",   type: "number" },
       { key: "days_no_incident",  label: "วันปลอดอุบัติเหตุ",   type: "number" },
       { key: "ifr",                label: "IFR (อัตราความถี่)",         type: "number" },
+      { key: "target_ifr",         label: "เป้าหมาย IFR",               type: "number" },
       { key: "isr",                label: "ISR (อัตราความรุนแรง)",      type: "number" },
+      { key: "target_isr",         label: "เป้าหมาย ISR",               type: "number" },
     ],
   },
   INSPECTION: {
@@ -2897,8 +2956,9 @@ function renderAccidentForm() {
             <div class="field"><label>ประเภทความรุนแรงของการเกิดอุบัติเหตุ</label>
               <select id="acc_severity_type"><option value="">-- เลือก --</option>${ACCIDENT_OPTIONS.severity_type.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join("")}</select>
             </div>
-            <div class="field"><label>หยุดงานหรือไม่หยุด</label>
+            <div class="field"><label>หยุดงานหรือไม่หยุด <span style="color:var(--red)">*</span></label>
               <select id="acc_lost_time"><option value="">-- เลือก --</option><option value="หยุดงาน">หยุดงาน</option><option value="ไม่หยุดงาน">ไม่หยุดงาน</option></select>
+              <div class="hint">ระบบจะเลือกให้อัตโนมัติตามความรุนแรงที่เลือกไว้ (แก้ไขเองได้)</div>
             </div>
             <div class="field"><label>วันที่เริ่มหยุดงาน</label><input id="acc_leave_start_date" type="date"></div>
             <div class="field"><label>หยุดงานถึงวันที่</label><input id="acc_leave_end_date" type="date"></div>
@@ -2927,6 +2987,28 @@ function renderAccidentForm() {
   `;
 
   getEmployeeCache().then(refreshAccidentEmployeeDatalists);
+
+  // ✅ BUG FIX: เดิมทีฟิลด์ "หยุดงานหรือไม่หยุด" (lost_time) เป็นช่องอิสระที่ผู้กรอกต้อง
+  // เลือกเองแยกจาก "ประเภทความรุนแรง" (severity_type) ถ้าลืมเลือก lost_time จะเว้นว่าง
+  // ผลคือ Code.gs (handleAccidentStats_) จะนับแถวนั้นเป็น total_incidents แต่ "ไม่" นับเป็น
+  // lti หรือ not_lti เลย ทำให้ยอดรวมบน Dashboard (LTI + ไม่หยุดงาน) น้อยกว่า "อุบัติเหตุทั้งหมด"
+  // อยู่เสมอ ดูเหมือนข้อมูลไม่ตรงกัน
+  // วิธีแก้: auto-fill lost_time ให้ทันทีตามค่าความรุนแรงที่เลือก (ผู้ใช้ยังแก้ไขเองภายหลังได้)
+  const LOST_TIME_SEVERITY_MAP = {
+    "ปฐมพยาบาล (First Aid)": "ไม่หยุดงาน",
+    "รักษาพยาบาล (Medical Treatment)": "ไม่หยุดงาน",
+    "หยุดงาน (Lost Time Injury)": "หยุดงาน",
+    "ทุพพลภาพ (Disability)": "หยุดงาน",
+    "เสียชีวิต (Fatality)": "หยุดงาน",
+  };
+  const severitySel = document.getElementById("acc_severity_type");
+  const lostTimeSel = document.getElementById("acc_lost_time");
+  if (severitySel && lostTimeSel) {
+    severitySel.addEventListener("change", () => {
+      const mapped = LOST_TIME_SEVERITY_MAP[severitySel.value];
+      if (mapped) lostTimeSel.value = mapped;
+    });
+  }
 
   const empSearch = document.getElementById("acc_emp_search");
   if (empSearch) {
@@ -2980,6 +3062,7 @@ function validateAccidentForm() {
   const req = [
     { id: "acc_emp_name",      label: "ชื่อพนักงาน" },
     { id: "acc_accident_date", label: "วันที่เกิดอุบัติเหตุ" },
+    { id: "acc_lost_time",     label: "หยุดงานหรือไม่หยุด" }, // ✅ บังคับกรอก ป้องกัน total_incidents ไม่เท่ากับ lti+not_lti
   ];
   req.forEach(f => {
     const el = document.getElementById(f.id);

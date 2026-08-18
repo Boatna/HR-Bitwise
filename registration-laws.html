@@ -1581,7 +1581,7 @@ body {
 
 <script>
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyzq_BRpDU1EqFXFQGe61mXjgthwwi_wAjUv6wAjnEyq8J2Fq0VMuVOa6WQRyIsjTMi/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwz1rAoplkLARXG29sUCSLfjurQE6pgKudOoXsLI9FGga1YAOWMCBCI-fRv0nxM8aja/exec",
   SHEET: "Registration_Laws_and_Safety",
   TIMEOUT: 30000,
   RETRY: 3
@@ -1649,6 +1649,10 @@ function escapeHtml(value) {
 
 function escapeJsAttr(value) {
   return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/[\r\n]+/g, " ");
+}
+
+function normSeq(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ").toUpperCase();
 }
 
 function formatNum(v) {
@@ -2030,7 +2034,7 @@ function startRegEditByIndex(rowIndex) {
 // ============ Group Edit Functions ============
 function startRegEditGroupBySeq(seq) {
   const items = regRowsCache
-    .filter(r => (r["ลำดับ"] || "").toString().trim() === seq)
+    .filter(r => normSeq(r["ลำดับ"]) === normSeq(seq))
     .sort((a, b) => a._rowIndex - b._rowIndex);
   if (!items.length) { showToast('ไม่พบข้อมูลฉบับนี้ กรุณารีเฟรชแล้วลองใหม่', true); return; }
 
@@ -2225,7 +2229,7 @@ async function handleGroupSave() {
   
   try {
     const sharedData = { "ลำดับ": seqVal, "กระทรวง": ministry, "ชื่อกฎหมาย": lawName, "วันที่ประกาศ": announceDt, "วันที่มีผลบังคับใช้": effectiveDt };
-    const originalRowIndexes = new Set(regRowsCache.filter(r => (r["ลำดับ"] || "").toString().trim() === regGroupEditSeq).map(r => r._rowIndex));
+    const originalRowIndexes = new Set(regRowsCache.filter(r => normSeq(r["ลำดับ"]) === normSeq(regGroupEditSeq)).map(r => r._rowIndex));
     const keptRowIndexes = new Set(regGroupEditItems.filter(it => it.rowIndex !== null).map(it => it.rowIndex));
     const toDelete = [...originalRowIndexes].filter(idx => !keptRowIndexes.has(idx));
     
@@ -2275,7 +2279,7 @@ async function handleRegDelete(rowIndex) {
 }
 
 async function handleRegDeleteBySeq(seq) {
-  const items = regRowsCache.filter(r => (r["ลำดับ"] || "").toString().trim() === seq);
+  const items = regRowsCache.filter(r => normSeq(r["ลำดับ"]) === normSeq(seq));
   if (!items.length) return;
   if (!confirm(`ยืนยันการลบกฎหมาย ${seq} (${items.length} ข้อกำหนด) ทั้งหมด?`)) return;
   try {
@@ -2294,7 +2298,14 @@ async function handleRegDeleteBySeq(seq) {
 function populateRegFilterOptions(rows) {
   const ministries = [...new Set(rows.map(r => (r["กระทรวง"] || "").trim()).filter(Boolean))].sort();
   const owners     = [...new Set(rows.map(r => (r["ผู้รับผิดชอบ"] || "").trim()).filter(Boolean))].sort();
-  const sequences  = [...new Set(rows.map(r => (r["ลำดับ"] || "").toString().trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  // ✅ dedupe ตัวเลือก "ลำดับ" ด้วยค่าที่ normalize แล้ว กันกรณีมีตัวพิมพ์เล็ก/ใหญ่หรือช่องว่างต่างกัน
+  // แต่ยังโชว์เป็นค่าดิบของแถวแรกที่เจอ เพื่อให้ผู้ใช้เห็นค่าตามที่บันทึกจริงในชีต
+  const seqMap = new Map();
+  rows.forEach(r => {
+    const raw = (r["ลำดับ"] || "").toString().trim();
+    if (raw && !seqMap.has(normSeq(raw))) seqMap.set(normSeq(raw), raw);
+  });
+  const sequences = [...seqMap.values()].sort((a, b) => a.localeCompare(b));
 
   const setSelect = (id, options, currentVal) => {
     const sel = document.getElementById(id);
@@ -2313,16 +2324,18 @@ function applyRegFilter(rows) {
   if (regFilterState.ministry) result = result.filter(r => (r["กระทรวง"] || "").trim() === regFilterState.ministry);
   if (regFilterState.owner)    result = result.filter(r => (r["ผู้รับผิดชอบ"] || "").trim() === regFilterState.owner);
   if (regFilterState.result)   result = result.filter(r => String(r["ผลการประเมิน"] || "").trim().toLowerCase() === regFilterState.result.toLowerCase());
-  if (regFilterState.seq)      result = result.filter(r => (r["ลำดับ"] || "").toString().trim() === regFilterState.seq);
+  if (regFilterState.seq)      result = result.filter(r => normSeq(r["ลำดับ"]) === normSeq(regFilterState.seq));
   return result;
 }
 
 function groupRegRows(rows) {
   const map = new Map();
   rows.forEach(r => {
-    const seq = (r["ลำดับ"] || "").toString().trim();
-    const key = seq || `__no_seq_${r._rowIndex}`;
-    if (!map.has(key)) map.set(key, { seq, items: [] });
+    const rawSeq = (r["ลำดับ"] || "").toString().trim();
+    const key = rawSeq ? normSeq(rawSeq) : `__no_seq_${r._rowIndex}`;
+    // ใช้ค่า "ลำดับ" ของแถวแรกที่เจอในกลุ่มเป็นค่าที่แสดงผล (badge/หัวข้อฉบับ) เพื่อไม่ให้ดู
+    // เหมือนแก้ไขข้อมูลดิบในชีต แต่การจัดกลุ่มยังอ้างอิงค่าที่ normalize แล้วเสมอ
+    if (!map.has(key)) map.set(key, { seq: rawSeq, items: [] });
     map.get(key).items.push(r);
   });
   return Array.from(map.values()).sort((a, b) => a.seq.localeCompare(b.seq));
@@ -2382,7 +2395,7 @@ function renderRegSummary(rows) {
   }
 
   const total = rows.length;
-  const uniqueLaws = new Set(rows.map(r => (r["ลำดับ"] || "").toString().trim()).filter(Boolean)).size || total;
+  const uniqueLaws = new Set(rows.map(r => normSeq(r["ลำดับ"])).filter(Boolean)).size || total;
   
   const counts = { yes: 0, no: 0, na: 0 };
   rows.forEach(r => {
