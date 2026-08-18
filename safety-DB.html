@@ -1419,13 +1419,14 @@ body {
         <div class="trend-legend">
           <div class="trend-legend-item"><span class="sw" style="background:#EF4444;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>หยุดงาน (LTI)</div>
           <div class="trend-legend-item"><span class="sw" style="background:#F59E0B;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>ไม่หยุดงาน</div>
-          <div class="trend-legend-item">🔢 ตัวเลข "รวม" ใต้แต่ละเดือน = หยุดงาน + ไม่หยุดงาน รวมกัน</div>
+          <div class="trend-legend-item">📊 แสดงครบทุกเดือน (ม.ค.–ธ.ค.) พร้อมคอลัมน์ "รวม" สรุปยอดทั้งปีไว้ท้ายกราฟ</div>
         </div>
         <div class="trend-wrap" id="trendChart"></div>
       </div>
       
       <div class="panel">
         <h3>🎯 อัตราความถี่ / ความรุนแรง (IFR / ISR)</h3>
+        <div class="section-subtitle" id="gaugeSourceNote" style="text-align:center;margin-bottom:8px;"></div>
         <div class="gauge-row" id="gaugeRow"></div>
       </div>
     </div>
@@ -1941,7 +1942,7 @@ function renderDonut(segments, centerLabel, centerValue) {
 // ✅ NEW: รองรับพารามิเตอร์ totals (ทางเลือก) — ถ้าใส่มา จะแสดงเป็น "ตัวเลขรวม" อยู่ใต้กราฟ
 // แท่งคู่ของแต่ละเดือน (แทนที่จะวาดเป็นแท่งที่ 3 ซ้อนแยกต่างหากแบบเดิม) ทำให้อ่านง่ายขึ้นว่า
 // หยุดงาน (LTI) กับ ไม่หยุดงาน เทียบกันเดือนต่อเดือนอย่างไร พร้อมเห็นยอดรวมกำกับไว้ในตัว
-function renderGroupedBarChart(labels, seriesList, totals) {
+function renderGroupedBarChart(labels, seriesList, totals, highlightIndex) {
   const hasTotals = Array.isArray(totals);
   const padL = 40, padR = 14, padT = 16, padB = hasTotals ? 42 : 24;
   const groupW = 74;
@@ -1963,8 +1964,14 @@ function renderGroupedBarChart(labels, seriesList, totals) {
     gridLines.push(`<line x1="${padL}" y1="${gy}" x2="${w - padR}" y2="${gy}" stroke="#E2E8F0" stroke-width="1"/>`);
     gridLines.push(`<text x="${padL - 8}" y="${gy + 4}" font-size="10" fill="#64748B" text-anchor="end" font-family="Sarabun, sans-serif">${Math.round(gv)}</text>`);
   }
+  // ✅ NEW: เส้นคั่นประก่อนคอลัมน์ "รวม" (ถ้ามีการระบุ highlightIndex) เพื่อแยกให้เห็นชัดว่าเป็นยอดรวมทั้งปี ไม่ใช่ข้อมูลรายเดือน
+  if (highlightIndex !== undefined && highlightIndex !== null && highlightIndex > 0 && highlightIndex < labels.length) {
+    const dividerX = padL + stepX * highlightIndex;
+    gridLines.push(`<line x1="${dividerX}" y1="${padT - 4}" x2="${dividerX}" y2="${padT + plotH + 4}" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="3 3"/>`);
+  }
   const groups = labels.map((lab, i) => {
     const groupX = padL + stepX * i;
+    const isHighlight = (i === highlightIndex); // ✅ NEW: คอลัมน์ "รวม" จะได้ label ตัวหนา/เข้มกว่าคอลัมน์เดือนปกติ
     const bars = seriesList.map((s, si) => {
       const v = Number(s.values[i]) || 0;
       const barX = groupX + barGap + si * (barW + barGap);
@@ -1977,7 +1984,7 @@ function renderGroupedBarChart(labels, seriesList, totals) {
     }).join("");
     const labelX = groupX + stepX / 2;
     const monthLabelY = hasTotals ? h - 26 : h - 6;
-    let extra = `<text x="${labelX}" y="${monthLabelY}" font-size="10" fill="#64748B" text-anchor="middle" font-family="Sarabun, sans-serif">${lab}</text>`;
+    let extra = `<text x="${labelX}" y="${monthLabelY}" font-size="${isHighlight ? 11 : 10}" fill="${isHighlight ? '#1A365D' : '#64748B'}" text-anchor="middle" font-family="Sarabun, sans-serif" font-weight="${isHighlight ? 800 : 400}">${lab}</text>`;
     if (hasTotals) {
       const t = Number(totals[i]) || 0;
       extra += `<text x="${labelX}" y="${h - 10}" font-size="10.5" fill="#1A365D" text-anchor="middle" font-family="Sarabun, sans-serif" font-weight="800">รวม ${t}</text>`;
@@ -2112,6 +2119,35 @@ function pickKpiIndex(grouped) {
   return grouped.length - 1;
 }
 
+// ✅ BUG FIX: เดิมทีกราฟ Gauge (IFR/ISR) ใช้ pickKpiIndex ซึ่งหยิบ "เดือนล่าสุดตามลำดับเวลา" ในขอบเขตที่
+// เลือกมาแสดงเสมอ โดยไม่สนใจว่าเดือนนั้นมีการกรอกค่า IFR/ISR ไว้จริงหรือไม่ ถ้าเดือนล่าสุดมีแค่ข้อมูล
+// อุบัติเหตุจาก AccidentReport (ผ่าน applyAccidentOverrides) แต่ยังไม่มีใครกรอก ifr/target_ifr/isr/target_isr
+// ลงในชีต KPI_Monthly สำหรับเดือนนั้น ค่า Gauge จะกลายเป็น 0.00 ทันที ดูเหมือนข้อมูลหายไปทั้งที่จริงมีค่า
+// กรอกไว้ในเดือนก่อนหน้าในขอบเขตเดียวกัน วิธีแก้: ไล่ย้อนจากเดือนล่าสุดหาเดือนที่ "มีข้อมูล IFR/ISR จริง"
+// ก่อน ถ้าไม่มีข้อมูลเลยทั้งขอบเขตค่อย fallback กลับไปที่เดือนล่าสุดตามเดิม (จะแสดง warning แทน)
+function hasGaugeData(g) {
+  return (Number(g.ifr) || 0) !== 0 || (Number(g.target_ifr) || 0) !== 0 ||
+         (Number(g.isr) || 0) !== 0 || (Number(g.target_isr) || 0) !== 0;
+}
+
+function pickGaugeIndex(grouped) {
+  if (!grouped.length) return -1;
+  if (filterState.month) {
+    return grouped.findIndex(g => g.month === filterState.month);
+  }
+  let scopeIdx = [];
+  if (filterState.year) {
+    grouped.forEach((g, i) => { if (g.month.slice(0, 4) === filterState.year) scopeIdx.push(i); });
+  } else {
+    scopeIdx = grouped.map((_, i) => i);
+  }
+  if (!scopeIdx.length) return -1;
+  for (let i = scopeIdx.length - 1; i >= 0; i--) {
+    if (hasGaugeData(grouped[scopeIdx[i]])) return scopeIdx[i];
+  }
+  return scopeIdx[scopeIdx.length - 1];
+}
+
 function getKpiScopeAggregate(grouped) {
   if (!grouped.length) return { view: null, isAggregate: false, scopeRows: [] };
 
@@ -2233,21 +2269,40 @@ async function loadTrendChart() {
     const yearScope = filterState.year || String(new Date().getFullYear());
     if (filterState.plant) rows = rows.filter(r => samePlant(r.plant, filterState.plant));
     const accidentStats = await fetchAccidentStats(filterState.plant);
-    const grouped = applyAccidentOverrides(groupKpiRows(rows), accidentStats.months)
+    const groupedRaw = applyAccidentOverrides(groupKpiRows(rows), accidentStats.months)
       .filter(g => g.month.slice(0, 4) === yearScope);
     if (scopeLabel) scopeLabel.textContent = `ปี ${Number(yearScope) + 543}`;
-    if (!grouped.length) {
+
+    // ✅ NEW: สร้างข้อมูลให้ครบ 12 เดือนเสมอ (ม.ค.-ธ.ค.) แม้เดือนนั้นจะไม่มีข้อมูล (= 0)
+    // เพื่อให้แกนกราฟแสดงครบทั้งปีเหมือนตัวอย่างที่ต้องการ แทนที่จะแสดงเฉพาะเดือนที่มีข้อมูลเท่านั้น
+    const byMonthNum = {};
+    groupedRaw.forEach(g => { byMonthNum[Number(g.month.slice(5, 7))] = g; });
+    const labels     = MONTH_NAMES_TH.slice();
+    const ltiVals    = [];
+    const notLtiVals = [];
+    for (let mIdx = 1; mIdx <= 12; mIdx++) {
+      const g = byMonthNum[mIdx];
+      ltiVals.push(g ? (Number(g.lti) || 0) : 0);
+      notLtiVals.push(g ? (Number(g.not_lti) || 0) : 0);
+    }
+
+    // ✅ NEW: เพิ่มคอลัมน์ "รวม" ปิดท้ายกราฟ = ผลรวมทั้งปีของหยุดงาน (LTI) และไม่หยุดงาน แยกกัน
+    const ltiTotal    = ltiVals.reduce((s, v) => s + v, 0);
+    const notLtiTotal = notLtiVals.reduce((s, v) => s + v, 0);
+    const totalColumnIndex = labels.length; // ตำแหน่งคอลัมน์ "รวม" (หลังเดือน ธ.ค.)
+    labels.push("รวม");
+    ltiVals.push(ltiTotal);
+    notLtiVals.push(notLtiTotal);
+
+    if (!groupedRaw.length && ltiTotal === 0 && notLtiTotal === 0) {
       el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`;
       return;
     }
-    const labels = grouped.map(g => MONTH_NAMES_TH[Number(g.month.slice(5, 7)) - 1]);
-    const ltiVals    = grouped.map(g => g.lti);
-    const notLtiVals = grouped.map(g => g.not_lti);
-    const totalVals  = grouped.map(g => (Number(g.lti) || 0) + (Number(g.not_lti) || 0));
+
     el.innerHTML = renderGroupedBarChart(labels, [
       { label: "หยุดงาน (LTI)", values: ltiVals,    color: "#EF4444" },
       { label: "ไม่หยุดงาน",    values: notLtiVals, color: "#F59E0B" }
-    ], totalVals);
+    ], null, totalColumnIndex);
   } catch (err) {
     el.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
   }
@@ -2255,16 +2310,32 @@ async function loadTrendChart() {
 
 async function loadGauges() {
   const el = document.getElementById("gaugeRow");
+  const noteEl = document.getElementById("gaugeSourceNote");
   showLoading(el);
+  if (noteEl) noteEl.textContent = "";
   try {
     const allRows = await fetchSheetData(CONFIG.SHEETS.KPI);
     let baseRows = allRows;
     if (filterState.plant) baseRows = baseRows.filter(r => samePlant(r.plant, filterState.plant));
     const accidentStats = await fetchAccidentStats(filterState.plant);
     const grouped = applyAccidentOverrides(groupKpiRows(baseRows), accidentStats.months);
-    const idx = pickKpiIndex(grouped);
+    const idx = pickGaugeIndex(grouped);
     if (idx === -1) { el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`; return; }
     const latest = grouped[idx];
+    const gaugeHasData = hasGaugeData(latest);
+
+    if (noteEl) {
+      if (!gaugeHasData) {
+        noteEl.innerHTML = `⚠️ เดือน ${formatMonthThai(latest.month)} ยังไม่มีการกรอกค่า IFR/ISR ในชีต KPI_Monthly`;
+        noteEl.style.color = "var(--amber-dark)";
+      } else if (!filterState.month) {
+        noteEl.innerHTML = `📅 แสดงค่าล่าสุดจากเดือน ${formatMonthThai(latest.month)}`;
+        noteEl.style.color = "var(--text-muted)";
+      } else {
+        noteEl.innerHTML = "";
+      }
+    }
+
     const ifr = Number(latest.ifr) || 0;
     const ifrTarget = Number(latest.target_ifr) || 1;
     const ifrMax = Math.max(3, Math.ceil(ifrTarget * 3));
