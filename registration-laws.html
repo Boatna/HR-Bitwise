@@ -2121,11 +2121,6 @@ function renderGroupEditRows() {
   });
 }
 
-// ✅ BUG FIX: ก่อนหน้านี้ไฟล์ที่เลือกไว้ในแต่ละข้อกำหนดจะถูกอ่านจาก DOM ตอนกด "บันทึกทั้งฉบับ" เท่านั้น
-// ถ้าระหว่างนั้นมีการ "เพิ่ม/ลบข้อกำหนด" ซึ่งเรียก renderGroupEditRows() มา re-render container ใหม่ทั้งหมด
-// input type="file" ที่เคยเลือกไฟล์ไว้จะถูกสร้างใหม่ (ไฟล์ที่เลือกไว้หายไปจากหน้าจอ) โดยไม่มีการแจ้งเตือนใดๆ
-// วิธีแก้: จับไฟล์ที่ผู้ใช้เลือกเก็บลง item.attachFileObj ทันทีที่มีการเลือก (change event)
-// เพื่อให้ state ของไฟล์ถูกเก็บไว้ใน JS ก่อนที่ DOM จะถูก re-render ทับ
 function onGroupItemFieldChange(e) {
   const uid = Number(e.target.dataset.uid);
   const field = e.target.dataset.field;
@@ -2135,7 +2130,6 @@ function onGroupItemFieldChange(e) {
     const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
     if (file) {
       item.attachFileObj = file;
-      // อัปเดตข้อความสถานะให้ผู้ใช้เห็นทันทีว่าไฟล์ถูกจดจำไว้แล้ว แม้จะยังไม่ได้อัปโหลดจริง
       const note = document.querySelector(`.file-current-note[data-uid="${uid}"][data-role="attach-note"]`);
       if (note) note.innerHTML = `✅ เลือกไฟล์ใหม่แล้ว: ${escapeHtml(file.name)} (ยังไม่ได้อัปโหลด — จะอัปโหลดตอนกดบันทึกทั้งฉบับ)`;
     }

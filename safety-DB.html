@@ -2195,12 +2195,6 @@ function pickKpiIndex(grouped) {
   return grouped.length - 1;
 }
 
-// ✅ BUG FIX: เดิมทีกราฟ Gauge (IFR/ISR) ใช้ pickKpiIndex ซึ่งหยิบ "เดือนล่าสุดตามลำดับเวลา" ในขอบเขตที่
-// เลือกมาแสดงเสมอ โดยไม่สนใจว่าเดือนนั้นมีการกรอกค่า IFR/ISR ไว้จริงหรือไม่ ถ้าเดือนล่าสุดมีแค่ข้อมูล
-// อุบัติเหตุจาก AccidentReport (ผ่าน applyAccidentOverrides) แต่ยังไม่มีใครกรอก ifr/target_ifr/isr/target_isr
-// ลงในชีต KPI_Monthly สำหรับเดือนนั้น ค่า Gauge จะกลายเป็น 0.00 ทันที ดูเหมือนข้อมูลหายไปทั้งที่จริงมีค่า
-// กรอกไว้ในเดือนก่อนหน้าในขอบเขตเดียวกัน วิธีแก้: ไล่ย้อนจากเดือนล่าสุดหาเดือนที่ "มีข้อมูล IFR/ISR จริง"
-// ก่อน ถ้าไม่มีข้อมูลเลยทั้งขอบเขตค่อย fallback กลับไปที่เดือนล่าสุดตามเดิม (จะแสดง warning แทน)
 function hasGaugeData(g) {
   return (Number(g.ifr) || 0) !== 0 || (Number(g.target_ifr) || 0) !== 0 ||
          (Number(g.isr) || 0) !== 0 || (Number(g.target_isr) || 0) !== 0;
@@ -2680,8 +2674,6 @@ function bodyColorFromCount(count, maxCount) {
 }
 
 function bodyZoneLabelTH(key) {
-  // ✅ NEW: แยกป้ายชื่อ "หู" ออกจากศีรษะ และแยก "มือ" กับ "นิ้วมือ", "เท้า" กับ "นิ้วเท้า" ออก
-  // จากกันให้ชัดเจน (เดิมรวมกันเป็นก้อนเดียว ทำให้ไม่รู้ว่าบาดเจ็บที่มือหรือที่นิ้ว)
   const map = {
     head: "ศีรษะ / ใบหน้า", ear: "หู", eye: "ตา", shoulder: "ไหล่", arm: "แขน",
     hand: "มือ", finger: "นิ้วมือ",
@@ -2691,8 +2683,6 @@ function bodyZoneLabelTH(key) {
 }
 
 function bodyFigureSvg(colors) {
-  // ✅ NEW: เพิ่ม "หู" เป็นจุดแยกต่างหากข้างศีรษะ และแยกภาพ "นิ้วมือ"/"นิ้วเท้า" ออกจาก
-  // "มือ"/"เท้า" อย่างชัดเจน (วาดเป็นวงเล็กๆ/ปลายนิ้วที่มีสีของตัวเองไม่ปนกับมือ/เท้า)
   const {
     head: headFill, ear: earFill, eye: eyeFill, shoulder: shoulderFill, arm: armFill,
     hand: handFill, finger: fingerFill, torso: torsoFill, leg: legFill,
@@ -2783,9 +2773,6 @@ function renderBodyMap(bodyParts) {
   const el = document.getElementById("bodyMapChart");
   const totalEl = document.getElementById("bodyMapTotal");
   if (!el) return;
-
-  // ✅ NEW: แยก "หู" ออกจากศีรษะ และแยก "มือ" กับ "นิ้วมือ", "เท้า" กับ "นิ้วเท้า" เป็นจุดของตัวเอง
-  // แต่ละจุด เพื่อให้เห็นชัดว่าอวัยวะไหนบาดเจ็บบ่อยกว่ากัน (เดิมรวมกันเป็นก้อนเดียวมองไม่ออก)
   const counts = {
     head:     (bodyParts["คอ ศีรษะ"] || 0) + (bodyParts["ใบหน้า"] || 0),
     ear:      (bodyParts["หู"] || 0),
@@ -2851,8 +2838,6 @@ async function loadAccidentInsights() {
   }
 }
 
-// ✅ NEW: แสดงกราฟแท่งแนวนอนพร้อมตัวเลขรวมกำกับที่หัวข้อ (badge-count) — ใช้ร่วมกันกับกราฟสถิติ
-// เชิงลึกทั้งหมดในหัวข้อ "สถิติเชิงลึกอุบัติเหตุ" เพื่อไม่ให้โค้ดซ้ำซ้อน
 function renderHorizontalBarWithTotal(entries, elId, totalElId, unitLabel) {
   const el = document.getElementById(elId);
   const totalEl = document.getElementById(totalElId);
@@ -2884,24 +2869,18 @@ async function loadAccidentAnalytics() {
   try {
     const a = await fetchAccidentAnalytics(filterState.plant);
 
-    // 1) สถิติการเกิดอุบัติเหตุระหว่างปี 2556 - 2567 (แสดงครบทุกปีแม้ไม่มีข้อมูล = 0)
     const yearEntries = [];
     for (let y = 2556; y <= 2567; y++) yearEntries.push([String(y), Number(a.yearlyCounts[y]) || 0]);
     renderHorizontalBarWithTotal(yearEntries, "yearlyAccidentChart", "yearlyAccidentTotal", "ครั้ง");
 
-    // 2) จำนวนวันทำงานที่สูญเสียรายเดือน ปี 2567 (แสดงครบ 12 เดือน)
     const lostDaysEntries = MONTH_NAMES_TH.map((label, i) => {
       const mm = String(i + 1).padStart(2, '0');
       return [label, Number(a.monthlyLostDays[mm]) || 0];
     });
     renderHorizontalBarWithTotal(lostDaysEntries, "lostDaysChart", "lostDaysTotal", "วัน");
-
-    // หน่วยงาน / สัญชาติ: หมวดหมู่อิสระ ไม่มีลำดับตายตัว → เรียงจากมากไปน้อยให้เห็นอันดับชัดเจน
     const sortDesc = (obj) => Object.entries(obj || {}).sort((x, y) => y[1] - x[1]);
     renderHorizontalBarWithTotal(sortDesc(a.byDepartment), "deptAccidentChart", "deptAccidentTotal", "ครั้ง");
     renderHorizontalBarWithTotal(sortDesc(a.byNationality), "nationalityChart", "nationalityTotal", "ครั้ง");
-    // ช่วงอายุ / ช่วงอายุงาน / ช่วงเวลา: มีลำดับตามธรรมชาติอยู่แล้ว (backend ส่งมาเรียงลำดับไว้ให้)
-    // จึงคงลำดับเดิมตามที่ได้รับมา ไม่เรียงตามจำนวนซ้ำ เพื่อให้อ่านง่ายเป็นสเกลต่อเนื่อง
     const keepOrder = (obj) => Object.entries(obj || {});
     renderHorizontalBarWithTotal(keepOrder(a.byAgeRange), "ageRangeChart", "ageRangeTotal", "ครั้ง");
     renderHorizontalBarWithTotal(keepOrder(a.byTenureRange), "tenureRangeChart", "tenureRangeTotal", "ครั้ง");
@@ -3243,13 +3222,6 @@ function renderAccidentForm() {
   `;
 
   getEmployeeCache().then(refreshAccidentEmployeeDatalists);
-
-  // ✅ BUG FIX: เดิมทีฟิลด์ "หยุดงานหรือไม่หยุด" (lost_time) เป็นช่องอิสระที่ผู้กรอกต้อง
-  // เลือกเองแยกจาก "ประเภทความรุนแรง" (severity_type) ถ้าลืมเลือก lost_time จะเว้นว่าง
-  // ผลคือ Code.gs (handleAccidentStats_) จะนับแถวนั้นเป็น total_incidents แต่ "ไม่" นับเป็น
-  // lti หรือ not_lti เลย ทำให้ยอดรวมบน Dashboard (LTI + ไม่หยุดงาน) น้อยกว่า "อุบัติเหตุทั้งหมด"
-  // อยู่เสมอ ดูเหมือนข้อมูลไม่ตรงกัน
-  // วิธีแก้: auto-fill lost_time ให้ทันทีตามค่าความรุนแรงที่เลือก (ผู้ใช้ยังแก้ไขเองภายหลังได้)
   const LOST_TIME_SEVERITY_MAP = {
     "ปฐมพยาบาล (First Aid)": "ไม่หยุดงาน",
     "รักษาพยาบาล (Medical Treatment)": "ไม่หยุดงาน",
@@ -3257,10 +3229,6 @@ function renderAccidentForm() {
     "ทุพพลภาพ (Disability)": "หยุดงาน",
     "เสียชีวิต (Fatality)": "หยุดงาน",
   };
-  // ✅ NEW: input type="time" ของเบราว์เซอร์จะแสดงผลตาม locale ของเครื่อง/OS ผู้ใช้ (บางเครื่องเป็น
-  // AM/PM 12 ชม. โดยอัตโนมัติ) จึงบังคับให้เป็น 24 ชม. เสมอไม่ได้ 100% ด้วย type="time"
-  // วิธีแก้: เปลี่ยนเป็น text input ที่ auto-format ใส่ ":" ให้ระหว่างพิมพ์ และตรวจสอบรูปแบบ
-  // HH:MM (00-23 : 00-59) ก่อนบันทึกเสมอ เพื่อให้ค่าที่ได้เป็น 24 ชม. แน่นอนไม่ว่าจะใช้เครื่องไหน
   const accTimeInput = document.getElementById("acc_accident_time");
   if (accTimeInput) {
     accTimeInput.addEventListener("input", () => {
@@ -3349,7 +3317,7 @@ function validateAccidentForm() {
   const req = [
     { id: "acc_emp_name",      label: "ชื่อพนักงาน" },
     { id: "acc_accident_date", label: "วันที่เกิดอุบัติเหตุ" },
-    { id: "acc_lost_time",     label: "หยุดงานหรือไม่หยุด" }, // ✅ บังคับกรอก ป้องกัน total_incidents ไม่เท่ากับ lti+not_lti
+    { id: "acc_lost_time",     label: "หยุดงานหรือไม่หยุด" },
   ];
   req.forEach(f => {
     const el = document.getElementById(f.id);
