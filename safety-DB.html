@@ -1412,6 +1412,43 @@ body {
       <div class="skeleton-row">⏳ กำลังโหลดข้อมูล...</div>
     </section>
 
+    <!-- Accident Insights Section -->
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <div>
+        <h2>DASHBOARD รายงานอุบัติเหตุ (ACCIDENT INSIGHTS)</h2>
+        <div class="section-subtitle">จุดบาดเจ็บและสาเหตุการเกิดอุบัติเหตุ จากรายงานอุบัติเหตุ (AccidentReport)</div>
+      </div>
+    </div>
+
+    <div class="grid-2-wide">
+      <div class="panel">
+        <h3>🧍 จุดบาดเจ็บบนร่างกาย (Body Injury Map) <span class="badge-count" id="bodyMapTotal">—</span></h3>
+        <div id="bodyMapChart"></div>
+      </div>
+      <div class="panel">
+        <h3>🔍 สาเหตุการเกิดอุบัติเหตุ <span class="badge-count" id="causeDonutTotal">—</span></h3>
+        <div id="causeDonutChart"></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:18px;">
+      <h3>📊 สาเหตุการเกิดอุบัติเหตุ (กราฟแท่งแนวนอน)</h3>
+      <div id="causeBarChart" class="bar-chart"></div>
+    </div>
+
+
+
+    <!-- Trends & Additional Stats Section -->
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <div>
+        <h2>แนวโน้มและสถิติเสริม (TRENDS &amp; ADDITIONAL STATS)</h2>
+        <div class="section-subtitle">แนวโน้ม IFR/ISR การตรวจความปลอดภัย สถานะ CAR และรายงานส่งราชการ</div>
+      </div>
+    </div>
+
+
     <!-- Charts Row 1 -->
     <div class="grid-2">
       <div class="panel">
@@ -1419,7 +1456,6 @@ body {
         <div class="trend-legend">
           <div class="trend-legend-item"><span class="sw" style="background:#EF4444;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>หยุดงาน (LTI)</div>
           <div class="trend-legend-item"><span class="sw" style="background:#F59E0B;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>ไม่หยุดงาน</div>
-          <div class="trend-legend-item">📊 แสดงครบทุกเดือน (ม.ค.–ธ.ค.) พร้อมคอลัมน์ "รวม" สรุปยอดทั้งปีไว้ท้ายกราฟ</div>
         </div>
         <div class="trend-wrap" id="trendChart"></div>
       </div>
@@ -1462,40 +1498,51 @@ body {
       </div>
     </div>
 
-    <!-- Accident Insights Section -->
+    <!-- ✅ NEW: Historical & Demographic Accident Analytics Section -->
     <div class="section-header">
-      <div class="section-number">2</div>
+      <div class="section-number">4</div>
       <div>
-        <h2>DASHBOARD รายงานอุบัติเหตุ (ACCIDENT INSIGHTS)</h2>
-        <div class="section-subtitle">จุดบาดเจ็บ สาเหตุ และลักษณะการเกิดอุบัติเหตุ จากรายงานอุบัติเหตุ (AccidentReport)</div>
+        <h2>สถิติเชิงลึกอุบัติเหตุ (HISTORICAL &amp; DEMOGRAPHIC ANALYTICS)</h2>
+        <div class="section-subtitle">ภาพรวมย้อนหลังหลายปี และสถิติจำแนกตามปัจจัยต่างๆ ของอุบัติเหตุ</div>
       </div>
     </div>
 
-    <div class="grid-2-wide">
+    <div class="panel" style="margin-bottom:18px;">
+      <h3>📈 สถิติการเกิดอุบัติเหตุระหว่างปี 2556 - 2567 <span class="badge-count" id="yearlyAccidentTotal">—</span></h3>
+      <div id="yearlyAccidentChart" class="bar-chart"></div>
+    </div>
+
+    <div class="grid-2">
       <div class="panel">
-        <h3>🧍 จุดบาดเจ็บบนร่างกาย (Body Injury Map) <span class="badge-count" id="bodyMapTotal">—</span></h3>
-        <div id="bodyMapChart"></div>
+        <h3>🗓️ จำนวนวันทำงานที่สูญเสียรายเดือน ปี 2567 <span class="badge-count" id="lostDaysTotal">—</span></h3>
+        <div id="lostDaysChart" class="bar-chart"></div>
       </div>
       <div class="panel">
-        <h3>🔍 สาเหตุการเกิดอุบัติเหตุ <span class="badge-count" id="causeDonutTotal">—</span></h3>
-        <div id="causeDonutChart"></div>
+        <h3>🏢 อุบัติเหตุจำแนกตามหน่วยงาน ปี 2567 <span class="badge-count" id="deptAccidentTotal">—</span></h3>
+        <div id="deptAccidentChart" class="bar-chart"></div>
       </div>
     </div>
 
     <div class="grid-2">
       <div class="panel">
-        <h3>📊 สาเหตุการเกิดอุบัติเหตุ (กราฟแท่งแนวนอน)</h3>
-        <div id="causeBarChart" class="bar-chart"></div>
+        <h3>🎂 อุบัติเหตุจำแนกตามช่วงอายุ ปี 2567 <span class="badge-count" id="ageRangeTotal">—</span></h3>
+        <div id="ageRangeChart" class="bar-chart"></div>
       </div>
       <div class="panel">
-        <h3>📊 ลักษณะการเกิดอุบัติเหตุ (กราฟแท่งแนวนอน)</h3>
-        <div id="natureBarChart" class="bar-chart"></div>
+        <h3>🧑‍💼 อุบัติเหตุจำแนกตามช่วงอายุงาน ปี 2567 <span class="badge-count" id="tenureRangeTotal">—</span></h3>
+        <div id="tenureRangeChart" class="bar-chart"></div>
       </div>
     </div>
 
-    <div class="panel" style="margin-bottom:18px;">
-      <h3>🧩 ลักษณะการเกิดอุบัติเหตุ (Donut) <span class="badge-count" id="natureDonutTotal">—</span></h3>
-      <div id="natureDonutChart"></div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>🕐 อุบัติเหตุจำแนกตามช่วงเวลาที่เกิดเหตุ ปี 2567 <span class="badge-count" id="timeRangeTotal">—</span></h3>
+        <div id="timeRangeChart" class="bar-chart"></div>
+      </div>
+      <div class="panel">
+        <h3>🌏 อุบัติเหตุจำแนกตามสัญชาติ ปี 2567 <span class="badge-count" id="nationalityTotal">—</span></h3>
+        <div id="nationalityChart" class="bar-chart"></div>
+      </div>
     </div>
 
   </div>
@@ -1564,7 +1611,7 @@ body {
 <script>
 // ============ Configuration ============
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwz1rAoplkLARXG29sUCSLfjurQE6pgKudOoXsLI9FGga1YAOWMCBCI-fRv0nxM8aja/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyx5IJ2ZiLYADyjBbX9idXL56ZvCs6yrNldehaTzrCvyCVqd1npHUO1NMtfJyCZQrc3/exec",
   SHEETS: {
     KPI:          "KPI_Monthly",
     INSPECTION:   "Inspection",
@@ -1774,6 +1821,35 @@ async function fetchAccidentStats(plant, month, year) {
   } catch (err) {
     console.error("fetchAccidentStats error:", err);
     return { months: {}, bodyParts: {}, causes: {}, natures: {} };
+  }
+}
+
+// ✅ NEW: ดึงข้อมูลสถิติเชิงลึก (รายปีย้อนหลัง / วันสูญเสีย / หน่วยงาน / อายุ / อายุงาน / ช่วงเวลา / สัญชาติ)
+async function fetchAccidentAnalytics(plant) {
+  const qs = new URLSearchParams({ calc: "accidentAnalytics" });
+  if (plant) qs.set("plant", plant);
+  const url = `${CONFIG.APPS_SCRIPT_URL}?${qs.toString()}`;
+  const empty = {
+    yearlyCounts: {}, monthlyLostDays: {}, byDepartment: {},
+    byAgeRange: {}, byTenureRange: {}, byTimeRange: {}, byNationality: {}
+  };
+  try {
+    const response = await fetchWithRetry(url);
+    const text = await response.text();
+    const json = JSON.parse(text);
+    if (!json || !json.success) return empty;
+    return {
+      yearlyCounts:    json.yearlyCounts    || {},
+      monthlyLostDays: json.monthlyLostDays || {},
+      byDepartment:    json.byDepartment    || {},
+      byAgeRange:      json.byAgeRange      || {},
+      byTenureRange:   json.byTenureRange   || {},
+      byTimeRange:     json.byTimeRange     || {},
+      byNationality:   json.byNationality   || {},
+    };
+  } catch (err) {
+    console.error("fetchAccidentAnalytics error:", err);
+    return empty;
   }
 }
 
@@ -2205,8 +2281,8 @@ async function loadKpi() {
     const daysAuto = await fetchDaysNoIncident(filterState.plant);
     const daysNoIncidentValue = (daysAuto.days !== null && daysAuto.days !== undefined) ? daysAuto.days : latest.days_no_incident;
     const daysNoIncidentMeta = daysAuto.lastAccidentDate
-      ? `นับจากอุบัติเหตุล่าสุด ${formatDateThai(daysAuto.lastAccidentDate)}`
-      : "ยังไม่มีอุบัติเหตุบันทึกไว้";
+      ? `นับจากอุบัติเหตุหยุดงาน (LTI) ล่าสุด ${formatDateThai(daysAuto.lastAccidentDate)}`
+      : "ยังไม่มีอุบัติเหตุหยุดงาน (LTI) บันทึกไว้";
     function calcChange(current, previous) {
       const c = Number(current) || 0;
       const p = Number(previous) || 0;
@@ -2604,15 +2680,24 @@ function bodyColorFromCount(count, maxCount) {
 }
 
 function bodyZoneLabelTH(key) {
+  // ✅ NEW: แยกป้ายชื่อ "หู" ออกจากศีรษะ และแยก "มือ" กับ "นิ้วมือ", "เท้า" กับ "นิ้วเท้า" ออก
+  // จากกันให้ชัดเจน (เดิมรวมกันเป็นก้อนเดียว ทำให้ไม่รู้ว่าบาดเจ็บที่มือหรือที่นิ้ว)
   const map = {
-    head: "ศีรษะ / ใบหน้า / หู", eye: "ตา", shoulder: "ไหล่", arm: "แขน", hand: "มือ / นิ้วมือ",
-    torso: "ลำตัว / เอว", back: "หลัง", leg: "ขา", foot: "เท้า / นิ้วเท้า"
+    head: "ศีรษะ / ใบหน้า", ear: "หู", eye: "ตา", shoulder: "ไหล่", arm: "แขน",
+    hand: "มือ", finger: "นิ้วมือ",
+    torso: "ลำตัว / เอว", back: "หลัง", leg: "ขา", foot: "เท้า", toe: "นิ้วเท้า"
   };
   return map[key] || key;
 }
 
 function bodyFigureSvg(colors) {
-  const { head: headFill, eye: eyeFill, shoulder: shoulderFill, arm: armFill, hand: handFill, torso: torsoFill, leg: legFill, foot: footFill } = colors;
+  // ✅ NEW: เพิ่ม "หู" เป็นจุดแยกต่างหากข้างศีรษะ และแยกภาพ "นิ้วมือ"/"นิ้วเท้า" ออกจาก
+  // "มือ"/"เท้า" อย่างชัดเจน (วาดเป็นวงเล็กๆ/ปลายนิ้วที่มีสีของตัวเองไม่ปนกับมือ/เท้า)
+  const {
+    head: headFill, ear: earFill, eye: eyeFill, shoulder: shoulderFill, arm: armFill,
+    hand: handFill, finger: fingerFill, torso: torsoFill, leg: legFill,
+    foot: footFill, toe: toeFill
+  } = colors;
   return `
   <svg viewBox="0 0 200 380" width="190" style="display:block;">
     <!-- เงาใต้เท้า -->
@@ -2627,8 +2712,19 @@ function bodyFigureSvg(colors) {
           fill="${legFill}" stroke="#CBD5E1" stroke-width="1"/>
 
     <!-- เท้า -->
-    <ellipse cx="80" cy="357" rx="17" ry="8.5" fill="${footFill}" stroke="#CBD5E1" stroke-width="1" transform="rotate(-10 80 357)"/>
-    <ellipse cx="120" cy="357" rx="17" ry="8.5" fill="${footFill}" stroke="#CBD5E1" stroke-width="1" transform="rotate(10 120 357)"/>
+    <ellipse cx="77" cy="357" rx="14" ry="8" fill="${footFill}" stroke="#CBD5E1" stroke-width="1" transform="rotate(-10 77 357)"/>
+    <ellipse cx="123" cy="357" rx="14" ry="8" fill="${footFill}" stroke="#CBD5E1" stroke-width="1" transform="rotate(10 123 357)"/>
+    <!-- นิ้วเท้า: วาดเป็นแถวจุดเล็กๆ ที่ปลายเท้าแต่ละข้าง แยกสีออกจากตัวเท้า -->
+    <g>
+      <circle cx="64" cy="354" r="2.6" fill="${toeFill}" stroke="#CBD5E1" stroke-width="0.6"/>
+      <circle cx="63.5" cy="359" r="2.6" fill="${toeFill}" stroke="#CBD5E1" stroke-width="0.6"/>
+      <circle cx="64.5" cy="364" r="2.6" fill="${toeFill}" stroke="#CBD5E1" stroke-width="0.6"/>
+    </g>
+    <g>
+      <circle cx="136" cy="354" r="2.6" fill="${toeFill}" stroke="#CBD5E1" stroke-width="0.6"/>
+      <circle cx="136.5" cy="359" r="2.6" fill="${toeFill}" stroke="#CBD5E1" stroke-width="0.6"/>
+      <circle cx="135.5" cy="364" r="2.6" fill="${toeFill}" stroke="#CBD5E1" stroke-width="0.6"/>
+    </g>
 
     <!-- ลำตัว (เข้ารูปช่วงเอว) -->
     <path d="M100,120 C87,120 76,129 71,142 C66,157 65,175 68,196
@@ -2649,11 +2745,28 @@ function bodyFigureSvg(colors) {
           fill="${armFill}" stroke="#CBD5E1" stroke-width="1"/>
 
     <!-- มือ -->
-    <circle cx="53" cy="246" r="11.5" fill="${handFill}" stroke="#CBD5E1" stroke-width="1"/>
-    <circle cx="147" cy="246" r="11.5" fill="${handFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <circle cx="53" cy="246" r="10" fill="${handFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <circle cx="147" cy="246" r="10" fill="${handFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <!-- นิ้วมือ: วาดเป็นแท่งเล็กๆ 4 นิ้วยื่นออกจากฝ่ามือ แยกสีออกจากตัวมือ -->
+    <g>
+      <rect x="38" y="250" width="4.4" height="11" rx="2.2" fill="${fingerFill}" stroke="#CBD5E1" stroke-width="0.6" transform="rotate(-18 40 250)"/>
+      <rect x="44" y="253" width="4.4" height="13" rx="2.2" fill="${fingerFill}" stroke="#CBD5E1" stroke-width="0.6" transform="rotate(-6 46 253)"/>
+      <rect x="51" y="254" width="4.4" height="13" rx="2.2" fill="${fingerFill}" stroke="#CBD5E1" stroke-width="0.6" transform="rotate(6 53 254)"/>
+      <rect x="58" y="252" width="4.4" height="11" rx="2.2" fill="${fingerFill}" stroke="#CBD5E1" stroke-width="0.6" transform="rotate(18 60 252)"/>
+    </g>
+    <g>
+      <rect x="157.6" y="250" width="4.4" height="11" rx="2.2" fill="${fingerFill}" stroke="#CBD5E1" stroke-width="0.6" transform="rotate(18 159.8 250)"/>
+      <rect x="151.6" y="253" width="4.4" height="13" rx="2.2" fill="${fingerFill}" stroke="#CBD5E1" stroke-width="0.6" transform="rotate(6 153.8 253)"/>
+      <rect x="144.6" y="254" width="4.4" height="13" rx="2.2" fill="${fingerFill}" stroke="#CBD5E1" stroke-width="0.6" transform="rotate(-6 146.8 254)"/>
+      <rect x="137.6" y="252" width="4.4" height="11" rx="2.2" fill="${fingerFill}" stroke="#CBD5E1" stroke-width="0.6" transform="rotate(-18 139.8 252)"/>
+    </g>
 
     <!-- คอ -->
     <path d="M90,96 L110,96 L110,116 C110,122 90,122 90,116 Z" fill="${headFill}" stroke="#CBD5E1" stroke-width="1"/>
+
+    <!-- หู: วงรีข้างศีรษะทั้งสองด้าน แยกสีออกจากศีรษะ -->
+    <ellipse cx="70" cy="68" rx="6" ry="10" fill="${earFill}" stroke="#CBD5E1" stroke-width="1"/>
+    <ellipse cx="130" cy="68" rx="6" ry="10" fill="${earFill}" stroke="#CBD5E1" stroke-width="1"/>
 
     <!-- ศีรษะ -->
     <ellipse cx="100" cy="66" rx="29" ry="32" fill="${headFill}" stroke="#CBD5E1" stroke-width="1"/>
@@ -2671,16 +2784,21 @@ function renderBodyMap(bodyParts) {
   const totalEl = document.getElementById("bodyMapTotal");
   if (!el) return;
 
+  // ✅ NEW: แยก "หู" ออกจากศีรษะ และแยก "มือ" กับ "นิ้วมือ", "เท้า" กับ "นิ้วเท้า" เป็นจุดของตัวเอง
+  // แต่ละจุด เพื่อให้เห็นชัดว่าอวัยวะไหนบาดเจ็บบ่อยกว่ากัน (เดิมรวมกันเป็นก้อนเดียวมองไม่ออก)
   const counts = {
-    head:     (bodyParts["คอ ศีรษะ"] || 0) + (bodyParts["ใบหน้า"] || 0) + (bodyParts["หู"] || 0),
-    eye:      (bodyParts["ตา"] || 0), // ✅ NEW: แยก "ตา" ออกจากศีรษะ เพื่อแสดงบนรูปหุ่นเป็นจุดต่างหาก
+    head:     (bodyParts["คอ ศีรษะ"] || 0) + (bodyParts["ใบหน้า"] || 0),
+    ear:      (bodyParts["หู"] || 0),
+    eye:      (bodyParts["ตา"] || 0),
     shoulder: (bodyParts["ไหล่"] || 0),
     arm:      (bodyParts["แขน"] || 0),
-    hand:     (bodyParts["มือ"] || 0) + (bodyParts["นิ้วมือ"] || 0),
+    hand:     (bodyParts["มือ"] || 0),
+    finger:   (bodyParts["นิ้วมือ"] || 0),
     torso:    (bodyParts["ลำตัว เอว"] || 0),
     back:     (bodyParts["หลัง"] || 0),
     leg:      (bodyParts["ขา"] || 0),
-    foot:     (bodyParts["เท้า"] || 0) + (bodyParts["นิ้วเท้า"] || 0),
+    foot:     (bodyParts["เท้า"] || 0),
+    toe:      (bodyParts["นิ้วเท้า"] || 0),
   };
   const multi = bodyParts["บาดเจ็บหลายส่วน"] || 0;
   const other = bodyParts["อวัยวะอื่นๆ"] || 0;
@@ -2719,19 +2837,78 @@ function renderBodyMap(bodyParts) {
 async function loadAccidentInsights() {
   const bodyEl       = document.getElementById("bodyMapChart");
   const causeDonutEl = document.getElementById("causeDonutChart");
-  const natureDonutEl= document.getElementById("natureDonutChart");
   const causeBarEl   = document.getElementById("causeBarChart");
-  const natureBarEl  = document.getElementById("natureBarChart");
-  [bodyEl, causeDonutEl, natureDonutEl, causeBarEl, natureBarEl].forEach(el => el && showLoading(el));
+  [bodyEl, causeDonutEl, causeBarEl].forEach(el => el && showLoading(el));
   try {
     const stats = await fetchAccidentStats(filterState.plant, filterState.month, filterState.year);
     renderBodyMap(stats.bodyParts);
     renderCauseNatureDonut(stats.causes, "causeDonutChart", "causeDonutTotal");
-    renderCauseNatureDonut(stats.natures, "natureDonutChart", "natureDonutTotal");
     renderHorizontalBar(stats.causes, "causeBarChart");
-    renderHorizontalBar(stats.natures, "natureBarChart");
   } catch (err) {
-    [bodyEl, causeDonutEl, natureDonutEl, causeBarEl, natureBarEl].forEach(el => {
+    [bodyEl, causeDonutEl, causeBarEl].forEach(el => {
+      if (el) el.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
+    });
+  }
+}
+
+// ✅ NEW: แสดงกราฟแท่งแนวนอนพร้อมตัวเลขรวมกำกับที่หัวข้อ (badge-count) — ใช้ร่วมกันกับกราฟสถิติ
+// เชิงลึกทั้งหมดในหัวข้อ "สถิติเชิงลึกอุบัติเหตุ" เพื่อไม่ให้โค้ดซ้ำซ้อน
+function renderHorizontalBarWithTotal(entries, elId, totalElId, unitLabel) {
+  const el = document.getElementById(elId);
+  const totalEl = document.getElementById(totalElId);
+  if (!el) return;
+  const total = entries.reduce((s, [, v]) => s + v, 0);
+  if (totalEl) totalEl.textContent = `${formatNum(total)} ${unitLabel || 'ครั้ง'}`;
+  if (!entries.length || total === 0) {
+    el.innerHTML = `<div class="skeleton-row">❌ ไม่พบข้อมูลตามตัวกรองที่เลือก</div>`;
+    return;
+  }
+  const maxVal = Math.max(...entries.map(([, v]) => v), 1);
+  const palette = ["blue", "green", "amber", "purple", "red"];
+  el.innerHTML = entries.map(([label, value], i) => `
+    <div class="bar-item">
+      <span class="bar-label" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+      <div class="bar-track">
+        <div class="bar-fill ${palette[i % palette.length]}" style="width:${maxVal ? (value / maxVal) * 100 : 0}%">
+          ${value > 0 ? formatNum(value) : ''}
+        </div>
+      </div>
+      <span class="bar-value">${formatNum(value)}</span>
+    </div>
+  `).join("");
+}
+
+async function loadAccidentAnalytics() {
+  const ids = ["yearlyAccidentChart", "lostDaysChart", "deptAccidentChart", "ageRangeChart", "tenureRangeChart", "timeRangeChart", "nationalityChart"];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) showLoading(el); });
+  try {
+    const a = await fetchAccidentAnalytics(filterState.plant);
+
+    // 1) สถิติการเกิดอุบัติเหตุระหว่างปี 2556 - 2567 (แสดงครบทุกปีแม้ไม่มีข้อมูล = 0)
+    const yearEntries = [];
+    for (let y = 2556; y <= 2567; y++) yearEntries.push([String(y), Number(a.yearlyCounts[y]) || 0]);
+    renderHorizontalBarWithTotal(yearEntries, "yearlyAccidentChart", "yearlyAccidentTotal", "ครั้ง");
+
+    // 2) จำนวนวันทำงานที่สูญเสียรายเดือน ปี 2567 (แสดงครบ 12 เดือน)
+    const lostDaysEntries = MONTH_NAMES_TH.map((label, i) => {
+      const mm = String(i + 1).padStart(2, '0');
+      return [label, Number(a.monthlyLostDays[mm]) || 0];
+    });
+    renderHorizontalBarWithTotal(lostDaysEntries, "lostDaysChart", "lostDaysTotal", "วัน");
+
+    // หน่วยงาน / สัญชาติ: หมวดหมู่อิสระ ไม่มีลำดับตายตัว → เรียงจากมากไปน้อยให้เห็นอันดับชัดเจน
+    const sortDesc = (obj) => Object.entries(obj || {}).sort((x, y) => y[1] - x[1]);
+    renderHorizontalBarWithTotal(sortDesc(a.byDepartment), "deptAccidentChart", "deptAccidentTotal", "ครั้ง");
+    renderHorizontalBarWithTotal(sortDesc(a.byNationality), "nationalityChart", "nationalityTotal", "ครั้ง");
+    // ช่วงอายุ / ช่วงอายุงาน / ช่วงเวลา: มีลำดับตามธรรมชาติอยู่แล้ว (backend ส่งมาเรียงลำดับไว้ให้)
+    // จึงคงลำดับเดิมตามที่ได้รับมา ไม่เรียงตามจำนวนซ้ำ เพื่อให้อ่านง่ายเป็นสเกลต่อเนื่อง
+    const keepOrder = (obj) => Object.entries(obj || {});
+    renderHorizontalBarWithTotal(keepOrder(a.byAgeRange), "ageRangeChart", "ageRangeTotal", "ครั้ง");
+    renderHorizontalBarWithTotal(keepOrder(a.byTenureRange), "tenureRangeChart", "tenureRangeTotal", "ครั้ง");
+    renderHorizontalBarWithTotal(keepOrder(a.byTimeRange), "timeRangeChart", "timeRangeTotal", "ครั้ง");
+  } catch (err) {
+    ids.forEach(id => {
+      const el = document.getElementById(id);
       if (el) el.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
     });
   }
@@ -2748,7 +2925,8 @@ async function loadAllDashboardData() {
       loadCarChart(),
       loadCarMiniTrend(),
       loadLegal(),
-      loadAccidentInsights()
+      loadAccidentInsights(),
+      loadAccidentAnalytics()
     ]);
   } catch (err) {
     showToast(`❌ ${err.message}`, true);
@@ -2846,7 +3024,7 @@ const ACCIDENT_OPTIONS = {
   injured_parts: ["ตา","หู","คอ ศีรษะ","ใบหน้า","มือ","นิ้วมือ","แขน","ลำตัว เอว","หลัง","ไหล่","เท้า","นิ้วเท้า","ขา","บาดเจ็บหลายส่วน","อวัยวะอื่นๆ"],
   cause: ["ยานพาหนะ","เครื่องจักร","ตกจากที่สูง","ของหล่นทับ","ลื่นล้ม","ความร้อน","ไฟฟ้า","สิ่งมีพิษ สารเคมี","ระเบิด","เศษวัสดุ","ถูกทำร้ายร่างกาย","เสียงในโรงงาน","วัตถุหรือสิ่งของทับ กระแทก","โรคเนื่องจากการทำงาน","ยกของหนัก","อื่นๆ"],
   nature: ["ตกจากที่สูง","หกล้ม ลื่นล้ม","อาคารหรือสิ่งก่อสร้างพังทับ","วัตถุหรือสิ่งของพังทลาย/หล่น","วัตถุหรือสิ่งของหนีบทับ","วัตถุหรือสิ่งของตัด บาด ทิ่ม","วัตถุหรือสิ่งของกระเด็นเข้าตา","ยกหรือเคลื่อนย้ายของหนัก","อาการเจ็บป่วยจากท่าทางการทำงาน","อุบัติเหตุจากยานพาหนะ","วัตถุหรือสิ่งของระเบิด","ไฟฟ้าช็อต","ผลจากความร้อนสูงหรือสัมผัสความร้อน","ผลจากความเย็นจัดหรือสัมผัสความเย็น","สัมผัสสิ่งมีพิษ สารเคมี","แพ้จากการสัมผัสสิ่งของ","อันตรายจากแสง","อันตรายจากรังสี","ถูกทำร้ายร่างกาย","ถูกสัตว์ทำร้าย","โรคเนื่องจากการทำงาน","อื่นๆ"],
-  severity_type: ["ปฐมพยาบาล (First Aid)","รักษาพยาบาล (Medical Treatment)","หยุดงาน (Lost Time Injury)","ทุพพลภาพ (Disability)","เสียชีวิต (Fatality)"]
+  severity_type: ["ปฐมพยาบาล (First Aid)","รักษาพยาบาล (Medical Treatment)","สูญเสียอวัยวะบางส่วน (Partial Disability)","ทุพพลภาพ (Disability)","เสียชีวิต (Fatality)"]
 };
 
 let employeeCache = null;
@@ -2894,7 +3072,7 @@ function renderAccidentForm() {
         <div class="accident-section-head">
           <div class="accident-section-icon">🏢</div>
           <div class="accident-section-titles">
-            <div class="accident-section-title">ข้อมูลบริษัทและพนักงาน</div>
+            <div class="accident-section-title">ข้อมูลพนักงาน</div>
             <div class="accident-section-sub">ผู้ประสบอุบัติเหตุ — ค้นหาจากรายชื่อพนักงานเพื่อดึงข้อมูลอัตโนมัติ</div>
           </div>
         </div>
@@ -2954,7 +3132,10 @@ function renderAccidentForm() {
         <div class="accident-section-body">
           <div class="field-grid">
             <div class="field"><label>วันที่เกิดอุบัติเหตุ <span style="color:var(--red)">*</span></label><input id="acc_accident_date" type="date"></div>
-            <div class="field"><label>เวลาที่เกิดอุบัติเหตุ</label><input id="acc_accident_time" type="time"></div>
+            <div class="field"><label>เวลาที่เกิดอุบัติเหตุ (24 ชม.)</label>
+              <input id="acc_accident_time" type="text" inputmode="numeric" placeholder="HH:MM เช่น 14:30" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" maxlength="5">
+              <div class="hint">กรอกเวลาแบบ 24 ชั่วโมง (00:00 - 23:59)</div>
+            </div>
             <div class="field"><label>เครื่องจักร เครื่องมือ/อุปกรณ์ที่เกี่ยวข้อง</label><input id="acc_equipment" type="text"></div>
             <div class="field"><label>สถานที่เกิดอุบัติเหตุ</label><input id="acc_location" type="text"></div>
           </div>
@@ -2965,7 +3146,7 @@ function renderAccidentForm() {
         <div class="accident-section-head">
           <div class="accident-section-icon">📝</div>
           <div class="accident-section-titles">
-            <div class="accident-section-title">รายละเอียดเหตุการณ์</div>
+            <div class="accident-section-title">รายละเอียดเหตุการณ์อุบัติเหตุ</div>
             <div class="accident-section-sub">อธิบายเหตุการณ์ ผลที่เกิดขึ้น และการรักษาเบื้องต้น</div>
           </div>
         </div>
@@ -3022,7 +3203,7 @@ function renderAccidentForm() {
         <div class="accident-section-head">
           <div class="accident-section-icon">⚖️</div>
           <div class="accident-section-titles">
-            <div class="accident-section-title">ความรุนแรงและการหยุดงาน</div>
+            <div class="accident-section-title">ความรุนแรงของอุบัติเหตุ</div>
             <div class="accident-section-sub">ระดับความรุนแรงและระยะเวลาหยุดงาน (ถ้ามี)</div>
           </div>
         </div>
@@ -3072,10 +3253,41 @@ function renderAccidentForm() {
   const LOST_TIME_SEVERITY_MAP = {
     "ปฐมพยาบาล (First Aid)": "ไม่หยุดงาน",
     "รักษาพยาบาล (Medical Treatment)": "ไม่หยุดงาน",
-    "หยุดงาน (Lost Time Injury)": "หยุดงาน",
+    "สูญเสียอวัยวะบางส่วน (Partial Disability)": "หยุดงาน",
     "ทุพพลภาพ (Disability)": "หยุดงาน",
     "เสียชีวิต (Fatality)": "หยุดงาน",
   };
+  // ✅ NEW: input type="time" ของเบราว์เซอร์จะแสดงผลตาม locale ของเครื่อง/OS ผู้ใช้ (บางเครื่องเป็น
+  // AM/PM 12 ชม. โดยอัตโนมัติ) จึงบังคับให้เป็น 24 ชม. เสมอไม่ได้ 100% ด้วย type="time"
+  // วิธีแก้: เปลี่ยนเป็น text input ที่ auto-format ใส่ ":" ให้ระหว่างพิมพ์ และตรวจสอบรูปแบบ
+  // HH:MM (00-23 : 00-59) ก่อนบันทึกเสมอ เพื่อให้ค่าที่ได้เป็น 24 ชม. แน่นอนไม่ว่าจะใช้เครื่องไหน
+  const accTimeInput = document.getElementById("acc_accident_time");
+  if (accTimeInput) {
+    accTimeInput.addEventListener("input", () => {
+      let digits = accTimeInput.value.replace(/[^0-9]/g, "").slice(0, 4);
+      if (digits.length >= 3) {
+        accTimeInput.value = `${digits.slice(0, 2)}:${digits.slice(2)}`;
+      } else {
+        accTimeInput.value = digits;
+      }
+    });
+    accTimeInput.addEventListener("blur", () => {
+      const v = accTimeInput.value.trim();
+      if (!v) { accTimeInput.classList.remove("error"); return; }
+      const m = v.match(/^([0-9]{1,2}):([0-9]{2})$/);
+      let valid = false;
+      if (m) {
+        const hh = Number(m[1]), mm = Number(m[2]);
+        if (hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) {
+          accTimeInput.value = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+          valid = true;
+        }
+      }
+      accTimeInput.classList.toggle("error", !valid);
+      if (!valid) showToast("รูปแบบเวลาไม่ถูกต้อง กรุณากรอกแบบ 24 ชม. เช่น 14:30", true);
+    });
+  }
+
   const severitySel = document.getElementById("acc_severity_type");
   const lostTimeSel = document.getElementById("acc_lost_time");
   if (severitySel && lostTimeSel) {
