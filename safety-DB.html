@@ -1427,7 +1427,7 @@ body {
         <div id="bodyMapChart"></div>
       </div>
       <div class="panel">
-        <h3>🩺 ระดับความรุนแรงของอุบัติเหตุ <span class="badge-count" id="causeDonutTotal">—</span></h3>
+        <h3>🔄 ลักษณะการเกิดอุบัติเหตุ <span class="badge-count" id="causeDonutTotal">—</span></h3>
         <div id="causeDonutChart"></div>
       </div>
     </div>
@@ -2223,7 +2223,7 @@ function getKpiScopeAggregate(grouped) {
 
   const scopeRows = filterState.year
     ? grouped.filter(g => g.month.slice(0, 4) === filterState.year)
-    : grouped.slice(); // ไม่เลือกช่วงเวลาเลย = ทุกช่วงเวลาที่มีข้อมูลอยู่
+    : grouped.slice();
 
   if (!scopeRows.length) return { view: null, isAggregate: true, scopeRows: [] };
 
@@ -2272,7 +2272,6 @@ async function loadKpi() {
     const daysNoIncidentMeta = daysAuto.lastAccidentDate
       ? `นับจากอุบัติเหตุหยุดงาน (LTI) ล่าสุด ${formatDateThai(daysAuto.lastAccidentDate)}`
       : "ยังไม่มีอุบัติเหตุหยุดงาน (LTI) บันทึกไว้";
-    // จำนวนวันหยุดงานรวม: ใช้ข้อมูลจริงจาก AccidentReport ตามตัวกรอง
     const accidentRowsForKpi = await fetchSheetData(CONFIG.SHEETS.ACCIDENT);
     const filteredAccidentRowsForKpi = accidentRowsForKpi.filter(r => {
       if (filterState.plant && !samePlant(r.company, filterState.plant)) return false;
@@ -2285,16 +2284,10 @@ async function loadKpi() {
       .filter(r => String(r.lost_time || "").includes("หยุดงาน") || String(r.severity_type || "").toLowerCase().includes("lost time"))
       .reduce((sum, r) => sum + (Number(r.leave_actual_days) || 0), 0);
 
-    // จำนวนผู้บาดเจ็บแยกสัญชาติ — นับบุคคลไม่ซ้ำด้วยรหัสพนักงาน (fallback เป็นชื่อ)
-    const injuredPeople = new Map();
-    filteredAccidentRowsForKpi.forEach(r => {
-      const key = String(r.emp_code || r.emp_name || "").trim();
-      if (!key) return;
-      if (!injuredPeople.has(key)) injuredPeople.set(key, String(r.nationality || "").trim());
-    });
+    
     let thaiInjured = 0, myanmarInjured = 0;
-    injuredPeople.forEach(n => {
-      const v = n.toLowerCase();
+    filteredAccidentRowsForKpi.forEach(r => {
+      const v = String(r.nationality || "").trim().toLowerCase();
       if (v.includes("ไทย") || v.includes("thai")) thaiInjured++;
       else if (v.includes("พม่า") || v.includes("เมียนมา") || v.includes("myanmar") || v.includes("burma")) myanmarInjured++;
     });
@@ -2331,8 +2324,8 @@ async function loadKpi() {
         target: "รวมจาก AccidentReport เฉพาะรายการหยุดงาน (LTI)",
         status: lostDaysTotal > 0 ? "warn" : "good",
         icon: "📅", change: "" },
-      { label: "จำนวนผู้บาดเจ็บ ไทย / เมียนมา", value: `${formatNum(thaiInjured)} / ${formatNum(myanmarInjured)}`,
-        target: "นับผู้บาดเจ็บไม่ซ้ำจาก AccidentReport",
+      { label: "จำนวนผู้บาดเจ็บ ไทย / ต่างด้าว", value: `${formatNum(thaiInjured)} / ${formatNum(myanmarInjured)}`,
+        target: "นับจำนวนครั้งบาดเจ็บ",
         status: "info",
         icon: "👥", change: "" },
       { label: "วันปลอดอุบัติเหตุ (อัตโนมัติ)", value: daysNoIncidentValue,
@@ -2368,8 +2361,6 @@ async function loadTrendChart() {
       .filter(g => g.month.slice(0, 4) === yearScope);
     if (scopeLabel) scopeLabel.textContent = `ปี ${Number(yearScope) + 543}`;
 
-    // ✅ NEW: สร้างข้อมูลให้ครบ 12 เดือนเสมอ (ม.ค.-ธ.ค.) แม้เดือนนั้นจะไม่มีข้อมูล (= 0)
-    // เพื่อให้แกนกราฟแสดงครบทั้งปีเหมือนตัวอย่างที่ต้องการ แทนที่จะแสดงเฉพาะเดือนที่มีข้อมูลเท่านั้น
     const byMonthNum = {};
     groupedRaw.forEach(g => { byMonthNum[Number(g.month.slice(5, 7))] = g; });
     const labels     = MONTH_NAMES_TH.slice();
@@ -2381,10 +2372,9 @@ async function loadTrendChart() {
       notLtiVals.push(g ? (Number(g.not_lti) || 0) : 0);
     }
 
-    // ✅ NEW: เพิ่มคอลัมน์ "รวม" ปิดท้ายกราฟ = ผลรวมทั้งปีของหยุดงาน (LTI) และไม่หยุดงาน แยกกัน
     const ltiTotal    = ltiVals.reduce((s, v) => s + v, 0);
     const notLtiTotal = notLtiVals.reduce((s, v) => s + v, 0);
-    const totalColumnIndex = labels.length; // ตำแหน่งคอลัมน์ "รวม" (หลังเดือน ธ.ค.)
+    const totalColumnIndex = labels.length;
     labels.push("รวม");
     ltiVals.push(ltiTotal);
     notLtiVals.push(notLtiTotal);
@@ -2854,7 +2844,7 @@ async function loadAccidentInsights() {
   try {
     const stats = await fetchAccidentStats(filterState.plant, filterState.month, filterState.year);
     renderBodyMap(stats.bodyParts);
-    renderCauseNatureDonut(stats.severityTypes, "causeDonutChart", "causeDonutTotal", "ระดับความรุนแรง");
+    renderCauseNatureDonut(stats.natures, "causeDonutChart", "causeDonutTotal", "ลักษณะการเกิดอุบัติเหตุ");
     renderHorizontalBar(stats.causes, "causeBarChart");
   } catch (err) {
     [bodyEl, causeDonutEl, causeBarEl].forEach(el => {
