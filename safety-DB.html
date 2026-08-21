@@ -1427,13 +1427,13 @@ body {
         <div id="bodyMapChart"></div>
       </div>
       <div class="panel">
-        <h3>🧩 ลักษณะการเกิดอุบัติเหตุ <span class="badge-count" id="causeDonutTotal">—</span></h3>
+        <h3>🩺 ระดับความรุนแรงของอุบัติเหตุ <span class="badge-count" id="causeDonutTotal">—</span></h3>
         <div id="causeDonutChart"></div>
       </div>
     </div>
 
     <div class="panel" style="margin-bottom:18px;">
-      <h3>📊 ลักษณะการเกิดอุบัติเหตุ (กราฟแท่งแนวนอน)</h3>
+      <h3>🔍 สาเหตุที่ทำให้เกิดอุบัติเหตุ (กราฟแท่งแนวนอน)</h3>
       <div id="causeBarChart" class="bar-chart"></div>
     </div>
 
@@ -1611,7 +1611,7 @@ body {
 <script>
 // ============ Configuration ============
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbw1-xoczkrfoYYdkvzmBGzl8uKgDdsLS1_pGU3JkUEUg1ZhUhqVWZ0S1TOWgeSkyYd8/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyG-wT-yuwH7wiXGfqnSRZYRynbydjUxNpv2k4Oi3RLmF9uXBUYPi2aJiQSnH2mh-oV/exec",
   SHEETS: {
     KPI:          "KPI_Monthly",
     INSPECTION:   "Inspection",
@@ -1800,7 +1800,6 @@ async function fetchDaysNoIncident(plant) {
   }
 }
 
-// ✅ NEW: ดึงข้อมูลสรุปจาก AccidentReport (รายเดือน / จุดบาดเจ็บ / สาเหตุ / ลักษณะ)
 async function fetchAccidentStats(plant, month, year) {
   const qs = new URLSearchParams({ calc: "accidentStats" });
   if (plant) qs.set("plant", plant);
@@ -1811,20 +1810,20 @@ async function fetchAccidentStats(plant, month, year) {
     const response = await fetchWithRetry(url);
     const text = await response.text();
     const json = JSON.parse(text);
-    if (!json || !json.success) return { months: {}, bodyParts: {}, causes: {}, natures: {} };
+    if (!json || !json.success) return { months: {}, bodyParts: {}, causes: {}, natures: {}, severityTypes: {} };
     return {
       months:    json.months    || {},
       bodyParts: json.bodyParts || {},
       causes:    json.causes    || {},
       natures:   json.natures   || {},
+      severityTypes: json.severityTypes || {},
     };
   } catch (err) {
     console.error("fetchAccidentStats error:", err);
-    return { months: {}, bodyParts: {}, causes: {}, natures: {} };
+    return { months: {}, bodyParts: {}, causes: {}, natures: {}, severityTypes: {} };
   }
 }
 
-// ✅ NEW: ดึงข้อมูลสถิติเชิงลึก (รายปีย้อนหลัง / วันสูญเสีย / หน่วยงาน / อายุ / อายุงาน / ช่วงเวลา / สัญชาติ)
 async function fetchAccidentAnalytics(plant) {
   const qs = new URLSearchParams({ calc: "accidentAnalytics" });
   if (plant) qs.set("plant", plant);
@@ -1873,7 +1872,6 @@ function populateMonthOptions(selectEl) {
     }).join("");
 }
 
-// ต้องตรงกับ normalizePlant() ฝั่ง Code.gs เพื่อไม่ให้ผลการกรองไม่ตรงกันระหว่าง client/server
 const PLANT_NAME_CORRECTIONS = {
   'bitwise (thailand) co. ltd': 'bitwise (thailand) co. ltd',
   'bitwise thailand co ltd': 'bitwise (thailand) co. ltd',
@@ -2015,9 +2013,6 @@ function renderDonut(segments, centerLabel, centerValue) {
   </svg>`;
 }
 
-// ✅ NEW: รองรับพารามิเตอร์ totals (ทางเลือก) — ถ้าใส่มา จะแสดงเป็น "ตัวเลขรวม" อยู่ใต้กราฟ
-// แท่งคู่ของแต่ละเดือน (แทนที่จะวาดเป็นแท่งที่ 3 ซ้อนแยกต่างหากแบบเดิม) ทำให้อ่านง่ายขึ้นว่า
-// หยุดงาน (LTI) กับ ไม่หยุดงาน เทียบกันเดือนต่อเดือนอย่างไร พร้อมเห็นยอดรวมกำกับไว้ในตัว
 function renderGroupedBarChart(labels, seriesList, totals, highlightIndex) {
   const hasTotals = Array.isArray(totals);
   const padL = 40, padR = 14, padT = 16, padB = hasTotals ? 42 : 24;
@@ -2040,14 +2035,14 @@ function renderGroupedBarChart(labels, seriesList, totals, highlightIndex) {
     gridLines.push(`<line x1="${padL}" y1="${gy}" x2="${w - padR}" y2="${gy}" stroke="#E2E8F0" stroke-width="1"/>`);
     gridLines.push(`<text x="${padL - 8}" y="${gy + 4}" font-size="10" fill="#64748B" text-anchor="end" font-family="Sarabun, sans-serif">${Math.round(gv)}</text>`);
   }
-  // ✅ NEW: เส้นคั่นประก่อนคอลัมน์ "รวม" (ถ้ามีการระบุ highlightIndex) เพื่อแยกให้เห็นชัดว่าเป็นยอดรวมทั้งปี ไม่ใช่ข้อมูลรายเดือน
+
   if (highlightIndex !== undefined && highlightIndex !== null && highlightIndex > 0 && highlightIndex < labels.length) {
     const dividerX = padL + stepX * highlightIndex;
     gridLines.push(`<line x1="${dividerX}" y1="${padT - 4}" x2="${dividerX}" y2="${padT + plotH + 4}" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="3 3"/>`);
   }
   const groups = labels.map((lab, i) => {
     const groupX = padL + stepX * i;
-    const isHighlight = (i === highlightIndex); // ✅ NEW: คอลัมน์ "รวม" จะได้ label ตัวหนา/เข้มกว่าคอลัมน์เดือนปกติ
+    const isHighlight = (i === highlightIndex);
     const bars = seriesList.map((s, si) => {
       const v = Number(s.values[i]) || 0;
       const barX = groupX + barGap + si * (barW + barGap);
@@ -2668,7 +2663,7 @@ function renderHorizontalBar(dataObj, elId) {
   `).join("");
 }
 
-function renderCauseNatureDonut(dataObj, elId, totalElId) {
+function renderCauseNatureDonut(dataObj, elId, totalElId, unitLabel) {
   const el = document.getElementById(elId);
   const totalEl = document.getElementById(totalElId);
   if (!el) return;
@@ -2859,9 +2854,8 @@ async function loadAccidentInsights() {
   try {
     const stats = await fetchAccidentStats(filterState.plant, filterState.month, filterState.year);
     renderBodyMap(stats.bodyParts);
-    // ใช้ "nature" แทน cause เพราะหน้าเดิมแสดงสาเหตุซ้ำใน donut + bar
-    renderCauseNatureDonut(stats.natures, "causeDonutChart", "causeDonutTotal");
-    renderHorizontalBar(stats.natures, "causeBarChart");
+    renderCauseNatureDonut(stats.severityTypes, "causeDonutChart", "causeDonutTotal", "ระดับความรุนแรง");
+    renderHorizontalBar(stats.causes, "causeBarChart");
   } catch (err) {
     [bodyEl, causeDonutEl, causeBarEl].forEach(el => {
       if (el) el.innerHTML = `<div class="skeleton-row">❌ ${escapeHtml(err.message)}</div>`;
@@ -3464,6 +3458,7 @@ function startAccidentEdit(row) {
 let activeSchemaKey  = "KPI";
 let editingRowIndex  = null;
 let editInitialized  = false;
+let employeeSearchTerm = "";
 
 function initEditView() {
   if (editInitialized) return;
@@ -3492,6 +3487,23 @@ function initEditFilterBar() {
   }));
 }
 
+function initEmployeeSearch() {
+  const input = document.getElementById("employeeQuickSearch");
+  const clear = document.getElementById("employeeClearSearch");
+  if (!input) return;
+  input.value = employeeSearchTerm;
+  input.oninput = () => {
+    employeeSearchTerm = input.value.trim().toLowerCase();
+    loadTableData();
+  };
+  if (clear) clear.onclick = () => {
+    input.value = "";
+    employeeSearchTerm = "";
+    loadTableData();
+    input.focus();
+  };
+}
+
 function renderTabs() {
   const tabsEl = document.getElementById("sheetTabs");
   tabsEl.innerHTML = Object.entries(SCHEMAS).map(([key, schema]) =>
@@ -3506,8 +3518,10 @@ function switchSchema(key) {
   activeSchemaKey = key;
   renderTabs();
   resetForm();
+  employeeSearchTerm = "";
   renderFormFields();
   loadTableData();
+  if (key === "EMPLOYEE") initEmployeeSearch();
   if (key === "ACCIDENT") getEmployeeCache();
 }
 
@@ -3518,11 +3532,16 @@ function renderFormFields() {
   if (schema.custom) { renderAccidentForm(); return; }
 
   const employeeNote = activeSchemaKey === "EMPLOYEE" ? `
-    <div class="field wide" style="background:var(--primary-bg);border:1.5px dashed var(--primary);border-radius:8px;padding:10px 14px;">
-      <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">
-        👤 <b>จัดการข้อมูลพนักงาน:</b> สามารถเพิ่ม แก้ไข และลบข้อมูลได้จากตารางด้านล่าง
-        โดยข้อมูลจะบันทึกลงชีต <b>Employee</b> โดยตรง และใช้หมายเลขแถวจริงของ Google Sheet เพื่อป้องกันการแก้ไขผิดแถว
+    <div class="field wide" style="background:var(--primary-bg);border:1.5px dashed var(--primary);border-radius:8px;padding:12px 14px;">
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+        👤 <b>จัดการข้อมูลพนักงาน</b> — เพิ่ม / แก้ไข / ลบ ได้จากฟอร์มและตารางด้านล่าง
+        <br>🔒 ระบบตรวจ <b>รหัสพนักงานซ้ำ</b> ก่อนบันทึก และใช้ <b>หมายเลขแถวจริงของ Google Sheet</b> เพื่อแก้ไข/ลบให้ตรงรายการ
       </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+        <input id="employeeQuickSearch" type="search" placeholder="🔎 ค้นหารหัส / ชื่อ / แผนก / ตำแหน่ง..." style="flex:1;min-width:260px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:12.5px;background:#fff;">
+        <button type="button" class="btn btn-outline btn-sm" id="employeeClearSearch">ล้างค้นหา</button>
+      </div>
+      <div id="employeeSearchSummary" style="font-size:11px;color:var(--text-muted);margin-top:6px;"></div>
     </div>` : "";
   const autoCalcNote = (activeSchemaKey === "KPI") ? `
     <div class="field wide" style="background:var(--primary-bg);border:1.5px dashed var(--primary);border-radius:8px;padding:10px 14px;">
@@ -3603,12 +3622,10 @@ async function loadTableData() {
     const hasMonthField = schema.fields.some(f => f.key === 'month');
     const hasAccidentDateField = schema.fields.some(f => f.key === 'accident_date');
     
-    // --- ✅ FIX: รองรับการกรองปี/เดือนสำหรับ AccidentReport โดยใช้ accident_date ---
     if (hasMonthField) {
       if (editFilterState.month) rows = rows.filter(r => rowMonthValue(r) === editFilterState.month);
       else if (editFilterState.year) rows = rows.filter(r => { const m = rowMonthValue(r); return m && m.slice(0,4) === editFilterState.year; });
     } else if (hasAccidentDateField) {
-      // แปลง accident_date ให้เป็น YYYY-MM เพื่อใช้กรอง
       const getAccidentMonth = (r) => {
         const iso = toISODateString(r.accident_date) || (typeof r.accident_date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(r.accident_date) ? r.accident_date.slice(0, 10) : null);
         return iso ? iso.slice(0, 7) : null;
@@ -3620,7 +3637,6 @@ async function loadTableData() {
       }
     }
 
-    // กรอง Plant (AccidentReport ใช้ company, Employee ใช้ Plant ตัวพิมพ์ใหญ่, ชีตอื่นใช้ plant)
     if (editFilterState.plant) {
       let plantField = 'plant';
       if (hasAccidentDateField) {
@@ -3629,6 +3645,17 @@ async function loadTableData() {
         plantField = 'Plant';
       }
       rows = rows.filter(r => samePlant(r[plantField], editFilterState.plant));
+    }
+
+    if (activeSchemaKey === "EMPLOYEE" && employeeSearchTerm) {
+      rows = rows.filter(r => [
+        r["รหัสพนักงาน"], r["ชื่อ-นามสกุล"], r["แผนก"], r["ตำแหน่ง"], r["Plant"], r["สัญชาติ"]
+      ].some(v => String(v || "").toLowerCase().includes(employeeSearchTerm)));
+    }
+
+    const employeeSummary = document.getElementById("employeeSearchSummary");
+    if (employeeSummary && activeSchemaKey === "EMPLOYEE") {
+      employeeSummary.textContent = employeeSearchTerm ? `พบ ${rows.length.toLocaleString('th-TH')} รายการจากคำค้นหา` : `พนักงานทั้งหมด ${rows.length.toLocaleString('th-TH')} รายการ`;
     }
 
     if (!rows.length) {
@@ -3646,8 +3673,8 @@ async function loadTableData() {
           return `<td>${escapeHtml(val)}</td>`;
         }).join("")}
         <td class="row-actions">
-          <button class="edit-btn"   data-row="${row._rowIndex}">✏️</button>
-          <button class="delete-btn" data-row="${row._rowIndex}">🗑️</button>
+          <button class="edit-btn" title="แก้ไข" data-row="${row._rowIndex}">✏️ แก้ไข</button>
+          <button class="delete-btn" title="ลบ" data-row="${row._rowIndex}">🗑️ ลบ</button>
         </td>
       </tr>
     `).join("");
@@ -3765,12 +3792,6 @@ document.getElementById("refreshBtn").addEventListener("click", () => {
   else loadTableData();
   showToast("🔄 รีเฟรชข้อมูลแล้ว");
 });
-
-setInterval(() => {
-  if (document.getElementById("dashboardView").classList.contains("active")) {
-    loadAllDashboardData();
-  }
-}, 300000);
 
 console.log('✅ Executive Safety Dashboard - Refined Blue-White Theme loaded!');
 </script>
