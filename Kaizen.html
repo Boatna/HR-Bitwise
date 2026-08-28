@@ -1598,7 +1598,11 @@ body {
           </div>
 
           <div class="flex items-center gap-2 flex-wrap mt-3 pt-3 mb-4" style="border-top:1px solid var(--line-soft);">
-            <input id="mgrSearch" type="text" placeholder="🔎 ค้นหารหัส / ชื่อพนักงาน / หัวข้อ / แผนก..." class="input-field text-sm flex-1 min-w-[220px]" aria-label="ค้นหา Kaizen">
+            <select id="mgrScopeFilter" class="input-field w-auto text-sm" aria-label="ขอบเขตการแสดงผล">
+              <option value="mine">🏢 แผนกของฉัน</option>
+              <option value="all">🌐 ทุกแผนก</option>
+            </select>
+            <input id="mgrSearch" type="text" placeholder="🔎 ค้นหารหัสพนักงาน / ชื่อ / รหัส Kaizen / หัวข้อ (ค้นได้ทุกแผนก)..." class="input-field text-sm flex-1 min-w-[220px]" aria-label="ค้นหา Kaizen">
             <select id="mgrStatusFilter" class="input-field w-auto text-sm" aria-label="กรองตามสถานะ">
               <option value="">ทุกสถานะ</option>
               <option value="รอหัวหน้าแผนกตรวจ">รอหัวหน้าแผนกตรวจ</option>
@@ -1609,6 +1613,7 @@ body {
             <button id="btnAdvancedSearch" class="btn-secondary text-sm flex items-center gap-1" aria-label="ค้นหาขั้นสูง">🔍 ค้นหาขั้นสูง</button>
           </div>
 
+          <p class="text-xs mb-3" style="color:var(--ink-faint);">💡 ค่าเริ่มต้น: หัวหน้าแผนกจะเห็นเฉพาะงานแผนกตัวเอง ส่วนผู้จัดการจะเห็นทุกแผนก (เพราะต้องอนุมัติขั้นสุดท้ายให้ทุกแผนก) — สลับมุมมองได้ที่ช่อง "ขอบเขตการแสดงผล" หรือพิมพ์ค้นหารหัสพนักงาน/ชื่อเพื่อค้นข้ามแผนกได้ทันที</p>
           <div id="mgrCardsContainer" class="kz-cards-wrap"></div>
           <div id="mgrEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
             <div class="text-3xl mb-2">📭</div>ไม่มีรายการ
@@ -1715,7 +1720,10 @@ body {
                 </select>
               </div>
             </div>
-            <button id="btnRefreshProgress" class="btn-secondary text-sm">🔄 โหลดใหม่</button>
+            <div class="flex items-center gap-2">
+              <button id="btnExportProgressExcel" class="btn-secondary text-sm" aria-label="ส่งออกเป็น Excel">📥 Export Excel</button>
+              <button id="btnRefreshProgress" class="btn-secondary text-sm">🔄 โหลดใหม่</button>
+            </div>
           </div>
         </div>
 
@@ -2033,7 +2041,7 @@ body {
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZmVWxU7cPooDd8gM67UUbNyFxeesoEGh20D3gatlPFEfmReSQj5TZsKr0JnhBLoeM7w/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhemetg_MjMIe65xK6MiZ3HBrqpQqlWYBdaEv9dqcSfUNSasy_Y6lamNF4iV3A3zMmAA/exec';
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
     const CONFIG_MAX_FILES_PER_KAIZEN = 10;
@@ -2319,11 +2327,12 @@ body {
           rejected.push(f.name + ' (ใหญ่เกิน 10MB)');
           return;
         }
-        currentTotalSize += f.size;
-        if (currentTotalSize > MAX_TOTAL_SIZE) {
+        var prospectiveTotal = currentTotalSize + f.size;
+        if (prospectiveTotal > MAX_TOTAL_SIZE) {
           rejected.push(f.name + ' (ขนาดรวมเกิน 50MB)');
           return;
         }
+        currentTotalSize = prospectiveTotal;
         selectedFiles.push({ file: f, name: f.name, type: f.type });
       });
 
@@ -3048,11 +3057,16 @@ body {
     function loadQueue() {
       if (isLoading) return;
       showLoading();
-      callAppsScript('getReviewQueue', { reviewerId: CURRENT_USER.id })
+      var scopeSel = document.getElementById('mgrScopeFilter');
+      var keyword = document.getElementById('mgrSearch').value.trim();
+      // ส่ง scope ปัจจุบันไปด้วย; ถ้ายังไม่เคยตั้งค่า (โหลดครั้งแรก) จะส่งค่าว่างไปให้ฝั่งเซิร์ฟเวอร์เลือก default ตามบทบาทเอง
+      var scope = (scopeSel && scopeSel.dataset.userSet === '1') ? scopeSel.value : '';
+      callAppsScript('getReviewQueue', { reviewerId: CURRENT_USER.id, scope: scope, keyword: keyword })
         .then(function(res) {
           hideLoading();
           if (!res.success) { showError(res.message); return; }
           QUEUE_RECORDS = res.records || [];
+          if (scopeSel && res.scope) scopeSel.value = res.scope;
           renderMgrKPI();
           renderMgrTable();
         })
@@ -3928,13 +3942,13 @@ body {
       document.getElementById('progPercent').textContent = (summary.achievedPercent || 0) + '%';
     }
 
-    function renderProgressTable() {
+    // ใช้ร่วมกันทั้งตอน render ตารางและตอน export Excel เพื่อให้ผลลัพธ์ตรงกับสิ่งที่เห็นบนหน้าจอเป๊ะ ๆ
+    function getFilteredProgressList_() {
       var search = document.getElementById('progressSearch').value.trim().toLowerCase();
-      var month = Number(document.getElementById('progressMonth').value) || progressSelectedMonth;
       progressPlantFilter = document.getElementById('progressPlantFilter').value || '';
       progressDeptFilter = document.getElementById('progressDeptFilter').value || '';
 
-      var filtered = PROGRESS_EMPLOYEES.filter(function(e) {
+      return PROGRESS_EMPLOYEES.filter(function(e) {
         var matchSearch = !search ||
           (e.name || '').toLowerCase().indexOf(search) > -1 ||
           (e.department || '').toLowerCase().indexOf(search) > -1 ||
@@ -3944,6 +3958,11 @@ body {
         var matchDept = !progressDeptFilter || e.department === progressDeptFilter;
         return matchSearch && matchPlant && matchDept;
       });
+    }
+
+    function renderProgressTable() {
+      var month = Number(document.getElementById('progressMonth').value) || progressSelectedMonth;
+      var filtered = getFilteredProgressList_();
 
       var tbody = document.getElementById('progressTableBody');
       tbody.innerHTML = '';
@@ -4125,9 +4144,6 @@ body {
       });
     }
 
-    // EXPORT พนักงาน (ชีต HR_Employees) เป็นไฟล์ Excel (.xlsx)
-    // ใช้ข้อมูลชุดเดียวกับที่แสดงในตาราง "จัดการข้อมูลพนักงาน" (ซึ่งดึงมาจาก HR_Employees ผ่าน getAllEmployeesRaw)
-    // และ export เฉพาะรายการที่ผ่านการค้นหา/กรองอยู่ในขณะนั้น ให้ตรงกับสิ่งที่เห็นบนหน้าจอ
     function exportEmployeeManageToExcel() {
       if (typeof XLSX === 'undefined') {
         Swal.fire({ icon: 'error', title: 'ไม่สามารถโหลดไลบรารี Excel ได้', text: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่อีกครั้ง', confirmButtonColor: '#1B6E4C' });
@@ -4178,6 +4194,63 @@ body {
       var pad = function(n) { return String(n).padStart(2, '0'); };
       var stamp = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '_' + pad(now.getHours()) + pad(now.getMinutes());
       var fileName = 'HR_Employees_' + stamp + '.xlsx';
+
+      XLSX.writeFile(wb, fileName);
+    }
+
+    function exportProgressToExcel() {
+      if (typeof XLSX === 'undefined') {
+        Swal.fire({ icon: 'error', title: 'ไม่สามารถโหลดไลบรารี Excel ได้', text: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่อีกครั้ง', confirmButtonColor: '#1B6E4C' });
+        return;
+      }
+
+      if (!PROGRESS_EMPLOYEES || PROGRESS_EMPLOYEES.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'ยังไม่มีข้อมูล', text: 'กรุณากดโหลดข้อมูลก่อน export', confirmButtonColor: '#1B6E4C' });
+        return;
+      }
+
+      var rows = getFilteredProgressList_();
+      if (rows.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'ไม่พบข้อมูลที่จะ export', text: 'ลองล้างคำค้นหา/ตัวกรองแล้วลองใหม่อีกครั้ง', confirmButtonColor: '#1B6E4C' });
+        return;
+      }
+
+      var month = Number(document.getElementById('progressMonth').value) || progressSelectedMonth;
+      var monthLabel = monthNamesTH[(month || 1) - 1] || ('เดือน ' + month);
+      var beYear = Number(document.getElementById('progressYear').value) || progressBeYear;
+
+      var headers = ['รหัสพนักงาน', 'ชื่อ-สกุล', 'Plant', 'แผนก', 'เป้าหมาย/ปี', 'ส่งแล้ว(สะสม)', 'คงเหลือ', '% ความคืบหน้า', 'สถานะ', 'จำนวนเดือน ' + monthLabel];
+      var aoa = [headers];
+
+      rows.forEach(function(e) {
+        var monthCount = (e.monthly && e.monthly[month] !== undefined) ? e.monthly[month] : 0;
+        aoa.push([
+          e.empId || '',
+          e.name || '',
+          e.plant || '',
+          e.department || '',
+          Number(e.target) || 0,
+          Number(e.total) || 0,
+          Number(e.remaining) || 0,
+          Number(e.percent) || 0,
+          e.achieved ? 'ถึงเป้าหมาย' : 'ยังไม่ถึง',
+          Number(monthCount) || 0
+        ]);
+      });
+
+      var ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = [
+        { wch: 12 }, { wch: 26 }, { wch: 18 }, { wch: 22 },
+        { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 16 }
+      ];
+
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'ความคืบหน้า Kaizen');
+
+      var now = new Date();
+      var pad = function(n) { return String(n).padStart(2, '0'); };
+      var stamp = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '_' + pad(now.getHours()) + pad(now.getMinutes());
+      var fileName = 'Kaizen_ความคืบหน้า_' + (beYear || '') + '_' + monthLabel + '_' + stamp + '.xlsx';
 
       XLSX.writeFile(wb, fileName);
     }
@@ -4689,11 +4762,16 @@ body {
         loadHrDashboard(document.getElementById('hrDashYear').value);
       });
 
-      document.getElementById('mgrSearch').addEventListener('input', debounce(renderMgrTable, 300));
+      document.getElementById('mgrSearch').addEventListener('input', debounce(function mgrSearchDebounced() { loadQueue(); }, 400));
       document.getElementById('mgrStatusFilter').addEventListener('change', renderMgrTable);
+      document.getElementById('mgrScopeFilter').addEventListener('change', function() {
+        this.dataset.userSet = '1';
+        loadQueue();
+      });
       document.getElementById('btnAdvancedSearch').addEventListener('click', showAdvancedSearch);
 
       document.getElementById('progressSearch').addEventListener('input', debounce(renderProgressTable, 300));
+      document.getElementById('btnExportProgressExcel').addEventListener('click', exportProgressToExcel);
       document.getElementById('btnRefreshProgress').addEventListener('click', function() {
         loadMonthlyProgress(document.getElementById('progressYear').value);
       });
