@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Employee Marketplace | ตลาดนัดพนักงาน</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- SweetAlert2 for polished alerts -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- 1. NAVIGATION BAR -->
+  <!-- ========================================================================= -->
+  <header class="sticky top-0 z-40 glass-nav border-b border-slate-200/80 shadow-sm transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-4">
+        
+        <!-- Logo & Brand -->
+        <div class="flex items-center gap-3 cursor-pointer select-none" onclick="filterCategory('all'); resetSearch();">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <i class="ph-bold ph-storefront text-2xl"></i>
+          </div>
+          <div>
+            <span class="font-bold text-lg text-slate-900 leading-none tracking-tight block">Employee Market</span>
+            <span class="text-xs text-blue-600 font-medium">ตลาดนัดเพื่อนพนักงาน</span>
+          </div>
+        </div>
+
+        <!-- Search Bar (Desktop) -->
+        <div class="hidden md:flex flex-1 max-w-md mx-4">
+          <div class="relative w-full">
+            <i class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+            <input
+              type="text"
+              id="searchInputDesktop"
+              placeholder="ค้นหาชื่อสินค้า, แบรนด์, หรือผู้ขาย..."
+              class="w-full pl-10 pr-4 py-2 bg-slate-100/90 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+              oninput="handleSearch(this.value)"
+            />
+          </div>
+        </div>
+
+        <!-- Right Actions: Sell Button & Auth Profile -->
+        <div class="flex items-center gap-2.5">
+          <!-- Sell Button -->
+          <button
+            onclick="openSellModal()"
+            class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-medium text-sm rounded-xl shadow-md shadow-blue-500/25 transition"
+          >
+            <i class="ph-bold ph-plus-circle text-lg"></i>
+            <span class="hidden sm:inline">ลงขายสินค้า</span>
+            <span class="sm:hidden">ลงขาย</span>
+          </button>
+
+          <!-- User State: Logged In vs Guest -->
+          <div id="userNavContainer" class="relative">
+            <!-- Rendered by app.js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Bar (Mobile Only) -->
+      <div class="pb-3 md:hidden">
+        <div class="relative w-full">
+          <i class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+          <input
+            type="text"
+            id="searchInputMobile"
+            placeholder="ค้นหาชื่อสินค้า หรือผู้ขาย..."
+            class="w-full pl-10 pr-4 py-2 bg-slate-100 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+            oninput="handleSearch(this.value)"
+          />
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. CATEGORY BAR -->
+  <!-- ========================================================================= -->
+  <section class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div id="categoryContainer" class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+        <!-- Rendered by app.js -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 3. MAIN CONTENT: PRODUCT FEED -->
+  <!-- ========================================================================= -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+    
+    <!-- Welcome / Info Banner for Logged in user -->
+    <div id="welcomeBanner" class="hidden mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl">
+          👋
+        </div>
+        <div>
+          <div class="font-semibold text-base" id="bannerUserName">สวัสดีคุณพนักงาน</div>
+          <div class="text-xs text-blue-100" id="bannerUserDetail">แผนก IT • Plant 1</div>
+        </div>
+      </div>
+      <button onclick="openMyListingsModal()" class="text-xs bg-white text-blue-600 font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-blue-50 transition">
+        จัดการสินค้าของฉัน
+      </button>
+    </div>
+
+    <!-- Feed Header: Title & Total count -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <h2 id="currentCategoryTitle" class="text-lg sm:text-xl font-bold text-slate-800">สินค้าทั้งหมด</h2>
+        <span id="productCountBadge" class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-medium">0 รายการ</span>
+      </div>
+
+      <!-- Refresh Button -->
+      <button onclick="loadProducts(true)" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg text-sm transition" title="รีเฟรชข้อมูล">
+        <i class="ph-bold ph-arrows-clockwise text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Product Grid -->
+    <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+      <!-- Shimmer Loading Skeletons will appear here initially -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden text-center py-16 px-4">
+      <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 text-4xl mx-auto mb-4">
+        <i class="ph ph-shopping-bag-open"></i>
+      </div>
+      <h3 class="text-base font-bold text-slate-700 mb-1">ยังไม่มีสินค้าในหมวดหมู่นี้</h3>
+      <p class="text-sm text-slate-500 mb-4">มาร่วมเป็นคนแรกที่ลงขายสินค้าให้เพื่อนๆ ดูกัน!</p>
+      <button onclick="openSellModal()" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition shadow-sm">
+        + ลงขายสินค้าตอนนี้
+      </button>
+    </div>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 4. FOOTER -->
+  <!-- ========================================================================= -->
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>Employee Marketplace © 2026 • ภายในองค์กรเท่านั้น</div>
+      <div class="flex items-center gap-1 text-slate-500">
+        <i class="ph-fill ph-shield-check text-green-500"></i> เข้าใช้งานด้วยระบบ EmpID & PIN
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- 5. MODAL: LOGIN / AUTHENTICATION -->
+  <!-- ========================================================================= -->
+  <div id="loginModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden scale-in">
+      <div class="p-6 sm:p-8">
+        
+        <!-- Header -->
+        <div class="text-center mb-6">
+          <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
+            <i class="ph-bold ph-identification-card"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-800">เข้าสู่ระบบพนักงาน</h3>
+          <p class="text-xs text-slate-500 mt-1">ยืนยันตัวตนด้วยรหัสพนักงานและรหัส PIN</p>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+          <!-- EmpID -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสพนักงาน (EmpID)</label>
+            <div class="relative">
+              <i class="ph ph-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+              <input
+                type="text"
+                id="loginEmpId"
+                required
+                placeholder="เช่น EMP001 หรือ 10024"
+                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white uppercase font-mono transition"
+              />
+            </div>
+          </div>
+
+          <!-- PIN -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">รหัส PIN ยืนยันตัวตน</label>
+            <div class="relative">
+              <i class="ph ph-lock-key absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+              <input
+                type="password"
+                id="loginPin"
+                required
+                maxlength="8"
+                placeholder="กรอกรหัส PIN (เช่น 4 หรือ 6 หลัก)"
+                class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white tracking-widest transition"
+              />
+              <button
+                type="button"
+                onclick="togglePasswordVisibility('loginPin', this)"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <i class="ph ph-eye text-lg"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Error Alert -->
+          <div id="loginError" class="hidden p-3 rounded-xl bg-red-50 text-red-600 text-xs font-medium border border-red-200">
+            <!-- Dynamic Error Msg -->
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            id="loginSubmitBtn"
+            class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-500/25 transition active:scale-[0.98] flex items-center justify-center gap-2"
+          >
+            <span>เข้าสู่ระบบ</span>
+            <i class="ph-bold ph-arrow-right"></i>
+          </button>
+        </form>
+
+        <div class="mt-5 text-center text-xs text-slate-400">
+          <p>ข้อมูลเชื่อมโยงกับฐานข้อมูลพนักงานใน Google Sheets</p>
+        </div>
+      </div>
+
+      <!-- Close Button -->
+      <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 text-right">
+        <button onclick="closeLoginModal()" class="text-xs font-medium text-slate-500 hover:text-slate-700">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 6. MODAL: PRODUCT DETAIL -->
+  <!-- ========================================================================= -->
+  <div id="productDetailModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden scale-in my-auto max-h-[90vh] flex flex-col">
+      
+      <!-- Modal Header / Close -->
+      <div class="relative bg-slate-100 flex-shrink-0">
+        <!-- Main Product Image -->
+        <div class="w-full h-64 sm:h-80 bg-slate-900 flex items-center justify-center overflow-hidden relative">
+          <img id="detailImage" src="" alt="Product" class="w-full h-full object-contain" />
+          <div id="detailCategoryBadge" class="absolute top-4 left-4 bg-white/90 backdrop-blur text-blue-600 text-xs font-semibold px-3 py-1 rounded-full shadow-md">
+            หมวดหมู่
+          </div>
+          <button onclick="closeProductDetailModal()" class="absolute top-4 right-4 w-9 h-9 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center transition">
+            <i class="ph-bold ph-x text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+        
+        <!-- Price & Title -->
+        <div>
+          <div class="flex items-baseline justify-between gap-2">
+            <div id="detailPrice" class="text-2xl sm:text-3xl font-extrabold text-blue-600">฿0</div>
+            <div id="detailDate" class="text-xs text-slate-400">เมื่อ 1 ชม. ที่แล้ว</div>
+          </div>
+          <h2 id="detailTitle" class="text-lg sm:text-xl font-bold text-slate-900 mt-1">ชื่อสินค้า</h2>
+        </div>
+
+        <!-- Description -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          <div class="text-xs font-semibold text-slate-500 mb-1">รายละเอียดสินค้า</div>
+          <p id="detailDescription" class="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
+            -
+          </p>
+        </div>
+
+        <!-- Seller Information Card -->
+        <div class="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-sm" id="detailSellerAvatar">
+              EM
+            </div>
+            <div>
+              <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider">ข้อมูลผู้ขาย</div>
+              <div id="detailSellerName" class="font-bold text-slate-800 text-sm sm:text-base">ชื่อผู้ขาย</div>
+              <div id="detailSellerDept" class="text-xs text-slate-500">แผนก • Plant</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="inline-flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-medium">
+              <i class="ph-fill ph-check-circle"></i> พนักงานในระบบ
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer / Action Buttons -->
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex-shrink-0 flex items-center gap-3">
+        <!-- Phone Call Button -->
+        <a
+          id="detailPhoneBtn"
+          href="tel:"
+          class="flex-1 py-2.5 px-4 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition"
+        >
+          <i class="ph-bold ph-phone-call text-lg text-emerald-600"></i>
+          <span id="detailPhoneText">โทรติดต่อ</span>
+        </a>
+
+        <!-- In-app Chat Button -->
+        <button
+          id="detailChatBtn"
+          onclick="openChatFromDetail()"
+          class="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition"
+        >
+          <i class="ph-bold ph-chat-teardrop-dots text-lg"></i>
+          <span>แชทสอบถาม</span>
+        </button>
+
+        <!-- Manage Owner Button (Visible only to item owner) -->
+        <button
+          id="detailOwnerManageBtn"
+          onclick="promptManageOwnerProduct()"
+          class="hidden py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-1.5 transition"
+        >
+          <i class="ph-bold ph-gear"></i>
+          <span>จัดการ</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 7. MODAL: POST / SELL PRODUCT -->
+  <!-- ========================================================================= -->
+  <div id="sellModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden scale-in my-auto max-h-[90vh] flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-lg">
+            <i class="ph-bold ph-tag"></i>
+          </div>
+          <h3 class="font-bold text-base text-slate-800">ลงประกาศขายสินค้า</h3>
+        </div>
+        <button onclick="closeSellModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form id="sellForm" onsubmit="handleSellSubmit(event)" class="p-6 overflow-y-auto space-y-4 flex-1">
+        
+        <!-- Image Upload Area -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">รูปภาพสินค้า</label>
+          <div
+            id="imageDropArea"
+            onclick="document.getElementById('productImageInput').click()"
+            class="w-full h-44 border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl bg-slate-50 flex flex-col items-center justify-center cursor-pointer transition relative overflow-hidden group"
+          >
+            <div id="imagePlaceholder" class="text-center p-4">
+              <i class="ph ph-camera text-3xl text-slate-400 group-hover:text-blue-500 group-hover:scale-110 transition duration-200"></i>
+              <p class="text-xs font-medium text-slate-600 mt-2">คลิกเพื่อเลือกรูปภาพจากเครื่อง</p>
+              <p class="text-[11px] text-slate-400">รองรับ JPG, PNG (ระบบจะย่อขนาดให้อัตโนมัติ)</p>
+            </div>
+            <img id="imagePreview" src="" alt="Preview" class="hidden w-full h-full object-cover" />
+            <button
+              type="button"
+              id="removeImageBtn"
+              onclick="event.stopPropagation(); removeSelectedImage();"
+              class="hidden absolute top-2 right-2 w-7 h-7 bg-red-600 text-white rounded-full flex items-center justify-center shadow"
+            >
+              <i class="ph-bold ph-x text-xs"></i>
+            </button>
+          </div>
+          <input
+            type="file"
+            id="productImageInput"
+            accept="image/*"
+            class="hidden"
+            onchange="handleImageSelected(event)"
+          />
+        </div>
+
+        <!-- Product Name -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อสินค้า / หัวข้อประกาศ <span class="text-red-500">*</span></label>
+          <input
+            type="text"
+            id="sellTitle"
+            required
+            placeholder="เช่น หูฟังไร้สาย Sony WH-1000XM4 สภาพนางฟ้า"
+            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+          />
+        </div>
+
+        <!-- Category & Price (2 Cols) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Category -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">หมวดหมู่ <span class="text-red-500">*</span></label>
+            <select
+              id="sellCategory"
+              required
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+            >
+              <!-- Populated by app.js -->
+            </select>
+          </div>
+
+          <!-- Price -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ราคา (บาท) <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">฿</span>
+              <input
+                type="number"
+                id="sellPrice"
+                required
+                min="0"
+                step="1"
+                placeholder="0"
+                class="w-full pl-8 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition font-mono"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Phone -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรติดต่อ <span class="text-red-500">*</span></label>
+          <div class="relative">
+            <i class="ph ph-phone absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
+            <input
+              type="tel"
+              id="sellPhone"
+              required
+              placeholder="เช่น 0812345678"
+              class="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+            />
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดเพิ่มเติม</label>
+          <textarea
+            id="sellDescription"
+            rows="3"
+            placeholder="ระบุสภาพสินค้า ระยะเวลาการใช้งาน อุปกรณ์ที่มีให้ หรือสถานที่นัดรับในโรงงาน/ออฟฟิศ..."
+            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+          ></textarea>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2">
+          <button
+            type="submit"
+            id="sellSubmitBtn"
+            class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-500/25 transition active:scale-[0.98] flex items-center justify-center gap-2"
+          >
+            <i class="ph-bold ph-paper-plane-tilt"></i>
+            <span>ลงประกาศขายทันที</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 8. MODAL / DRAWER: CHAT & MESSAGING -->
+  <!-- ========================================================================= -->
+  <div id="chatModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-2 sm:p-4">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden scale-in flex flex-col h-[85vh] sm:h-[600px]">
+      
+      <!-- Chat Header -->
+      <div class="px-4 py-3 bg-white border-b border-slate-200 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <img id="chatProductThumb" src="" alt="" class="w-10 h-10 rounded-lg object-cover bg-slate-100 border border-slate-200" />
+          <div>
+            <div id="chatPartnerName" class="font-bold text-sm text-slate-800 leading-tight">แชทกับผู้ขาย</div>
+            <div id="chatProductTitle" class="text-xs text-blue-600 truncate max-w-[200px] sm:max-w-[280px]">ชื่อสินค้า</div>
+          </div>
+        </div>
+        <button onclick="closeChatModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center">
+          <i class="ph-bold ph-x text-base"></i>
+        </button>
+      </div>
+
+      <!-- Messages Stream Area -->
+      <div id="chatMessagesArea" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50">
+        <!-- Messages rendered by app.js -->
+        <div class="text-center py-8 text-xs text-slate-400">
+          เริ่มการสนทนาเกี่ยวกับสินค้านี้
+        </div>
+      </div>
+
+      <!-- Chat Input Area -->
+      <div class="p-3 bg-white border-t border-slate-200 flex items-center gap-2 flex-shrink-0">
+        <input
+          type="text"
+          id="chatInput"
+          placeholder="พิมพ์ข้อความสอบถามหรือต่อรองราคา..."
+          class="flex-1 px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+          onkeydown="if(event.key === 'Enter') sendChatMessage()"
+        />
+        <button
+          onclick="sendChatMessage()"
+          id="chatSendBtn"
+          class="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-md shadow-blue-500/25 transition active:scale-95 flex-shrink-0"
+        >
+          <i class="ph-bold ph-paper-plane-right text-lg"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 9. MODAL: MY LISTINGS (สินค้าของฉัน) -->
+  <!-- ========================================================================= -->
+  <div id="myListingsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden scale-in my-auto max-h-[90vh] flex flex-col">
+      
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+            <i class="ph-bold ph-archive-box"></i>
+          </div>
+          <h3 class="font-bold text-base text-slate-800">สินค้าที่ฉันลงประกาศ</h3>
+        </div>
+        <button onclick="closeMyListingsModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Listings List -->
+      <div id="myListingsContent" class="p-6 overflow-y-auto space-y-3 flex-1">
+        <!-- Rendered by app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 10. MODAL: ADMIN DASHBOARD (ผู้ดูแลระบบ) -->
+  <!-- ========================================================================= -->
+  <div id="adminDashboardModal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div class="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden scale-in my-auto max-h-[92vh] flex flex-col">
+      
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-slate-100 bg-slate-900 text-white flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl shadow-md shadow-blue-500/30">
+            <i class="ph-bold ph-shield-check"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-base sm:text-lg">แผงควบคุมผู้ดูแลระบบ (Admin Dashboard)</h3>
+              <span class="text-[10px] bg-blue-500/30 text-blue-300 px-2 py-0.5 rounded-full font-mono uppercase">Admin Mode</span>
+            </div>
+            <p class="text-xs text-slate-400">ตรวจสอบข้อมูลระบบ สถิติภาพรวม และจัดการลบโพสต์ที่ไม่เหมาะสม</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="loadAdminDashboardData(true)" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition" title="รีเฟรชข้อมูล">
+            <i class="ph-bold ph-arrows-clockwise text-lg"></i>
+          </button>
+          <button onclick="closeAdminDashboardModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
+            <i class="ph-bold ph-x text-base"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Admin Body (Scrollable) -->
+      <div class="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/50">
+        
+        <!-- 1. Stats Cards Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <!-- Card 1: Active Products -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl flex-shrink-0">
+              <i class="ph ph-shopping-bag"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-medium text-slate-500">สินค้ากำลังขาย</div>
+              <div id="adminStatActiveProd" class="text-xl font-extrabold text-slate-800 font-mono">-</div>
+            </div>
+          </div>
+
+          <!-- Card 2: Sold Products -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl flex-shrink-0">
+              <i class="ph ph-check-circle"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-medium text-slate-500">สินค้าขายแล้ว</div>
+              <div id="adminStatSoldProd" class="text-xl font-extrabold text-slate-800 font-mono">-</div>
+            </div>
+          </div>
+
+          <!-- Card 3: Deleted / Banned Posts -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-2xl flex-shrink-0">
+              <i class="ph ph-prohibit"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-medium text-slate-500">โพสต์ที่ถูกลบ</div>
+              <div id="adminStatDeletedProd" class="text-xl font-extrabold text-rose-600 font-mono">-</div>
+            </div>
+          </div>
+
+          <!-- Card 4: Total Employees & Logs -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl flex-shrink-0">
+              <i class="ph ph-users-three"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-medium text-slate-500">พนักงานในระบบ</div>
+              <div id="adminStatEmployees" class="text-xl font-extrabold text-slate-800 font-mono">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Tabs Selector -->
+        <div class="flex items-center gap-2 border-b border-slate-200 pb-2">
+          <button
+            onclick="switchAdminTab('products')"
+            id="adminTabBtnProducts"
+            class="px-4 py-2 text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5"
+          >
+            <i class="ph-bold ph-squares-four"></i>
+            <span>ตรวจสอบและจัดการโพสต์สินค้า</span>
+          </button>
+          <button
+            onclick="switchAdminTab('logs')"
+            id="adminTabBtnLogs"
+            class="px-4 py-2 text-xs font-medium rounded-xl transition bg-slate-200 text-slate-700 hover:bg-slate-300 flex items-center gap-1.5"
+          >
+            <i class="ph-bold ph-list-bullets"></i>
+            <span>ประวัติกิจกรรมระบบ (Logs)</span>
+          </button>
+        </div>
+
+        <!-- 3. TAB 1: PRODUCT MODERATION TABLE -->
+        <div id="adminTabProducts" class="space-y-3">
+          <!-- Search & Status Filter -->
+          <div class="flex flex-col sm:flex-row gap-2 justify-between items-stretch sm:items-center">
+            <div class="relative flex-1 max-w-sm">
+              <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+              <input
+                type="text"
+                id="adminProductSearch"
+                placeholder="ค้นหาชื่อสินค้า, รหัส, หรือชื่อพนักงาน..."
+                class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                oninput="filterAdminProducts()"
+              />
+            </div>
+            <div class="flex items-center gap-1 overflow-x-auto text-xs">
+              <button onclick="setAdminProductFilter('ALL')" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-800 text-white font-medium">ทั้งหมด</button>
+              <button onclick="setAdminProductFilter('ACTIVE')" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">กำลังขาย</button>
+              <button onclick="setAdminProductFilter('SOLD')" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">ขายแล้ว</button>
+              <button onclick="setAdminProductFilter('DELETED')" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">ถูกลบ</button>
+            </div>
+          </div>
+
+          <!-- Product Table Container -->
+          <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-100/80 text-slate-600 font-semibold border-b border-slate-200">
+                  <tr>
+                    <th class="p-3">สินค้า</th>
+                    <th class="p-3">ราคา</th>
+                    <th class="p-3">ผู้ลงประกาศ (EmpID)</th>
+                    <th class="p-3">วันที่ลง</th>
+                    <th class="p-3">สถานะ</th>
+                    <th class="p-3 text-right">การจัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="adminProductTableBody" class="divide-y divide-slate-100">
+                  <!-- Rendered by app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. TAB 2: SYSTEM LOGS TABLE -->
+        <div id="adminTabLogs" class="hidden space-y-3">
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span>แสดง 100 รายการกิจกรรมล่าสุดจากชีต Logs</span>
+            <button onclick="loadAdminDashboardData(true)" class="text-blue-600 font-medium hover:underline flex items-center gap-1">
+              <i class="ph ph-arrows-clockwise"></i> รีเฟรช Logs
+            </button>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-100/80 text-slate-600 font-semibold border-b border-slate-200">
+                  <tr>
+                    <th class="p-3">วัน-เวลา</th>
+                    <th class="p-3">รหัสพนักงาน</th>
+                    <th class="p-3">กิจกรรม (Action)</th>
+                    <th class="p-3">รายละเอียด (Details)</th>
+                  </tr>
+                </thead>
+                <tbody id="adminLogsTableBody" class="divide-y divide-slate-100">
+                  <!-- Rendered by app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="p-4 bg-slate-100 border-t border-slate-200 text-right flex items-center justify-between">
+        <div class="text-xs text-slate-500">
+          🛡️ สิทธิ์ผู้ดูแลระบบ: ข้อมูลการลบโพสต์จะถูกบันทึกประวัติลงชีต Logs อัตโนมัติ
+        </div>
+        <button onclick="closeAdminDashboardModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
