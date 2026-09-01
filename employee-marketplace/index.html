@@ -21,6 +21,9 @@
     tailwind.config = {
       theme: {
         extend: {
+          screens: {
+            xs: '400px'
+          },
           colors: {
             brand: {
               50: '#eff6ff',
@@ -44,16 +47,16 @@
   </div>
   <header class="sticky top-0 z-40 glass-nav border-b border-slate-200/80 shadow-sm transition-all">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16 gap-4">
+      <div class="flex items-center justify-between h-16 gap-2 sm:gap-4">
         
         <!-- Logo & Brand -->
-        <div class="flex items-center gap-3 cursor-pointer select-none" onclick="filterCategory('all'); resetSearch();">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <i class="ph-bold ph-storefront text-2xl"></i>
+        <div class="flex items-center gap-2 sm:gap-3 cursor-pointer select-none min-w-0 flex-shrink" onclick="filterCategory('all'); resetSearch();">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 flex-shrink-0">
+            <i class="ph-bold ph-storefront text-xl sm:text-2xl"></i>
           </div>
-          <div>
-            <span class="font-bold text-lg text-slate-900 leading-none tracking-tight block">Employee Market</span>
-            <span class="text-xs text-blue-600 font-medium">ตลาดนัดเพื่อนพนักงาน</span>
+          <div class="min-w-0">
+            <span class="font-bold text-sm sm:text-lg text-slate-900 leading-none tracking-tight block truncate">Employee Market</span>
+            <span class="hidden xs:block text-[11px] sm:text-xs text-blue-600 font-medium truncate">ตลาดนัดเพื่อนพนักงาน</span>
           </div>
         </div>
 
@@ -72,31 +75,31 @@
         </div>
 
         <!-- Right Actions: Notification Bell, Sell Button & Auth Profile -->
-        <div class="flex items-center gap-2 sm:gap-2.5">
+        <div class="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
           
           <!-- Notification / Alarm Bell Button -->
           <button
             id="notificationBellBtn"
             onclick="handleBellClick()"
-            class="relative w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95"
+            class="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition active:scale-95 flex-shrink-0"
             title="การแจ้งเตือนและกล่องข้อความ"
           >
-            <i id="bellIcon" class="ph-bold ph-bell text-xl"></i>
+            <i id="bellIcon" class="ph-bold ph-bell text-lg sm:text-xl"></i>
             <span id="unreadBadge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center shadow-md animate-pulse font-mono">0</span>
           </button>
 
           <!-- Sell Button -->
           <button
             onclick="openSellModal()"
-            class="flex items-center gap-2 px-3.5 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-medium text-sm rounded-xl shadow-md shadow-blue-500/25 transition"
+            class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-medium text-xs sm:text-sm rounded-xl shadow-md shadow-blue-500/25 transition flex-shrink-0"
           >
-            <i class="ph-bold ph-plus-circle text-lg"></i>
+            <i class="ph-bold ph-plus-circle text-base sm:text-lg"></i>
             <span class="hidden sm:inline">ลงขายสินค้า</span>
             <span class="sm:hidden">ลงขาย</span>
           </button>
 
           <!-- User State: Logged In vs Guest -->
-          <div id="userNavContainer" class="relative">
+          <div id="userNavContainer" class="relative flex-shrink-0">
             <!-- Rendered by app.js -->
           </div>
         </div>
@@ -128,30 +131,30 @@
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
     
     <!-- Welcome / Info Banner for Logged in user -->
-    <div id="welcomeBanner" class="hidden mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl">
+    <div id="welcomeBanner" class="hidden mb-6 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl flex-shrink-0">
           👋
         </div>
-        <div>
-          <div class="font-semibold text-base" id="bannerUserName">สวัสดีคุณพนักงาน</div>
-          <div class="text-xs text-blue-100" id="bannerUserDetail">แผนก IT • Plant 1</div>
+        <div class="min-w-0">
+          <div class="font-semibold text-sm sm:text-base truncate" id="bannerUserName">สวัสดีคุณพนักงาน</div>
+          <div class="text-xs text-blue-100 truncate" id="bannerUserDetail">แผนก IT • Plant 1</div>
         </div>
       </div>
-      <button onclick="openMyListingsModal()" class="text-xs bg-white text-blue-600 font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-blue-50 transition">
+      <button onclick="openMyListingsModal()" class="self-start sm:self-auto flex-shrink-0 text-xs bg-white text-blue-600 font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-blue-50 transition">
         จัดการสินค้าของฉัน
       </button>
     </div>
 
     <!-- Feed Header: Title & Total count -->
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-2">
-        <h2 id="currentCategoryTitle" class="text-lg sm:text-xl font-bold text-slate-800">สินค้าทั้งหมด</h2>
-        <span id="productCountBadge" class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-medium">0 รายการ</span>
+    <div class="flex items-center justify-between gap-2 mb-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <h2 id="currentCategoryTitle" class="text-base sm:text-xl font-bold text-slate-800 truncate">สินค้าทั้งหมด</h2>
+        <span id="productCountBadge" class="flex-shrink-0 text-[11px] sm:text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-medium">0 รายการ</span>
       </div>
 
       <!-- Refresh Button -->
-      <button onclick="loadProducts(true)" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg text-sm transition" title="รีเฟรชข้อมูล">
+      <button onclick="loadProducts(true)" class="flex-shrink-0 p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg text-sm transition" title="รีเฟรชข้อมูล">
         <i class="ph-bold ph-arrows-clockwise text-lg"></i>
       </button>
     </div>
@@ -278,27 +281,27 @@
       <!-- Modal Header / Close -->
       <div class="relative bg-slate-100 flex-shrink-0">
         <!-- Main Product Image -->
-        <div class="w-full h-64 sm:h-80 bg-slate-900 flex items-center justify-center overflow-hidden relative">
+        <div class="w-full h-56 sm:h-80 bg-slate-900 flex items-center justify-center overflow-hidden relative">
           <img id="detailImage" src="" alt="Product" class="w-full h-full object-contain" />
-          <div id="detailCategoryBadge" class="absolute top-4 left-4 bg-white/90 backdrop-blur text-blue-600 text-xs font-semibold px-3 py-1 rounded-full shadow-md">
+          <div id="detailCategoryBadge" class="absolute top-3 sm:top-4 left-3 sm:left-4 right-14 max-w-[65%] truncate bg-white/90 backdrop-blur text-blue-600 text-[11px] sm:text-xs font-semibold px-2.5 sm:px-3 py-1 rounded-full shadow-md">
             หมวดหมู่
           </div>
-          <button onclick="closeProductDetailModal()" class="absolute top-4 right-4 w-9 h-9 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center transition">
-            <i class="ph-bold ph-x text-lg"></i>
+          <button onclick="closeProductDetailModal()" class="absolute top-3 sm:top-4 right-3 sm:right-4 w-8 h-8 sm:w-9 sm:h-9 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center transition flex-shrink-0">
+            <i class="ph-bold ph-x text-base sm:text-lg"></i>
           </button>
         </div>
       </div>
 
       <!-- Modal Body (Scrollable) -->
-      <div class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+      <div class="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 flex-1">
         
         <!-- Price & Title -->
         <div>
           <div class="flex items-baseline justify-between gap-2">
-            <div id="detailPrice" class="text-2xl sm:text-3xl font-extrabold text-blue-600">฿0</div>
-            <div id="detailDate" class="text-xs text-slate-400">เมื่อ 1 ชม. ที่แล้ว</div>
+            <div id="detailPrice" class="text-xl sm:text-3xl font-extrabold text-blue-600 truncate">฿0</div>
+            <div id="detailDate" class="text-[11px] sm:text-xs text-slate-400 flex-shrink-0 whitespace-nowrap">เมื่อ 1 ชม. ที่แล้ว</div>
           </div>
-          <h2 id="detailTitle" class="text-lg sm:text-xl font-bold text-slate-900 mt-1">ชื่อสินค้า</h2>
+          <h2 id="detailTitle" class="text-base sm:text-xl font-bold text-slate-900 mt-1 leading-snug">ชื่อสินค้า</h2>
         </div>
 
         <!-- Description -->
@@ -310,19 +313,19 @@
         </div>
 
         <!-- Seller Information Card -->
-        <div class="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-sm" id="detailSellerAvatar">
+        <div class="p-3.5 sm:p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex flex-wrap items-center justify-between gap-2.5">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-base sm:text-lg shadow-sm flex-shrink-0" id="detailSellerAvatar">
               EM
             </div>
-            <div>
-              <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider">ข้อมูลผู้ขาย</div>
-              <div id="detailSellerName" class="font-bold text-slate-800 text-sm sm:text-base">ชื่อผู้ขาย</div>
-              <div id="detailSellerDept" class="text-xs text-slate-500">แผนก • Plant</div>
+            <div class="min-w-0">
+              <div class="text-[11px] sm:text-xs text-blue-600 font-semibold uppercase tracking-wider">ข้อมูลผู้ขาย</div>
+              <div id="detailSellerName" class="font-bold text-slate-800 text-sm sm:text-base truncate">ชื่อผู้ขาย</div>
+              <div id="detailSellerDept" class="text-xs text-slate-500 truncate">แผนก • Plant</div>
             </div>
           </div>
-          <div class="text-right">
-            <span class="inline-flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-medium">
+          <div class="flex-shrink-0">
+            <span class="inline-flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
               <i class="ph-fill ph-check-circle"></i> พนักงานในระบบ
             </span>
           </div>
@@ -331,44 +334,44 @@
       </div>
 
       <!-- Modal Footer / Action Buttons -->
-      <div class="p-4 bg-slate-50 border-t border-slate-100 flex-shrink-0 flex items-center gap-3">
+      <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-100 flex-shrink-0 grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3">
         <!-- Phone Call Button -->
         <a
           id="detailPhoneBtn"
           href="tel:"
-          class="flex-1 py-2.5 px-4 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition"
+          class="sm:flex-1 py-2.5 px-2 sm:px-4 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 transition min-w-0"
         >
-          <i class="ph-bold ph-phone-call text-lg text-emerald-600"></i>
-          <span id="detailPhoneText">โทรติดต่อ</span>
+          <i class="ph-bold ph-phone-call text-base sm:text-lg text-emerald-600 flex-shrink-0"></i>
+          <span id="detailPhoneText" class="truncate">โทรติดต่อ</span>
         </a>
 
         <!-- In-app Chat Button (For Buyers) -->
         <button
           id="detailChatBtn"
           onclick="openChatFromDetail()"
-          class="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition"
+          class="sm:flex-1 py-2.5 px-2 sm:px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 shadow-md shadow-blue-500/20 transition min-w-0"
         >
-          <i class="ph-bold ph-chat-teardrop-dots text-lg"></i>
-          <span>แชทสอบถาม</span>
+          <i class="ph-bold ph-chat-teardrop-dots text-base sm:text-lg flex-shrink-0"></i>
+          <span class="truncate">แชทสอบถาม</span>
         </button>
 
         <!-- Seller Inquiries Button (Visible only to item owner) -->
         <button
           id="detailSellerInquiriesBtn"
           onclick="openSellerInquiriesFromDetail()"
-          class="hidden flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-1.5 transition"
+          class="hidden flex sm:flex-1 py-2.5 px-2 sm:px-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs sm:text-sm rounded-xl items-center justify-center gap-1.5 transition min-w-0"
         >
-          <i class="ph-bold ph-chats-circle text-lg"></i>
-          <span>ดูแชทลูกค้า</span>
+          <i class="ph-bold ph-chats-circle text-base sm:text-lg flex-shrink-0"></i>
+          <span class="truncate">ดูแชทลูกค้า</span>
         </button>
 
         <button
           id="detailOwnerManageBtn"
           onclick="promptManageOwnerProduct()"
-          class="hidden py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-1.5 transition"
+          class="hidden flex col-span-2 sm:col-span-1 sm:flex-shrink-0 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs sm:text-sm rounded-xl items-center justify-center gap-1.5 transition min-w-0"
         >
-          <i class="ph-bold ph-gear"></i>
-          <span>จัดการ</span>
+          <i class="ph-bold ph-gear flex-shrink-0"></i>
+          <span class="truncate">จัดการ</span>
         </button>
       </div>
 
@@ -503,18 +506,18 @@
   <div id="chatModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-2 sm:p-4">
     <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden scale-in flex flex-col h-[85vh] sm:h-[600px]">
       
-      <div class="px-4 py-3 bg-white border-b border-slate-200 flex items-center justify-between flex-shrink-0">
-        <div class="flex items-center gap-3">
-          <img id="chatProductThumb" src="" alt="" class="w-10 h-10 rounded-lg object-cover bg-slate-100 border border-slate-200" />
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <span id="chatPartnerRoleBadge" class="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded font-bold">ลูกค้า</span>
-              <span id="chatPartnerName" class="font-bold text-sm text-slate-800 leading-tight truncate">ผู้ใช้</span>
+      <div class="px-3 sm:px-4 py-3 bg-white border-b border-slate-200 flex items-center justify-between gap-2 flex-shrink-0">
+        <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <img id="chatProductThumb" src="" alt="" class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover bg-slate-100 border border-slate-200 flex-shrink-0" />
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <span id="chatPartnerRoleBadge" class="flex-shrink-0 text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded font-bold">ลูกค้า</span>
+              <span id="chatPartnerName" class="font-bold text-xs sm:text-sm text-slate-800 leading-tight truncate min-w-0">ผู้ใช้</span>
             </div>
-            <div id="chatProductTitle" class="text-xs text-blue-600 truncate max-w-[200px] sm:max-w-[280px]">ชื่อสินค้า</div>
+            <div id="chatProductTitle" class="text-[11px] sm:text-xs text-blue-600 truncate">ชื่อสินค้า</div>
           </div>
         </div>
-        <button onclick="closeChatModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
+        <button onclick="closeChatModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition flex-shrink-0">
           <i class="ph-bold ph-x text-base"></i>
         </button>
       </div>

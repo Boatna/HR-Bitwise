@@ -50,7 +50,7 @@ async function tryAutoLoginFromStorage() {
       return;
     }
 
-    const isAdmin = await verifyAdminOnServer(user.empId);
+    const isAdmin = await verifyAdminOnServer(user.empId, user.sessionToken);
     if (isAdmin) {
       ADMIN_STATE.currentUser = user;
       showAdminDashboardScreen();
@@ -62,14 +62,31 @@ async function tryAutoLoginFromStorage() {
   }
 }
 
-async function verifyAdminOnServer(empId) {
+async function verifyAdminOnServer(empId, token) {
   try {
-    const response = await fetch(`${CONFIG.API_URL}?action=getAdminDashboard&adminEmpId=${encodeURIComponent(empId)}&_t=${Date.now()}`);
+    const response = await fetch(`${CONFIG.API_URL}?action=getAdminDashboard&adminEmpId=${encodeURIComponent(empId)}&token=${encodeURIComponent(token || '')}&_t=${Date.now()}`);
     const result = await response.json();
     return Boolean(result.success);
   } catch (e) {
     return false;
   }
+}
+
+// เรียกเมื่อเซิร์ฟเวอร์ตอบกลับว่า session หมดอายุ/ไม่ถูกต้อง (sessionExpired: true)
+function handleAdminAuthExpired(result) {
+  if (!result || !result.sessionExpired) return false;
+
+  ADMIN_STATE.currentUser = null;
+  localStorage.removeItem(ADMIN_STORAGE_KEY);
+
+  Swal.fire({
+    icon: 'warning',
+    title: 'เซสชันหมดอายุ',
+    text: 'กรุณาเข้าสู่ระบบแอดมินใหม่อีกครั้ง',
+    confirmButtonColor: '#0f172a'
+  }).then(() => showAdminLoginScreen());
+
+  return true;
 }
 
 function showAdminLoginScreen() {
@@ -194,8 +211,10 @@ async function loadAdminDashboardData() {
       return;
     }
 
-    const response = await fetch(`${CONFIG.API_URL}?action=getAdminDashboard&adminEmpId=${encodeURIComponent(ADMIN_STATE.currentUser.empId)}&_t=${Date.now()}`);
+    const response = await fetch(`${CONFIG.API_URL}?action=getAdminDashboard&adminEmpId=${encodeURIComponent(ADMIN_STATE.currentUser.empId)}&token=${encodeURIComponent(ADMIN_STATE.currentUser.sessionToken || '')}&_t=${Date.now()}`);
     const result = await response.json();
+
+    if (handleAdminAuthExpired(result)) return;
 
     if (result.success) {
       ADMIN_STATE.adminData = {
@@ -231,14 +250,17 @@ function switchAdminTab(tabName) {
   const tabProd = document.getElementById('adminTabProducts');
   const tabLogs = document.getElementById('adminTabLogs');
 
+  const activeCls = 'flex-shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5';
+  const inactiveCls = 'flex-shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-medium rounded-xl transition bg-white text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5';
+
   if (tabName === 'products') {
-    btnProd.className = 'px-4 py-2 text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5';
-    btnLogs.className = 'px-4 py-2 text-xs font-medium rounded-xl transition bg-white text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5';
+    btnProd.className = activeCls;
+    btnLogs.className = inactiveCls;
     tabProd.classList.remove('hidden');
     tabLogs.classList.add('hidden');
   } else {
-    btnLogs.className = 'px-4 py-2 text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5';
-    btnProd.className = 'px-4 py-2 text-xs font-medium rounded-xl transition bg-white text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5';
+    btnLogs.className = activeCls;
+    btnProd.className = inactiveCls;
     tabLogs.classList.remove('hidden');
     tabProd.classList.add('hidden');
   }
@@ -248,12 +270,12 @@ function setAdminProductFilter(status, evt) {
   ADMIN_STATE.adminProductFilterStatus = status;
 
   document.querySelectorAll('.admin-prod-filter').forEach(btn => {
-    btn.className = 'admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs';
+    btn.className = 'admin-prod-filter flex-shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs';
   });
 
-  const targetBtn = evt ? evt.target : null;
+  const targetBtn = evt ? evt.target.closest('button') : null;
   if (targetBtn) {
-    targetBtn.className = 'admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-800 text-white font-medium text-xs';
+    targetBtn.className = 'admin-prod-filter flex-shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg bg-slate-800 text-white font-medium text-xs';
   }
 
   renderAdminProductTable();
@@ -392,10 +414,12 @@ async function handleAdminDeletePost(productId) {
           action: 'adminDeleteProduct',
           productId: productId,
           adminEmpId: ADMIN_STATE.currentUser.empId,
+          token: ADMIN_STATE.currentUser.sessionToken,
           reason: reason
         })
       });
       const result = await response.json();
+      if (handleAdminAuthExpired(result)) return;
       if (!result.success) {
         Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: result.message || 'เกิดข้อผิดพลาด' });
         return;

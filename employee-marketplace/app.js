@@ -17,8 +17,48 @@ const STATE = {
   myConversations: [],
   totalUnreadCount: 0,
   lastKnownUnreadCount: 0,
-  hasShownInitialUnreadAlert: false
+  hasShownInitialUnreadAlert: false,
+  sessionExpiredNotified: false
 };
+
+// คืนค่า session token ของผู้ใช้ปัจจุบัน (ใช้แนบไปกับทุก action ที่ต้องยืนยันตัวตน)
+function getSessionToken() {
+  return (STATE.currentUser && STATE.currentUser.sessionToken) || '';
+}
+
+// เรียกเมื่อเซิร์ฟเวอร์ตอบกลับว่า session หมดอายุ/ไม่ถูกต้อง (sessionExpired: true)
+// คืนค่า true ถ้าเป็นกรณี session หมดอายุ (ผู้เรียกควรหยุดทำงานต่อ)
+function handleAuthExpired(result) {
+  if (!result || !result.sessionExpired) return false;
+
+  if (!STATE.sessionExpiredNotified) {
+    STATE.sessionExpiredNotified = true;
+    STATE.currentUser = null;
+    localStorage.removeItem('emp_marketplace_user');
+
+    if (STATE.chatPollingInterval) {
+      clearInterval(STATE.chatPollingInterval);
+      STATE.chatPollingInterval = null;
+    }
+    if (STATE.notificationPollingInterval) {
+      clearInterval(STATE.notificationPollingInterval);
+      STATE.notificationPollingInterval = null;
+    }
+
+    updateUserNav();
+    updateUnreadBadgeUI();
+    closeChatModal();
+    closeInboxModal();
+
+    Swal.fire({
+      icon: 'warning',
+      title: 'เซสชันหมดอายุ',
+      text: 'กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อดำเนินการต่อ',
+      confirmButtonColor: '#3b82f6'
+    }).then(() => openLoginModal());
+  }
+  return true;
+}
 
 const MOCK_PRODUCTS = [
   {
@@ -159,14 +199,14 @@ function updateUserNav() {
       <div class="relative group">
         <button class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 transition border border-slate-200">
           <div class="w-8 h-8 rounded-lg ${isAdminUser ? 'bg-indigo-700' : 'bg-blue-600'} text-white flex items-center justify-center font-bold text-xs shadow-sm">
-            ${initials}
+            ${escapeHtml(initials)}
           </div>
           <div class="hidden lg:block text-left pr-1">
             <div class="flex items-center gap-1.5">
-              <span class="text-xs font-bold text-slate-800 leading-tight">${STATE.currentUser.name}</span>
+              <span class="text-xs font-bold text-slate-800 leading-tight">${escapeHtml(STATE.currentUser.name)}</span>
               ${isAdminUser ? '<span class="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded font-bold">Admin</span>' : ''}
             </div>
-            <div class="text-[10px] text-slate-400 font-mono">${STATE.currentUser.empId}</div>
+            <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(STATE.currentUser.empId)}</div>
           </div>
           <i class="ph ph-caret-down text-xs text-slate-400"></i>
         </button>
@@ -175,11 +215,11 @@ function updateUserNav() {
         <div class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 hidden group-hover:block hover:block z-50 fade-in">
           <div class="px-4 py-2 border-b border-slate-100">
             <div class="flex items-center justify-between">
-              <p class="text-xs font-bold text-slate-800">${STATE.currentUser.name}</p>
+              <p class="text-xs font-bold text-slate-800">${escapeHtml(STATE.currentUser.name)}</p>
               ${isAdminUser ? '<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-mono">ADMIN</span>' : ''}
             </div>
-            <p class="text-[11px] text-slate-500">${STATE.currentUser.department || ''} ${STATE.currentUser.plant ? '• ' + STATE.currentUser.plant : ''}</p>
-            <p class="text-[10px] text-blue-600 font-mono mt-0.5">EmpID: ${STATE.currentUser.empId}</p>
+            <p class="text-[11px] text-slate-500">${escapeHtml(STATE.currentUser.department || '')} ${STATE.currentUser.plant ? '• ' + escapeHtml(STATE.currentUser.plant) : ''}</p>
+            <p class="text-[10px] text-blue-600 font-mono mt-0.5">EmpID: ${escapeHtml(STATE.currentUser.empId)}</p>
           </div>
 
           <button onclick="openInboxModal()" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between">
@@ -286,6 +326,7 @@ async function handleLoginSubmit(event) {
       closeLoginModal();
       updateUserNav();
       startNotificationPolling();
+      STATE.sessionExpiredNotified = false;
       Swal.fire({
         icon: 'success',
         title: 'เข้าสู่ระบบสำเร็จ (Demo Mode)',
@@ -315,6 +356,7 @@ async function handleLoginSubmit(event) {
       closeLoginModal();
       updateUserNav();
       startNotificationPolling();
+      STATE.sessionExpiredNotified = false;
       Swal.fire({
         icon: 'success',
         title: 'เข้าสู่ระบบสำเร็จ',
@@ -582,8 +624,9 @@ async function loadMyChats(showLoader = false) {
 
       conversations = Object.values(convMap);
     } else {
-      const response = await fetch(`${CONFIG.API_URL}?action=getMyChats&empId=${encodeURIComponent(STATE.currentUser.empId)}&_t=${Date.now()}`);
+      const response = await fetch(`${CONFIG.API_URL}?action=getMyChats&empId=${encodeURIComponent(STATE.currentUser.empId)}&token=${encodeURIComponent(getSessionToken())}&_t=${Date.now()}`);
       const result = await response.json();
+      if (handleAuthExpired(result)) return;
       if (result.success) {
         conversations = result.conversations || [];
         totalUnread = result.totalUnread || 0;
@@ -702,25 +745,25 @@ function renderInboxList() {
     return `
       <div
         onclick="openChatModalFromInboxByKey('${conv.key}')"
-        class="p-3.5 bg-white border ${isUnread ? 'border-blue-300 bg-blue-50/40 shadow-sm' : 'border-slate-200/80'} hover:border-blue-400 rounded-2xl cursor-pointer transition flex items-center justify-between gap-3 group relative"
+        class="p-3 sm:p-3.5 bg-white border ${isUnread ? 'border-blue-300 bg-blue-50/40 shadow-sm' : 'border-slate-200/80'} hover:border-blue-400 rounded-2xl cursor-pointer transition flex items-start sm:items-center justify-between gap-2 sm:gap-3 group relative"
       >
-        <div class="flex items-center gap-3 min-w-0">
+        <div class="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
           <img
             src="${imgUrl}"
             alt="Product"
-            class="w-12 h-12 rounded-xl object-cover bg-slate-100 flex-shrink-0 border border-slate-200"
+            class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-cover bg-slate-100 flex-shrink-0 border border-slate-200"
             onerror="this.src='${fallbackImg}'"
           />
-          <div class="min-w-0">
-            <div class="flex items-center gap-2 mb-0.5">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5 sm:gap-2 mb-0.5 flex-wrap">
               ${roleBadge}
-              <span class="text-xs font-bold text-slate-800 truncate">${escapeHtml(conv.partnerName)}</span>
+              <span class="text-xs font-bold text-slate-800 truncate max-w-[120px] sm:max-w-none">${escapeHtml(conv.partnerName)}</span>
               <span class="text-[10px] text-slate-400 font-mono">(${conv.partnerId})</span>
             </div>
-            <div class="text-xs font-semibold text-blue-600 truncate max-w-[220px] sm:max-w-[280px]">
+            <div class="text-xs font-semibold text-blue-600 truncate max-w-[180px] sm:max-w-[280px]">
               ${escapeHtml(conv.productTitle)}
             </div>
-            <div class="text-xs text-slate-600 truncate max-w-[220px] sm:max-w-[280px] mt-0.5 ${isUnread ? 'font-bold text-slate-900' : ''}">
+            <div class="text-xs text-slate-600 truncate max-w-[180px] sm:max-w-[280px] mt-0.5 ${isUnread ? 'font-bold text-slate-900' : ''}">
               ${escapeHtml(conv.lastMessage)}
             </div>
           </div>
@@ -754,10 +797,11 @@ function openChatModalFromInbox(conv) {
     productId: conv.productId,
     title: conv.productTitle,
     price: conv.productPrice,
-    imageUrl: conv.productImage
+    imageUrl: conv.productImage,
+    empId: conv.isSeller ? (STATE.currentUser && STATE.currentUser.empId) : conv.partnerId
   };
 
-  openChatModal(mockProduct, conv.partnerId, conv.partnerName);
+  openChatModal(mockProduct, conv.partnerId, conv.partnerName, Boolean(conv.isSeller));
 }
 
 function openSellerInquiriesFromDetail() {
@@ -922,8 +966,8 @@ function renderProductGrid() {
             onerror="this.src='${fallbackImg}'"
           />
           
-          <span class="absolute top-2.5 left-2.5 bg-white/90 backdrop-blur text-[10px] font-semibold text-slate-700 px-2 py-0.5 rounded-md shadow-sm">
-            ${item.category || 'ทั่วไป'}
+          <span class="absolute top-2 left-2 right-2 max-w-[85%] truncate bg-white/90 backdrop-blur text-[10px] font-semibold text-slate-700 px-2 py-0.5 rounded-md shadow-sm">
+            ${escapeHtml(item.category) || 'ทั่วไป'}
           </span>
 
           ${isSold ? `
@@ -1153,6 +1197,7 @@ async function handleSellSubmit(event) {
   const newProductPayload = {
     action: 'createProduct',
     empId: STATE.currentUser.empId,
+    token: getSessionToken(),
     title: title,
     category: category,
     price: price,
@@ -1205,6 +1250,7 @@ async function handleSellSubmit(event) {
     });
 
     const result = await response.json();
+    if (handleAuthExpired(result)) return;
     if (result.success) {
       closeSellModal();
       Swal.fire({
@@ -1251,12 +1297,27 @@ function openChatFromDetail() {
   openChatModal(item, item.empId, item.sellerName || item.empId);
 }
 
-function openChatModal(product, partnerId, partnerName) {
+function openChatModal(product, partnerId, partnerName, currentUserIsSeller) {
   hideNewMessageFloatAlert();
 
   STATE.currentChatProduct = product;
   STATE.currentChatPartnerId = partnerId;
   STATE.currentChatPartnerName = partnerName;
+
+  const isSeller = typeof currentUserIsSeller === 'boolean'
+    ? currentUserIsSeller
+    : Boolean(STATE.currentUser && product && product.empId && STATE.currentUser.empId === product.empId);
+
+  const roleBadge = document.getElementById('chatPartnerRoleBadge');
+  if (roleBadge) {
+    if (isSeller) {
+      roleBadge.textContent = 'ลูกค้า';
+      roleBadge.className = 'flex-shrink-0 text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold';
+    } else {
+      roleBadge.textContent = 'ผู้ขาย';
+      roleBadge.className = 'flex-shrink-0 text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold';
+    }
+  }
 
   document.getElementById('chatProductThumb').src = product.imageUrl || 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=100&auto=format&fit=crop&q=60';
   document.getElementById('chatProductTitle').textContent = product.title;
@@ -1296,16 +1357,19 @@ async function markChatMessagesAsRead(productId, partnerId) {
   }
 
   try {
-    await fetch(CONFIG.API_URL, {
+    const response = await fetch(CONFIG.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'markAsRead',
         productId: productId,
         myEmpId: STATE.currentUser.empId,
-        partnerEmpId: partnerId
+        partnerEmpId: partnerId,
+        token: getSessionToken()
       })
     });
+    const result = await response.json();
+    if (handleAuthExpired(result)) return;
     loadMyChats(false);
   } catch (e) {
     console.error('Mark read error:', e);
@@ -1329,8 +1393,9 @@ async function loadChatMessages() {
         ((m.senderEmpID === myId && m.receiverEmpID === partnerId) || (m.senderEmpID === partnerId && m.receiverEmpID === myId))
       );
     } else {
-      const response = await fetch(`${CONFIG.API_URL}?action=getMessages&productId=${encodeURIComponent(productId)}&buyerId=${encodeURIComponent(myId)}&sellerId=${encodeURIComponent(partnerId)}&_t=${Date.now()}`);
+      const response = await fetch(`${CONFIG.API_URL}?action=getMessages&productId=${encodeURIComponent(productId)}&buyerId=${encodeURIComponent(myId)}&sellerId=${encodeURIComponent(partnerId)}&token=${encodeURIComponent(getSessionToken())}&_t=${Date.now()}`);
       const result = await response.json();
+      if (handleAuthExpired(result)) return;
       if (result.success && Array.isArray(result.messages)) {
         messages = result.messages;
       }
@@ -1418,11 +1483,18 @@ async function sendChatMessage() {
         productId: productId,
         senderEmpID: myId,
         receiverEmpID: partnerId,
-        message: messageText
+        message: messageText,
+        token: getSessionToken()
       })
     });
 
     const result = await response.json();
+
+    if (result && result.sessionExpired) {
+      markChatBubbleFailed(tempId, messageText);
+      handleAuthExpired(result);
+      return;
+    }
 
     if (!result || !result.success) {
       markChatBubbleFailed(tempId, messageText);
@@ -1497,28 +1569,30 @@ function openMyListingsModal() {
     `;
   } else {
     container.innerHTML = myListings.map(item => `
-      <div class="flex items-center justify-between gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
-        <img src="${item.imageUrl || 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=100'}" class="w-14 h-14 rounded-xl object-cover bg-white" />
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-blue-600 font-mono">฿${Number(item.price).toLocaleString()}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${item.status === 'SOLD' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}">
-              ${item.status === 'SOLD' ? 'ขายแล้ว' : 'กำลังขาย'}
-            </span>
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
+        <div class="flex items-center gap-3 min-w-0">
+          <img src="${item.imageUrl || 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=100'}" class="w-14 h-14 rounded-xl object-cover bg-white flex-shrink-0" />
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-bold text-blue-600 font-mono">฿${Number(item.price).toLocaleString()}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 ${item.status === 'SOLD' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}">
+                ${item.status === 'SOLD' ? 'ขายแล้ว' : 'กำลังขาย'}
+              </span>
+            </div>
+            <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate">${escapeHtml(item.title)}</h4>
+            <p class="text-[11px] text-slate-400 truncate">${escapeHtml(item.category)} • ${item.createdAt || ''}</p>
           </div>
-          <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate">${escapeHtml(item.title)}</h4>
-          <p class="text-[11px] text-slate-400">${item.category} • ${item.createdAt || ''}</p>
         </div>
-        <div class="flex flex-col gap-1.5">
+        <div class="flex sm:flex-col gap-1.5 flex-shrink-0">
           <button
             onclick="updateItemStatus('${item.productId}', '${item.status === 'SOLD' ? 'ACTIVE' : 'SOLD'}')"
-            class="px-2.5 py-1 text-[11px] font-semibold rounded-lg ${item.status === 'SOLD' ? 'bg-slate-200 text-slate-700' : 'bg-emerald-600 text-white'}"
+            class="flex-1 sm:flex-none px-2.5 py-1.5 sm:py-1 text-[11px] font-semibold rounded-lg text-center whitespace-nowrap sm:whitespace-normal ${item.status === 'SOLD' ? 'bg-slate-200 text-slate-700' : 'bg-emerald-600 text-white'}"
           >
             ${item.status === 'SOLD' ? 'เปิดขายใหม่' : 'ทำเครื่องหมายว่าขายแล้ว'}
           </button>
           <button
             onclick="deleteItem('${item.productId}')"
-            class="px-2.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 rounded-lg transition"
+            class="flex-1 sm:flex-none px-2.5 py-1.5 sm:py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 bg-white sm:bg-transparent border sm:border-0 border-red-200 rounded-lg transition whitespace-nowrap"
           >
             ลบประกาศ
           </button>
@@ -1547,16 +1621,19 @@ async function updateItemStatus(productId, newStatus) {
 
   if (STATE.isApiConfigured) {
     try {
-      await fetch(CONFIG.API_URL, {
+      const response = await fetch(CONFIG.API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'updateProductStatus',
           productId: productId,
           empId: STATE.currentUser.empId,
+          token: getSessionToken(),
           status: newStatus
         })
       });
+      const result = await response.json();
+      handleAuthExpired(result);
     } catch (e) {
       console.error(e);
     }
@@ -1586,15 +1663,18 @@ async function deleteItem(productId) {
 
   if (STATE.isApiConfigured) {
     try {
-      await fetch(CONFIG.API_URL, {
+      const response = await fetch(CONFIG.API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'deleteProduct',
           productId: productId,
-          empId: STATE.currentUser.empId
+          empId: STATE.currentUser.empId,
+          token: getSessionToken()
         })
       });
+      const result = await response.json();
+      if (handleAuthExpired(result)) return;
     } catch (e) {
       console.error(e);
     }
@@ -1661,16 +1741,19 @@ async function handleAdminDeletePost(productId) {
 
   if (STATE.isApiConfigured) {
     try {
-      await fetch(CONFIG.API_URL, {
+      const response = await fetch(CONFIG.API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'adminDeleteProduct',
           productId: productId,
           adminEmpId: STATE.currentUser.empId,
+          token: getSessionToken(),
           reason: reason
         })
       });
+      const result = await response.json();
+      if (handleAuthExpired(result)) return;
     } catch (e) {
       console.error(e);
     }

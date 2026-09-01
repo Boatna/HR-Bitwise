@@ -1,5 +1,5 @@
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbw5hgkY3baroLWinR0arV1s_TAVSPf65Qm9gDMiXk537Iru6jbKXkdXQiMP5WCse5OHng/exec",
+  API_URL: "https://script.google.com/macros/s/AKfycbymH4KTFltssd3pnoR05Z4kgsMz4NmikEhe69V0ud07F0bMVIU-1q_HUniqmFZvVDUgrA/exec",
 
   CATEGORIES: [
     { id: "all", name: "ทั้งหมด", icon: "squares-four" },

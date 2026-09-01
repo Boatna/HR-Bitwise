@@ -14,6 +14,9 @@
     tailwind.config = {
       theme: {
         extend: {
+          screens: {
+            xs: '400px'
+          },
           colors: {
             brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af' }
           }
@@ -90,33 +93,33 @@
 
     <!-- Top Bar -->
     <header class="bg-slate-900 text-white sticky top-0 z-30 shadow-md">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 flex items-center justify-center text-lg sm:text-xl flex-shrink-0">
             <i class="ph-bold ph-shield-check"></i>
           </div>
-          <div>
+          <div class="min-w-0">
             <div class="flex items-center gap-2">
-              <h1 class="font-bold text-sm sm:text-base leading-none">Admin Control Panel</h1>
-              <span class="text-[10px] bg-blue-500/30 text-blue-300 px-2 py-0.5 rounded-full font-mono uppercase">Admin Mode</span>
+              <h1 class="font-bold text-xs sm:text-base leading-none truncate">Admin Control Panel</h1>
+              <span class="hidden sm:inline-block text-[10px] bg-blue-500/30 text-blue-300 px-2 py-0.5 rounded-full font-mono uppercase flex-shrink-0">Admin Mode</span>
             </div>
-            <p class="text-[11px] text-slate-400 mt-1">Employee Marketplace • ระบบจัดการภายใน</p>
+            <p class="hidden sm:block text-[11px] text-slate-400 mt-1 truncate">Employee Marketplace • ระบบจัดการภายใน</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <div class="hidden sm:block text-right mr-2">
+        <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div class="hidden md:block text-right mr-2">
             <div id="adminNavName" class="text-xs font-bold leading-none">-</div>
             <div id="adminNavId" class="text-[10px] text-slate-400 font-mono mt-0.5">-</div>
           </div>
-          <a href="index.html" class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition" title="ไปหน้าหลัก">
-            <i class="ph-bold ph-storefront text-lg"></i>
+          <a href="index.html" class="p-1.5 sm:p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition" title="ไปหน้าหลัก">
+            <i class="ph-bold ph-storefront text-base sm:text-lg"></i>
           </a>
-          <button onclick="loadAdminDashboardData()" class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition" title="รีเฟรชข้อมูล">
-            <i class="ph-bold ph-arrows-clockwise text-lg"></i>
+          <button onclick="loadAdminDashboardData()" class="p-1.5 sm:p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition" title="รีเฟรชข้อมูล">
+            <i class="ph-bold ph-arrows-clockwise text-base sm:text-lg"></i>
           </button>
-          <button onclick="handleAdminLogout()" class="p-2 text-rose-300 hover:text-white hover:bg-rose-600 rounded-xl transition" title="ออกจากระบบ">
-            <i class="ph-bold ph-sign-out text-lg"></i>
+          <button onclick="handleAdminLogout()" class="p-1.5 sm:p-2 text-rose-300 hover:text-white hover:bg-rose-600 rounded-xl transition" title="ออกจากระบบ">
+            <i class="ph-bold ph-sign-out text-base sm:text-lg"></i>
           </button>
         </div>
       </div>
@@ -165,14 +168,14 @@
       </div>
 
       <!-- Tabs -->
-      <div class="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div class="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar">
         <button onclick="switchAdminTab('products')" id="adminTabBtnProducts"
-          class="px-4 py-2 text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
+          class="flex-shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
           <i class="ph-bold ph-squares-four"></i>
           <span>ตรวจสอบและจัดการโพสต์สินค้า</span>
         </button>
         <button onclick="switchAdminTab('logs')" id="adminTabBtnLogs"
-          class="px-4 py-2 text-xs font-medium rounded-xl transition bg-white text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5">
+          class="flex-shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-medium rounded-xl transition bg-white text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5">
           <i class="ph-bold ph-list-bullets"></i>
           <span>ประวัติกิจกรรมระบบ (Logs)</span>
         </button>
@@ -187,17 +190,17 @@
               class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               oninput="filterAdminProducts()" />
           </div>
-          <div class="flex items-center gap-1 overflow-x-auto text-xs">
-            <button onclick="setAdminProductFilter('ALL', event)" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-800 text-white font-medium">ทั้งหมด</button>
-            <button onclick="setAdminProductFilter('ACTIVE', event)" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">กำลังขาย</button>
-            <button onclick="setAdminProductFilter('SOLD', event)" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">ขายแล้ว</button>
-            <button onclick="setAdminProductFilter('DELETED', event)" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">ถูกลบ</button>
+          <div class="flex items-center gap-1 overflow-x-auto no-scrollbar text-xs">
+            <button onclick="setAdminProductFilter('ALL', event)" class="admin-prod-filter flex-shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg bg-slate-800 text-white font-medium">ทั้งหมด</button>
+            <button onclick="setAdminProductFilter('ACTIVE', event)" class="admin-prod-filter flex-shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">กำลังขาย</button>
+            <button onclick="setAdminProductFilter('SOLD', event)" class="admin-prod-filter flex-shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">ขายแล้ว</button>
+            <button onclick="setAdminProductFilter('DELETED', event)" class="admin-prod-filter flex-shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">ถูกลบ</button>
           </div>
         </div>
 
         <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="w-full min-w-[640px] text-left text-xs">
               <thead class="bg-slate-100/80 text-slate-600 font-semibold border-b border-slate-200">
                 <tr>
                   <th class="p-3">สินค้า</th>
@@ -226,7 +229,7 @@
         </div>
         <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="w-full min-w-[640px] text-left text-xs">
               <thead class="bg-slate-100/80 text-slate-600 font-semibold border-b border-slate-200">
                 <tr>
                   <th class="p-3">วัน-เวลา</th>

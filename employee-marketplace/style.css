@@ -5,9 +5,32 @@
   --primary-hover: #2563eb;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Respect iPhone notch / home-indicator areas for sticky headers and floating alerts */
+.glass-nav {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+#newMessageFloatAlert {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Guard against long unbroken strings (URLs, IDs) blowing out flex/grid layouts on narrow screens */
+.truncate,
+[id^="detail"],
+[id^="chat"],
+[id^="banner"] {
+  min-width: 0;
 }
 
 ::-webkit-scrollbar {
@@ -142,30 +165,8 @@ body {
   will-change: transform;
 }
 
-.bg-decor__logo {
-  top: -6%;
-  right: -10%;
-  width: 46vw;
-  max-width: 620px;
-  aspect-ratio: 598 / 562;
-  background-image: url('assets/bitwise-logo-watermark.png');
-  opacity: 0.05;
-  transform: rotate(-6deg);
-}
-
-.bg-decor__mascot {
-  bottom: -2%;
-  left: -6%;
-  width: 60vw;
-  max-width: 760px;
-  aspect-ratio: 1584 / 672;
-  background-image: url('assets/bitwise-mascot-watermark.jpg');
-  opacity: 0.06;
-}
-
 @media (max-width: 1024px) {
   .bg-decor__logo { width: 58vw; opacity: 0.045; }
-  .bg-decor__mascot { width: 70vw; opacity: 0.055; }
 }
 
 @media (max-width: 640px) {
@@ -176,10 +177,17 @@ body {
     opacity: 0.04;
   }
   .bg-decor__mascot {
-    width: 92vw;
-    bottom: -1%;
-    left: -4%;
-    opacity: 0.05;
+    bottom: -2%;
+    left: -3%;
+    opacity: 0.14;
+  }
+}
+
+@media (max-width: 380px) {
+  .bg-decor__mascot {
+    width: clamp(120px, 40vw, 170px);
+    bottom: 0%;
+    opacity: 0.13;
   }
 }
 
@@ -192,13 +200,9 @@ body {
   display: none;
 }
 
-@media (max-width: 380px) {
-  .bg-decor__mascot { display: none; }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .bg-decor__logo,
   .bg-decor__mascot {
-    opacity: 0.035;
+    opacity: 0.06;
   }
 }
