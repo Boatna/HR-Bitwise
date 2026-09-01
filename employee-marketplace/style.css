@@ -1,4 +1,3 @@
-/* Custom styling and modern enhancements */
 @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
 
 :root {
@@ -11,7 +10,6 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -30,7 +28,6 @@ body {
   background: #94a3b8;
 }
 
-/* Glassmorphism Navbar & Cards */
 .glass-nav {
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
@@ -43,7 +40,6 @@ body {
   -webkit-backdrop-filter: blur(8px);
 }
 
-/* Transitions & Animations */
 .fade-in {
   animation: fadeIn 0.25s ease-out forwards;
 }
@@ -74,7 +70,6 @@ body {
   }
 }
 
-/* Product Card Hover Effect */
 .product-card {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -84,7 +79,6 @@ body {
   box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.08), 0 6px 12px -4px rgba(0, 0, 0, 0.04);
 }
 
-/* Chat Bubbles */
 .chat-bubble-me {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
@@ -97,7 +91,6 @@ body {
   border-bottom-left-radius: 4px;
 }
 
-/* Shimmer Loading Animation */
 .shimmer {
   background: linear-gradient(90deg, #f0f3f6 25%, #e2e8f0 50%, #f0f3f6 75%);
   background-size: 200% 100%;
@@ -113,12 +106,10 @@ body {
   }
 }
 
-/* Floating Action Button (FAB) for Sell */
 .fab-shadow {
   box-shadow: 0 8px 24px -4px rgba(59, 130, 246, 0.45);
 }
 
-/* Line Clamp utility */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -131,4 +122,83 @@ body {
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.bg-decor {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.bg-decor__logo,
+.bg-decor__mascot {
+  position: absolute;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  will-change: transform;
+}
+
+.bg-decor__logo {
+  top: -6%;
+  right: -10%;
+  width: 46vw;
+  max-width: 620px;
+  aspect-ratio: 598 / 562;
+  background-image: url('assets/bitwise-logo-watermark.png');
+  opacity: 0.05;
+  transform: rotate(-6deg);
+}
+
+.bg-decor__mascot {
+  bottom: -2%;
+  left: -6%;
+  width: 60vw;
+  max-width: 760px;
+  aspect-ratio: 1584 / 672;
+  background-image: url('assets/bitwise-mascot-watermark.jpg');
+  opacity: 0.06;
+}
+
+@media (max-width: 1024px) {
+  .bg-decor__logo { width: 58vw; opacity: 0.045; }
+  .bg-decor__mascot { width: 70vw; opacity: 0.055; }
+}
+
+@media (max-width: 640px) {
+  .bg-decor__logo {
+    width: 78vw;
+    top: -4%;
+    right: -22%;
+    opacity: 0.04;
+  }
+  .bg-decor__mascot {
+    width: 92vw;
+    bottom: -1%;
+    left: -4%;
+    opacity: 0.05;
+  }
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 380px) {
+  .bg-decor__mascot { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-decor__logo,
+  .bg-decor__mascot {
+    opacity: 0.035;
+  }
 }

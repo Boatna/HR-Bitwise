@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | Employee Marketplace</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="style.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen antialiased">
+
+  <!-- ========================================================================= -->
+  <!-- 0. BACKGROUND DECORATION: โลโก้บริษัท + มาสคอตแบบจางๆ (ไม่บังการใช้งาน) -->
+  <!-- ========================================================================= -->
+  <div class="bg-decor" aria-hidden="true">
+    <div class="bg-decor__logo"></div>
+    <div class="bg-decor__mascot"></div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- SCREEN 1: ADMIN LOGIN GATE -->
+  <!-- ========================================================================= -->
+  <div id="adminLoginScreen" class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+      <div class="p-8">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
+            <i class="ph-bold ph-shield-check"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-800">เข้าสู่ระบบผู้ดูแลระบบ</h3>
+          <p class="text-xs text-slate-500 mt-1">หน้านี้สำหรับแอดมินเท่านั้น กรุณายืนยันตัวตนด้วยรหัสพนักงานและ PIN</p>
+        </div>
+
+        <form id="adminLoginForm" onsubmit="handleAdminLoginSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสพนักงาน (EmpID)</label>
+            <div class="relative">
+              <i class="ph ph-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+              <input type="text" id="adminEmpIdInput" required placeholder="เช่น EMP001"
+                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white uppercase font-mono transition" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">รหัส PIN</label>
+            <div class="relative">
+              <i class="ph ph-lock-key absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+              <input type="password" id="adminPinInput" required maxlength="8" placeholder="กรอกรหัส PIN"
+                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white tracking-widest transition" />
+            </div>
+          </div>
+
+          <div id="adminLoginError" class="hidden p-3 rounded-xl bg-red-50 text-red-600 text-xs font-medium border border-red-200"></div>
+
+          <button type="submit" id="adminLoginSubmitBtn"
+            class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl shadow-lg transition active:scale-[0.98] flex items-center justify-center gap-2">
+            <span>เข้าสู่ระบบแอดมิน</span>
+            <i class="ph-bold ph-arrow-right"></i>
+          </button>
+        </form>
+
+        <div class="mt-5 text-center">
+          <a href="index.html" class="text-xs font-medium text-slate-400 hover:text-slate-600">
+            ← กลับหน้าหลัก Employee Marketplace
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- SCREEN 2: ADMIN DASHBOARD (แสดงเมื่อ login สำเร็จและมีสิทธิ์ Admin) -->
+  <!-- ========================================================================= -->
+  <div id="adminDashboardScreen" class="hidden min-h-screen">
+
+    <!-- Top Bar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-30 shadow-md">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl">
+            <i class="ph-bold ph-shield-check"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-bold text-sm sm:text-base leading-none">Admin Control Panel</h1>
+              <span class="text-[10px] bg-blue-500/30 text-blue-300 px-2 py-0.5 rounded-full font-mono uppercase">Admin Mode</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Employee Marketplace • ระบบจัดการภายใน</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="hidden sm:block text-right mr-2">
+            <div id="adminNavName" class="text-xs font-bold leading-none">-</div>
+            <div id="adminNavId" class="text-[10px] text-slate-400 font-mono mt-0.5">-</div>
+          </div>
+          <a href="index.html" class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition" title="ไปหน้าหลัก">
+            <i class="ph-bold ph-storefront text-lg"></i>
+          </a>
+          <button onclick="loadAdminDashboardData()" class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition" title="รีเฟรชข้อมูล">
+            <i class="ph-bold ph-arrows-clockwise text-lg"></i>
+          </button>
+          <button onclick="handleAdminLogout()" class="p-2 text-rose-300 hover:text-white hover:bg-rose-600 rounded-xl transition" title="ออกจากระบบ">
+            <i class="ph-bold ph-sign-out text-lg"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl flex-shrink-0">
+            <i class="ph ph-shopping-bag"></i>
+          </div>
+          <div>
+            <div class="text-[11px] font-medium text-slate-500">สินค้ากำลังขาย</div>
+            <div id="adminStatActiveProd" class="text-xl font-extrabold text-slate-800 font-mono">-</div>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl flex-shrink-0">
+            <i class="ph ph-check-circle"></i>
+          </div>
+          <div>
+            <div class="text-[11px] font-medium text-slate-500">สินค้าขายแล้ว</div>
+            <div id="adminStatSoldProd" class="text-xl font-extrabold text-slate-800 font-mono">-</div>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-2xl flex-shrink-0">
+            <i class="ph ph-prohibit"></i>
+          </div>
+          <div>
+            <div class="text-[11px] font-medium text-slate-500">โพสต์ที่ถูกลบ</div>
+            <div id="adminStatDeletedProd" class="text-xl font-extrabold text-rose-600 font-mono">-</div>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl flex-shrink-0">
+            <i class="ph ph-users-three"></i>
+          </div>
+          <div>
+            <div class="text-[11px] font-medium text-slate-500">พนักงานในระบบ</div>
+            <div id="adminStatEmployees" class="text-xl font-extrabold text-slate-800 font-mono">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <button onclick="switchAdminTab('products')" id="adminTabBtnProducts"
+          class="px-4 py-2 text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
+          <i class="ph-bold ph-squares-four"></i>
+          <span>ตรวจสอบและจัดการโพสต์สินค้า</span>
+        </button>
+        <button onclick="switchAdminTab('logs')" id="adminTabBtnLogs"
+          class="px-4 py-2 text-xs font-medium rounded-xl transition bg-white text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5">
+          <i class="ph-bold ph-list-bullets"></i>
+          <span>ประวัติกิจกรรมระบบ (Logs)</span>
+        </button>
+      </div>
+
+      <!-- TAB: PRODUCTS -->
+      <div id="adminTabProducts" class="space-y-3">
+        <div class="flex flex-col sm:flex-row gap-2 justify-between items-stretch sm:items-center">
+          <div class="relative flex-1 max-w-sm">
+            <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input type="text" id="adminProductSearch" placeholder="ค้นหาชื่อสินค้า, รหัส, หรือ EmpID..."
+              class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              oninput="filterAdminProducts()" />
+          </div>
+          <div class="flex items-center gap-1 overflow-x-auto text-xs">
+            <button onclick="setAdminProductFilter('ALL', event)" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-800 text-white font-medium">ทั้งหมด</button>
+            <button onclick="setAdminProductFilter('ACTIVE', event)" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">กำลังขาย</button>
+            <button onclick="setAdminProductFilter('SOLD', event)" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">ขายแล้ว</button>
+            <button onclick="setAdminProductFilter('DELETED', event)" class="admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">ถูกลบ</button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100/80 text-slate-600 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3">สินค้า</th>
+                  <th class="p-3">ราคา</th>
+                  <th class="p-3">ผู้ลงประกาศ (EmpID)</th>
+                  <th class="p-3 hidden sm:table-cell">วันที่ลง</th>
+                  <th class="p-3">สถานะ</th>
+                  <th class="p-3 text-right">การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="adminProductTableBody" class="divide-y divide-slate-100">
+                <tr><td colspan="6" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: LOGS -->
+      <div id="adminTabLogs" class="hidden space-y-3">
+        <div class="flex items-center justify-between text-xs text-slate-500">
+          <span>แสดง 100 รายการกิจกรรมล่าสุดจากชีต Logs</span>
+          <button onclick="loadAdminDashboardData()" class="text-blue-600 font-medium hover:underline flex items-center gap-1">
+            <i class="ph ph-arrows-clockwise"></i> รีเฟรช Logs
+          </button>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100/80 text-slate-600 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3">วัน-เวลา</th>
+                  <th class="p-3">รหัสพนักงาน</th>
+                  <th class="p-3">กิจกรรม (Action)</th>
+                  <th class="p-3">รายละเอียด (Details)</th>
+                </tr>
+              </thead>
+              <tbody id="adminLogsTableBody" class="divide-y divide-slate-100">
+                <tr><td colspan="4" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="text-center text-[11px] text-slate-400 py-6">
+      🛡️ หน้านี้สำหรับผู้ดูแลระบบเท่านั้น • การลบโพสต์จะถูกบันทึกประวัติลงชีต Logs โดยอัตโนมัติ
+    </footer>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

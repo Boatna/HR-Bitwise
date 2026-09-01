@@ -1,4 +1,3 @@
-
 const STATE = {
   currentUser: null,
   allProducts: [],
@@ -8,28 +7,17 @@ const STATE = {
   selectedImageBase64: '',
   selectedImageName: '',
   currentDetailProduct: null,
+  currentChatProduct: null,
   currentChatPartnerId: '',
   currentChatPartnerName: '',
   chatPollingInterval: null,
+  notificationPollingInterval: null,
   isApiConfigured: false,
 
-  // Admin Dashboard State
-  adminData: {
-    stats: {
-      totalEmployees: 0,
-      totalProducts: 0,
-      activeProducts: 0,
-      soldProducts: 0,
-      deletedProducts: 0,
-      totalMessages: 0,
-      totalLogs: 0
-    },
-    products: [],
-    logs: []
-  },
-  adminActiveTab: 'products',
-  adminProductFilterStatus: 'ALL',
-  adminSearchQuery: ''
+  myConversations: [],
+  totalUnreadCount: 0,
+  lastKnownUnreadCount: 0,
+  hasShownInitialUnreadAlert: false
 };
 
 const MOCK_PRODUCTS = [
@@ -95,7 +83,6 @@ const MOCK_PRODUCTS = [
   }
 ];
 
-// Sample Mock Messages Store
 let MOCK_MESSAGES = [
   {
     messageId: 'MSG-1',
@@ -103,7 +90,8 @@ let MOCK_MESSAGES = [
     senderEmpID: 'EMP002',
     receiverEmpID: 'EMP001',
     message: 'สวัสดีครับ หูฟังยังอยู่ไหมครับ ลดได้อีกนิดไหมครับ',
-    timestamp: '31/08/2026 10:00'
+    timestamp: '31/08/2026 10:00',
+    isRead: false
   },
   {
     messageId: 'MSG-2',
@@ -111,33 +99,25 @@ let MOCK_MESSAGES = [
     senderEmpID: 'EMP001',
     receiverEmpID: 'EMP002',
     message: 'ยังอยู่ครับ ถ้ามารับเองที่ตึก A ลดให้เหลือ 4,500 บาทได้ครับ',
-    timestamp: '31/08/2026 10:05'
+    timestamp: '31/08/2026 10:05',
+    isRead: true
   }
 ];
 
-// Sample Mock Logs
 let MOCK_LOGS = [
-  { logId: 'LOG-1', timestamp: '31/08/2026 09:00', empId: 'EMP001', action: 'LOGIN', details: 'เข้าสู่ระบบสำเร็จ (สมชาย ใจดี, IT)' },
+  { logId: 'LOG-1', timestamp: '31/08/2026 09:00', empId: 'EMP001', action: 'LOGIN', details: 'เข้าสู่ระบบสำเร็จ (สมชาย ใจดี, IT) [ADMIN]' },
   { logId: 'LOG-2', timestamp: '31/08/2026 09:30', empId: 'EMP001', action: 'POST_PRODUCT', details: 'ลงขายสินค้า [PROD-001] "หูฟังไร้สาย Sony WH-1000XM4"' },
   { logId: 'LOG-3', timestamp: '31/08/2026 10:00', empId: 'EMP002', action: 'LOGIN', details: 'เข้าสู่ระบบสำเร็จ (สมศรี มีสุข, HR)' },
   { logId: 'LOG-4', timestamp: '31/08/2026 10:00', empId: 'EMP002', action: 'SEND_MESSAGE', details: 'ส่งข้อความถึง EMP001 (สินค้า PROD-001)' }
 ];
 
-/**
- * =========================================================================
- * 1. INITIALIZATION & AUTHENTICATION
- * =========================================================================
- */
 document.addEventListener('DOMContentLoaded', () => {
   STATE.isApiConfigured = Boolean(CONFIG.API_URL && CONFIG.API_URL.trim() !== '');
 
-  // ตรวจสอบสถานะการเข้าสู่ระบบ
   checkStoredAuth();
 
-  // สร้างปุ่มหมวดหมู่
   renderCategories();
 
-  // โหลดรายการสินค้า
   loadProducts();
 });
 
@@ -146,6 +126,7 @@ function checkStoredAuth() {
   if (savedUser) {
     try {
       STATE.currentUser = JSON.parse(savedUser);
+      startNotificationPolling();
     } catch (e) {
       STATE.currentUser = null;
     }
@@ -155,6 +136,10 @@ function checkStoredAuth() {
 
 function checkIsAdmin(user) {
   if (!user || !user.empId) return false;
+  if (STATE.isApiConfigured) {
+    return user.isAdmin === true;
+  }
+
   const adminList = Array.isArray(CONFIG.ADMIN_EMP_IDS) ? CONFIG.ADMIN_EMP_IDS : ['EMP001', 'ADMIN', 'ADMIN001', 'IT001'];
   return user.isAdmin === true || adminList.includes(user.empId.toUpperCase());
 }
@@ -162,10 +147,13 @@ function checkIsAdmin(user) {
 function updateUserNav() {
   const container = document.getElementById('userNavContainer');
   const welcomeBanner = document.getElementById('welcomeBanner');
+  const notificationBellBtn = document.getElementById('notificationBellBtn');
 
   if (STATE.currentUser) {
     const initials = STATE.currentUser.name ? STATE.currentUser.name.substring(0, 2) : 'EM';
     const isAdminUser = checkIsAdmin(STATE.currentUser);
+
+    if (notificationBellBtn) notificationBellBtn.classList.remove('hidden');
 
     container.innerHTML = `
       <div class="relative group">
@@ -194,16 +182,25 @@ function updateUserNav() {
             <p class="text-[10px] text-blue-600 font-mono mt-0.5">EmpID: ${STATE.currentUser.empId}</p>
           </div>
 
-          ${isAdminUser ? `
-            <button onclick="openAdminDashboard()" class="w-full text-left px-4 py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 flex items-center gap-2">
-              <i class="ph-bold ph-shield-check text-base"></i> แผงควบคุมผู้ดูแลระบบ (Admin)
-            </button>
-            <div class="border-t border-slate-100 my-1"></div>
-          ` : ''}
+          <button onclick="openInboxModal()" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between">
+            <span class="flex items-center gap-2">
+              <i class="ph ph-chats-teardrop text-base"></i> ข้อความแชททั้งหมด
+            </span>
+            <span id="dropdownUnreadBadge" class="hidden bg-rose-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono">0</span>
+          </button>
 
           <button onclick="openMyListingsModal()" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2">
             <i class="ph ph-archive-box text-base"></i> สินค้าของฉัน
           </button>
+
+          ${isAdminUser ? `
+            <div class="border-t border-slate-100 my-1"></div>
+            <a href="admin.html" target="_blank" class="w-full text-left px-4 py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 flex items-center gap-2">
+              <i class="ph-bold ph-shield-check text-base"></i> แผงควบคุมผู้ดูแลระบบ (Admin)
+              <i class="ph ph-arrow-square-out text-xs ml-auto"></i>
+            </a>
+          ` : ''}
+
           <div class="border-t border-slate-100 my-1"></div>
           <button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center gap-2">
             <i class="ph ph-sign-out text-base"></i> ออกจากระบบ
@@ -212,7 +209,6 @@ function updateUserNav() {
       </div>
     `;
 
-    // Show banner
     if (welcomeBanner) {
       welcomeBanner.classList.remove('hidden');
       document.getElementById('bannerUserName').textContent = `สวัสดีคุณ ${STATE.currentUser.name}`;
@@ -229,17 +225,11 @@ function updateUserNav() {
       </button>
     `;
 
-    if (welcomeBanner) {
-      welcomeBanner.classList.add('hidden');
-    }
+    if (welcomeBanner) welcomeBanner.classList.add('hidden');
+    if (notificationBellBtn) notificationBellBtn.classList.add('hidden');
   }
 }
 
-/**
- * =========================================================================
- * 2. LOGIN / AUTHENTICATION MODAL & SUBMIT
- * =========================================================================
- */
 function openLoginModal() {
   document.getElementById('loginModal').classList.remove('hidden');
   document.getElementById('loginModal').classList.add('flex');
@@ -295,6 +285,7 @@ async function handleLoginSubmit(event) {
       localStorage.setItem('emp_marketplace_user', JSON.stringify(STATE.currentUser));
       closeLoginModal();
       updateUserNav();
+      startNotificationPolling();
       Swal.fire({
         icon: 'success',
         title: 'เข้าสู่ระบบสำเร็จ (Demo Mode)',
@@ -305,7 +296,7 @@ async function handleLoginSubmit(event) {
       return;
     }
 
-    // Call Real Google Apps Script Backend
+    // Real API Call
     const response = await fetch(CONFIG.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -323,6 +314,7 @@ async function handleLoginSubmit(event) {
       localStorage.setItem('emp_marketplace_user', JSON.stringify(STATE.currentUser));
       closeLoginModal();
       updateUserNav();
+      startNotificationPolling();
       Swal.fire({
         icon: 'success',
         title: 'เข้าสู่ระบบสำเร็จ',
@@ -355,22 +347,26 @@ function handleLogout() {
     cancelButtonText: 'ยกเลิก'
   }).then((res) => {
     if (res.isConfirmed) {
-      // 1. ล้างข้อมูลผู้ใช้ใน State และ Storage
       STATE.currentUser = null;
       localStorage.removeItem('emp_marketplace_user');
       localStorage.removeItem('emp_marketplace_chat_cache');
       sessionStorage.clear();
-
-      // 2. หยุดการทำงานของ Polling และล้างข้อมูลแชททั้งหมดในหน่วยความจำ
       if (STATE.chatPollingInterval) {
         clearInterval(STATE.chatPollingInterval);
         STATE.chatPollingInterval = null;
       }
+      if (STATE.notificationPollingInterval) {
+        clearInterval(STATE.notificationPollingInterval);
+        STATE.notificationPollingInterval = null;
+      }
+
       STATE.currentChatProduct = null;
       STATE.currentChatPartnerId = '';
       STATE.currentChatPartnerName = '';
+      STATE.myConversations = [];
+      STATE.totalUnreadCount = 0;
+      STATE.lastKnownUnreadCount = 0;
 
-      // 3. ล้างข้อความในหน้าต่างแชท (DOM) เพื่อไม่ให้ค้างในเบราว์เซอร์
       const chatArea = document.getElementById('chatMessagesArea');
       if (chatArea) {
         chatArea.innerHTML = `
@@ -383,18 +379,14 @@ function handleLogout() {
       const chatInput = document.getElementById('chatInput');
       if (chatInput) chatInput.value = '';
 
-      // 4. ล้างข้อมูลภาพที่อาจค้างอยู่ในฟอร์มลงขาย
       removeSelectedImage();
-
-      // 5. ปิด Modal ทั้งหมดที่อาจเปิดอยู่
       closeChatModal();
+      closeInboxModal();
       closeProductDetailModal();
       closeSellModal();
       closeMyListingsModal();
-      closeAdminDashboardModal();
-
-      // 6. อัปเดต UI หน้าเว็บ
       updateUserNav();
+      updateUnreadBadgeUI();
       applyFilters();
 
       Swal.fire({
@@ -408,16 +400,378 @@ function handleLogout() {
   });
 }
 
-/**
- * =========================================================================
- * 3. CATEGORIES & SEARCH & PRODUCT FEED
- * =========================================================================
- */
+function playNotificationChime() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+
+    const now = ctx.currentTime;
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, now);
+    gain1.gain.setValueAtTime(0.15, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.3);
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880, now + 0.15);
+    gain2.gain.setValueAtTime(0.2, now + 0.15);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.15);
+    osc2.stop(now + 0.5);
+  } catch (e) {
+    console.log('Audio chime not allowed yet by user interaction.');
+  }
+}
+
+function triggerAlarmEffect() {
+  const bellIcon = document.getElementById('bellIcon');
+  if (bellIcon) {
+    bellIcon.classList.remove('ph-bell');
+    bellIcon.classList.add('ph-bell-ringing', 'bell-ringing', 'text-rose-600');
+    setTimeout(() => {
+      bellIcon.classList.remove('bell-ringing', 'text-rose-600');
+    }, 4000);
+  }
+}
+
+function showNewMessageFloatAlert(conv) {
+  let el = document.getElementById('newMessageFloatAlert');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'newMessageFloatAlert';
+    el.className = 'fixed bottom-5 right-5 z-[60] max-w-xs';
+    document.body.appendChild(el);
+  }
+
+  el.innerHTML = `
+    <button
+      onclick="handleFloatAlertClick('${conv.key}')"
+      class="w-full flex items-center gap-3 bg-slate-900 text-white pl-3 pr-4 py-3 rounded-2xl shadow-2xl shadow-black/30 hover:bg-slate-800 active:scale-[0.98] transition scale-in border border-white/10"
+    >
+      <span class="relative flex-shrink-0">
+        <i class="ph-fill ph-bell-ringing text-2xl text-amber-400"></i>
+        <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping"></span>
+        <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full"></span>
+      </span>
+      <span class="text-left min-w-0">
+        <span class="block text-[11px] font-bold text-amber-300">มีข้อความใหม่จาก ${escapeHtml(conv.partnerName)}</span>
+        <span class="block text-xs text-slate-200 truncate max-w-[190px]">${escapeHtml(conv.lastMessage)}</span>
+      </span>
+      <i class="ph-bold ph-arrow-right ml-auto flex-shrink-0"></i>
+    </button>
+  `;
+  el.classList.remove('hidden');
+  if (el._hideTimeout) clearTimeout(el._hideTimeout);
+  el._hideTimeout = setTimeout(() => hideNewMessageFloatAlert(), 8000);
+}
+
+function hideNewMessageFloatAlert() {
+  const el = document.getElementById('newMessageFloatAlert');
+  if (el) el.classList.add('hidden');
+}
+
+function handleFloatAlertClick(key) {
+  hideNewMessageFloatAlert();
+  openChatModalFromInboxByKey(key);
+}
+
+function handleBellClick() {
+  if (!STATE.currentUser) {
+    openLoginModal();
+    return;
+  }
+
+  hideNewMessageFloatAlert();
+
+  const unreadConvs = (STATE.myConversations || []).filter(c => c.unreadCount > 0);
+  if (unreadConvs.length === 1) {
+    openChatModalFromInbox(unreadConvs[0]);
+  } else {
+    openInboxModal();
+  }
+}
+
+function updateUnreadBadgeUI() {
+  const badge = document.getElementById('unreadBadge');
+  const dropdownBadge = document.getElementById('dropdownUnreadBadge');
+  const count = STATE.totalUnreadCount || 0;
+
+  if (badge) {
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : count;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  }
+
+  if (dropdownBadge) {
+    if (count > 0) {
+      dropdownBadge.textContent = count;
+      dropdownBadge.classList.remove('hidden');
+    } else {
+      dropdownBadge.classList.add('hidden');
+    }
+  }
+}
+
+function startNotificationPolling() {
+  if (STATE.notificationPollingInterval) clearInterval(STATE.notificationPollingInterval);
+  loadMyChats(false);
+  STATE.notificationPollingInterval = setInterval(() => {
+    if (STATE.currentUser) {
+      loadMyChats(false);
+    }
+  }, 4000);
+}
+
+async function loadMyChats(showLoader = false) {
+  if (!STATE.currentUser) return;
+
+  try {
+    let conversations = [];
+    let totalUnread = 0;
+
+    if (!STATE.isApiConfigured) {
+      // Demo Mode
+      const myId = STATE.currentUser.empId;
+      const convMap = {};
+
+      MOCK_MESSAGES.forEach(m => {
+        if (m.senderEmpID === myId || m.receiverEmpID === myId) {
+          const partnerId = m.senderEmpID === myId ? m.receiverEmpID : m.senderEmpID;
+          const key = `${m.productId}_${partnerId}`;
+          const prod = MOCK_PRODUCTS.find(p => p.productId === m.productId) || { title: 'สินค้า', price: 0, imageUrl: '' };
+          const isSeller = prod.empId === myId;
+
+          if (!convMap[key]) {
+            convMap[key] = {
+              key: key,
+              productId: m.productId,
+              productTitle: prod.title,
+              productImage: prod.imageUrl,
+              productPrice: prod.price,
+              isSeller: isSeller,
+              partnerId: partnerId,
+              partnerName: partnerId === 'EMP001' ? 'สมชาย ใจดี' : (partnerId === 'EMP002' ? 'สมศรี มีสุข' : `พนักงาน ${partnerId}`),
+              partnerDept: partnerId === 'EMP001' ? 'IT' : 'HR',
+              lastMessage: m.message,
+              lastSenderId: m.senderEmpID,
+              timestamp: m.timestamp,
+              unreadCount: (m.receiverEmpID === myId && !m.isRead) ? 1 : 0
+            };
+          } else {
+            convMap[key].lastMessage = m.message;
+            convMap[key].lastSenderId = m.senderEmpID;
+            convMap[key].timestamp = m.timestamp;
+            if (m.receiverEmpID === myId && !m.isRead) convMap[key].unreadCount++;
+          }
+
+          if (m.receiverEmpID === myId && !m.isRead) totalUnread++;
+        }
+      });
+
+      conversations = Object.values(convMap);
+    } else {
+      const response = await fetch(`${CONFIG.API_URL}?action=getMyChats&empId=${encodeURIComponent(STATE.currentUser.empId)}&_t=${Date.now()}`);
+      const result = await response.json();
+      if (result.success) {
+        conversations = result.conversations || [];
+        totalUnread = result.totalUnread || 0;
+      }
+    }
+
+    const isFirstPollThisSession = !STATE.hasShownInitialUnreadAlert;
+    STATE.hasShownInitialUnreadAlert = true;
+
+    if (isFirstPollThisSession) {
+      if (totalUnread > 0) {
+        triggerAlarmEffect();
+        const firstUnreadConv = conversations.find(c => c.unreadCount > 0);
+        if (firstUnreadConv) showNewMessageFloatAlert(firstUnreadConv);
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: `🔔 คุณมีข้อความที่ยังไม่ได้อ่าน ${totalUnread} ข้อความ`,
+          showConfirmButton: true,
+          confirmButtonText: 'เปิดดูแชท',
+          confirmButtonColor: '#3b82f6',
+          timer: 6000,
+          timerProgressBar: true
+        }).then((res) => {
+          if (res.isConfirmed) openInboxModal();
+        });
+      }
+    } else if (totalUnread > STATE.lastKnownUnreadCount) {
+      // ทุกครั้งหลังจากนั้น: ยอด unread "เพิ่มขึ้น" จากค่าก่อนหน้า = มีข้อความใหม่จริงๆ ให้แจ้งเตือนเสมอ
+      // ไม่ว่าค่าก่อนหน้าจะเป็น 0 หรือไม่ก็ตาม
+      playNotificationChime();
+      triggerAlarmEffect();
+
+      const latestUnreadConv = conversations.find(c => c.unreadCount > 0);
+      if (latestUnreadConv) {
+        showNewMessageFloatAlert(latestUnreadConv);
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: `🔔 มีข้อความใหม่จาก ${latestUnreadConv.partnerName}`,
+          html: `<span class="text-xs text-slate-600">${escapeHtml(latestUnreadConv.lastMessage)}</span>`,
+          showConfirmButton: true,
+          confirmButtonText: 'เปิดดูแชท',
+          confirmButtonColor: '#3b82f6',
+          timer: 6000,
+          timerProgressBar: true
+        }).then((res) => {
+          if (res.isConfirmed) {
+            openChatModalFromInbox(latestUnreadConv);
+          }
+        });
+      }
+    }
+
+    STATE.lastKnownUnreadCount = totalUnread;
+    STATE.totalUnreadCount = totalUnread;
+    STATE.myConversations = conversations;
+
+    updateUnreadBadgeUI();
+    const inboxModal = document.getElementById('inboxModal');
+    if (inboxModal && !inboxModal.classList.contains('hidden')) {
+      renderInboxList();
+    }
+
+  } catch (err) {
+    console.error('Error loading chats:', err);
+  }
+}
+
+function openInboxModal() {
+  if (!STATE.currentUser) {
+    openLoginModal();
+    return;
+  }
+
+  document.getElementById('inboxModal').classList.remove('hidden');
+  document.getElementById('inboxModal').classList.add('flex');
+
+  hideNewMessageFloatAlert();
+  loadMyChats(true);
+  renderInboxList();
+}
+
+function closeInboxModal() {
+  document.getElementById('inboxModal').classList.add('hidden');
+  document.getElementById('inboxModal').classList.remove('flex');
+}
+
+function renderInboxList() {
+  const container = document.getElementById('inboxListContainer');
+  const conversations = STATE.myConversations || [];
+
+  if (conversations.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-12 text-slate-400">
+        <i class="ph ph-chat-circle-dots text-4xl mb-2 block text-slate-300"></i>
+        <p class="text-sm font-semibold text-slate-600">ยังไม่มีข้อความสนทนา</p>
+        <p class="text-xs text-slate-400 mt-1">เมื่อคุณทักถามสินค้า หรือมีลูกค้าทักมา จะแสดงที่นี่</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = conversations.map(conv => {
+    const isUnread = conv.unreadCount > 0;
+    const isSeller = conv.isSeller;
+    const roleBadge = isSeller
+      ? `<span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><i class="ph-bold ph-storefront"></i> ลูกค้าทักซื้อ</span>`
+      : `<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full"><i class="ph-bold ph-shopping-cart"></i> คุณทักถาม</span>`;
+
+    const fallbackImg = 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=100&auto=format&fit=crop&q=60';
+    const imgUrl = conv.productImage || fallbackImg;
+
+    return `
+      <div
+        onclick="openChatModalFromInboxByKey('${conv.key}')"
+        class="p-3.5 bg-white border ${isUnread ? 'border-blue-300 bg-blue-50/40 shadow-sm' : 'border-slate-200/80'} hover:border-blue-400 rounded-2xl cursor-pointer transition flex items-center justify-between gap-3 group relative"
+      >
+        <div class="flex items-center gap-3 min-w-0">
+          <img
+            src="${imgUrl}"
+            alt="Product"
+            class="w-12 h-12 rounded-xl object-cover bg-slate-100 flex-shrink-0 border border-slate-200"
+            onerror="this.src='${fallbackImg}'"
+          />
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 mb-0.5">
+              ${roleBadge}
+              <span class="text-xs font-bold text-slate-800 truncate">${escapeHtml(conv.partnerName)}</span>
+              <span class="text-[10px] text-slate-400 font-mono">(${conv.partnerId})</span>
+            </div>
+            <div class="text-xs font-semibold text-blue-600 truncate max-w-[220px] sm:max-w-[280px]">
+              ${escapeHtml(conv.productTitle)}
+            </div>
+            <div class="text-xs text-slate-600 truncate max-w-[220px] sm:max-w-[280px] mt-0.5 ${isUnread ? 'font-bold text-slate-900' : ''}">
+              ${escapeHtml(conv.lastMessage)}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
+          <span class="text-[10px] text-slate-400">${conv.timestamp || ''}</span>
+          ${isUnread ? `
+            <span class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-mono shadow-sm animate-pulse">
+              ${conv.unreadCount} ใหม่
+            </span>
+          ` : `
+            <i class="ph ph-caret-right text-slate-300 group-hover:text-blue-500 transition"></i>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openChatModalFromInboxByKey(key) {
+  const conv = STATE.myConversations.find(c => c.key === key);
+  if (!conv) return;
+  openChatModalFromInbox(conv);
+}
+
+function openChatModalFromInbox(conv) {
+  closeInboxModal();
+
+  const mockProduct = {
+    productId: conv.productId,
+    title: conv.productTitle,
+    price: conv.productPrice,
+    imageUrl: conv.productImage
+  };
+
+  openChatModal(mockProduct, conv.partnerId, conv.partnerName);
+}
+
+function openSellerInquiriesFromDetail() {
+  const item = STATE.currentDetailProduct;
+  if (!item || !STATE.currentUser) return;
+
+  closeProductDetailModal();
+  openInboxModal();
+}
+
 function renderCategories() {
   const container = document.getElementById('categoryContainer');
   const sellCategorySelect = document.getElementById('sellCategory');
 
-  // Categories Bar
   container.innerHTML = CONFIG.CATEGORIES.map(cat => `
     <button
       onclick="filterCategory('${cat.id}')"
@@ -433,7 +787,6 @@ function renderCategories() {
     </button>
   `).join('');
 
-  // Populate Select in Sell Form
   sellCategorySelect.innerHTML = CONFIG.CATEGORIES
     .filter(c => c.id !== 'all')
     .map(cat => `<option value="${cat.name}">${cat.name}</option>`)
@@ -605,11 +958,6 @@ function renderProductGrid() {
   }).join('');
 }
 
-/**
- * =========================================================================
- * 4. PRODUCT DETAIL MODAL
- * =========================================================================
- */
 function openProductDetail(productId) {
   const item = STATE.allProducts.find(p => p.productId === productId);
   if (!item) return;
@@ -623,13 +971,10 @@ function openProductDetail(productId) {
   document.getElementById('detailTitle').textContent = item.title;
   document.getElementById('detailDate').textContent = item.createdAt ? `ลงขายเมื่อ: ${item.createdAt}` : '';
   document.getElementById('detailDescription').textContent = item.description || 'ไม่มีรายละเอียดเพิ่มเติม';
-
-  // Seller Info
   document.getElementById('detailSellerAvatar').textContent = item.sellerName ? item.sellerName.substring(0, 2) : 'EM';
   document.getElementById('detailSellerName').textContent = item.sellerName || item.empId;
   document.getElementById('detailSellerDept').textContent = `${item.sellerDept || 'พนักงาน'} ${item.sellerPlant ? '• ' + item.sellerPlant : ''} (รหัส ${item.empId})`;
 
-  // Phone Call Button
   const phoneBtn = document.getElementById('detailPhoneBtn');
   const phoneText = document.getElementById('detailPhoneText');
   if (item.phone) {
@@ -642,24 +987,26 @@ function openProductDetail(productId) {
     phoneBtn.classList.add('opacity-50', 'pointer-events-none');
   }
 
-  // Owner / Admin Management Button
   const ownerBtn = document.getElementById('detailOwnerManageBtn');
   const chatBtn = document.getElementById('detailChatBtn');
+  const inquiriesBtn = document.getElementById('detailSellerInquiriesBtn');
   const isAdminUser = checkIsAdmin(STATE.currentUser);
+  const isOwner = STATE.currentUser && STATE.currentUser.empId === item.empId;
 
-  if (STATE.currentUser && (STATE.currentUser.empId === item.empId || isAdminUser)) {
-    ownerBtn.classList.remove('hidden');
-    ownerBtn.innerHTML = isAdminUser && STATE.currentUser.empId !== item.empId
-      ? `<i class="ph-bold ph-shield-warning"></i> <span>จัดการ (Admin)</span>`
-      : `<i class="ph-bold ph-gear"></i> <span>จัดการ</span>`;
-  } else {
-    ownerBtn.classList.add('hidden');
-  }
-
-  if (STATE.currentUser && STATE.currentUser.empId === item.empId) {
+  if (isOwner) {
     chatBtn.classList.add('hidden');
+    inquiriesBtn.classList.remove('hidden');
+    ownerBtn.classList.remove('hidden');
+    ownerBtn.innerHTML = `<i class="ph-bold ph-gear"></i> <span>จัดการ</span>`;
+  } else if (isAdminUser) {
+    chatBtn.classList.remove('hidden');
+    inquiriesBtn.classList.add('hidden');
+    ownerBtn.classList.remove('hidden');
+    ownerBtn.innerHTML = `<i class="ph-bold ph-shield-warning"></i> <span>จัดการ (Admin)</span>`;
   } else {
     chatBtn.classList.remove('hidden');
+    inquiriesBtn.classList.add('hidden');
+    ownerBtn.classList.add('hidden');
   }
 
   document.getElementById('productDetailModal').classList.remove('hidden');
@@ -679,8 +1026,7 @@ function promptManageOwnerProduct() {
   const isOwner = STATE.currentUser.empId === item.empId;
 
   if (isAdminUser && !isOwner) {
-    // Admin Action for other user's post
-    handleAdminDeletePost(item.productId, item.title, item.empId);
+    handleAdminDeletePost(item.productId);
     return;
   }
 
@@ -704,11 +1050,6 @@ function promptManageOwnerProduct() {
   });
 }
 
-/**
- * =========================================================================
- * 5. POST / SELL PRODUCT MODAL & IMAGE COMPRESSION
- * =========================================================================
- */
 function openSellModal() {
   if (!STATE.currentUser) {
     Swal.fire({
@@ -883,11 +1224,6 @@ async function handleSellSubmit(event) {
   }
 }
 
-/**
- * =========================================================================
- * 6. CHAT & MESSAGING SYSTEM
- * =========================================================================
- */
 function openChatFromDetail() {
   const item = STATE.currentDetailProduct;
   if (!item) return;
@@ -916,6 +1252,8 @@ function openChatFromDetail() {
 }
 
 function openChatModal(product, partnerId, partnerName) {
+  hideNewMessageFloatAlert();
+
   STATE.currentChatProduct = product;
   STATE.currentChatPartnerId = partnerId;
   STATE.currentChatPartnerName = partnerName;
@@ -927,11 +1265,11 @@ function openChatModal(product, partnerId, partnerName) {
 
   document.getElementById('chatModal').classList.remove('hidden');
   document.getElementById('chatModal').classList.add('flex');
-
   loadChatMessages();
+  markChatMessagesAsRead(product.productId, partnerId);
 
   if (STATE.chatPollingInterval) clearInterval(STATE.chatPollingInterval);
-  STATE.chatPollingInterval = setInterval(loadChatMessages, CONFIG.CHAT_POLL_INTERVAL || 4000);
+  STATE.chatPollingInterval = setInterval(loadChatMessages, CONFIG.CHAT_POLL_INTERVAL || 3500);
 }
 
 function closeChatModal() {
@@ -940,6 +1278,37 @@ function closeChatModal() {
   if (STATE.chatPollingInterval) {
     clearInterval(STATE.chatPollingInterval);
     STATE.chatPollingInterval = null;
+  }
+  loadMyChats(false);
+}
+
+async function markChatMessagesAsRead(productId, partnerId) {
+  if (!STATE.currentUser) return;
+
+  if (!STATE.isApiConfigured) {
+    MOCK_MESSAGES.forEach(m => {
+      if (m.productId === productId && m.senderEmpID === partnerId && m.receiverEmpID === STATE.currentUser.empId) {
+        m.isRead = true;
+      }
+    });
+    loadMyChats(false);
+    return;
+  }
+
+  try {
+    await fetch(CONFIG.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'markAsRead',
+        productId: productId,
+        myEmpId: STATE.currentUser.empId,
+        partnerEmpId: partnerId
+      })
+    });
+    loadMyChats(false);
+  } catch (e) {
+    console.error('Mark read error:', e);
   }
 }
 
@@ -972,6 +1341,7 @@ async function loadChatMessages() {
         <div class="text-center py-12 text-slate-400 text-xs">
           <i class="ph ph-chat-circle-dots text-3xl mb-2 block"></i>
           ยังไม่มีบทสนทนา พิมพ์ทักทายหรือต่อรองราคาสินค้าได้เลยครับ
+          <p class="text-[10px] text-slate-400 mt-2">⏳ ข้อความจะถูกลบอัตโนมัติทุกเที่ยงคืนของวันถัดไป</p>
         </div>
       `;
       return;
@@ -1010,15 +1380,16 @@ async function sendChatMessage() {
 
   const now = new Date();
   const timeFormatted = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
+  const tempId = 'temp-' + Date.now();
   const messagesArea = document.getElementById('chatMessagesArea');
   const tempMsgElement = document.createElement('div');
   tempMsgElement.className = 'flex flex-col items-end';
+  tempMsgElement.id = tempId;
   tempMsgElement.innerHTML = `
     <div class="max-w-[78%] px-4 py-2.5 rounded-2xl text-xs sm:text-sm chat-bubble-me">
       ${escapeHtml(messageText)}
     </div>
-    <span class="text-[10px] text-slate-400 mt-1 px-1">ส่งแล้ว ${timeFormatted}</span>
+    <span class="text-[10px] text-slate-400 mt-1 px-1" data-role="status">กำลังส่ง...</span>
   `;
   messagesArea.appendChild(tempMsgElement);
   messagesArea.scrollTop = messagesArea.scrollHeight;
@@ -1031,12 +1402,15 @@ async function sendChatMessage() {
         senderEmpID: myId,
         receiverEmpID: partnerId,
         message: messageText,
-        timestamp: timeFormatted
+        timestamp: timeFormatted,
+        isRead: false
       });
+      updateChatBubbleStatus(tempId, `ส่งแล้ว ${timeFormatted}`);
+      loadMyChats(false);
       return;
     }
 
-    await fetch(CONFIG.API_URL, {
+    const response = await fetch(CONFIG.API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
@@ -1047,16 +1421,61 @@ async function sendChatMessage() {
         message: messageText
       })
     });
+
+    const result = await response.json();
+
+    if (!result || !result.success) {
+      markChatBubbleFailed(tempId, messageText);
+      Swal.fire({ icon: 'error', title: 'ส่งข้อความไม่สำเร็จ', text: (result && result.message) || 'กรุณาลองส่งข้อความอีกครั้ง' });
+      return;
+    }
+
+    updateChatBubbleStatus(tempId, `ส่งแล้ว ${timeFormatted}`);
+    loadChatMessages();
+    loadMyChats(false);
   } catch (err) {
     console.error('Failed to send chat message:', err);
+    markChatBubbleFailed(tempId, messageText);
+    Swal.fire({
+      icon: 'error',
+      title: 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ',
+      text: 'ข้อความนี้ยังไม่ถูกส่งไปยังอีกฝ่าย กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง'
+    });
   }
 }
 
-/**
- * =========================================================================
- * 7. MY LISTINGS (จัดการสินค้าของฉัน)
- * =========================================================================
- */
+function updateChatBubbleStatus(bubbleId, text) {
+  const bubbleElement = document.getElementById(bubbleId);
+  if (!bubbleElement) return;
+  const statusEl = bubbleElement.querySelector('[data-role="status"]');
+  if (statusEl) statusEl.textContent = text;
+}
+
+function markChatBubbleFailed(bubbleId, originalMessageText) {
+  const bubbleElement = document.getElementById(bubbleId);
+  if (!bubbleElement) return;
+  bubbleElement.dataset.failedText = originalMessageText;
+
+  const statusEl = bubbleElement.querySelector('[data-role="status"]');
+  if (statusEl) {
+    statusEl.innerHTML = `
+      <span class="text-rose-500 font-semibold">✕ ส่งไม่สำเร็จ</span>
+      <button onclick="retryFailedMessage('${bubbleElement.id}')" class="ml-1 text-blue-600 underline font-semibold">ลองอีกครั้ง</button>
+    `;
+  }
+}
+
+function retryFailedMessage(bubbleId) {
+  const bubbleElement = document.getElementById(bubbleId);
+  if (!bubbleElement) return;
+  const text = bubbleElement.dataset.failedText || '';
+  bubbleElement.remove();
+
+  const input = document.getElementById('chatInput');
+  input.value = text;
+  sendChatMessage();
+}
+
 function openMyListingsModal() {
   if (!STATE.currentUser) {
     openLoginModal();
@@ -1184,240 +1603,23 @@ async function deleteItem(productId) {
   Swal.fire({ icon: 'success', title: 'ลบสินค้าเรียบร้อย', timer: 1500, showConfirmButton: false });
 }
 
-/**
- * =========================================================================
- * 8. ADMIN DASHBOARD & MODERATION (ผู้ดูแลระบบ)
- * =========================================================================
- */
-function openAdminDashboard() {
-  if (!checkIsAdmin(STATE.currentUser)) {
-    Swal.fire({ icon: 'error', title: 'ปฏิเสธการเข้าถึง', text: 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้' });
+async function handleAdminDeletePost(productId) {
+  const item = STATE.allProducts.find(p => p.productId === productId);
+
+  if (!item) {
+    Swal.fire({ icon: 'error', title: 'ไม่พบข้อมูลสินค้านี้ อาจถูกลบหรือรีเฟรชข้อมูลไปแล้ว' });
     return;
   }
 
-  document.getElementById('adminDashboardModal').classList.remove('hidden');
-  document.getElementById('adminDashboardModal').classList.add('flex');
+  const productTitle = item.title;
+  const sellerEmpId = item.empId;
 
-  loadAdminDashboardData();
-}
-
-function closeAdminDashboardModal() {
-  document.getElementById('adminDashboardModal').classList.add('hidden');
-  document.getElementById('adminDashboardModal').classList.remove('flex');
-}
-
-function switchAdminTab(tabName) {
-  STATE.adminActiveTab = tabName;
-
-  const btnProd = document.getElementById('adminTabBtnProducts');
-  const btnLogs = document.getElementById('adminTabBtnLogs');
-  const tabProd = document.getElementById('adminTabProducts');
-  const tabLogs = document.getElementById('adminTabLogs');
-
-  if (tabName === 'products') {
-    btnProd.className = 'px-4 py-2 text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5';
-    btnLogs.className = 'px-4 py-2 text-xs font-medium rounded-xl transition bg-slate-200 text-slate-700 hover:bg-slate-300 flex items-center gap-1.5';
-    tabProd.classList.remove('hidden');
-    tabLogs.classList.add('hidden');
-  } else {
-    btnLogs.className = 'px-4 py-2 text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5';
-    btnProd.className = 'px-4 py-2 text-xs font-medium rounded-xl transition bg-slate-200 text-slate-700 hover:bg-slate-300 flex items-center gap-1.5';
-    tabLogs.classList.remove('hidden');
-    tabProd.classList.add('hidden');
-  }
-}
-
-async function loadAdminDashboardData(forceRefresh = false) {
-  try {
-    if (!STATE.isApiConfigured) {
-      // Demo Mode Data
-      const activeCount = STATE.allProducts.filter(p => p.status === 'ACTIVE').length;
-      const soldCount = STATE.allProducts.filter(p => p.status === 'SOLD').length;
-      const deletedCount = STATE.allProducts.filter(p => p.status === 'DELETED' || p.status === 'DELETED_BY_ADMIN').length;
-
-      STATE.adminData = {
-        stats: {
-          totalEmployees: 12,
-          totalProducts: STATE.allProducts.length,
-          activeProducts: activeCount,
-          soldProducts: soldCount,
-          deletedProducts: deletedCount,
-          totalMessages: MOCK_MESSAGES.length,
-          totalLogs: MOCK_LOGS.length
-        },
-        products: [...STATE.allProducts],
-        logs: [...MOCK_LOGS]
-      };
-    } else {
-      const response = await fetch(`${CONFIG.API_URL}?action=getAdminDashboard&adminEmpId=${encodeURIComponent(STATE.currentUser.empId)}&_t=${Date.now()}`);
-      const result = await response.json();
-      if (result.success) {
-        STATE.adminData = {
-          stats: result.stats || {},
-          products: result.products || [],
-          logs: result.logs || []
-        };
-      }
-    }
-
-    renderAdminDashboard();
-  } catch (err) {
-    console.error('Error fetching admin data:', err);
-  }
-}
-
-function renderAdminDashboard() {
-  const stats = STATE.adminData.stats;
-  document.getElementById('adminStatActiveProd').textContent = stats.activeProducts || 0;
-  document.getElementById('adminStatSoldProd').textContent = stats.soldProducts || 0;
-  document.getElementById('adminStatDeletedProd').textContent = stats.deletedProducts || 0;
-  document.getElementById('adminStatEmployees').textContent = `${stats.totalEmployees || 0} คน`;
-
-  renderAdminProductTable();
-  renderAdminLogsTable();
-}
-
-function setAdminProductFilter(status) {
-  STATE.adminProductFilterStatus = status;
-
-  document.querySelectorAll('.admin-prod-filter').forEach(btn => {
-    btn.className = 'admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs';
-  });
-  event.target.className = 'admin-prod-filter px-3 py-1.5 rounded-lg bg-slate-800 text-white font-medium text-xs';
-
-  renderAdminProductTable();
-}
-
-function filterAdminProducts() {
-  STATE.adminSearchQuery = (document.getElementById('adminProductSearch').value || '').trim().toLowerCase();
-  renderAdminProductTable();
-}
-
-function renderAdminProductTable() {
-  const tbody = document.getElementById('adminProductTableBody');
-  const products = STATE.adminData.products || [];
-
-  const filtered = products.filter(item => {
-    const matchStatus = STATE.adminProductFilterStatus === 'ALL' ||
-      (STATE.adminProductFilterStatus === 'DELETED' && (item.status === 'DELETED' || item.status === 'DELETED_BY_ADMIN')) ||
-      item.status === STATE.adminProductFilterStatus;
-
-    const matchQuery = !STATE.adminSearchQuery ||
-      (item.title && item.title.toLowerCase().includes(STATE.adminSearchQuery)) ||
-      (item.empId && item.empId.toLowerCase().includes(STATE.adminSearchQuery)) ||
-      (item.productId && item.productId.toLowerCase().includes(STATE.adminSearchQuery));
-
-    return matchStatus && matchQuery;
-  });
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" class="p-8 text-center text-slate-400">
-          ไม่พบรายการสินค้าที่ตรงกับเงื่อนไข
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(item => {
-    const isDeleted = item.status === 'DELETED' || item.status === 'DELETED_BY_ADMIN';
-    let statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">กำลังขาย</span>`;
-    if (item.status === 'SOLD') {
-      statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">ขายแล้ว</span>`;
-    } else if (isDeleted) {
-      statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">ถูกลบ/แบน</span>`;
-    }
-
-    return `
-      <tr class="hover:bg-slate-50/80 transition">
-        <td class="p-3">
-          <div class="flex items-center gap-2.5">
-            <img src="${item.imageUrl || 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=100'}" class="w-10 h-10 rounded-lg object-cover bg-slate-100 flex-shrink-0" />
-            <div class="min-w-0">
-              <div class="font-bold text-slate-800 truncate max-w-[200px]">${escapeHtml(item.title)}</div>
-              <div class="text-[10px] text-slate-400 font-mono">${item.productId} • ${item.category}</div>
-            </div>
-          </div>
-        </td>
-        <td class="p-3 font-mono font-bold text-blue-600">
-          ฿${Number(item.price).toLocaleString()}
-        </td>
-        <td class="p-3">
-          <span class="font-mono font-semibold text-slate-700">${item.empId}</span>
-          <div class="text-[10px] text-slate-400">${item.phone || '-'}</div>
-        </td>
-        <td class="p-3 text-slate-500 text-[11px]">
-          ${item.createdAt || '-'}
-        </td>
-        <td class="p-3">
-          ${statusBadge}
-        </td>
-        <td class="p-3 text-right">
-          ${!isDeleted ? `
-            <button
-              onclick="handleAdminDeletePost('${item.productId}', '${escapeHtml(item.title)}', '${item.empId}')"
-              class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-semibold flex items-center gap-1 ml-auto transition"
-              title="ลบโพสต์ที่ไม่เหมาะสม"
-            >
-              <i class="ph-bold ph-trash"></i>
-              <span>ลบโพสต์นี้</span>
-            </button>
-          ` : `
-            <span class="text-[11px] text-slate-400 italic">ลบแล้ว</span>
-          `}
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function renderAdminLogsTable() {
-  const tbody = document.getElementById('adminLogsTableBody');
-  const logs = STATE.adminData.logs || [];
-
-  if (logs.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" class="p-8 text-center text-slate-400">
-          ยังไม่มีข้อมูลประวัติกิจกรรม (Logs)
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = logs.map(log => {
-    let actionBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">${log.action}</span>`;
-    if (log.action === 'LOGIN') {
-      actionBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 font-mono">LOGIN</span>`;
-    } else if (log.action === 'POST_PRODUCT') {
-      actionBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700 font-mono">POST</span>`;
-    } else if (log.action.includes('DELETE')) {
-      actionBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700 font-mono">${log.action}</span>`;
-    } else if (log.action === 'SEND_MESSAGE') {
-      actionBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-700 font-mono">MESSAGE</span>`;
-    }
-
-    return `
-      <tr class="hover:bg-slate-50 transition">
-        <td class="p-3 text-slate-500 font-mono text-[11px] whitespace-nowrap">${log.timestamp || '-'}</td>
-        <td class="p-3 font-mono font-bold text-slate-800">${log.empId}</td>
-        <td class="p-3">${actionBadge}</td>
-        <td class="p-3 text-slate-700 text-xs">${escapeHtml(log.details)}</td>
-      </tr>
-    `;
-  }).join('');
-}
-
-async function handleAdminDeletePost(productId, productTitle, sellerEmpId) {
   const { value: reason, isConfirmed } = await Swal.fire({
     title: 'ลบโพสต์ที่ไม่เหมาะสม (Admin)',
     html: `
       <p class="text-xs text-slate-600 mb-3 text-left">
         ต้องการลบสินค้า: <b>${escapeHtml(productTitle)}</b><br/>
-        ของผู้ลงประกาศ: <b>${sellerEmpId}</b>
+        ของผู้ลงประกาศ: <b>${escapeHtml(sellerEmpId)}</b>
       </p>
     `,
     input: 'select',
@@ -1440,19 +1642,11 @@ async function handleAdminDeletePost(productId, productTitle, sellerEmpId) {
 
   if (!isConfirmed || !reason) return;
 
-  // Local state update
   const prodIndex = STATE.allProducts.findIndex(p => p.productId === productId);
   if (prodIndex > -1) {
     STATE.allProducts[prodIndex].status = 'DELETED_BY_ADMIN';
   }
 
-  // Update admin list
-  const adminProdIndex = STATE.adminData.products.findIndex(p => p.productId === productId);
-  if (adminProdIndex > -1) {
-    STATE.adminData.products[adminProdIndex].status = 'DELETED_BY_ADMIN';
-  }
-
-  // Add Log entry
   const newLog = {
     logId: 'LOG-' + Date.now(),
     timestamp: 'เมื่อสักครู่',
@@ -1460,12 +1654,10 @@ async function handleAdminDeletePost(productId, productTitle, sellerEmpId) {
     action: 'ADMIN_DELETE_PRODUCT',
     details: `แอดมินลบโพสต์ [${productId}] "${productTitle}" ของพนักงาน ${sellerEmpId} (เหตุผล: ${reason})`
   };
-  STATE.adminData.logs.unshift(newLog);
   MOCK_LOGS.unshift(newLog);
 
   applyFilters();
   closeProductDetailModal();
-  renderAdminDashboard();
 
   if (STATE.isApiConfigured) {
     try {
@@ -1493,11 +1685,6 @@ async function handleAdminDeletePost(productId, productTitle, sellerEmpId) {
   });
 }
 
-/**
- * =========================================================================
- * UTILITY HELPERS
- * =========================================================================
- */
 function escapeHtml(string) {
   if (!string) return '';
   return String(string)

@@ -1,7 +1,6 @@
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbyK_2XPau3q-l6iv8lWLkz7dGp6CmojjEbLMLYqaGHG2wjRApWBk7GSycH8NfxfqF8s/exec",
+  API_URL: "https://script.google.com/macros/s/AKfycbw5hgkY3baroLWinR0arV1s_TAVSPf65Qm9gDMiXk537Iru6jbKXkdXQiMP5WCse5OHng/exec",
 
-  // หมวดหมู่สินค้าในระบบ
   CATEGORIES: [
     { id: "all", name: "ทั้งหมด", icon: "squares-four" },
     { id: "electronics", name: "อิเล็กทรอนิกส์ & มือถือ", icon: "device-mobile" },
@@ -19,6 +18,5 @@ const CONFIG = {
 
   CHAT_POLL_INTERVAL: 4000,
 
-  // รายชื่อรหัสพนักงานที่มีสิทธิ์เป็นแอดมิน (สามารถดู Dashboard และลบโพสต์แปลกๆ/ไม่เหมาะสมได้)
   ADMIN_EMP_IDS: ['EMP001', 'ADMIN', 'ADMIN001', 'IT001']
 };

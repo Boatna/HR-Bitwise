@@ -11,12 +11,19 @@
 ```
 employee-marketplace/
 ├── index.html        # หน้าเว็บหลัก (Responsive Design รองรับมือถือและคอมพิวเตอร์)
+├── admin.html         # หน้าแผงควบคุมผู้ดูแลระบบ (แยกจาก index.html)
 ├── app.js            # ระบบจัดการหน้าบ้าน (Login, แสดงสินค้า, กรองหมวดหมู่, แชท, จัดการสินค้า)
+├── admin.js           # ระบบจัดการหน้า Admin Dashboard
 ├── style.css         # สไตล์และแอนิเมชัน
 ├── config.js         # ไฟล์ตั้งค่า URL ของ Google Apps Script
 ├── Code.gs           # โค้ด Backend API สำหรับนำไปวางใน Google Apps Script
+├── assets/            # โลโก้/มาสคอตที่ใช้เป็นลายน้ำพื้นหลัง (อ้างอิงจาก style.css)
+│   ├── bitwise-logo-watermark.png
+│   └── bitwise-mascot-watermark.jpg
 └── README.md         # คู่มือการติดตั้งนี้
 ```
+
+> ⚠️ **สำคัญ**: `style.css` อ้างอิงไฟล์ภาพลายน้ำพื้นหลังผ่าน path สัมพัทธ์ `assets/bitwise-logo-watermark.png` และ `assets/bitwise-mascot-watermark.jpg` — ต้องสร้างโฟลเดอร์ `assets/` ไว้ที่ระดับเดียวกับ `index.html` และใส่ไฟล์ทั้งสองนี้ (นามสกุลไฟล์ต้องตรงกันเป๊ะ ตัวพิมพ์เล็ก-ใหญ่มีผลบน GitHub Pages/Linux) ไม่เช่นนั้นลายน้ำจะไม่แสดงผล (แต่หน้าเว็บยังใช้งานได้ปกติ เพราะเป็นแค่พื้นหลังตกแต่ง)
 
 ---
 
