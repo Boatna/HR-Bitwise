@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบบันทึก Kaizen - บริษัท บิทไว้ส์ (ประเทศไทย) จำกัด</title>
+  
+  <!-- External Libraries -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Progress Bar -->
+  <div id="loadingBar"></div>
+
+  <!-- Login Screen -->
+  <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+    <div class="card p-6 sm:p-8 w-full max-w-sm fade-in" style="box-shadow:var(--shadow-3);">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 mx-auto rounded-2xl andon-mark p-3 mb-3" style="background:linear-gradient(160deg,var(--brand-600),var(--brand-900)); box-shadow:var(--shadow-2);">
+          <span class="lamp-red"></span>
+          <span class="lamp-amber"></span>
+          <span class="lamp-green"></span>
+        </div>
+        <h1 class="text-xl font-bold" style="color:var(--ink); letter-spacing:-0.01em;">ระบบบันทึก Kaizen</h1>
+        <p class="text-sm" style="color:var(--ink-faint);">เลือกประเภทและกรอกรหัสของคุณ</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-1.5 mb-5 p-1.5 rounded-2xl" style="background:var(--brand-50);">
+        <button type="button" id="roleEmployeeBtn" class="tab-btn active !py-2.5" data-role="employee" aria-label="เข้าสู่ระบบในฐานะพนักงาน">👤 พนักงาน</button>
+        <button type="button" id="roleManagerBtn" class="tab-btn !py-2.5" data-role="manager" aria-label="เข้าสู่ระบบในฐานะหัวหน้างาน">🧑‍💼 หัวหน้างาน</button>
+      </div>
+
+      <form id="loginForm" class="space-y-4" autocomplete="off">
+        <div>
+          <label class="text-sm font-semibold mb-2 block" style="color:var(--ink-soft);" id="loginIdLabel">รหัสพนักงาน</label>
+          <input id="loginId" type="text" required autocomplete="off" class="input-field" placeholder="เช่น 00123" aria-label="กรอกรหัสพนักงาน">
+        </div>
+        <button type="submit" id="btnLogin" class="btn-primary w-full flex items-center justify-center gap-2">เข้าสู่ระบบ</button>
+      </form>
+      <p id="loginError" class="text-xs text-center mt-3 hidden" style="color:var(--bad-600); font-weight:600;"></p>
+      <p class="text-xs text-center mt-2" style="color:var(--ink-faint);">
+        กด <kbd class="px-1 py-0.5 rounded text-xs" style="background:var(--brand-50);">Enter</kbd> เพื่อเข้าสู่ระบบ
+      </p>
+    </div>
+  </div>
+
+  <!-- Main Application Shell -->
+  <div id="appShell" class="hidden">
+    <div class="sticky top-0 z-30" style="background:rgba(255,255,255,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--line-soft);">
+      <div class="max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1680px] mx-auto px-3 sm:px-4 md:px-6 py-3">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl andon-mark p-2 flex-shrink-0" style="background:linear-gradient(160deg,var(--brand-600),var(--brand-900)); box-shadow:var(--shadow-2);">
+              <span class="lamp-red"></span>
+              <span class="lamp-amber"></span>
+              <span class="lamp-green"></span>
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-base sm:text-lg font-bold truncate" style="color:var(--ink); letter-spacing:-0.01em;">ระบบบันทึก Kaizen</h1>
+              <p class="text-xs sm:text-sm truncate" style="color:var(--ink-faint);" id="profileLine">-</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <button id="btnOpenForm" class="btn-primary hidden items-center gap-2 text-xs sm:text-sm" aria-label="ส่ง Kaizen ใหม่">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+              <span class="hidden sm:inline">ส่ง Kaizen ใหม่</span>
+            </button>
+            <button id="btnAdminTools" class="btn-secondary text-xs sm:text-sm hidden" aria-label="เครื่องมือระบบสำหรับผู้ดูแล">🛠️ <span class="hidden md:inline">เครื่องมือระบบ</span></button>
+            <button id="btnLogout" class="btn-secondary text-xs sm:text-sm" aria-label="ออกจากระบบ">ออกจากระบบ</button>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap mt-3 pb-1" id="tabBar" role="tablist"></div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl xl:max-w-[1440px] 2xl:max-w-[1680px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
+
+      <!-- Employee View -->
+      <div id="empView" class="hidden fade-in" role="tabpanel" aria-label="รายการ Kaizen ของพนักงาน">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="stat-card rail-blue"><div class="stat-label">เป้าหมายปีนี้</div><div class="stat-number num" id="empTarget">0</div></div>
+          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">✅ ผ่านแล้ว</div><div class="stat-number num" style="color:var(--good-600);" id="empApproved">0</div></div>
+          <div class="stat-card rail-warn"><div class="stat-label" style="color:var(--warn-600);">⏳ รอตรวจ</div><div class="stat-number num" style="color:var(--warn-600);" id="empPending">0</div></div>
+          <div class="stat-card rail-bad"><div class="stat-label" style="color:var(--bad-600);">❌ ถูกตีกลับ</div><div class="stat-number num" style="color:var(--bad-600);" id="empRejected">0</div></div>
+        </div>
+
+        <div class="card p-5 mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-bold" style="color:var(--ink);">ความคืบหน้าเทียบเป้าหมาย</p>
+            <span class="text-xs num font-semibold" style="color:var(--ink-faint);" id="empProgressLabel">0 / 0</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="empProgressBar" style="width:0%"></div></div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-sm font-bold" style="color:var(--ink);">รายการ Kaizen ของฉัน <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="empRowCount">0</span> รายการ)</span></p>
+            <button id="btnRefreshEmp" class="btn-secondary text-xs py-1 px-3" aria-label="โหลดข้อมูลใหม่">🔄 โหลดใหม่</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr>
+                <th>รหัส</th><th>วันที่</th><th>หัวข้อ</th><th>ประเภท</th><th>หมวดหมู่</th><th>สถานะ</th><th>จัดการ</th>
+              </tr></thead>
+              <tbody id="empTableBody"></tbody>
+            </table>
+            <div id="empEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
+              <div class="text-3xl mb-2">🗂️</div>ยังไม่มีข้อมูล Kaizen
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manager Queue View -->
+      <div id="mgrQueueView" class="hidden fade-in" role="tabpanel" aria-label="คิวตรวจ Kaizen">
+        <p class="text-xs font-bold uppercase tracking-wide mb-2" style="color:var(--ink-faint); letter-spacing:.07em;">ภาพรวมคิวตรวจ Kaizen</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="stat-card rail-blue"><div class="stat-label">ทั้งหมด</div><div class="stat-number num" id="mgrKpiTotal">0</div></div>
+          <div class="stat-card rail-warn"><div class="stat-label" style="color:var(--warn-600);">รอตรวจ</div><div class="stat-number num" style="color:var(--warn-600);" id="mgrKpiPending">0</div></div>
+          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">ผ่านแล้ว</div><div class="stat-number num" style="color:var(--good-600);" id="mgrKpiApproved">0</div></div>
+          <div class="stat-card rail-bad"><div class="stat-label" style="color:var(--bad-600);">ตีกลับ</div><div class="stat-number num" style="color:var(--bad-600);" id="mgrKpiRejected">0</div></div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <p class="text-sm font-bold" style="color:var(--ink);">📋 คิวตรวจ Kaizen <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="mgrRowCount">0</span> รายการ)</span></p>
+            <button id="btnRefreshQueue" class="btn-secondary text-xs py-1 px-3 flex items-center gap-1" aria-label="โหลดข้อมูลใหม่">🔄 โหลดใหม่</button>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap mt-3 pt-3 mb-4" style="border-top:1px solid var(--line-soft);">
+            <select id="mgrScopeFilter" class="input-field w-auto text-sm" aria-label="ขอบเขตการแสดงผล">
+              <option value="mine">🏢 แผนกของฉัน</option>
+              <option value="all">🌐 ทุกแผนก</option>
+            </select>
+            <input id="mgrSearch" type="text" placeholder="🔎 ค้นหารหัสพนักงาน / ชื่อ / รหัส Kaizen / หัวข้อ (ค้นได้ทุกแผนก)..." class="input-field text-sm flex-1 min-w-[220px]" aria-label="ค้นหา Kaizen">
+            <select id="mgrStatusFilter" class="input-field w-auto text-sm" aria-label="กรองตามสถานะ">
+              <option value="">ทุกสถานะ</option>
+              <option value="รอหัวหน้าแผนกตรวจ">รอหัวหน้าแผนกตรวจ</option>
+              <option value="รอผู้จัดการตรวจ">รอผู้จัดการตรวจ</option>
+              <option value="ผ่าน">ผ่านแล้ว</option>
+              <option value="ตีกลับ">ตีกลับ</option>
+            </select>
+            <button id="btnAdvancedSearch" class="btn-secondary text-sm flex items-center gap-1" aria-label="ค้นหาขั้นสูง">🔍 ค้นหาขั้นสูง</button>
+          </div>
+
+          <p class="text-xs mb-3" style="color:var(--ink-faint);">💡 ค่าเริ่มต้น: หัวหน้าแผนกจะเห็นเฉพาะงานแผนกตัวเอง ส่วนผู้จัดการจะเห็นทุกแผนก — สลับมุมมองได้ที่ช่อง "ขอบเขตการแสดงผล" หรือพิมพ์ค้นหาเพื่อค้นข้ามแผนกได้ทันที</p>
+          <div id="mgrCardsContainer" class="kz-cards-wrap"></div>
+          <div id="mgrEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
+            <div class="text-3xl mb-2">📭</div>ไม่มีรายการ
+          </div>
+        </div>
+      </div>
+
+      <!-- Manager HR Dashboard View -->
+      <div id="mgrHrDashView" class="hidden fade-in" role="tabpanel" aria-label="Dashboard HR">
+        <div class="card p-5 sm:p-6 mb-6">
+          <div class="flex flex-wrap items-start justify-between gap-5">
+            <div>
+              <h2 class="text-lg font-bold" style="color:var(--ink); letter-spacing:-.01em;">📊 Dashboard HR</h2>
+              <p class="text-xs mt-1" id="hrDashScopeLabel" style="color:var(--ink-faint);"></p>
+            </div>
+            <div class="flex items-end gap-3 flex-wrap">
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ปี (พ.ศ.)</label>
+                <select id="hrDashYear" class="input-field w-auto min-w-[140px]" aria-label="เลือกปี"></select>
+              </div>
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ค้นหาพนักงาน</label>
+                <input id="hrDashSearch" type="text" placeholder="ชื่อ / รหัส / แผนก..." class="input-field w-56 text-sm" aria-label="ค้นหาพนักงาน">
+              </div>
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">สถานะ</label>
+                <select id="hrDashStatus" class="input-field w-auto text-sm" aria-label="กรองตามสถานะ">
+                  <option value="">ทุกสถานะ</option>
+                  <option value="achieved">✅ ถึงเป้าหมาย</option>
+                  <option value="notAchieved">⏳ ยังไม่ถึง</option>
+                </select>
+              </div>
+              <button id="btnRefreshHrDash" class="btn-secondary text-sm py-2 px-4 flex items-center gap-1" aria-label="โหลดข้อมูลใหม่">🔄 โหลดใหม่</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="stat-card rail-blue"><div class="stat-label">พนักงานทั้งหมด</div><div class="stat-number num" id="hrTotalEmp">0</div></div>
+          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">✅ Status <span style="text-transform:none;letter-spacing:0;font-weight:500;">(ส่ง-อนุมัติผ่าน)</span></div><div class="stat-number num" style="color:var(--good-600);" id="hrAchieved">0</div></div>
+          <div class="stat-card rail-blue">
+            <div class="stat-label" style="color:var(--brand-700);">🎯 เป้าหมาย <span style="text-transform:none;letter-spacing:0;font-weight:500;">(รวมทุกคน)</span></div>
+            <div class="stat-number num" style="color:var(--brand-700);" id="hrTargetSum">0</div>
+          </div>
+          <div class="stat-card rail-blue"><div class="stat-label" style="color:var(--brand-700);">% สำเร็จรวม</div><div class="stat-number num" style="color:var(--brand-700);" id="hrPercent">0%</div></div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <p class="text-sm font-bold" style="color:var(--ink);">รายชื่อพนักงาน <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="hrRowCount">0</span> คน)</span></p>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr>
+                <th>รหัส</th>
+                <th>ชื่อ-สกุล</th>
+                <th>แผนก</th>
+                <th class="text-center">เป้าหมาย</th>
+                <th class="text-center">ทำแล้ว</th>
+                <th>ความคืบหน้า</th>
+                <th class="text-center">สถานะ</th>
+                <th class="text-center">📋 Kaizen ที่ส่ง</th>
+              </tr></thead>
+              <tbody id="hrDashTableBody"></tbody>
+            </table>
+            <div id="hrDashEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
+              <div class="text-3xl mb-2">🔍</div>ไม่พบข้อมูล
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manager Bulk Progress View -->
+      <div id="mgrBulkView" class="hidden fade-in" role="tabpanel" aria-label="กรอกจำนวน Kaizen">
+        <div class="card p-5 mb-6">
+          <div class="flex items-start gap-3">
+            <div class="text-2xl">🔢</div>
+            <div>
+              <p class="text-sm font-bold" style="color:var(--ink);">กรอกจำนวน Kaizen ที่ส่งแล้ว</p>
+              <p class="text-xs mt-1" style="color:var(--ink-faint);">ไม่ต้องกรอกฟอร์ม Kaizen เต็มรูปแบบ — เลือกเดือน/ปี แล้วพิมพ์ "จำนวนเรื่อง" ที่พนักงานแต่ละคนส่งแล้วในเดือนนั้นได้เลย ระบบจะรวมยอดสะสมทั้งปีและเทียบกับเป้าหมายให้อัตโนมัติ<br>📇 รายชื่อพนักงานในหน้านี้ดึงจากชีต <b>Employees_All</b> หรือ <b>HR_Employees</b> — ใช้ตัวกรอง Plant / แผนก ด้านล่างเพื่อดูเฉพาะกลุ่มที่ต้องการได้</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-5 mb-6">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-2 flex-wrap">
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">ปี (พ.ศ.)</label>
+                <select id="progressYear" class="input-field w-auto min-w-[120px]" aria-label="เลือกปี"></select>
+              </div>
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">เดือนที่กรอก</label>
+                <select id="progressMonth" class="input-field w-auto min-w-[130px]" aria-label="เลือกเดือน"></select>
+              </div>
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">🏭 Plant</label>
+                <select id="progressPlantFilter" class="input-field w-auto min-w-[140px]" aria-label="กรองตาม Plant">
+                  <option value="">ทุก Plant</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">🏢 แผนก</label>
+                <select id="progressDeptFilter" class="input-field w-auto min-w-[160px]" aria-label="กรองตามแผนก">
+                  <option value="">ทุกแผนก</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btnExportProgressExcel" class="btn-secondary text-sm" aria-label="ส่งออกเป็น Excel">📥 Export Excel</button>
+              <button id="btnRefreshProgress" class="btn-secondary text-sm">🔄 โหลดใหม่</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="progressSummary">
+          <div class="stat-card rail-blue"><div class="stat-label">พนักงานทั้งหมด</div><div class="stat-number num" id="progTotalEmp">0</div></div>
+          <div class="stat-card rail-good"><div class="stat-label" style="color:var(--good-600);">✅ ถึงเป้าหมาย</div><div class="stat-number num" id="progAchieved">0</div></div>
+          <div class="stat-card rail-warn"><div class="stat-label" style="color:var(--warn-600);">⏳ ยังไม่ถึง</div><div class="stat-number num" id="progNotAchieved">0</div></div>
+          <div class="stat-card rail-blue"><div class="stat-label" style="color:var(--brand-700);">% สำเร็จ</div><div class="stat-number num" id="progPercent">0%</div></div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <p class="text-sm font-bold" style="color:var(--ink);">รายชื่อพนักงาน <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="progEmpCount">0</span> คน)</span></p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <input id="progressSearch" type="text" placeholder="ค้นหารหัส/ชื่อ/แผนก/Plant..." class="input-field w-56 text-sm" aria-label="ค้นหาพนักงาน">
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr>
+                <th>รหัส</th>
+                <th>ชื่อ-สกุล</th>
+                <th>🏭 Plant</th>
+                <th>แผนก</th>
+                <th class="text-center">เป้าหมาย/ปี</th>
+                <th class="text-center">ส่งแล้ว(สะสม)</th>
+                <th class="text-center">คงเหลือ</th>
+                <th>ความคืบหน้า</th>
+                <th class="text-center">จำนวนเดือนนี้</th>
+                <th class="text-center">บันทึก</th>
+              </tr></thead>
+              <tbody id="progressTableBody"></tbody>
+            </table>
+            <div id="progressEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
+              <div class="text-3xl mb-2">🔍</div>ไม่พบรายชื่อพนักงาน
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Employee Management View -->
+      <div id="mgrEmpManageView" class="hidden fade-in" role="tabpanel" aria-label="จัดการข้อมูลพนักงาน">
+        <div class="card p-5 mb-6">
+          <div class="flex items-start gap-3">
+            <div class="text-2xl">✏️</div>
+            <div>
+              <p class="text-sm font-bold" style="color:var(--ink);">จัดการข้อมูลพนักงานทั้งหมด</p>
+              <p class="text-xs mt-1" style="color:var(--ink-faint);">แก้ไขคำนำหน้า ชื่อ-สกุล แผนก ตำแหน่ง Plant อีเมล เป้าหมาย (Tasks) และจำนวนที่ทำสำเร็จ (Done) ของพนักงานแต่ละคนได้โดยตรงจากตารางด้านล่าง แก้เสร็จแล้วกด "บันทึก" ที่แถวนั้น ๆ การเปลี่ยนแปลงจะมีผลทันทีในชีต HR_Employees<br>⚠️ <b>รหัสพนักงาน (EmpID) แก้ไขไม่ได้</b> เพื่อป้องกันประวัติ Kaizen เดิมหลุดจากบัญชี</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <p class="text-sm font-bold" style="color:var(--ink);">รายชื่อพนักงานทั้งหมด <span style="color:var(--ink-faint); font-weight:500;">(<span class="num" id="empMgrCount">0</span> คน)</span></p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <input id="empMgrSearch" type="text" placeholder="🔎 ค้นหารหัส/ชื่อ/แผนก..." class="input-field w-56 text-sm" aria-label="ค้นหาพนักงาน">
+              <button id="btnAddEmployee" class="btn-primary text-sm py-2 px-4" aria-label="เพิ่มพนักงานใหม่">➕ เพิ่มพนักงาน</button>
+              <button id="btnExportEmpExcel" class="btn-secondary text-sm" aria-label="ส่งออกเป็น Excel">📥 Export Excel</button>
+              <button id="btnRefreshEmpMgr" class="btn-secondary text-sm">🔄 โหลดใหม่</button>
+            </div>
+          </div>
+
+          <div class="table-wrap mt-4">
+            <table class="data-table">
+              <thead><tr>
+                <th>รหัสพนักงาน</th>
+                <th>คำนำหน้า</th>
+                <th>ชื่อ</th>
+                <th>นามสกุล</th>
+                <th>แผนก</th>
+                <th>ตำแหน่ง</th>
+                <th>Plant</th>
+                <th>อีเมล</th>
+                <th class="text-center">เป้าหมาย (Tasks)</th>
+                <th class="text-center">ทำแล้ว (Done)</th>
+                <th class="text-center">จัดการ</th>
+              </tr></thead>
+              <tbody id="empMgrTableBody"></tbody>
+            </table>
+            <div id="empMgrEmptyState" class="hidden text-center py-14" style="color:var(--ink-faint);">
+              <div class="text-3xl mb-2">🔍</div>ไม่พบรายชื่อพนักงาน
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Kaizen Form Modal -->
+  <div id="formModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
+    <div class="w-full h-full sm:h-auto max-w-4xl xl:max-w-5xl 2xl:max-w-6xl max-h-full sm:max-h-[92vh] overflow-y-auto sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+
+      <div class="flex items-center justify-between px-4 sm:px-5 py-3 sticky top-0 z-10 sm:rounded-t-2xl" style="background:rgba(255,255,255,.95); backdrop-filter:blur(6px); border-bottom:1px solid var(--line-soft);">
+        <h2 class="font-bold text-sm" style="color:var(--ink-soft);" id="formModalTitle">ส่ง Kaizen ใหม่</h2>
+        <button id="btnCloseForm" class="w-9 h-9 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิดฟอร์ม">✕</button>
+      </div>
+
+      <form id="kaizenForm" class="p-3 sm:p-5 lg:p-7" novalidate>
+        <input type="hidden" id="editRowIndex" value="">
+        <input type="hidden" id="editKaizenId" value="">
+
+        <div class="form-doc">
+          <div class="form-header">
+            <div class="form-logo">
+              <div class="logo-icon andon-mark"><span class="lamp-red"></span><span class="lamp-amber"></span><span class="lamp-green"></span></div>
+              <div class="company-name">บริษัท บิทไว้ส์<br>(ประเทศไทย) จำกัด</div>
+            </div>
+            <div class="form-title">
+              <div class="title-main">ใบข้อเสนอแนะกิจกรรม KAIZEN</div>
+              <div class="title-sub">Kaizen Suggestion Form</div>
+            </div>
+            <div class="form-code">
+              <span class="code-pill">F-Hr-45 Rev.1</span>
+              <span class="text-xs mt-1" style="color:var(--ink-faint);" id="formHeaderDateLabel">-</span>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-cell">
+              <span class="info-label">👤 ชื่อ-สกุล</span>
+              <input id="empName" readonly class="input-field font-semibold text-sm" style="background:var(--surface-tint);" tabindex="-1">
+            </div>
+            <div class="info-cell">
+              <span class="info-label">🏢 แผนก</span>
+              <input id="empDept" readonly class="input-field font-semibold text-sm" style="background:var(--surface-tint);" tabindex="-1">
+            </div>
+            <div class="info-cell" style="grid-column:1/-1;">
+              <span class="info-label">📅 วันที่ทำ Kaizen <span style="color:var(--bad-600);">*</span></span>
+              <div class="grid grid-cols-3 gap-3">
+                <select id="dDay" required class="input-field text-sm" aria-label="วันที่"></select>
+                <select id="dMonth" required class="input-field text-sm" aria-label="เดือน"></select>
+                <select id="dYear" required class="input-field text-sm" aria-label="ปี"></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div id="rejectBanner" class="hidden rounded-xl p-3 text-sm mb-4" style="background:var(--bad-100); border:1px solid #F3C6C2; color:var(--bad-600); font-weight:600;"></div>
+            
+            <div class="section-title">📝 หัวข้อ Kaizen</div>
+            <div class="section-body space-y-4">
+              <div>
+                <label class="text-sm font-semibold mb-1 block" style="color:var(--ink-soft);" for="title">หัวข้อ Kaizen <span style="color:var(--bad-600);">*</span></label>
+                <input id="title" required class="input-field" placeholder="ระบุหัวข้อ Kaizen" maxlength="200">
+              </div>
+            </div>
+
+            <div class="section-title mt-4">🏷️ ประเภท Kaizen <span style="color:var(--bad-600);">*</span></div>
+            <div class="section-body">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="kaizenTypeGrid">
+                <label class="category-checkbox" data-type="automation" role="radio" aria-checked="false" tabindex="0" data-tooltip="Automation = ใช้โปรแกรม, AI, RPA หรือเครื่องจักรอัตโนมัติ">
+                  <span class="category-icon" style="background:#6366f1;color:#fff;">🤖</span>
+                  <span class="category-label">Automation</span>
+                </label>
+                <label class="category-checkbox" data-type="karakuri" role="radio" aria-checked="false" tabindex="0" data-tooltip="Karakuri = ปรับปรุงด้วยกลไกง่าย ๆ ไม่ใช้ไฟฟ้า">
+                  <span class="category-icon" style="background:#8b5cf6;color:#fff;">⚙️</span>
+                  <span class="category-label">Karakuri</span>
+                </label>
+                <label class="category-checkbox" data-type="genco" role="radio" aria-checked="false" tabindex="0" data-tooltip="Genba/Genco = การปรับปรุงที่หน้างานจริง ณ จุดปฏิบัติงานจริง">
+                  <span class="category-icon" style="background:#f59e0b;color:#fff;">🏭</span>
+                  <span class="category-label">Genba/Genco</span>
+                </label>
+                <label class="category-checkbox" data-type="project" role="radio" aria-checked="false" tabindex="0" data-tooltip="Project = โครงการที่มีแผนดำเนินงานชัดเจน">
+                  <span class="category-icon" style="background:#3b82f6;color:#fff;">📋</span>
+                  <span class="category-label">Project</span>
+                </label>
+                <label class="category-checkbox" data-type="service" role="radio" aria-checked="false" tabindex="0" data-tooltip="Service = ปรับปรุงการให้บริการ">
+                  <span class="category-icon" style="background:#10b981;color:#fff;">🛠️</span>
+                  <span class="category-label">Service</span>
+                </label>
+                <label class="category-checkbox" data-type="innovation" role="radio" aria-checked="false" tabindex="0" data-tooltip="Innovation = นวัตกรรมหรือสิ่งประดิษฐ์ใหม่">
+                  <span class="category-icon" style="background:#8b5cf6;color:#fff;">💡</span>
+                  <span class="category-label">Innovation</span>
+                </label>
+                <label class="category-checkbox" data-type="suggestion" role="radio" aria-checked="false" tabindex="0" data-tooltip="Suggestion = ข้อเสนอแนะทั่วไป">
+                  <span class="category-icon" style="background:#f472b6;color:#fff;">📝</span>
+                  <span class="category-label">Suggestion</span>
+                </label>
+              </div>
+              <input type="hidden" id="kaizenTypeData" value="">
+              <p class="text-xs mt-2" style="color:var(--ink-faint);">เลือก 1 ประเภทเท่านั้น · 💡 เอาเมาส์ไปวางบนแต่ละตัวเลือกเพื่อดูความหมาย</p>
+            </div>
+
+            <div class="section-title mt-4">🏷️ หมวดหมู่ Kaizen <span class="font-normal text-xs opacity-90">(เลือกได้มากกว่า 1 ข้อ) <span style="color:#FFD7D2;">*</span></span></div>
+            <div class="section-body">
+              <div class="category-grid" id="categoryGrid">
+                <label class="category-checkbox cat-P" data-cat="P" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Productivity — เพิ่มผลผลิต ลดเวลา หรือเพิ่มประสิทธิภาพในการทำงาน"><span class="category-icon">P</span><span class="category-label">ผลผลิต</span></label>
+                <label class="category-checkbox cat-D" data-cat="D" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Delivery — ปรับปรุงความตรงเวลาและความแม่นยำในการส่งมอบงาน"><span class="category-icon">D</span><span class="category-label">การส่งมอบ</span></label>
+                <label class="category-checkbox cat-E" data-cat="E" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Environment — ลดผลกระทบต่อสิ่งแวดล้อม ลดของเสีย หรือลดมลพิษ"><span class="category-icon">E</span><span class="category-label">สิ่งแวดล้อม</span></label>
+                <label class="category-checkbox cat-S" data-cat="S" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Safety — เพิ่มความปลอดภัยในการทำงาน ลดความเสี่ยงต่อการเกิดอุบัติเหตุ"><span class="category-icon">S</span><span class="category-label">ความปลอดภัย</span></label>
+                <label class="category-checkbox cat-Q" data-cat="Q" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Quality — ลดข้อบกพร่อง ความผิดพลาด และเพิ่มคุณภาพของงาน"><span class="category-icon">Q</span><span class="category-label">คุณภาพ</span></label>
+                <label class="category-checkbox cat-E2" data-cat="E2" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Energy — การปรับปรุงและลดความสูญเปล่าด้านพลังงาน เพื่อให้ประหยัดต้นทุน"><span class="category-icon">E</span><span class="category-label">พลังงาน</span></label>
+                <label class="category-checkbox cat-C" data-cat="C" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Cost — ลดต้นทุนหรือค่าใช้จ่ายในการดำเนินงาน"><span class="category-icon">C</span><span class="category-label">ลดต้นทุน</span></label>
+                <label class="category-checkbox cat-M" data-cat="M" role="checkbox" aria-checked="false" tabindex="0" data-tooltip="Morale — เพิ่มขวัญและกำลังใจในการทำงาน สร้างบรรยากาศที่ดี"><span class="category-icon">M</span><span class="category-label">ขวัญกำลังใจ</span></label>
+              </div>
+              <input type="hidden" id="categoriesData" value="{}">
+              <p class="text-xs mt-2" style="color:var(--ink-faint);">💡 เอาเมาส์ไปวางบนแต่ละหมวดหมู่เพื่อดูความหมาย</p>
+            </div>
+
+            <div class="section-title mt-4">📷 เปรียบเทียบก่อน–หลังปรับปรุง</div>
+            <div class="section-body">
+              <div class="ba-grid">
+                <div class="panel-before">
+                  <div class="panel-head">🔴 BEFORE (ก่อนปรับปรุง)</div>
+                  <div class="panel-body">
+                    <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);" for="beforeImageInput">📎 แนบรูปภาพ</label>
+                    <input id="beforeImageInput" type="file" accept="image/*" class="input-field text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-red-50 file:text-red-700 file:font-medium" aria-label="อัปโหลดรูปภาพก่อนปรับปรุง">
+                    <div id="beforeImageContainer" class="mt-2 hidden img-frame sm clickable">
+                      <img id="beforeImagePreview" class="img-loading" alt="รูปภาพก่อนปรับปรุง" loading="lazy">
+                    </div>
+                    <label class="text-xs font-semibold block mt-2" style="color:var(--ink-soft);" for="beforeProblem">1. ปัญหาที่พบ</label>
+                    <textarea id="beforeProblem" rows="3" class="input-field resize-y text-sm" placeholder="อธิบายปัญหาที่พบ..."></textarea>
+                  </div>
+                </div>
+                <div class="panel-after">
+                  <div class="panel-head">🟢 AFTER (หลังปรับปรุง)</div>
+                  <div class="panel-body">
+                    <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);" for="afterImageInput">📎 แนบรูปภาพ</label>
+                    <input id="afterImageInput" type="file" accept="image/*" class="input-field text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:text-emerald-700 file:font-medium" aria-label="อัปโหลดรูปภาพหลังปรับปรุง">
+                    <div id="afterImageContainer" class="mt-2 hidden img-frame sm clickable">
+                      <img id="afterImagePreview" class="img-loading" alt="รูปภาพหลังปรับปรุง" loading="lazy">
+                    </div>
+                    <label class="text-xs font-semibold block mt-2" style="color:var(--ink-soft);" for="afterSolution">2. แก้ไขด้วยวิธีใด</label>
+                    <textarea id="afterSolution" rows="3" class="input-field resize-y text-sm" placeholder="อธิบายวิธีการแก้ไข..."></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-title mt-4">📎 เอกสารแนบเพิ่มเติม <span class="font-normal text-xs opacity-90">(PDF / Excel / Word / รูปภาพ ฯลฯ ไม่เกิน 10 ไฟล์ รวมไม่เกิน 50MB)</span></div>
+            <div class="section-body">
+              <label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);" for="multiFileInput">เลือกไฟล์แนบ (เลือกได้หลายไฟล์)</label>
+              <input id="multiFileInput" type="file" multiple class="input-field text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:font-medium" aria-label="แนบไฟล์เอกสารเพิ่มเติม">
+              <div id="existingFilesList" class="mt-2"></div>
+              <div id="selectedFilesList" class="flex flex-wrap gap-1 mt-2"></div>
+              <div id="uploadProgressContainer" class="hidden mt-2">
+                <div class="upload-progress"><div id="uploadProgressFill" class="upload-progress-fill" style="width:0%"></div></div>
+                <p id="uploadProgressText" class="text-xs mt-1" style="color:var(--ink-faint);"></p>
+              </div>
+            </div>
+
+            <div class="section-title mt-4">📈 ผลลัพธ์การปรับปรุง</div>
+            <div class="section-body">
+              <div>
+                <label class="text-sm font-semibold mb-1 block" style="color:var(--ink-soft);" for="detail">ผลลัพธ์ (ทำแล้วดีขึ้นอย่างไร) <span style="color:var(--bad-600);">*</span></label>
+                <textarea id="detail" rows="4" class="input-field resize-y text-sm" placeholder="อธิบายว่าการปรับปรุงนี้ทำให้เกิดประโยชน์อย่างไรบ้าง..."></textarea>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center text-[0.6rem] mt-3 pt-2" style="color:var(--ink-faint); border-top:1px solid var(--line-soft);">
+              <span>F-Hr-45 Rev.1</span>
+              <span>ระบบบันทึก Kaizen · บริษัท บิทไว้ส์ (ประเทศไทย) จำกัด</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" id="btnCancel" class="btn-secondary text-sm">ยกเลิก</button>
+          <button type="submit" id="btnSubmit" class="btn-primary flex items-center gap-2 text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            บันทึก
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="fixed inset-0 modal-backdrop z-50 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+    <div class="w-full h-full sm:h-auto max-w-5xl xl:max-w-6xl max-h-full sm:max-h-[92vh] overflow-y-auto sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+      <div class="flex items-center justify-between px-6 py-4 sticky top-0 z-10" style="background:rgba(255,255,255,.95); backdrop-filter:blur(6px); border-bottom:1px solid var(--line-soft);">
+        <h2 class="font-bold text-lg" style="color:var(--ink);" id="detailModalTitle">รายละเอียด Kaizen</h2>
+        <button id="btnCloseDetail" class="w-10 h-10 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิดรายละเอียด">✕</button>
+      </div>
+      <div id="detailBody" class="px-6 py-5 space-y-3 text-sm"></div>
+      <div id="detailReviewActions" class="hidden px-6 pb-6 flex gap-3"></div>
+    </div>
+  </div>
+
+  <!-- Comment Modal -->
+  <div id="commentModal" class="fixed inset-0 modal-backdrop z-50 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="commentModalTitle">
+    <div class="w-full h-full sm:h-auto max-w-3xl xl:max-w-4xl max-h-full sm:max-h-[85vh] overflow-hidden sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--line-soft);">
+        <h2 class="font-bold text-lg" style="color:var(--ink);" id="commentModalTitle">💬 ความคิดเห็น</h2>
+        <button id="btnCloseComment" class="w-10 h-10 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิดความคิดเห็น">✕</button>
+      </div>
+      <div id="commentBody" class="px-6 py-4 overflow-y-auto" style="max-height: calc(80vh - 120px);">
+        <div id="commentList" class="space-y-3"></div>
+        <div class="flex gap-2 mt-4 sticky bottom-0 pt-2" style="background:var(--surface);">
+          <textarea id="newComment" class="input-field text-sm flex-1" rows="2" placeholder="เขียนความคิดเห็น... (Ctrl+Enter เพื่อส่ง)" aria-label="เขียนความคิดเห็น"></textarea>
+          <button id="btnSubmitComment" class="btn-primary text-sm self-end" aria-label="ส่งความคิดเห็น">ส่ง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee History Modal -->
+  <div id="empHistoryModal" class="fixed inset-0 modal-backdrop z-40 hidden flex items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="empHistoryModalTitle">
+    <div class="w-full h-full sm:h-auto max-w-4xl xl:max-w-5xl max-h-full sm:max-h-[85vh] overflow-hidden sm:rounded-2xl" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--line-soft);">
+        <h2 class="font-bold text-lg" style="color:var(--ink);" id="empHistoryModalTitle">📋 ประวัติ Kaizen ของ <span id="empHistoryName"></span></h2>
+        <button id="btnCloseEmpHistory" class="w-10 h-10 rounded-xl flex items-center justify-center transition" style="color:var(--ink-faint);" onmouseover="this.style.background='var(--brand-50)'" onmouseout="this.style.background='transparent'" aria-label="ปิด">✕</button>
+      </div>
+      <div class="px-6 py-4 overflow-y-auto" style="max-height: calc(80vh - 80px);">
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="rounded-lg p-3 text-center" style="background:var(--warn-100);">
+            <span class="text-xs font-semibold" style="color:var(--warn-600);">⏳ รอตรวจ</span>
+            <div class="text-xl font-bold" style="color:var(--warn-600);" id="empHistPending">0</div>
+          </div>
+          <div class="rounded-lg p-3 text-center" style="background:var(--good-100);">
+            <span class="text-xs font-semibold" style="color:var(--good-600);">✅ ผ่านแล้ว</span>
+            <div class="text-xl font-bold" style="color:var(--good-600);" id="empHistApproved">0</div>
+          </div>
+          <div class="rounded-lg p-3 text-center" style="background:var(--bad-100);">
+            <span class="text-xs font-semibold" style="color:var(--bad-600);">❌ ตีกลับ</span>
+            <div class="text-xl font-bold" style="color:var(--bad-600);" id="empHistRejected">0</div>
+          </div>
+        </div>
+        <div id="empHistoryList" class="space-y-2"></div>
+        <div id="empHistoryEmptyState" class="text-center py-8" style="color:var(--ink-faint);">ยังไม่มีข้อมูล Kaizen</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Processing Modal: แสดงขั้นตอนที่กำลังทำงานอยู่ก่อน/ระหว่างบันทึกข้อมูล -->
+  <div id="processingModal" class="fixed inset-0 modal-backdrop z-[70] hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="processingModalTitle">
+    <div class="w-full max-w-sm rounded-2xl fade-in" style="background:var(--surface); box-shadow:var(--shadow-3); border:1px solid var(--line-soft);">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="proc-spinner" aria-hidden="true"></div>
+          <div class="min-w-0">
+            <h3 id="processingModalTitle" class="font-bold text-sm truncate" style="color:var(--ink);">กำลังบันทึกข้อมูล</h3>
+            <p class="text-xs" style="color:var(--ink-faint);">กรุณารอสักครู่ อย่าปิดหรือรีเฟรชหน้านี้</p>
+          </div>
+        </div>
+        <div id="processingStepsList" class="space-y-1.5" aria-live="polite"></div>
+        <div class="progress-track mt-4">
+          <div id="processingOverallBar" class="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
