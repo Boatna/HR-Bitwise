@@ -308,11 +308,6 @@ function updateUserNav() {
   }
 }
 
-// ========================================================================
-// [ใหม่] Consent / PDPA - นโยบายความเป็นส่วนตัว
-// ========================================================================
-
-// เรียกจากปุ่ม "เข้าสู่ระบบ" ทุกจุดในระบบ: ถ้ายังไม่เคยกดยอมรับ PDPA จะแสดง Consent Modal ก่อนเสมอ
 function openConsentOrLogin() {
   const accepted = localStorage.getItem(PDPA_CONSENT_KEY) === 'true';
   if (accepted) {
@@ -347,7 +342,7 @@ function acceptConsentAndContinue() {
 }
 
 // ========================================================================
-// [ใหม่] กติกาการซื้อ-ขายสินค้า
+// กติกาการซื้อ-ขายสินค้า
 // ========================================================================
 
 function openRulesModal() {
@@ -438,7 +433,7 @@ async function handleLoginSubmit(event) {
         action: 'login',
         empId: empId,
         pin: pin,
-        consentAccepted: consentAccepted // [ใหม่] ส่งสถานะการยอมรับ PDPA ไปบันทึกลง Logs
+        consentAccepted: consentAccepted 
       })
     });
 
@@ -757,8 +752,6 @@ async function loadMyChats(showLoader = false) {
         });
       }
     } else if (totalUnread > STATE.lastKnownUnreadCount) {
-      // ทุกครั้งหลังจากนั้น: ยอด unread "เพิ่มขึ้น" จากค่าก่อนหน้า = มีข้อความใหม่จริงๆ ให้แจ้งเตือนเสมอ
-      // ไม่ว่าค่าก่อนหน้าจะเป็น 0 หรือไม่ก็ตาม
       playNotificationChime();
       triggerAlarmEffect();
 
@@ -937,7 +930,6 @@ function renderCategories() {
     .map(cat => `<option value="${cat.name}">${cat.name}</option>`)
     .join('');
 
-  // ตั้งค่าเริ่มต้นให้ช่องจำนวนสินค้า (สำหรับระบบจอง) แสดง/ซ่อนให้ถูกต้องตามหมวดหมู่เริ่มต้น
   handleSellCategoryChange();
 }
 
@@ -1169,7 +1161,7 @@ function openProductDetail(productId) {
     ownerBtn.classList.add('hidden');
   }
 
-  updateReserveButtonVisibility(item); // [ใหม่]
+  updateReserveButtonVisibility(item);
 
   document.getElementById('productDetailModal').classList.remove('hidden');
   document.getElementById('productDetailModal').classList.add('flex');
@@ -1246,7 +1238,6 @@ function resetSellForm() {
   handleSellCategoryChange();
 }
 
-// [ใหม่] แสดง/ซ่อนช่องจำนวนสินค้า เมื่อเลือกหมวดหมู่ "อาหาร & ขนม" ในฟอร์มลงขาย
 function handleSellCategoryChange() {
   const select = document.getElementById('sellCategory');
   const qtyWrap = document.getElementById('sellQuantityWrap');
@@ -1324,7 +1315,6 @@ async function handleSellSubmit(event) {
     return;
   }
 
-  // [ใหม่] บังคับให้ยอมรับการเปิดเผยข้อมูลและกติกาการขายก่อนลงประกาศทุกครั้ง
   if (!consentChecked) {
     Swal.fire({
       icon: 'warning',
@@ -1412,7 +1402,7 @@ async function handleSellSubmit(event) {
       Swal.fire({
         icon: 'success',
         title: 'ลงประกาศสินค้าสำเร็จ!',
-        text: 'สินค้าถูกบันทึกลงใน Google Sheets เรียบร้อยแล้ว'
+        text: 'สินค้าถูกบันทึกเรียบร้อยแล้ว'
       });
       loadProducts(true);
     } else {
@@ -1925,10 +1915,6 @@ async function handleAdminDeletePost(productId) {
   });
 }
 
-// ========================================================================
-// [ใหม่] ระบบจองสินค้า (Reservation System) - สำหรับหมวดหมู่ "อาหาร & ขนม"
-// ========================================================================
-
 function updateReserveButtonVisibility(item) {
   const reserveBtn = document.getElementById('detailReserveBtn');
   if (!reserveBtn) return;
@@ -2085,7 +2071,6 @@ async function loadMyReservations(showModal = false) {
     let asSeller = [];
 
     if (!STATE.isApiConfigured) {
-      // Demo Mode: ยังไม่มีระบบจัดเก็บถาวร แสดงเป็นรายการว่างเปล่า
       asBuyer = [];
       asSeller = [];
     } else {

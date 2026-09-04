@@ -4,19 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Employee Marketplace | ตลาดนัดพนักงาน</title>
-  
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  
-  <!-- SweetAlert2 for polished alerts -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-  <!-- Custom Styles -->
   <link rel="stylesheet" href="style.css" />
-
   <script>
     tailwind.config = {
       theme: {
@@ -48,8 +39,6 @@
   <header class="sticky top-0 z-40 glass-nav border-b border-slate-200/80 shadow-sm transition-all">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 gap-2 sm:gap-4">
-        
-        <!-- Logo & Brand -->
         <div class="flex items-center gap-2 sm:gap-3 cursor-pointer select-none min-w-0 flex-shrink" onclick="filterCategory('all'); resetSearch();">
           <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 flex-shrink-0">
             <i class="ph-bold ph-storefront text-xl sm:text-2xl"></i>
@@ -59,8 +48,6 @@
             <span class="hidden xs:block text-[11px] sm:text-xs text-blue-600 font-medium truncate">ตลาดนัดเพื่อนพนักงาน</span>
           </div>
         </div>
-
-        <!-- Search Bar (Desktop) -->
         <div class="hidden md:flex flex-1 max-w-md mx-4">
           <div class="relative w-full">
             <i class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
@@ -73,11 +60,7 @@
             />
           </div>
         </div>
-
-        <!-- Right Actions: Notification Bell, Sell Button & Auth Profile -->
         <div class="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
-          
-          <!-- Notification / Alarm Bell Button -->
           <button
             id="notificationBellBtn"
             onclick="handleBellClick()"
@@ -88,7 +71,6 @@
             <span id="unreadBadge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center shadow-md animate-pulse font-mono">0</span>
           </button>
 
-          <!-- Sell Button -->
           <button
             onclick="openSellModal()"
             class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-medium text-xs sm:text-sm rounded-xl shadow-md shadow-blue-500/25 transition flex-shrink-0"
@@ -97,15 +79,11 @@
             <span class="hidden sm:inline">ลงขายสินค้า</span>
             <span class="sm:hidden">ลงขาย</span>
           </button>
-
-          <!-- User State: Logged In vs Guest -->
           <div id="userNavContainer" class="relative flex-shrink-0">
-            <!-- Rendered by app.js -->
           </div>
         </div>
       </div>
 
-      <!-- Search Bar (Mobile Only) -->
       <div class="pb-3 md:hidden">
         <div class="relative w-full">
           <i class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
@@ -124,13 +102,10 @@
   <section class="bg-white border-b border-slate-200">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
       <div id="categoryContainer" class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-        <!-- Rendered by app.js -->
       </div>
     </div>
   </section>
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
-    
-    <!-- Welcome / Info Banner for Logged in user -->
     <div id="welcomeBanner" class="hidden mb-6 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0">
         <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl flex-shrink-0">
@@ -146,25 +121,20 @@
       </button>
     </div>
 
-    <!-- Feed Header: Title & Total count -->
     <div class="flex items-center justify-between gap-2 mb-4">
       <div class="flex items-center gap-2 min-w-0">
         <h2 id="currentCategoryTitle" class="text-base sm:text-xl font-bold text-slate-800 truncate">สินค้าทั้งหมด</h2>
         <span id="productCountBadge" class="flex-shrink-0 text-[11px] sm:text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-medium">0 รายการ</span>
       </div>
 
-      <!-- Refresh Button -->
       <button onclick="loadProducts(true)" class="flex-shrink-0 p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg text-sm transition" title="รีเฟรชข้อมูล">
         <i class="ph-bold ph-arrows-clockwise text-lg"></i>
       </button>
     </div>
 
-    <!-- Product Grid -->
     <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
-      <!-- Shimmer Loading Skeletons will appear here initially -->
     </div>
 
-    <!-- Empty State -->
     <div id="emptyState" class="hidden text-center py-16 px-4">
       <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 text-4xl mx-auto mb-4">
         <i class="ph ph-shopping-bag-open"></i>
@@ -177,9 +147,6 @@
     </div>
   </main>
 
-  <!-- ========================================================================= -->
-  <!-- 4. FOOTER -->
-  <!-- ========================================================================= -->
   <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
       <div>Employee Marketplace © 2026 • ภายในองค์กรเท่านั้น</div>
@@ -197,9 +164,6 @@
     </div>
   </footer>
 
-  <!-- ========================================================================= -->
-  <!-- [ใหม่] MODAL: PDPA / นโยบายความเป็นส่วนตัว -->
-  <!-- ========================================================================= -->
   <div id="consentModal" class="fixed inset-0 z-[70] bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
     <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden scale-in my-auto max-h-[88vh] flex flex-col">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 flex-shrink-0">
@@ -228,9 +192,6 @@
     </div>
   </div>
 
-  <!-- ========================================================================= -->
-  <!-- [ใหม่] MODAL: กติกาการซื้อ-ขายสินค้า -->
-  <!-- ========================================================================= -->
   <div id="rulesModal" class="fixed inset-0 z-[70] bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
     <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden scale-in my-auto max-h-[88vh] flex flex-col">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 flex-shrink-0">
@@ -259,14 +220,9 @@
     </div>
   </div>
 
-  <!-- ========================================================================= -->
-  <!-- 5. MODAL: LOGIN / AUTHENTICATION -->
-  <!-- ========================================================================= -->
   <div id="loginModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden scale-in">
       <div class="p-6 sm:p-8">
-        
-        <!-- Header -->
         <div class="text-center mb-6">
           <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
             <i class="ph-bold ph-identification-card"></i>
@@ -274,10 +230,7 @@
           <h3 class="text-xl font-bold text-slate-800">เข้าสู่ระบบพนักงาน</h3>
           <p class="text-xs text-slate-500 mt-1">ยืนยันตัวตนด้วยรหัสพนักงานและรหัส PIN</p>
         </div>
-
-        <!-- Login Form -->
         <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
-          <!-- EmpID -->
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสพนักงาน (EmpID)</label>
             <div class="relative">
@@ -291,8 +244,6 @@
               />
             </div>
           </div>
-
-          <!-- PIN -->
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">รหัส PIN ยืนยันตัวตน</label>
             <div class="relative">
@@ -332,8 +283,6 @@
           <p>ข้อมูลเชื่อมโยงกับฐานข้อมูลพนักงานใน Google Sheets</p>
         </div>
       </div>
-
-      <!-- Close Button -->
       <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 text-right">
         <button onclick="closeLoginModal()" class="text-xs font-medium text-slate-500 hover:text-slate-700">
           ปิดหน้าต่าง
@@ -341,16 +290,9 @@
       </div>
     </div>
   </div>
-
-  <!-- ========================================================================= -->
-  <!-- 6. MODAL: PRODUCT DETAIL -->
-  <!-- ========================================================================= -->
   <div id="productDetailModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden scale-in my-auto max-h-[90vh] flex flex-col">
-      
-      <!-- Modal Header / Close -->
       <div class="relative bg-slate-100 flex-shrink-0">
-        <!-- Main Product Image -->
         <div class="w-full h-56 sm:h-80 bg-slate-900 flex items-center justify-center overflow-hidden relative">
           <img id="detailImage" src="" alt="Product" class="w-full h-full object-contain" />
           <div id="detailCategoryBadge" class="absolute top-3 sm:top-4 left-3 sm:left-4 right-14 max-w-[65%] truncate bg-white/90 backdrop-blur text-blue-600 text-[11px] sm:text-xs font-semibold px-2.5 sm:px-3 py-1 rounded-full shadow-md">
@@ -361,11 +303,7 @@
           </button>
         </div>
       </div>
-
-      <!-- Modal Body (Scrollable) -->
       <div class="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 flex-1">
-        
-        <!-- Price & Title -->
         <div>
           <div class="flex items-baseline justify-between gap-2">
             <div id="detailPrice" class="text-xl sm:text-3xl font-extrabold text-blue-600 truncate">฿0</div>
@@ -373,16 +311,12 @@
           </div>
           <h2 id="detailTitle" class="text-base sm:text-xl font-bold text-slate-900 mt-1 leading-snug">ชื่อสินค้า</h2>
         </div>
-
-        <!-- Description -->
         <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
           <div class="text-xs font-semibold text-slate-500 mb-1">รายละเอียดสินค้า</div>
           <p id="detailDescription" class="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
             -
           </p>
         </div>
-
-        <!-- Seller Information Card -->
         <div class="p-3.5 sm:p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex flex-wrap items-center justify-between gap-2.5">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-base sm:text-lg shadow-sm flex-shrink-0" id="detailSellerAvatar">
@@ -400,12 +334,8 @@
             </span>
           </div>
         </div>
-
       </div>
-
-      <!-- Modal Footer / Action Buttons -->
       <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-100 flex-shrink-0 grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 sm:gap-3">
-        <!-- Phone Call Button -->
         <a
           id="detailPhoneBtn"
           href="tel:"
@@ -414,8 +344,6 @@
           <i class="ph-bold ph-phone-call text-base sm:text-lg text-emerald-600 flex-shrink-0"></i>
           <span id="detailPhoneText" class="truncate">โทรติดต่อ</span>
         </a>
-
-        <!-- In-app Chat Button (For Buyers) -->
         <button
           id="detailChatBtn"
           onclick="openChatFromDetail()"
@@ -424,8 +352,6 @@
           <i class="ph-bold ph-chat-teardrop-dots text-base sm:text-lg flex-shrink-0"></i>
           <span class="truncate">แชทสอบถาม</span>
         </button>
-
-        <!-- [ใหม่] Reserve Button (For food category products only) -->
         <button
           id="detailReserveBtn"
           onclick="openReservationModal()"
@@ -434,8 +360,6 @@
           <i class="ph-bold ph-bookmark-simple text-base sm:text-lg flex-shrink-0"></i>
           <span class="truncate">จองสินค้า</span>
         </button>
-
-        <!-- Seller Inquiries Button (Visible only to item owner) -->
         <button
           id="detailSellerInquiriesBtn"
           onclick="openSellerInquiriesFromDetail()"
@@ -545,8 +469,6 @@
             </div>
           </div>
         </div>
-
-        <!-- [ใหม่] ช่องจำนวนสินค้า - แสดงเฉพาะหมวด "อาหาร & ขนม" เพื่อรองรับระบบจองสินค้า -->
         <div id="sellQuantityWrap" class="hidden">
           <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนสินค้าที่มีขาย (สำหรับระบบจองสินค้า)</label>
           <input
@@ -586,8 +508,6 @@
             class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
           ></textarea>
         </div>
-
-        <!-- [ใหม่] Consent เปิดเผยข้อมูล + ยอมรับกติกาการขาย (บังคับก่อนลงประกาศทุกครั้ง) -->
         <div class="p-3 rounded-xl bg-amber-50 border border-amber-200">
           <label class="flex items-start gap-2 cursor-pointer">
             <input type="checkbox" id="sellConsentRules" required class="mt-0.5 w-4 h-4 accent-blue-600 flex-shrink-0" />
@@ -710,9 +630,6 @@
     </div>
   </div>
 
-  <!-- ========================================================================= -->
-  <!-- [ใหม่] MODAL: จองสินค้า (สำหรับหมวดหมู่ "อาหาร & ขนม") -->
-  <!-- ========================================================================= -->
   <div id="reservationModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden scale-in my-auto">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-amber-50 flex-shrink-0">
@@ -750,9 +667,6 @@
     </div>
   </div>
 
-  <!-- ========================================================================= -->
-  <!-- [ใหม่] MODAL: การจองสินค้าของฉัน (ทั้งฝั่งผู้จอง และฝั่งผู้ขาย) -->
-  <!-- ========================================================================= -->
   <div id="myReservationsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden scale-in my-auto max-h-[88vh] flex flex-col">
       <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/90 flex-shrink-0">
