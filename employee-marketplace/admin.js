@@ -10,13 +10,18 @@ const ADMIN_STATE = {
       soldProducts: 0,
       deletedProducts: 0,
       totalMessages: 0,
-      totalLogs: 0
+      totalLogs: 0,
+      totalReservations: 0,      // [ใหม่]
+      pendingReservations: 0,    // [ใหม่]
+      confirmedReservations: 0   // [ใหม่]
     },
     products: [],
-    logs: []
+    logs: [],
+    reservations: [] // [ใหม่]
   },
   adminProductFilterStatus: 'ALL',
-  adminSearchQuery: ''
+  adminSearchQuery: '',
+  currentAdminTab: 'products' // [ใหม่] products | reservations | logs
 };
 
 const ADMIN_STORAGE_KEY = 'emp_marketplace_user';
@@ -195,10 +200,12 @@ async function loadAdminDashboardData() {
         stats: {
           totalEmployees: 0, totalAdmins: 0, totalProducts: 0,
           activeProducts: 0, soldProducts: 0, deletedProducts: 0,
-          totalMessages: 0, totalLogs: 0
+          totalMessages: 0, totalLogs: 0,
+          totalReservations: 0, pendingReservations: 0, confirmedReservations: 0
         },
         products: [],
-        logs: []
+        logs: [],
+        reservations: []
       };
       renderAdminDashboard();
       Swal.fire({
@@ -220,7 +227,8 @@ async function loadAdminDashboardData() {
       ADMIN_STATE.adminData = {
         stats: result.stats || {},
         products: result.products || [],
-        logs: result.logs || []
+        logs: result.logs || [],
+        reservations: result.reservations || [] // [ใหม่]
       };
       renderAdminDashboard();
     } else {
@@ -239,31 +247,38 @@ function renderAdminDashboard() {
   document.getElementById('adminStatSoldProd').textContent = stats.soldProducts || 0;
   document.getElementById('adminStatDeletedProd').textContent = stats.deletedProducts || 0;
   document.getElementById('adminStatEmployees').textContent = `${stats.totalEmployees || 0} คน`;
+  document.getElementById('adminStatPendingReservations').textContent = stats.pendingReservations || 0; // [ใหม่]
 
   renderAdminProductTable();
+  renderAdminReservationsTable(); // [ใหม่]
   renderAdminLogsTable();
 }
 
 function switchAdminTab(tabName) {
-  const btnProd = document.getElementById('adminTabBtnProducts');
-  const btnLogs = document.getElementById('adminTabBtnLogs');
-  const tabProd = document.getElementById('adminTabProducts');
-  const tabLogs = document.getElementById('adminTabLogs');
+  ADMIN_STATE.currentAdminTab = tabName;
+
+  const tabs = {
+    products: { btn: 'adminTabBtnProducts', panel: 'adminTabProducts' },
+    reservations: { btn: 'adminTabBtnReservations', panel: 'adminTabReservations' },
+    logs: { btn: 'adminTabBtnLogs', panel: 'adminTabLogs' }
+  };
 
   const activeCls = 'flex-shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5';
   const inactiveCls = 'flex-shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-medium rounded-xl transition bg-white text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5';
 
-  if (tabName === 'products') {
-    btnProd.className = activeCls;
-    btnLogs.className = inactiveCls;
-    tabProd.classList.remove('hidden');
-    tabLogs.classList.add('hidden');
-  } else {
-    btnLogs.className = activeCls;
-    btnProd.className = inactiveCls;
-    tabLogs.classList.remove('hidden');
-    tabProd.classList.add('hidden');
-  }
+  Object.keys(tabs).forEach(key => {
+    const btnEl = document.getElementById(tabs[key].btn);
+    const panelEl = document.getElementById(tabs[key].panel);
+    if (!btnEl || !panelEl) return;
+
+    if (key === tabName) {
+      btnEl.className = activeCls;
+      panelEl.classList.remove('hidden');
+    } else {
+      btnEl.className = inactiveCls;
+      panelEl.classList.add('hidden');
+    }
+  });
 }
 
 function setAdminProductFilter(status, evt) {
@@ -364,6 +379,44 @@ function renderAdminProductTable() {
       </tr>
     `;
   }).join('');
+}
+
+// [ใหม่] ตารางแสดงรายการจองสินค้าทั้งหมดสำหรับแอดมิน (อ่านอย่างเดียว เพื่อการตรวจสอบ)
+function renderAdminReservationsTable() {
+  const tbody = document.getElementById('adminReservationsTableBody');
+  if (!tbody) return;
+
+  const reservations = ADMIN_STATE.adminData.reservations || [];
+
+  if (reservations.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="p-8 text-center text-slate-400">
+          ยังไม่มีข้อมูลการจองสินค้าในระบบ
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  const statusBadge = (status) => {
+    if (status === 'PENDING') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">รอยืนยัน</span>`;
+    if (status === 'CONFIRMED') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">ยืนยันแล้ว</span>`;
+    if (status === 'REJECTED') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">ถูกปฏิเสธ</span>`;
+    return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">ยกเลิกแล้ว</span>`;
+  };
+
+  tbody.innerHTML = reservations.map(r => `
+    <tr class="hover:bg-slate-50 transition">
+      <td class="p-3 text-slate-500 font-mono text-[11px] whitespace-nowrap">${r.createdAt || '-'}</td>
+      <td class="p-3 font-mono text-[11px] text-slate-600">${escapeHtmlAdmin(r.reservationId)}</td>
+      <td class="p-3 font-mono text-[11px] text-slate-600">${escapeHtmlAdmin(r.productId)}</td>
+      <td class="p-3 font-mono font-semibold text-slate-700">${escapeHtmlAdmin(r.buyerEmpId)}</td>
+      <td class="p-3 font-mono font-semibold text-slate-700">${escapeHtmlAdmin(r.sellerEmpId)}</td>
+      <td class="p-3 font-mono text-slate-700">${r.quantity}</td>
+      <td class="p-3">${statusBadge(r.status)}</td>
+    </tr>
+  `).join('');
 }
 
 async function handleAdminDeletePost(productId) {
@@ -469,6 +522,8 @@ function renderAdminLogsTable() {
       actionBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700 font-mono">${escapeHtmlAdmin(log.action)}</span>`;
     } else if (log.action === 'SEND_MESSAGE') {
       actionBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-700 font-mono">MESSAGE</span>`;
+    } else if (log.action.includes('RESERVATION')) {
+      actionBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700 font-mono">${escapeHtmlAdmin(log.action)}</span>`;
     }
 
     return `

@@ -1,3 +1,5 @@
+const PDPA_CONSENT_KEY = 'emp_marketplace_pdpa_consent_v1';
+
 const STATE = {
   currentUser: null,
   allProducts: [],
@@ -18,7 +20,11 @@ const STATE = {
   totalUnreadCount: 0,
   lastKnownUnreadCount: 0,
   hasShownInitialUnreadAlert: false,
-  sessionExpiredNotified: false
+  sessionExpiredNotified: false,
+
+  // [ใหม่] ระบบจองสินค้า
+  myReservations: { asBuyer: [], asSeller: [] },
+  reservationTargetProduct: null
 };
 
 // คืนค่า session token ของผู้ใช้ปัจจุบัน (ใช้แนบไปกับทุก action ที่ต้องยืนยันตัวตน)
@@ -47,15 +53,18 @@ function handleAuthExpired(result) {
 
     updateUserNav();
     updateUnreadBadgeUI();
+    updateReservationBadge();
     closeChatModal();
     closeInboxModal();
+    closeReservationModal();
+    closeMyReservationsModal();
 
     Swal.fire({
       icon: 'warning',
       title: 'เซสชันหมดอายุ',
       text: 'กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อดำเนินการต่อ',
       confirmButtonColor: '#3b82f6'
-    }).then(() => openLoginModal());
+    }).then(() => openConsentOrLogin());
   }
   return true;
 }
@@ -74,7 +83,10 @@ const MOCK_PRODUCTS = [
     phone: '081-234-5678',
     imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
     status: 'ACTIVE',
-    createdAt: '31/08/2026 09:30'
+    createdAt: '31/08/2026 09:30',
+    quantity: null,
+    reservedQty: 0,
+    remainingQty: null
   },
   {
     productId: 'PROD-002',
@@ -89,7 +101,10 @@ const MOCK_PRODUCTS = [
     phone: '089-987-6543',
     imageUrl: 'https://images.unsplash.com/photo-1580481077190-736959684218?w=600&auto=format&fit=crop&q=80',
     status: 'ACTIVE',
-    createdAt: '31/08/2026 11:15'
+    createdAt: '31/08/2026 11:15',
+    quantity: null,
+    reservedQty: 0,
+    remainingQty: null
   },
   {
     productId: 'PROD-003',
@@ -104,7 +119,10 @@ const MOCK_PRODUCTS = [
     phone: '086-555-1234',
     imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80',
     status: 'ACTIVE',
-    createdAt: '31/08/2026 13:00'
+    createdAt: '31/08/2026 13:00',
+    quantity: 10,
+    reservedQty: 3,
+    remainingQty: 7
   },
   {
     productId: 'PROD-004',
@@ -119,7 +137,10 @@ const MOCK_PRODUCTS = [
     phone: '082-111-9988',
     imageUrl: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=80',
     status: 'ACTIVE',
-    createdAt: '31/08/2026 14:20'
+    createdAt: '31/08/2026 14:20',
+    quantity: null,
+    reservedQty: 0,
+    remainingQty: null
   }
 ];
 
@@ -151,6 +172,9 @@ let MOCK_LOGS = [
   { logId: 'LOG-4', timestamp: '31/08/2026 10:00', empId: 'EMP002', action: 'SEND_MESSAGE', details: 'ส่งข้อความถึง EMP001 (สินค้า PROD-001)' }
 ];
 
+// [ใหม่] ตัวอย่างข้อมูลจองสินค้าสำหรับ Demo Mode
+let MOCK_RESERVATIONS = [];
+
 document.addEventListener('DOMContentLoaded', () => {
   STATE.isApiConfigured = Boolean(CONFIG.API_URL && CONFIG.API_URL.trim() !== '');
 
@@ -160,6 +184,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadProducts();
 });
+
+function getFoodCategoryName() {
+  const foodCat = CONFIG.CATEGORIES.find(c => c.id === 'food');
+  return foodCat ? foodCat.name : 'อาหาร & ขนม';
+}
 
 function checkStoredAuth() {
   const savedUser = localStorage.getItem('emp_marketplace_user');
@@ -229,6 +258,13 @@ function updateUserNav() {
             <span id="dropdownUnreadBadge" class="hidden bg-rose-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono">0</span>
           </button>
 
+          <button onclick="openMyReservationsModal()" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-amber-50 hover:text-amber-600 flex items-center justify-between">
+            <span class="flex items-center gap-2">
+              <i class="ph ph-bookmark-simple text-base"></i> การจองสินค้า
+            </span>
+            <span id="dropdownReservationBadge" class="hidden bg-amber-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono">0</span>
+          </button>
+
           <button onclick="openMyListingsModal()" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2">
             <i class="ph ph-archive-box text-base"></i> สินค้าของฉัน
           </button>
@@ -254,10 +290,12 @@ function updateUserNav() {
       document.getElementById('bannerUserName').textContent = `สวัสดีคุณ ${STATE.currentUser.name}`;
       document.getElementById('bannerUserDetail').textContent = `รหัส ${STATE.currentUser.empId} • ${STATE.currentUser.department || 'พนักงาน'} ${STATE.currentUser.plant ? '• ' + STATE.currentUser.plant : ''} ${isAdminUser ? '• (ผู้ดูแลระบบ)' : ''}`;
     }
+
+    updateReservationBadge();
   } else {
     container.innerHTML = `
       <button
-        onclick="openLoginModal()"
+        onclick="openConsentOrLogin()"
         class="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-medium text-sm rounded-xl transition"
       >
         <i class="ph-bold ph-sign-in text-base"></i>
@@ -268,6 +306,58 @@ function updateUserNav() {
     if (welcomeBanner) welcomeBanner.classList.add('hidden');
     if (notificationBellBtn) notificationBellBtn.classList.add('hidden');
   }
+}
+
+// ========================================================================
+// [ใหม่] Consent / PDPA - นโยบายความเป็นส่วนตัว
+// ========================================================================
+
+// เรียกจากปุ่ม "เข้าสู่ระบบ" ทุกจุดในระบบ: ถ้ายังไม่เคยกดยอมรับ PDPA จะแสดง Consent Modal ก่อนเสมอ
+function openConsentOrLogin() {
+  const accepted = localStorage.getItem(PDPA_CONSENT_KEY) === 'true';
+  if (accepted) {
+    openLoginModal();
+  } else {
+    openConsentModal();
+  }
+}
+
+function openConsentModal() {
+  document.getElementById('consentModal').classList.remove('hidden');
+  document.getElementById('consentModal').classList.add('flex');
+  const alreadyAccepted = localStorage.getItem(PDPA_CONSENT_KEY) === 'true';
+  document.getElementById('consentCheckbox').checked = alreadyAccepted;
+  document.getElementById('consentAcceptBtn').disabled = !alreadyAccepted;
+}
+
+function closeConsentModal() {
+  document.getElementById('consentModal').classList.add('hidden');
+  document.getElementById('consentModal').classList.remove('flex');
+}
+
+function toggleConsentAcceptBtn() {
+  const checked = document.getElementById('consentCheckbox').checked;
+  document.getElementById('consentAcceptBtn').disabled = !checked;
+}
+
+function acceptConsentAndContinue() {
+  localStorage.setItem(PDPA_CONSENT_KEY, 'true');
+  closeConsentModal();
+  openLoginModal();
+}
+
+// ========================================================================
+// [ใหม่] กติกาการซื้อ-ขายสินค้า
+// ========================================================================
+
+function openRulesModal() {
+  document.getElementById('rulesModal').classList.remove('hidden');
+  document.getElementById('rulesModal').classList.add('flex');
+}
+
+function closeRulesModal() {
+  document.getElementById('rulesModal').classList.add('hidden');
+  document.getElementById('rulesModal').classList.remove('flex');
 }
 
 function openLoginModal() {
@@ -305,6 +395,8 @@ async function handleLoginSubmit(event) {
 
   if (!empId || !pin) return;
 
+  const consentAccepted = localStorage.getItem(PDPA_CONSENT_KEY) === 'true';
+
   errorDiv.classList.add('hidden');
   submitBtn.disabled = true;
   submitBtn.innerHTML = `<i class="ph-bold ph-spinner animate-spin text-lg"></i> กำลังตรวจสอบ...`;
@@ -323,6 +415,7 @@ async function handleLoginSubmit(event) {
         isAdmin: isAdminUser
       };
       localStorage.setItem('emp_marketplace_user', JSON.stringify(STATE.currentUser));
+      localStorage.setItem(PDPA_CONSENT_KEY, 'true');
       closeLoginModal();
       updateUserNav();
       startNotificationPolling();
@@ -344,7 +437,8 @@ async function handleLoginSubmit(event) {
       body: JSON.stringify({
         action: 'login',
         empId: empId,
-        pin: pin
+        pin: pin,
+        consentAccepted: consentAccepted // [ใหม่] ส่งสถานะการยอมรับ PDPA ไปบันทึกลง Logs
       })
     });
 
@@ -353,6 +447,7 @@ async function handleLoginSubmit(event) {
     if (result.success && result.user) {
       STATE.currentUser = result.user;
       localStorage.setItem('emp_marketplace_user', JSON.stringify(STATE.currentUser));
+      localStorage.setItem(PDPA_CONSENT_KEY, 'true');
       closeLoginModal();
       updateUserNav();
       startNotificationPolling();
@@ -408,6 +503,8 @@ function handleLogout() {
       STATE.myConversations = [];
       STATE.totalUnreadCount = 0;
       STATE.lastKnownUnreadCount = 0;
+      STATE.myReservations = { asBuyer: [], asSeller: [] };
+      STATE.reservationTargetProduct = null;
 
       const chatArea = document.getElementById('chatMessagesArea');
       if (chatArea) {
@@ -427,6 +524,8 @@ function handleLogout() {
       closeProductDetailModal();
       closeSellModal();
       closeMyListingsModal();
+      closeReservationModal();
+      closeMyReservationsModal();
       updateUserNav();
       updateUnreadBadgeUI();
       applyFilters();
@@ -528,7 +627,7 @@ function handleFloatAlertClick(key) {
 
 function handleBellClick() {
   if (!STATE.currentUser) {
-    openLoginModal();
+    openConsentOrLogin();
     return;
   }
 
@@ -569,9 +668,11 @@ function updateUnreadBadgeUI() {
 function startNotificationPolling() {
   if (STATE.notificationPollingInterval) clearInterval(STATE.notificationPollingInterval);
   loadMyChats(false);
+  loadMyReservations(false); // [ใหม่]
   STATE.notificationPollingInterval = setInterval(() => {
     if (STATE.currentUser) {
       loadMyChats(false);
+      loadMyReservations(false); // [ใหม่]
     }
   }, 4000);
 }
@@ -700,7 +801,7 @@ async function loadMyChats(showLoader = false) {
 
 function openInboxModal() {
   if (!STATE.currentUser) {
-    openLoginModal();
+    openConsentOrLogin();
     return;
   }
 
@@ -835,6 +936,9 @@ function renderCategories() {
     .filter(c => c.id !== 'all')
     .map(cat => `<option value="${cat.name}">${cat.name}</option>`)
     .join('');
+
+  // ตั้งค่าเริ่มต้นให้ช่องจำนวนสินค้า (สำหรับระบบจอง) แสดง/ซ่อนให้ถูกต้องตามหมวดหมู่เริ่มต้น
+  handleSellCategoryChange();
 }
 
 function filterCategory(catId) {
@@ -946,11 +1050,21 @@ function renderProductGrid() {
 
   emptyState.classList.add('hidden');
 
+  const foodCategoryName = getFoodCategoryName();
+
   grid.innerHTML = STATE.filteredProducts.map(item => {
     const isSold = item.status === 'SOLD';
     const fallbackImg = 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=400&auto=format&fit=crop&q=60';
     const imgUrl = item.imageUrl || fallbackImg;
     const initials = item.sellerName ? item.sellerName.substring(0, 2) : 'EM';
+
+    const isFood = item.category === foodCategoryName;
+    const hasQtyLimit = isFood && item.quantity !== null && item.quantity !== undefined;
+    const reservationBadge = hasQtyLimit
+      ? `<span class="absolute bottom-2 left-2 bg-amber-500/95 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm flex items-center gap-1">
+          <i class="ph-bold ph-bookmark-simple"></i> เหลือ ${item.remainingQty}
+        </span>`
+      : (isFood ? `<span class="absolute bottom-2 left-2 bg-amber-500/95 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm flex items-center gap-1"><i class="ph-bold ph-bookmark-simple"></i> จองได้</span>` : '');
 
     return `
       <div
@@ -969,6 +1083,8 @@ function renderProductGrid() {
           <span class="absolute top-2 left-2 right-2 max-w-[85%] truncate bg-white/90 backdrop-blur text-[10px] font-semibold text-slate-700 px-2 py-0.5 rounded-md shadow-sm">
             ${escapeHtml(item.category) || 'ทั่วไป'}
           </span>
+
+          ${!isSold ? reservationBadge : ''}
 
           ${isSold ? `
             <div class="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center">
@@ -1053,6 +1169,8 @@ function openProductDetail(productId) {
     ownerBtn.classList.add('hidden');
   }
 
+  updateReserveButtonVisibility(item); // [ใหม่]
+
   document.getElementById('productDetailModal').classList.remove('hidden');
   document.getElementById('productDetailModal').classList.add('flex');
 }
@@ -1103,7 +1221,7 @@ function openSellModal() {
       confirmButtonText: 'เข้าสู่ระบบตอนนี้',
       confirmButtonColor: '#3b82f6'
     }).then((res) => {
-      if (res.isConfirmed) openLoginModal();
+      if (res.isConfirmed) openConsentOrLogin();
     });
     return;
   }
@@ -1123,6 +1241,20 @@ function closeSellModal() {
 function resetSellForm() {
   document.getElementById('sellForm').reset();
   removeSelectedImage();
+  const consentBox = document.getElementById('sellConsentRules');
+  if (consentBox) consentBox.checked = false;
+  handleSellCategoryChange();
+}
+
+// [ใหม่] แสดง/ซ่อนช่องจำนวนสินค้า เมื่อเลือกหมวดหมู่ "อาหาร & ขนม" ในฟอร์มลงขาย
+function handleSellCategoryChange() {
+  const select = document.getElementById('sellCategory');
+  const qtyWrap = document.getElementById('sellQuantityWrap');
+  if (!select || !qtyWrap) return;
+
+  const selectedName = select.value;
+  const isFood = selectedName === getFoodCategoryName();
+  qtyWrap.classList.toggle('hidden', !isFood);
 }
 
 function handleImageSelected(event) {
@@ -1185,9 +1317,29 @@ async function handleSellSubmit(event) {
   const phone = document.getElementById('sellPhone').value.trim();
   const description = document.getElementById('sellDescription').value.trim();
   const submitBtn = document.getElementById('sellSubmitBtn');
+  const consentChecked = document.getElementById('sellConsentRules').checked;
 
   if (!title || isNaN(price) || !phone) {
     Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลให้ครบถ้วน' });
+    return;
+  }
+
+  // [ใหม่] บังคับให้ยอมรับการเปิดเผยข้อมูลและกติกาการขายก่อนลงประกาศทุกครั้ง
+  if (!consentChecked) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'กรุณายอมรับเงื่อนไข',
+      text: 'กรุณายืนยันการยินยอมเปิดเผยข้อมูลผู้ขาย และรับทราบกติกาการขายสินค้าก่อนลงประกาศ'
+    });
+    return;
+  }
+
+  const isFoodCategory = category === getFoodCategoryName();
+  const quantityInput = document.getElementById('sellQuantity');
+  const quantityVal = (isFoodCategory && quantityInput && quantityInput.value.trim() !== '') ? Number(quantityInput.value) : '';
+
+  if (isFoodCategory && quantityInput && quantityInput.value.trim() !== '' && (isNaN(quantityVal) || quantityVal <= 0)) {
+    Swal.fire({ icon: 'warning', title: 'จำนวนสินค้าไม่ถูกต้อง', text: 'กรุณาระบุจำนวนสินค้าเป็นตัวเลขที่มากกว่า 0 หรือเว้นว่างไว้หากไม่จำกัดจำนวน' });
     return;
   }
 
@@ -1204,7 +1356,8 @@ async function handleSellSubmit(event) {
     phone: phone,
     description: description,
     imageBase64: STATE.selectedImageBase64,
-    imageName: STATE.selectedImageName
+    imageName: STATE.selectedImageName,
+    quantity: quantityVal // [ใหม่]
   };
 
   try {
@@ -1223,7 +1376,10 @@ async function handleSellSubmit(event) {
         phone: phone,
         imageUrl: STATE.selectedImageBase64 || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
         status: 'ACTIVE',
-        createdAt: 'เมื่อสักครู่'
+        createdAt: 'เมื่อสักครู่',
+        quantity: quantityVal === '' ? null : quantityVal,
+        reservedQty: 0,
+        remainingQty: quantityVal === '' ? null : quantityVal
       };
       STATE.allProducts.unshift(mockNewItem);
       MOCK_LOGS.unshift({
@@ -1283,7 +1439,7 @@ function openChatFromDetail() {
       confirmButtonText: 'เข้าสู่ระบบ',
       confirmButtonColor: '#3b82f6'
     }).then((res) => {
-      if (res.isConfirmed) openLoginModal();
+      if (res.isConfirmed) openConsentOrLogin();
     });
     return;
   }
@@ -1550,7 +1706,7 @@ function retryFailedMessage(bubbleId) {
 
 function openMyListingsModal() {
   if (!STATE.currentUser) {
-    openLoginModal();
+    openConsentOrLogin();
     return;
   }
 
@@ -1578,6 +1734,7 @@ function openMyListingsModal() {
               <span class="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 ${item.status === 'SOLD' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}">
                 ${item.status === 'SOLD' ? 'ขายแล้ว' : 'กำลังขาย'}
               </span>
+              ${item.quantity !== null && item.quantity !== undefined ? `<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-700 flex-shrink-0">เหลือ ${item.remainingQty}/${item.quantity}</span>` : ''}
             </div>
             <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate">${escapeHtml(item.title)}</h4>
             <p class="text-[11px] text-slate-400 truncate">${escapeHtml(item.category)} • ${item.createdAt || ''}</p>
@@ -1766,6 +1923,330 @@ async function handleAdminDeletePost(productId) {
     timer: 2000,
     showConfirmButton: false
   });
+}
+
+// ========================================================================
+// [ใหม่] ระบบจองสินค้า (Reservation System) - สำหรับหมวดหมู่ "อาหาร & ขนม"
+// ========================================================================
+
+function updateReserveButtonVisibility(item) {
+  const reserveBtn = document.getElementById('detailReserveBtn');
+  if (!reserveBtn) return;
+
+  const isFood = item.category === getFoodCategoryName();
+  const isOwner = STATE.currentUser && STATE.currentUser.empId === item.empId;
+  const isActive = item.status === 'ACTIVE';
+
+  if (isFood && isActive && !isOwner) {
+    reserveBtn.classList.remove('hidden');
+
+    let qtyText = '';
+    let disabled = false;
+    if (item.quantity !== null && item.quantity !== undefined) {
+      const remaining = (item.remainingQty !== undefined && item.remainingQty !== null) ? item.remainingQty : item.quantity;
+      qtyText = ` (เหลือ ${remaining})`;
+      disabled = remaining <= 0;
+    }
+
+    reserveBtn.disabled = disabled;
+    reserveBtn.classList.toggle('opacity-50', disabled);
+    reserveBtn.classList.toggle('pointer-events-none', disabled);
+
+    const labelSpan = reserveBtn.querySelector('span');
+    if (labelSpan) labelSpan.textContent = disabled ? 'จองครบแล้ว' : `จองสินค้า${qtyText}`;
+  } else {
+    reserveBtn.classList.add('hidden');
+  }
+}
+
+function openReservationModal() {
+  const item = STATE.currentDetailProduct;
+  if (!item) return;
+
+  if (!STATE.currentUser) {
+    closeProductDetailModal();
+    Swal.fire({
+      icon: 'info',
+      title: 'กรุณาเข้าสู่ระบบ',
+      text: 'คุณต้องเข้าสู่ระบบก่อนทำการจองสินค้า',
+      confirmButtonText: 'เข้าสู่ระบบ',
+      confirmButtonColor: '#3b82f6'
+    }).then((res) => {
+      if (res.isConfirmed) openConsentOrLogin();
+    });
+    return;
+  }
+
+  STATE.reservationTargetProduct = item;
+
+  document.getElementById('reservationProductTitle').textContent = item.title;
+  document.getElementById('reservationProductThumb').src = item.imageUrl || 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=100';
+
+  const qtyInput = document.getElementById('reservationQuantityInput');
+  const hasLimit = item.quantity !== null && item.quantity !== undefined;
+  const maxQty = hasLimit ? Math.max(1, item.remainingQty) : 99;
+
+  qtyInput.max = maxQty;
+  qtyInput.value = 1;
+
+  document.getElementById('reservationMaxHint').textContent = hasLimit
+    ? `จองได้สูงสุด ${maxQty} รายการ (คงเหลือทั้งหมด ${item.remainingQty} จาก ${item.quantity})`
+    : 'ผู้ขายไม่ได้จำกัดจำนวนสินค้าไว้';
+  document.getElementById('reservationNoteInput').value = '';
+
+  closeProductDetailModal();
+  document.getElementById('reservationModal').classList.remove('hidden');
+  document.getElementById('reservationModal').classList.add('flex');
+}
+
+function closeReservationModal() {
+  document.getElementById('reservationModal').classList.add('hidden');
+  document.getElementById('reservationModal').classList.remove('flex');
+}
+
+async function submitReservation(event) {
+  event.preventDefault();
+  const item = STATE.reservationTargetProduct;
+  if (!item || !STATE.currentUser) return;
+
+  const qty = Number(document.getElementById('reservationQuantityInput').value) || 1;
+  const note = document.getElementById('reservationNoteInput').value.trim();
+  const btn = document.getElementById('reservationSubmitBtn');
+
+  if (qty <= 0) {
+    Swal.fire({ icon: 'warning', title: 'จำนวนไม่ถูกต้อง', text: 'กรุณาระบุจำนวนที่ต้องการจองมากกว่า 0' });
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> กำลังส่งคำขอจอง...`;
+
+  try {
+    if (!STATE.isApiConfigured) {
+      await new Promise(r => setTimeout(r, 500));
+      Swal.fire({
+        icon: 'success',
+        title: 'จองสินค้าสำเร็จ (Demo Mode)',
+        text: 'รอผู้ขายยืนยันการจอง (โหมดทดลองยังไม่บันทึกข้อมูลถาวร)',
+        timer: 2500,
+        showConfirmButton: false
+      });
+      closeReservationModal();
+      return;
+    }
+
+    const response = await fetch(CONFIG.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'createReservation',
+        productId: item.productId,
+        buyerEmpId: STATE.currentUser.empId,
+        quantity: qty,
+        note: note,
+        token: getSessionToken()
+      })
+    });
+
+    const result = await response.json();
+    if (handleAuthExpired(result)) return;
+
+    if (result.success) {
+      Swal.fire({
+        icon: 'success',
+        title: 'จองสินค้าสำเร็จ',
+        text: result.message || 'รอผู้ขายยืนยันการจอง',
+        timer: 2500,
+        showConfirmButton: false
+      });
+      closeReservationModal();
+      loadProducts(true);
+      loadMyReservations(false);
+    } else {
+      Swal.fire({ icon: 'error', title: 'จองไม่สำเร็จ', text: result.message || 'เกิดข้อผิดพลาด' });
+    }
+  } catch (err) {
+    console.error(err);
+    Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', text: 'ไม่สามารถส่งคำขอจองไปยังเซิร์ฟเวอร์ได้' });
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="ph-bold ph-bookmark-simple"></i> <span>ยืนยันการจอง</span>`;
+  }
+}
+
+async function loadMyReservations(showModal = false) {
+  if (!STATE.currentUser) {
+    if (showModal) openConsentOrLogin();
+    return;
+  }
+
+  try {
+    let asBuyer = [];
+    let asSeller = [];
+
+    if (!STATE.isApiConfigured) {
+      // Demo Mode: ยังไม่มีระบบจัดเก็บถาวร แสดงเป็นรายการว่างเปล่า
+      asBuyer = [];
+      asSeller = [];
+    } else {
+      const response = await fetch(`${CONFIG.API_URL}?action=getMyReservations&empId=${encodeURIComponent(STATE.currentUser.empId)}&token=${encodeURIComponent(getSessionToken())}&_t=${Date.now()}`);
+      const result = await response.json();
+      if (handleAuthExpired(result)) return;
+      if (result.success) {
+        asBuyer = result.asBuyer || [];
+        asSeller = result.asSeller || [];
+      }
+    }
+
+    STATE.myReservations = { asBuyer, asSeller };
+    updateReservationBadge();
+
+    const modal = document.getElementById('myReservationsModal');
+    if (showModal || (modal && !modal.classList.contains('hidden'))) {
+      renderMyReservations();
+    }
+  } catch (err) {
+    console.error('Error loading reservations:', err);
+  }
+}
+
+function updateReservationBadge() {
+  const pendingCount = (STATE.myReservations.asSeller || []).filter(r => r.status === 'PENDING').length;
+  const badge = document.getElementById('dropdownReservationBadge');
+  if (badge) {
+    if (pendingCount > 0) {
+      badge.textContent = pendingCount;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  }
+}
+
+function openMyReservationsModal() {
+  if (!STATE.currentUser) {
+    openConsentOrLogin();
+    return;
+  }
+
+  document.getElementById('myReservationsModal').classList.remove('hidden');
+  document.getElementById('myReservationsModal').classList.add('flex');
+  switchReservationTab('seller');
+  loadMyReservations(true);
+}
+
+function closeMyReservationsModal() {
+  document.getElementById('myReservationsModal').classList.add('hidden');
+  document.getElementById('myReservationsModal').classList.remove('flex');
+}
+
+let currentReservationTab = 'seller';
+
+function switchReservationTab(tab) {
+  currentReservationTab = tab;
+  const btnSeller = document.getElementById('resTabBtnSeller');
+  const btnBuyer = document.getElementById('resTabBtnBuyer');
+  const activeCls = 'flex-1 px-3 py-2 text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm';
+  const inactiveCls = 'flex-1 px-3 py-2 text-xs font-medium rounded-xl transition bg-white text-slate-600 border border-slate-200';
+
+  if (tab === 'seller') {
+    btnSeller.className = activeCls;
+    btnBuyer.className = inactiveCls;
+  } else {
+    btnBuyer.className = activeCls;
+    btnSeller.className = inactiveCls;
+  }
+
+  renderMyReservations();
+}
+
+function renderMyReservations() {
+  const container = document.getElementById('myReservationsContent');
+  if (!container) return;
+
+  const list = currentReservationTab === 'seller' ? (STATE.myReservations.asSeller || []) : (STATE.myReservations.asBuyer || []);
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-10 text-slate-400">
+        <i class="ph ph-bookmark-simple text-4xl mb-2 block text-slate-300"></i>
+        <p class="text-sm font-semibold text-slate-600">${currentReservationTab === 'seller' ? 'ยังไม่มีคำขอจองสินค้าของคุณ' : 'คุณยังไม่ได้จองสินค้าใดๆ'}</p>
+        <p class="text-xs text-slate-400 mt-1">${currentReservationTab === 'seller' ? 'เมื่อมีคนจองสินค้าอาหาร & ขนมของคุณ จะแสดงที่นี่' : 'ลองเลือกดูสินค้าหมวด "อาหาร & ขนม" แล้วกดจองได้เลย'}</p>
+      </div>`;
+    return;
+  }
+
+  const statusBadge = (status) => {
+    if (status === 'PENDING') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">รอยืนยัน</span>`;
+    if (status === 'CONFIRMED') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">ยืนยันแล้ว</span>`;
+    if (status === 'REJECTED') return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">ถูกปฏิเสธ</span>`;
+    return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">ยกเลิกแล้ว</span>`;
+  };
+
+  container.innerHTML = list.map(r => `
+    <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col gap-2">
+      <div class="flex items-center gap-3">
+        <img src="${r.productImage || 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=100'}" class="w-12 h-12 rounded-xl object-cover bg-white flex-shrink-0" onerror="this.src='https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=100'" />
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            ${statusBadge(r.status)}
+            <span class="text-[10px] text-slate-400">${r.createdAt || ''}</span>
+          </div>
+          <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate">${escapeHtml(r.productTitle)}</h4>
+          <p class="text-[11px] text-slate-500">จำนวน ${r.quantity} รายการ ${currentReservationTab === 'seller' ? '• ผู้จอง: ' + escapeHtml(r.buyerName) + ' (' + escapeHtml(r.buyerEmpId) + ')' : '• ผู้ขาย: ' + escapeHtml(r.sellerName)}</p>
+          ${r.note ? `<p class="text-[11px] text-slate-500 italic">หมายเหตุ: ${escapeHtml(r.note)}</p>` : ''}
+        </div>
+      </div>
+      ${currentReservationTab === 'seller' && r.status === 'PENDING' ? `
+        <div class="flex gap-2 pt-1 border-t border-slate-200">
+          <button onclick="handleReservationAction('${r.reservationId}','CONFIRMED')" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition">ยืนยันการจอง</button>
+          <button onclick="handleReservationAction('${r.reservationId}','REJECTED')" class="flex-1 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 text-[11px] font-bold rounded-lg transition">ปฏิเสธ</button>
+        </div>
+      ` : ''}
+      ${currentReservationTab === 'buyer' && r.status === 'PENDING' ? `
+        <div class="flex gap-2 pt-1 border-t border-slate-200">
+          <button onclick="handleReservationAction('${r.reservationId}','CANCELLED')" class="flex-1 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] font-bold rounded-lg transition">ยกเลิกการจอง</button>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+async function handleReservationAction(reservationId, newStatus) {
+  if (!STATE.currentUser) return;
+
+  try {
+    if (!STATE.isApiConfigured) {
+      Swal.fire({ icon: 'info', text: 'โหมดทดลอง (Demo Mode) ยังไม่รองรับการบันทึกการจองถาวร กรุณาตั้งค่า API_URL เพื่อใช้งานฟีเจอร์นี้จริง' });
+      return;
+    }
+
+    const response = await fetch(CONFIG.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'updateReservationStatus',
+        reservationId: reservationId,
+        empId: STATE.currentUser.empId,
+        token: getSessionToken(),
+        newStatus: newStatus
+      })
+    });
+
+    const result = await response.json();
+    if (handleAuthExpired(result)) return;
+
+    if (result.success) {
+      Swal.fire({ icon: 'success', title: result.message, timer: 1500, showConfirmButton: false });
+      loadMyReservations(true);
+      loadProducts(true);
+    } else {
+      Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', text: result.message || 'เกิดข้อผิดพลาด' });
+    }
+  } catch (err) {
+    console.error(err);
+    Swal.fire({ icon: 'error', title: 'เชื่อมต่อล้มเหลว', text: 'ไม่สามารถอัปเดตรายการจองได้' });
+  }
 }
 
 function escapeHtml(string) {

@@ -181,13 +181,83 @@
   <!-- 4. FOOTER -->
   <!-- ========================================================================= -->
   <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
-    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
       <div>Employee Marketplace © 2026 • ภายในองค์กรเท่านั้น</div>
-      <div class="flex items-center gap-1 text-slate-500">
-        <i class="ph-fill ph-shield-check text-green-500"></i> เข้าใช้งานด้วยระบบ EmpID & PIN
+      <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
+        <button onclick="openRulesModal()" class="text-slate-500 hover:text-blue-600 font-medium underline decoration-dotted decoration-slate-300 hover:decoration-blue-400">
+          กติกาการซื้อ-ขายสินค้า
+        </button>
+        <button onclick="openConsentModal()" class="text-slate-500 hover:text-blue-600 font-medium underline decoration-dotted decoration-slate-300 hover:decoration-blue-400">
+          นโยบายความเป็นส่วนตัว (PDPA)
+        </button>
+        <span class="flex items-center gap-1 text-slate-500">
+          <i class="ph-fill ph-shield-check text-green-500"></i> เข้าใช้งานด้วยระบบ EmpID & PIN
+        </span>
       </div>
     </div>
   </footer>
+
+  <!-- ========================================================================= -->
+  <!-- [ใหม่] MODAL: PDPA / นโยบายความเป็นส่วนตัว -->
+  <!-- ========================================================================= -->
+  <div id="consentModal" class="fixed inset-0 z-[70] bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden scale-in my-auto max-h-[88vh] flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 flex-shrink-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center flex-shrink-0"><i class="ph-bold ph-shield-check"></i></div>
+          <h3 class="font-bold text-sm sm:text-base text-slate-800 truncate">ข้อตกลงและนโยบายความเป็นส่วนตัว (PDPA)</h3>
+        </div>
+        <button onclick="closeConsentModal()" class="text-slate-400 hover:text-slate-600 flex-shrink-0"><i class="ph-bold ph-x text-lg"></i></button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-3 text-xs sm:text-sm text-slate-600 leading-relaxed flex-1">
+        <p>ระบบ Employee Marketplace จะเก็บรวบรวมและใช้ข้อมูล <b>รหัสพนักงาน ชื่อ-นามสกุล แผนก ตำแหน่ง และเบอร์โทรศัพท์</b> ของท่าน เพื่อวัตถุประสงค์ในการยืนยันตัวตนของพนักงานภายในองค์กร และอำนวยความสะดวกในการซื้อ-ขายสินค้าระหว่างพนักงานด้วยกันเท่านั้น</p>
+        <p>เมื่อท่านลงประกาศขายสินค้า ข้อมูล <b>ชื่อ-นามสกุล แผนก และเบอร์โทรศัพท์</b> ของท่านจะถูกแสดงต่อพนักงานท่านอื่นที่สนใจสินค้านั้น เพื่อให้สามารถติดต่อซื้อขายกันได้โดยตรง</p>
+        <p>ข้อความสนทนา (แชท) จะถูกเก็บไว้ชั่วคราวและลบออกจากระบบโดยอัตโนมัติทุกเที่ยงคืน (เวลาไทย) ของวันถัดไป</p>
+        <p>ระบบนี้จัดทำขึ้นเพื่อใช้งานภายในองค์กรเท่านั้น และไม่มีการเปิดเผยข้อมูลของท่านต่อบุคคลภายนอกองค์กร เว้นแต่ได้รับความยินยอมจากท่าน หรือเป็นไปตามที่กฎหมายกำหนด</p>
+        <p>ท่านมีสิทธิ์ขอเข้าถึง แก้ไข หรือขอให้ลบข้อมูลของท่านออกจากระบบได้ โดยติดต่อผู้ดูแลระบบ (Admin) ขององค์กร</p>
+      </div>
+      <div class="p-4 border-t border-slate-100 bg-slate-50 flex-shrink-0 space-y-3">
+        <label class="flex items-start gap-2 cursor-pointer">
+          <input type="checkbox" id="consentCheckbox" onchange="toggleConsentAcceptBtn()" class="mt-0.5 w-4 h-4 accent-blue-600 flex-shrink-0" />
+          <span class="text-xs text-slate-700">ข้าพเจ้าได้อ่านและรับทราบนโยบายความเป็นส่วนตัวข้างต้น และยินยอมให้เก็บรวบรวม ใช้ และเปิดเผยข้อมูลตามที่ระบุไว้</span>
+        </label>
+        <button id="consentAcceptBtn" disabled onclick="acceptConsentAndContinue()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl shadow-md transition">
+          ยอมรับและดำเนินการต่อ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- [ใหม่] MODAL: กติกาการซื้อ-ขายสินค้า -->
+  <!-- ========================================================================= -->
+  <div id="rulesModal" class="fixed inset-0 z-[70] bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden scale-in my-auto max-h-[88vh] flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center"><i class="ph-bold ph-gavel"></i></div>
+          <h3 class="font-bold text-base text-slate-800">กติกาการซื้อ-ขายสินค้า</h3>
+        </div>
+        <button onclick="closeRulesModal()" class="text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x text-lg"></i></button>
+      </div>
+      <div class="p-6 overflow-y-auto text-xs sm:text-sm text-slate-600 leading-relaxed flex-1">
+        <ol class="list-decimal list-inside space-y-2.5">
+          <li>ห้ามลงขายสินค้าผิดกฎหมาย ละเมิดลิขสิทธิ์ หรือสินค้าต้องห้ามตามระเบียบบริษัทโดยเด็ดขาด</li>
+          <li>ราคาที่ระบุต้องเป็นราคาจริงที่ตกลงซื้อขาย ห้ามหลอกลวงหรือปั่นราคา</li>
+          <li>รูปภาพสินค้าต้องเป็นภาพของสินค้าจริงที่ท่านเป็นเจ้าของ ห้ามนำภาพผู้อื่นมาใช้แอบอ้าง</li>
+          <li>สินค้าประเภท "อาหาร & ขนม" ต้องปรุง/ผลิตอย่างถูกสุขลักษณะ และควรระบุวันที่ผลิตหรือวันที่ควรบริโภคไว้ในรายละเอียดสินค้า</li>
+          <li>ระบบ "จองสินค้า" เป็นเพียงการแจ้งความประสงค์ล่วงหน้า ผู้ขายมีสิทธิ์ยืนยันหรือปฏิเสธคำขอจองได้ตามความเหมาะสม</li>
+          <li>ผู้จองสินค้าต้องมารับสินค้าและชำระเงินตามวัน เวลา และสถานที่ที่ตกลงกันไว้ หากไม่มารับตามนัดหมายโดยไม่แจ้งล่วงหน้า ถือว่าสละสิทธิ์การจอง</li>
+          <li>การนัดหมายซื้อขายและรับสินค้า เป็นความรับผิดชอบของผู้ซื้อและผู้ขายที่ตกลงกันเอง บริษัทและผู้ดูแลระบบไม่มีส่วนเกี่ยวข้องหรือรับผิดชอบต่อข้อพิพาทที่เกิดขึ้น</li>
+          <li>ห้ามใช้ระบบแชทในทางที่ไม่เหมาะสม หรือคุกคามผู้อื่นไม่ว่ากรณีใดๆ</li>
+          <li>ผู้ดูแลระบบสงวนสิทธิ์ในการลบประกาศที่ไม่เหมาะสม หรือระงับสิทธิ์การใช้งานของผู้ฝ่าฝืนกติกาได้ทันที โดยไม่ต้องแจ้งล่วงหน้า</li>
+        </ol>
+      </div>
+      <div class="p-3 bg-slate-50 border-t border-slate-100 text-right flex-shrink-0">
+        <button onclick="closeRulesModal()" class="text-xs font-semibold text-slate-600 hover:text-slate-900 px-4 py-2">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ========================================================================= -->
   <!-- 5. MODAL: LOGIN / AUTHENTICATION -->
@@ -334,7 +404,7 @@
       </div>
 
       <!-- Modal Footer / Action Buttons -->
-      <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-100 flex-shrink-0 grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3">
+      <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-100 flex-shrink-0 grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 sm:gap-3">
         <!-- Phone Call Button -->
         <a
           id="detailPhoneBtn"
@@ -353,6 +423,16 @@
         >
           <i class="ph-bold ph-chat-teardrop-dots text-base sm:text-lg flex-shrink-0"></i>
           <span class="truncate">แชทสอบถาม</span>
+        </button>
+
+        <!-- [ใหม่] Reserve Button (For food category products only) -->
+        <button
+          id="detailReserveBtn"
+          onclick="openReservationModal()"
+          class="hidden flex col-span-2 sm:col-span-1 sm:flex-1 py-2.5 px-2 sm:px-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs sm:text-sm rounded-xl items-center justify-center gap-1.5 sm:gap-2 shadow-md shadow-amber-500/20 transition min-w-0"
+        >
+          <i class="ph-bold ph-bookmark-simple text-base sm:text-lg flex-shrink-0"></i>
+          <span class="truncate">จองสินค้า</span>
         </button>
 
         <!-- Seller Inquiries Button (Visible only to item owner) -->
@@ -443,6 +523,7 @@
             <select
               id="sellCategory"
               required
+              onchange="handleSellCategoryChange()"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
             >
             </select>
@@ -463,6 +544,23 @@
               />
             </div>
           </div>
+        </div>
+
+        <!-- [ใหม่] ช่องจำนวนสินค้า - แสดงเฉพาะหมวด "อาหาร & ขนม" เพื่อรองรับระบบจองสินค้า -->
+        <div id="sellQuantityWrap" class="hidden">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนสินค้าที่มีขาย (สำหรับระบบจองสินค้า)</label>
+          <input
+            type="number"
+            id="sellQuantity"
+            min="1"
+            step="1"
+            placeholder="เช่น 10 (เว้นว่างได้หากไม่ต้องการจำกัดจำนวน)"
+            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition font-mono"
+          />
+          <p class="text-[11px] text-amber-600 mt-1.5 flex items-start gap-1">
+            <i class="ph-bold ph-info mt-0.5 flex-shrink-0"></i>
+            <span>สินค้าหมวด "อาหาร & ขนม" จะเปิดให้เพื่อนพนักงาน "จองสินค้า" ล่วงหน้าได้อัตโนมัติ</span>
+          </p>
         </div>
 
         <div>
@@ -487,6 +585,18 @@
             placeholder="ระบุสภาพสินค้า ระยะเวลาการใช้งาน อุปกรณ์ที่มีให้ หรือสถานที่นัดรับในโรงงาน/ออฟฟิศ..."
             class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
           ></textarea>
+        </div>
+
+        <!-- [ใหม่] Consent เปิดเผยข้อมูล + ยอมรับกติกาการขาย (บังคับก่อนลงประกาศทุกครั้ง) -->
+        <div class="p-3 rounded-xl bg-amber-50 border border-amber-200">
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input type="checkbox" id="sellConsentRules" required class="mt-0.5 w-4 h-4 accent-blue-600 flex-shrink-0" />
+            <span class="text-[11px] text-slate-700 leading-relaxed">
+              ข้าพเจ้ายินยอมเปิดเผยชื่อ-นามสกุล และเบอร์โทรศัพท์ตามที่กรอกไว้ ให้แก่พนักงานท่านอื่นที่สนใจติดต่อซื้อสินค้านี้ พร้อมรับทราบและยอมรับ
+              <button type="button" onclick="openRulesModal()" class="text-blue-600 font-semibold underline">กติกาการขายสินค้า</button>
+              ของระบบ Employee Marketplace
+            </span>
+          </label>
         </div>
 
         <div class="pt-2">
@@ -596,6 +706,79 @@
         </button>
       </div>
       <div id="myListingsContent" class="p-6 overflow-y-auto space-y-3 flex-1">
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- [ใหม่] MODAL: จองสินค้า (สำหรับหมวดหมู่ "อาหาร & ขนม") -->
+  <!-- ========================================================================= -->
+  <div id="reservationModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden scale-in my-auto">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-amber-50 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center"><i class="ph-bold ph-bookmark-simple"></i></div>
+          <h3 class="font-bold text-base text-slate-800">จองสินค้าล่วงหน้า</h3>
+        </div>
+        <button onclick="closeReservationModal()" class="text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x text-lg"></i></button>
+      </div>
+      <form id="reservationForm" onsubmit="submitReservation(event)" class="p-6 space-y-4">
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+          <img id="reservationProductThumb" src="" class="w-12 h-12 rounded-xl object-cover bg-white flex-shrink-0" />
+          <div class="min-w-0">
+            <div id="reservationProductTitle" class="text-sm font-bold text-slate-800 truncate">ชื่อสินค้า</div>
+            <div id="reservationMaxHint" class="text-[11px] text-amber-600"></div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนที่ต้องการจอง</label>
+          <input type="number" id="reservationQuantityInput" min="1" value="1" required class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition font-mono" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุ / เวลาที่สะดวกมารับ</label>
+          <textarea id="reservationNoteInput" rows="2" placeholder="เช่น ขอรับตอนพักเที่ยง 12:00 น." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"></textarea>
+        </div>
+        <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-100 text-[11px] text-amber-700 flex items-start gap-1.5">
+          <i class="ph-bold ph-info mt-0.5 flex-shrink-0"></i>
+          <span>การจองจะสมบูรณ์เมื่อผู้ขายกดยืนยันคำขอ กรุณามารับสินค้าตามเวลาที่นัดหมาย มิเช่นนั้นจะถือว่าสละสิทธิ์การจองตามกติกาการขาย</span>
+        </div>
+        <button type="submit" id="reservationSubmitBtn" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm rounded-xl shadow-lg transition active:scale-[0.98] flex items-center justify-center gap-2">
+          <i class="ph-bold ph-bookmark-simple"></i>
+          <span>ยืนยันการจอง</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- [ใหม่] MODAL: การจองสินค้าของฉัน (ทั้งฝั่งผู้จอง และฝั่งผู้ขาย) -->
+  <!-- ========================================================================= -->
+  <div id="myReservationsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden scale-in my-auto max-h-[88vh] flex flex-col">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/90 flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg shadow-sm">
+            <i class="ph-bold ph-bookmark-simple"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-800 leading-tight">การจองสินค้า</h3>
+            <span class="text-[11px] text-slate-400">จัดการคำขอจองสินค้าประเภทอาหาร & ขนม</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="loadMyReservations(true)" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition" title="รีเฟรช">
+            <i class="ph-bold ph-arrows-clockwise text-sm"></i>
+          </button>
+          <button onclick="closeMyReservationsModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition">
+            <i class="ph-bold ph-x text-sm"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-3 flex gap-2 border-b border-slate-100 flex-shrink-0">
+        <button id="resTabBtnSeller" onclick="switchReservationTab('seller')" class="flex-1 px-3 py-2 text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm">คำขอจองที่ได้รับ</button>
+        <button id="resTabBtnBuyer" onclick="switchReservationTab('buyer')" class="flex-1 px-3 py-2 text-xs font-medium rounded-xl transition bg-white text-slate-600 border border-slate-200">รายการที่ฉันจอง</button>
+      </div>
+      <div id="myReservationsContent" class="p-4 overflow-y-auto space-y-2.5 flex-1 bg-slate-50/30">
       </div>
     </div>
   </div>

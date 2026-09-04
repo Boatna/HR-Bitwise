@@ -16,7 +16,6 @@ body {
   width: 100%;
 }
 
-/* Respect iPhone notch / home-indicator areas for sticky headers and floating alerts */
 .glass-nav {
   padding-top: env(safe-area-inset-top, 0);
 }
@@ -25,7 +24,6 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-/* Guard against long unbroken strings (URLs, IDs) blowing out flex/grid layouts on narrow screens */
 .truncate,
 [id^="detail"],
 [id^="chat"],

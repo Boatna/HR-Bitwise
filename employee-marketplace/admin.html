@@ -128,7 +128,7 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
       <!-- Stats Cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
           <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl flex-shrink-0">
             <i class="ph ph-shopping-bag"></i>
@@ -165,6 +165,16 @@
             <div id="adminStatEmployees" class="text-xl font-extrabold text-slate-800 font-mono">-</div>
           </div>
         </div>
+        <!-- [ใหม่] สถิติคำขอจองสินค้า -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl flex-shrink-0">
+            <i class="ph ph-bookmark-simple"></i>
+          </div>
+          <div>
+            <div class="text-[11px] font-medium text-slate-500">คำขอจองรอดำเนินการ</div>
+            <div id="adminStatPendingReservations" class="text-xl font-extrabold text-amber-600 font-mono">-</div>
+          </div>
+        </div>
       </div>
 
       <!-- Tabs -->
@@ -173,6 +183,11 @@
           class="flex-shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-bold rounded-xl transition bg-blue-600 text-white shadow-sm flex items-center gap-1.5">
           <i class="ph-bold ph-squares-four"></i>
           <span>ตรวจสอบและจัดการโพสต์สินค้า</span>
+        </button>
+        <button onclick="switchAdminTab('reservations')" id="adminTabBtnReservations"
+          class="flex-shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-medium rounded-xl transition bg-white text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5">
+          <i class="ph-bold ph-bookmark-simple"></i>
+          <span>รายการจองสินค้า (Reservations)</span>
         </button>
         <button onclick="switchAdminTab('logs')" id="adminTabBtnLogs"
           class="flex-shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-medium rounded-xl transition bg-white text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5">
@@ -219,6 +234,36 @@
         </div>
       </div>
 
+      <!-- [ใหม่] TAB: RESERVATIONS -->
+      <div id="adminTabReservations" class="hidden space-y-3">
+        <div class="flex items-center justify-between text-xs text-slate-500">
+          <span>แสดง 100 รายการจองล่าสุด (เฉพาะสินค้าหมวด "อาหาร & ขนม")</span>
+          <button onclick="loadAdminDashboardData()" class="text-blue-600 font-medium hover:underline flex items-center gap-1">
+            <i class="ph ph-arrows-clockwise"></i> รีเฟรช
+          </button>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[640px] text-left text-xs">
+              <thead class="bg-slate-100/80 text-slate-600 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3">วัน-เวลา</th>
+                  <th class="p-3">รหัสการจอง</th>
+                  <th class="p-3">รหัสสินค้า</th>
+                  <th class="p-3">ผู้จอง</th>
+                  <th class="p-3">ผู้ขาย</th>
+                  <th class="p-3">จำนวน</th>
+                  <th class="p-3">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="adminReservationsTableBody" class="divide-y divide-slate-100">
+                <tr><td colspan="7" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- TAB: LOGS -->
       <div id="adminTabLogs" class="hidden space-y-3">
         <div class="flex items-center justify-between text-xs text-slate-500">
@@ -249,7 +294,7 @@
     </main>
 
     <footer class="text-center text-[11px] text-slate-400 py-6">
-      🛡️ หน้านี้สำหรับผู้ดูแลระบบเท่านั้น • การลบโพสต์จะถูกบันทึกประวัติลงชีต Logs โดยอัตโนมัติ
+      🛡️ หน้านี้สำหรับผู้ดูแลระบบเท่านั้น • การลบโพสต์และการยืนยัน/ปฏิเสธการจองจะถูกบันทึกประวัติลงชีต Logs โดยอัตโนมัติ
     </footer>
   </div>
 
