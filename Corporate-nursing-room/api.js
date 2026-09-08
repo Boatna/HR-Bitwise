@@ -1,6 +1,6 @@
 const ApiConfig = {
   STORAGE_KEY: 'nursing_station_api_url',
-  DEFAULT_URL: 'https://script.google.com/macros/s/AKfycbwBu8TPYDoHLS9jYWm_s0PoLtccS6Y7A0aqTunOysF5vgXGyqUJ7zLL_sSCbHG88Oxl/exec',
+  DEFAULT_URL: 'https://script.google.com/macros/s/AKfycbxhnWfPLmGLy1qonxoztZPw-eozQQHuJ1UT9EDtzV2FLVMRCByl2ttSfHfTyAeYS81R/exec',
 
   getUrl() {
     const saved = localStorage.getItem(this.STORAGE_KEY);
