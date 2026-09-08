@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Corporate Health &amp; Safety - Executive &amp; Nursing System</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<link href="style.css" rel="stylesheet"/>
+</head>
+<body>
+<div id="loader" style="display: none;">
+<div class="spinner-border text-primary" role="status" style="width: 3.2rem; height: 3.2rem;"></div>
+<div class="mt-3 fw-bold text-dark fs-5">กำลังประมวลผลข้อมูล...</div>
+<div class="small text-muted">เชื่อมต่อกับฐานข้อมูล</div>
+<div class="small text-muted mt-2 px-4 text-center" id="loader-hint" style="display:none; max-width: 340px;">
+  การเชื่อมต่อใช้เวลานานกว่าปกติ หากกดบันทึกแล้ว ข้อมูลอาจถูกบันทึกเรียบร้อยแล้วในระบบ กรุณาตรวจสอบข้อมูลก่อนบันทึกซ้ำ
+</div>
+<button type="button" class="btn btn-sm btn-outline-secondary mt-3" id="loader-close-btn" style="display:none;" onclick="forceHideLoader()">
+<i class="fas fa-xmark me-1"></i>ปิดหน้าต่างนี้
+</button>
+</div>
+<nav class="navbar navbar-clinic shadow-sm sticky-top no-print">
+<div class="container">
+<span class="navbar-brand fw-bold mb-0 d-flex align-items-center cursor-pointer" onclick="showPage('home')">
+<span class="brand-icon"><i class="fas fa-staff-snake"></i></span>Nursing Station &amp; EHS
+      </span>
+<div class="d-flex align-items-center gap-2">
+        <a class="btn btn-sm btn-primary fw-bold text-white shadow-sm" href="dashboard.html"><i class="fas fa-chart-pie me-1"></i>Dashboard</a>
+</div>
+</div>
+</nav>
+<div class="container py-4 main-content">
+<div class="api-banner no-print" id="api-status-banner" style="display: none;"></div>
+
+<div class="page-section" id="home-page">
+<div class="executive-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+<div>
+<div class="d-flex align-items-center gap-2 mb-1">
+<span class="badge bg-success px-3 py-1">Operational Station</span>
+<span class="text-muted small" id="report-timestamp">กำลังโหลดวันที่...</span>
+</div>
+<h3 class="fw-bold mb-1 text-dark">
+<i class="fas fa-clinic-medical text-primary me-2"></i>ระบบบริหารจัดการห้องพยาบาลองค์กร
+          </h3>
+<p class="text-secondary mb-0 small">
+            บันทึกตรวจรักษา, จ่ายยา, บริหารคลังเวชภัณฑ์ และระบบลงเวลาปฏิบัติงานของพยาบาล
+          </p>
+</div>
+<div class="d-flex align-items-center gap-2 no-print">
+
+</div>
+</div>
+<!-- Quick Action Navigation -->
+<div class="row g-3 mb-4 no-print">
+<div class="col-md-3 col-6">
+<button class="btn btn-outline-primary w-100 py-3 shadow-sm fw-bold nav-action-btn h-100" onclick="showPage('attendance')">
+<i class="fas fa-clock fa-2x mb-2 d-block"></i>ลงเวลาพยาบาล
+          </button>
+</div>
+<div class="col-md-3 col-6">
+<button class="btn btn-primary w-100 py-3 shadow-sm fw-bold nav-action-btn h-100" onclick="showPage('outbound')">
+<i class="fas fa-stethoscope fa-2x mb-2 d-block"></i>ตรวจรักษา / จ่ายยา
+          </button>
+</div>
+<div class="col-md-3 col-6">
+<button class="btn btn-outline-success w-100 py-3 shadow-sm fw-bold nav-action-btn h-100" onclick="showPage('inbound')">
+<i class="fas fa-dolly fa-2x mb-2 d-block"></i>รับยาเข้าคลัง
+          </button>
+</div>
+<div class="col-md-3 col-6">
+<button class="btn btn-outline-secondary w-100 py-3 shadow-sm fw-bold nav-action-btn h-100" onclick="showPage('inventory')">
+<i class="fas fa-boxes fa-2x mb-2 d-block"></i>ตรวจสอบคลังยา
+          </button>
+</div>
+</div>
+<!-- Summary Banner -->
+<div class="row g-3 mb-4">
+<div class="col-md-4">
+<div class="p-3 bg-white border rounded-3 shadow-sm d-flex align-items-center gap-3">
+<div class="p-3 bg-primary-subtle text-primary rounded-circle"><i class="fas fa-user-injured fa-lg"></i></div>
+<div>
+<div class="small text-muted">ผู้รับบริการวันนี้</div>
+<h4 class="fw-bold mb-0" id="home-sum-today">0 ราย</h4>
+</div>
+</div>
+</div>
+<div class="col-md-4">
+<div class="p-3 bg-white border rounded-3 shadow-sm d-flex align-items-center gap-3">
+<div class="p-3 bg-primary-subtle text-primary rounded-circle"><i class="fas fa-notes-medical fa-lg"></i></div>
+<div>
+<div class="small text-muted">จำนวนเคสของเดือนนี้</div>
+<h4 class="fw-bold mb-0 text-primary" id="home-sum-cases">0 เคส</h4>
+</div>
+</div>
+</div>
+<div class="col-md-4">
+<div class="p-3 bg-white border rounded-3 shadow-sm d-flex align-items-center gap-3">
+<div class="p-3 bg-success-subtle text-success rounded-circle"><i class="fas fa-box-open fa-lg"></i></div>
+<div>
+<div class="small text-muted">สถานะคลังยา</div>
+<h4 class="fw-bold mb-0 text-success" id="home-sum-stock">ปกติ</h4>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Patient Consultations Table -->
+<div class="card shadow-sm h-100">
+<div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+<span><i class="fas fa-history text-muted me-2"></i>รายการตรวจรักษาล่าสุด (Recent Patient Consultations)</span>
+<span class="badge bg-success-subtle text-success border border-success-subtle">
+<i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>Google Sheets Live
+          </span>
+</div>
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0 small">
+<thead class="table-light">
+<tr>
+<th style="width: 12%">วันที่</th>
+<th style="width: 10%">เวลา</th>
+<th style="width: 22%">ชื่อพนักงาน</th>
+<th style="width: 16%">แผนก</th>
+<th style="width: 20%">อาการ</th>
+<th style="width: 20%">ยาที่ได้รับ</th>
+</tr>
+</thead>
+<tbody id="recent-tbody">
+<tr><td class="text-center text-muted py-3" colspan="6">กำลังโหลดข้อมูล...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="page-section" id="outbound-page" style="display:none;">
+<div class="card shadow border-0">
+<div class="card-header bg-warning text-dark fw-bold d-flex justify-content-between align-items-center">
+<span><i class="fas fa-user-md me-2"></i>บันทึกการรักษา / จ่ายยา (Outbound)</span>
+<button class="btn btn-sm btn-light border" onclick="showExportModal('outbound')">
+<i class="fas fa-file-excel text-success me-1"></i>Export ข้อมูล
+          </button>
+</div>
+<div class="card-body p-4">
+<form id="outboundForm" onsubmit="event.preventDefault();">
+<div class="mb-3">
+<label class="fw-bold small text-muted">พยาบาลผู้บันทึก <span class="text-danger">*</span></label>
+<select class="form-select" id="outbound-nurse-select" required=""></select>
+</div>
+<!-- Employee Search Section with Quick Register Feature -->
+<div class="bg-light p-3 rounded-3 border mb-3 position-relative">
+<div class="d-flex justify-content-between align-items-center">
+<label class="text-primary fw-bold"><i class="fas fa-search me-1"></i>ค้นหาผู้ป่วย / พนักงาน <span class="text-danger">*</span></label>
+<button class="btn btn-outline-success btn-sm fw-bold" onclick="openNewEmployeeModal()" type="button">
+<i class="fas fa-user-plus me-1"></i>เพิ่มพนักงานใหม่
+                </button>
+</div>
+<div class="input-group mt-2">
+<input autocomplete="off" class="form-control" id="search-keyword" placeholder="พิมพ์ชื่อ หรือ รหัสพนักงาน แล้วกดค้นหา" type="text"/>
+<button class="btn btn-primary px-3" onclick="searchEmployee()" type="button">
+<i class="fas fa-search"></i> ค้นหา
+                </button>
+</div>
+<!-- Auto-suggest box -->
+<div class="list-group position-absolute w-100 shadow" id="suggestion-box" style="z-index: 1050; max-height: 250px; overflow-y: auto; display: none; top: 85px; left:0;"></div>
+<!-- Employee Display Card -->
+<div class="mt-3 p-2 bg-white rounded border d-flex flex-wrap gap-4">
+<div><strong>รหัส:</strong> <span class="text-secondary" id="pat-display-id">-</span></div>
+<div><strong>ชื่อ:</strong> <span class="text-primary fw-semibold" id="pat-name">-</span></div>
+<div><strong>แผนก:</strong> <span class="text-muted" id="pat-dept">-</span></div>
+</div>
+<input id="pat-id" type="hidden"/>
+<input id="pat-pos" type="hidden"/>
+<input id="pat-plant" type="hidden"/>
+</div>
+<div class="row mb-3 g-3">
+<div class="col-md-6">
+<label class="fw-bold small">อาการหลัก <span class="text-danger">*</span></label>
+<select class="form-select" id="pat-symptom-select" required=""></select>
+</div>
+<div class="col-md-6">
+<label class="fw-bold small">รายละเอียดเพิ่มเติม / การปฐมพยาบาล</label>
+<textarea class="form-control" id="pat-remarks" placeholder="ระบุการรักษาเพิ่มเติม เช่น ล้างแผล ประคบเย็น นอนพัก..." rows="1"></textarea>
+</div>
+</div>
+<div class="row mb-3 g-3">
+<div class="col-md-6">
+<label class="fw-bold small"><i class="fas fa-truck-medical text-danger me-1"></i>ส่งตัวโรงพยาบาลภายนอกหรือไม่?</label>
+<select class="form-select" id="pat-referral">
+<option value="no" selected="">ไม่ส่งตัว (รักษาที่ห้องพยาบาล)</option>
+<option value="yes">ส่งตัว รพ.ภายนอก (Referral)</option>
+</select>
+</div>
+</div>
+<hr class="my-4"/>
+<div class="mb-3">
+<label class="fw-bold text-success mb-2 fs-6"><i class="fas fa-pills me-1"></i>รายการยาที่จ่าย (เลือกได้สูงสุด 2 รายการ — ระบบเติมหน่วยและราคาต่อหน่วยให้อัตโนมัติ)</label><div class="small text-muted mb-2"><i class="fas fa-circle-info me-1"></i>เลือกยา → ระบบเติมหน่วยและราคาทันที → ใส่จำนวน → ระบบคำนวณรวมให้อัตโนมัติ</div>
+<!-- Drug Slot 1 -->
+<div class="drug-item p-3 border rounded-3 mb-3 bg-light-subtle">
+<div class="row g-2">
+<div class="col-md-6">
+<label class="small text-muted">ยาตัวที่ 1</label>
+<select class="form-select" id="outbound-drug-1" onchange="updateDrugInfo('1')">
+<option value="">- ไม่จ่ายยา -</option>
+</select>
+</div>
+<div class="col-md-3 col-6">
+<label class="small text-muted">จำนวน</label>
+<input class="form-control" id="outbound-qty-1" inputmode="decimal" min="0" placeholder="0" step="any" type="number"/>
+</div>
+<div class="col-md-3 col-6">
+<label class="small text-muted">หน่วย</label>
+<input class="form-control bg-light" id="outbound-unit-1" placeholder="หน่วย" readonly="" type="text"/>
+</div>
+<div class="col-md-3 col-6">
+<label class="small text-muted">ราคาต่อหน่วย (อัตโนมัติ)</label>
+<input class="form-control bg-light" id="outbound-price-display-1" placeholder="฿0.00" readonly="" type="text"/>
+</div>
+<div class="col-md-3 col-6">
+<label class="small text-muted">รวมค่ายา</label>
+<input class="form-control bg-success-subtle fw-bold text-success" id="outbound-total-1" placeholder="฿0.00" readonly="" type="text"/>
+</div>
+</div>
+<input id="outbound-drugName-1" type="hidden"/>
+<input id="outbound-price-1" type="hidden"/>
+</div>
+<!-- Drug Slot 2 -->
+<div class="drug-item p-3 border rounded-3 mb-3 bg-light-subtle">
+<div class="row g-2">
+<div class="col-md-6">
+<label class="small text-muted">ยาตัวที่ 2</label>
+<select class="form-select" id="outbound-drug-2" onchange="updateDrugInfo('2')">
+<option value="">- ไม่จ่ายยา -</option>
+</select>
+</div>
+<div class="col-md-3 col-6">
+<label class="small text-muted">จำนวน</label>
+<input class="form-control" id="outbound-qty-2" inputmode="decimal" min="0" placeholder="0" step="any" type="number"/>
+</div>
+<div class="col-md-3 col-6">
+<label class="small text-muted">หน่วย</label>
+<input class="form-control bg-light" id="outbound-unit-2" placeholder="หน่วย" readonly="" type="text"/>
+</div>
+<div class="col-md-3 col-6">
+<label class="small text-muted">ราคาต่อหน่วย (อัตโนมัติ)</label>
+<input class="form-control bg-light" id="outbound-price-display-2" placeholder="฿0.00" readonly="" type="text"/>
+</div>
+<div class="col-md-3 col-6">
+<label class="small text-muted">รวมค่ายา</label>
+<input class="form-control bg-success-subtle fw-bold text-success" id="outbound-total-2" placeholder="฿0.00" readonly="" type="text"/>
+</div>
+</div>
+<input id="outbound-drugName-2" type="hidden"/>
+<input id="outbound-price-2" type="hidden"/>
+</div>
+</div>
+<div class="alert alert-primary d-flex justify-content-between align-items-center mb-4 py-3">
+<div>
+<div class="small text-muted">ยอดค่ายาอัตโนมัติ</div>
+<div class="small text-secondary">จำนวน × ราคาต่อหน่วย (ระบบดึงจากทะเบียนยา)</div>
+</div>
+<div class="fs-4 fw-bold text-primary" id="outbound-grand-total">฿0.00</div>
+</div>
+<div class="d-flex justify-content-between mt-4">
+<button class="btn btn-secondary px-4" onclick="showPage('home')" type="button">ยกเลิก</button>
+<button class="btn btn-warning fw-bold px-4" onclick="submitOutbound()" type="button">
+<i class="fas fa-save me-2"></i>บันทึกการรักษา
+              </button>
+</div>
+</form>
+</div>
+</div>
+</div>
+<div class="page-section" id="attendance-page" style="display:none;">
+<div class="card shadow border-0">
+<div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+<span><i class="fas fa-user-clock me-2"></i>ลงเวลาปฏิบัติงานพยาบาล</span>
+<button class="btn btn-sm btn-light text-primary" onclick="showExportModal('attendance')">
+<i class="fas fa-file-excel text-success me-1"></i>Export
+          </button>
+</div>
+<div class="card-body p-4">
+<label class="fw-bold mb-2">เลือกพยาบาลผู้ปฏิบัติงาน <span class="text-danger">*</span></label>
+<select class="form-select mb-4 form-select-lg" id="attend-nurse-select"></select>
+<div class="row g-3 mb-4">
+<div class="col-6">
+<button class="btn btn-success w-100 py-3 fw-bold fs-5 shadow-sm" onclick="submitAttendance('เข้าเวร')">
+<i class="fas fa-sign-in-alt me-2"></i>เข้าเวร
+              </button>
+</div>
+<div class="col-6">
+<button class="btn btn-danger w-100 py-3 fw-bold fs-5 shadow-sm" onclick="submitAttendance('ออกเวร')">
+<i class="fas fa-sign-out-alt me-2"></i>ออกเวร
+              </button>
+</div>
+</div>
+<h6 class="border-bottom pb-2 fw-bold text-secondary">ประวัติการลงเวรล่าสุด (10 รายการ)</h6>
+<div class="table-responsive">
+<table class="table table-sm text-center table-striped align-middle small">
+<thead class="table-light">
+<tr><th>วันที่</th><th>เวลา</th><th>ชื่อพยาบาล</th><th>สถานะ</th></tr>
+</thead>
+<tbody id="attend-tbody">
+<tr><td class="text-center text-muted py-3" colspan="4">กำลังโหลด...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="page-section" id="inbound-page" style="display:none;">
+<div class="card shadow border-0">
+<div class="card-header bg-success text-white fw-bold">
+<i class="fas fa-truck-loading me-2"></i>รับยาเข้าคลัง (Inbound)
+        </div>
+<div class="card-body p-4">
+<form id="inboundForm" onsubmit="event.preventDefault();">
+<div class="mb-3">
+<label class="small fw-bold">พยาบาลผู้รับเข้า <span class="text-danger">*</span></label>
+<select class="form-select" id="inbound-nurse-select" required=""></select>
+</div>
+<div class="mb-3">
+<label class="small fw-bold">เลือกรายการยา <span class="text-danger">*</span></label>
+<select class="form-select" id="inbound-drug" onchange="updateDrugInfo('inbound')" required=""></select>
+</div>
+<div class="row g-3 mb-3">
+<div class="col-md-4">
+<label class="small fw-bold">จำนวนรับเข้า <span class="text-danger">*</span></label>
+<input class="form-control" id="inbound-qty" min="0" placeholder="0" required="" step="any" type="number"/>
+</div>
+<div class="col-md-4">
+<label class="small fw-bold">หน่วยนับ</label>
+<input class="form-control bg-light" id="inbound-unit" placeholder="เช่น เม็ด, แผง" readonly="" type="text"/>
+</div>
+<div class="col-md-4">
+<label class="small fw-bold">ราคาต่อหน่วย (อัตโนมัติ)</label>
+<input class="form-control bg-light" id="inbound-price" min="0" placeholder="฿" readonly="" step="any" type="number"/>
+</div>
+<div class="col-md-4">
+<label class="small fw-bold">มูลค่ารับเข้า (อัตโนมัติ)</label>
+<input class="form-control bg-success-subtle fw-bold text-success" id="inbound-total" min="0" placeholder="0.00" readonly="" step="any" type="number"/>
+</div>
+</div>
+<div class="row g-3 mb-4">
+<div class="col-md-6">
+<label class="small fw-bold">วันผลิต (MFG)</label>
+<input class="form-control" id="inbound-prodDate" type="date"/>
+</div>
+<div class="col-md-6">
+<label class="small fw-bold">วันหมดอายุ (EXP)</label>
+<input class="form-control" id="inbound-expDate" type="date"/>
+</div>
+</div>
+<input id="inbound-drugName" type="hidden"/>
+<input id="inbound-drugId" type="hidden"/>
+<div class="d-flex justify-content-between">
+<button class="btn btn-secondary px-4" onclick="showPage('home')" type="button">ยกเลิก</button>
+<button class="btn btn-success fw-bold px-4" onclick="submitInbound()" type="button">
+<i class="fas fa-save me-2"></i>ยืนยันรับยาเข้าคลัง
+              </button>
+</div>
+</form>
+</div>
+</div>
+</div>
+<div class="page-section" id="inventory-page" style="display:none;">
+<div class="row mb-3 align-items-center">
+<div class="col-md-6">
+<h5 class="fw-bold mb-0"><i class="fas fa-boxes text-info me-2"></i>สถานะคลังยาคงเหลือ (Stock)</h5>
+</div>
+<div class="col-md-6 d-flex justify-content-end gap-2 mt-2 mt-md-0">
+<div class="input-group" style="max-width: 320px;">
+<span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+<input class="form-control border-start-0 ps-0" id="inv-search" onkeyup="filterInventory()" placeholder="พิมพ์ชื่อยา หรือ รหัส..." type="text"/>
+</div>
+<button class="btn btn-secondary px-3" onclick="showPage('home')">กลับหน้าหลัก</button>
+</div>
+</div>
+<div class="card shadow-sm border-0">
+<div class="card-body p-0">
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0" id="inv-table">
+<thead class="table-light">
+<tr>
+<th style="width: 15%">รหัสยา</th>
+<th style="width: 30%">ชื่อยา</th>
+<th style="width: 15%">หน่วย</th>
+<th class="text-end" style="width: 15%">คงเหลือ</th>
+<th class="text-center" style="width: 10%">สถานะ</th>
+<th class="text-center" style="width: 15%">ประวัติเคลื่อนไหว</th>
+</tr>
+</thead>
+<tbody class="small"></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="newEmployeeModal" tabindex="-1">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+<div class="modal-header bg-success text-white">
+<h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>เพิ่มข้อมูลพนักงานใหม่</h5>
+<button class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+</div>
+<div class="modal-body p-4">
+<form id="newEmployeeForm" onsubmit="event.preventDefault();">
+<div class="mb-3">
+<label class="form-label fw-bold small">รหัสพนักงาน <span class="text-danger">*</span></label>
+<input class="form-control" id="new-emp-id" placeholder="เช่น EMP-001 หรือ 10045" required="" type="text"/>
+</div>
+<div class="mb-3">
+<label class="form-label fw-bold small">ชื่อ-นามสกุล <span class="text-danger">*</span></label>
+<input class="form-control" id="new-emp-name" placeholder="เช่น นายสมชาย ใจดี" required="" type="text"/>
+</div>
+<div class="mb-3">
+<label class="form-label fw-bold small">แผนก / ฝ่าย</label>
+<input class="form-control" id="new-emp-dept" placeholder="เช่น Production, QA, Warehouse" type="text"/>
+</div>
+<div class="row g-2 mb-3">
+<div class="col-6">
+<label class="form-label fw-bold small">ตำแหน่ง</label>
+<input class="form-control" id="new-emp-pos" placeholder="เช่น Operator, Supervisor" type="text"/>
+</div>
+<div class="col-6">
+<label class="form-label fw-bold small">สังกัด / Plant</label>
+<input class="form-control" id="new-emp-plant" placeholder="เช่น Plant 1, HQ" type="text"/>
+</div>
+</div>
+</form>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">ยกเลิก</button>
+<button class="btn btn-success fw-bold px-4" onclick="submitNewEmployee()" type="button">
+<i class="fas fa-save me-1"></i> บันทึกข้อมูลพนักงาน
+          </button>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="historyModal" tabindex="-1">
+<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content">
+<div class="modal-header bg-info text-white">
+<h5 class="modal-title"><i class="fas fa-history me-2"></i>ประวัติการรับเข้า - จ่ายออกยา</h5>
+<button class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+</div>
+<div class="modal-body p-0">
+<div class="p-3 bg-light border-bottom">
+<h6 class="mb-0 fw-bold text-primary" id="hist-drug-name">-</h6>
+</div>
+<div class="table-responsive">
+<table class="table table-sm table-striped mb-0 small">
+<thead class="table-light">
+<tr>
+<th>วัน-เวลา</th>
+<th>ประเภท</th>
+<th class="text-end">จำนวน</th>
+<th>ผู้ดำเนินการ</th>
+<th>หมายเหตุ / รายละเอียด</th>
+</tr>
+</thead>
+<tbody id="hist-tbody"></tbody>
+</table>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">ปิด</button>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="exportModal" tabindex="-1">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+<div class="modal-header bg-primary text-white">
+<h5 class="modal-title"><i class="fas fa-file-export me-2"></i>ส่งออกข้อมูล Excel</h5>
+<button class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
+</div>
+<div class="modal-body p-4">
+<div class="mb-3">
+<label class="form-label fw-bold">เลือกเดือนที่ต้องการส่งออก</label>
+<select class="form-select" id="export-month">
+<option value="1">มกราคม</option>
+<option value="2">กุมภาพันธ์</option>
+<option value="3">มีนาคม</option>
+<option value="4">เมษายน</option>
+<option value="5">พฤษภาคม</option>
+<option value="6">มิถุนายน</option>
+<option value="7">กรกฎาคม</option>
+<option value="8">สิงหาคม</option>
+<option value="9">กันยายน</option>
+<option value="10">ตุลาคม</option>
+<option value="11">พฤศจิกายน</option>
+<option value="12">ธันวาคม</option>
+</select>
+</div>
+<div class="mb-3">
+<label class="form-label fw-bold">เลือกปี</label>
+<select class="form-select" id="export-year"></select>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">ยกเลิก</button>
+<button class="btn btn-primary fw-bold" onclick="executeExport()" type="button">
+<i class="fas fa-download me-2"></i>สร้างไฟล์และดาวน์โหลด
+          </button>
+</div>
+</div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="api.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

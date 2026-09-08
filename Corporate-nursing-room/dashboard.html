@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard ห้องพยาบาลในองค์กร</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div id="loader" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,.78);z-index:9999;align-items:center;justify-content:center;flex-direction:column;">
+  <div class="spinner-border text-primary" role="status" style="width:3.2rem;height:3.2rem"></div>
+  <div class="mt-3 fw-bold text-dark fs-5">กำลังโหลด Dashboard...</div>
+  <div class="small text-muted">เชื่อมต่อกับฐานข้อมูล</div>
+  <div class="small text-muted mt-2 px-4 text-center" id="loader-hint" style="display:none; max-width: 340px;">
+    การเชื่อมต่อใช้เวลานานกว่าปกติ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือลองรีเฟรชหน้าใหม่
+  </div>
+  <button type="button" class="btn btn-sm btn-outline-secondary mt-3" id="loader-close-btn" style="display:none;" onclick="forceHideLoader()">
+    <i class="fas fa-xmark me-1"></i>ปิดหน้าต่างนี้
+  </button>
+</div>
+
+<!-- Navbar -->
+<nav class="navbar navbar-clinic shadow-sm sticky-top no-print">
+  <div class="container">
+    <a class="navbar-brand fw-bold text-decoration-none d-flex align-items-center" href="index.html">
+      <span class="brand-icon"><i class="fas fa-chart-pie"></i></span> Executive Dashboard
+    </a>
+    <div class="d-flex align-items-center gap-2">
+      <a class="btn btn-sm btn-light border fw-bold" href="index.html">
+        <i class="fas fa-arrow-left me-1"></i>กลับหน้าห้องพยาบาล
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4 main-content">
+  <div id="api-status-banner" class="api-banner" style="display:none;">
+    <div>
+      <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+      <strong>เชื่อมต่อ Google Sheets API ไม่สำเร็จ:</strong> กรุณาตรวจสอบ URL ใน api.js หรือติดต่อผู้ดูแลระบบ
+    </div>
+  </div>
+
+  <div id="dashboard-error" class="alert alert-danger" style="display:none"></div>
+
+  <div class="page-section" id="executive-page">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="badge bg-primary px-3 py-1">Executive Mode</span>
+          <span class="text-muted small" id="exec-report-timestamp">ข้อมูล ณ ปัจจุบัน</span>
+        </div>
+        <h3 class="fw-bold mb-1 text-dark">
+          <i class="fas fa-shield-halved text-primary me-2"></i>Dashboard ห้องพยาบาลในองค์กร
+        </h3>
+        <p class="text-secondary mb-0 small">
+          ศูนย์วิเคราะห์ข้อมูลสุขภาพองค์กร, ดัชนีความปลอดภัย (Zero Incident), งบประมาณ และสถานะคลังยา
+        </p>
+      </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card shadow-sm border-0 mb-4 no-print">
+      <div class="card-body py-3">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-3 col-6">
+            <label class="small fw-bold text-muted mb-1"><i class="fas fa-calendar-days me-1"></i>เดือน</label>
+            <select class="form-select" id="exec-filter-month" onchange="applyExecutiveFilters()">
+              <option value="all">ทุกเดือน (All Months)</option>
+              <option value="1">มกราคม</option>
+              <option value="2">กุมภาพันธ์</option>
+              <option value="3">มีนาคม</option>
+              <option value="4">เมษายน</option>
+              <option value="5">พฤษภาคม</option>
+              <option value="6">มิถุนายน</option>
+              <option value="7">กรกฎาคม</option>
+              <option value="8">สิงหาคม</option>
+              <option value="9">กันยายน</option>
+              <option value="10">ตุลาคม</option>
+              <option value="11">พฤศจิกายน</option>
+              <option value="12">ธันวาคม</option>
+            </select>
+          </div>
+          <div class="col-md-3 col-6">
+            <label class="small fw-bold text-muted mb-1"><i class="fas fa-clock-rotate-left me-1"></i>ปี</label>
+            <select class="form-select" id="exec-filter-year" onchange="applyExecutiveFilters()"></select>
+          </div>
+          <div class="col-md-4 col-8">
+            <label class="small fw-bold text-muted mb-1"><i class="fas fa-industry me-1"></i>Plant</label>
+            <select class="form-select" id="exec-filter-plant" onchange="applyExecutiveFilters()">
+              <option value="all">ทั้งหมด (All Plants)</option>
+            </select>
+          </div>
+          <div class="col-md-2 col-4">
+            <button class="btn btn-outline-secondary w-100" onclick="resetExecutiveFilters()" title="กลับไปเดือน/ปีปัจจุบัน และแสดงทุก Plant">
+              <i class="fas fa-rotate-left me-1"></i>รีเซ็ต
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-lg-3 col-sm-6">
+        <div class="kpi-card kpi-blue">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <span class="text-uppercase text-secondary small fw-bold" id="kpi1-label">ผู้รับบริการเดือนนี้</span>
+              <div class="kpi-value text-dark" id="sum-month">0</div>
+            </div>
+            <div class="kpi-icon"><i class="fas fa-users"></i></div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+            <span class="small text-muted">วันนี้: <strong class="text-dark" id="sum-today">0</strong> ราย</span>
+            <span class="trend-badge trend-neutral" id="kpi-mom-growth">
+              <i class="fas fa-minus"></i> 0% MoM
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-sm-6">
+        <div class="kpi-card kpi-red">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <span class="text-uppercase text-secondary small fw-bold">อุบัติเหตุจากการทำงาน</span>
+              <div class="kpi-value text-danger" id="sum-accidents">0</div>
+            </div>
+            <div class="kpi-icon"><i class="fas fa-hard-hat"></i></div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+            <span class="small text-muted">เป้าหมาย: <strong>Zero Accident</strong></span>
+            <span class="badge bg-success-subtle text-success" id="kpi-accident-status">
+              <i class="fas fa-check-circle me-1"></i>ปลอดภัย
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-sm-6">
+        <div class="kpi-card kpi-green">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <span class="text-uppercase text-secondary small fw-bold">มูลค่าเวชภัณฑ์และบริการ</span>
+              <div class="kpi-value text-success" id="sum-cost">฿0</div>
+            </div>
+            <div class="kpi-icon"><i class="fas fa-wallet"></i></div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+            <span class="small text-muted">เฉลี่ยต่อเคส:</span>
+            <span class="fw-bold text-dark small" id="sum-cost-per-case">฿0 / ราย</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-sm-6">
+        <div class="kpi-card kpi-teal">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <span class="text-uppercase text-secondary small fw-bold">ดัชนีความพร้อมคลังยา</span>
+              <div class="kpi-value text-info" id="sum-readiness">100%</div>
+            </div>
+            <div class="kpi-icon"><i class="fas fa-prescription-bottle-medical"></i></div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+            <span class="small text-muted text-truncate" id="stock-detail-summary">คลังยาพร้อมจ่ายปกติ</span>
+            <span class="badge bg-success" id="kpi-stock-badge">ปกติ</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-8">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-chart-line text-primary me-2"></i>แนวโน้มผู้รับบริการและอุบัติเหตุ</span>
+            <span class="badge bg-light text-secondary border" id="trend-period-badge">เดือนที่เลือก</span>
+          </div>
+          <div class="card-body">
+            <canvas id="trendChart" style="max-height: 270px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white fw-bold">
+            <i class="fas fa-disease text-danger me-2"></i>อาการป่วยยอดฮิต (Top 5 Symptoms)
+          </div>
+          <div class="card-body position-relative">
+            <canvas id="symptomChart" style="max-height: 270px;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white fw-bold">
+            <i class="fas fa-building text-info me-2"></i>สถิติการใช้บริการแยกตามฝ่าย / แผนก
+          </div>
+          <div class="card-body">
+            <canvas id="posChart" style="max-height: 250px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white fw-bold">
+            <i class="fas fa-pills text-success me-2"></i>5 อันดับยาและเวชภัณฑ์ที่มีการใช้สูงสุด
+          </div>
+          <div class="card-body">
+            <canvas id="drugChart" style="max-height: 250px;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white fw-bold">
+            <i class="fas fa-layer-group text-primary me-2"></i>กลุ่มโรคจำแนกตามประเภท (Disease Classification)
+          </div>
+          <div class="card-body">
+            <canvas id="categoryChart" style="max-height: 250px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card shadow-sm h-100 border-danger-subtle">
+          <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-truck-medical text-danger me-2"></i>อัตราการส่งตัวโรงพยาบาลภายนอก (Referral Rate)</span>
+            <span class="badge bg-light text-secondary border">Referral</span>
+          </div>
+          <div class="card-body d-flex flex-column justify-content-center align-items-center text-center py-4">
+            <div class="display-4 fw-bold text-danger mb-1" id="referral-rate-value">0%</div>
+            <div class="text-muted small mb-3">อัตราการส่งตัวจากผู้รับบริการทั้งหมดในช่วงที่เลือก</div>
+            <div class="d-flex gap-5">
+              <div>
+                <div class="fw-bold fs-4 text-dark" id="referral-count-value">0</div>
+                <div class="small text-muted">เคสที่ส่งตัว</div>
+              </div>
+              <div>
+                <div class="fw-bold fs-4 text-dark" id="referral-total-value">0</div>
+                <div class="small text-muted">ผู้รับบริการทั้งหมด</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card shadow-sm h-100 border-danger-subtle">
+          <div class="card-header bg-danger-subtle text-danger fw-bold d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-user-injured me-2"></i>บันทึกติดตามอุบัติเหตุล่าสุด</span>
+            <span class="badge bg-danger text-white">EHS Priority</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+              <thead class="table-light">
+                <tr>
+                  <th>วัน-เวลา</th>
+                  <th>พนักงาน</th>
+                  <th>แผนก</th>
+                  <th>ลักษณะอุบัติเหตุ</th>
+                </tr>
+              </thead>
+              <tbody id="accident-tbody">
+                <tr><td class="text-center text-muted py-3" colspan="4">กำลังโหลดข้อมูล...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card shadow-sm h-100 border-warning-subtle">
+          <div class="card-header bg-warning-subtle text-dark fw-bold d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-triangle-exclamation text-warning me-2"></i>รายการยาที่ต้องสั่งซื้อด่วน</span>
+            <span class="badge bg-warning text-dark">Stock Alert</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+              <thead class="table-light">
+                <tr>
+                  <th>รหัส</th>
+                  <th>ชื่อยา</th>
+                  <th class="text-end">คงเหลือ</th>
+                  <th class="text-center">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="procure-tbody">
+                <tr><td class="text-center text-muted py-3" colspan="4">กำลังโหลดข้อมูล...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="api.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
