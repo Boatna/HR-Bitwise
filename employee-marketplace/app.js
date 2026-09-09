@@ -24,8 +24,23 @@ const STATE = {
 
   // [ใหม่] ระบบจองสินค้า
   myReservations: { asBuyer: [], asSeller: [] },
-  reservationTargetProduct: null
+  reservationTargetProduct: null,
+
+  // [ใหม่] ระบบแสดงจำนวนผู้ใช้งานออนไลน์
+  onlinePollingInterval: null,
+  onlineCount: 0
 };
+
+// [ใหม่] Visitor ID สุ่มต่อเบราว์เซอร์ ใช้นับผู้ใช้งานออนไลน์ (นับรวมทั้งคนที่ล็อกอินและยังไม่ล็อกอิน)
+const VISITOR_ID_KEY = 'emp_marketplace_visitor_id';
+function getOrCreateVisitorId() {
+  let vId = sessionStorage.getItem(VISITOR_ID_KEY);
+  if (!vId) {
+    vId = 'V-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    sessionStorage.setItem(VISITOR_ID_KEY, vId);
+  }
+  return vId;
+}
 
 // คืนค่า session token ของผู้ใช้ปัจจุบัน (ใช้แนบไปกับทุก action ที่ต้องยืนยันตัวตน)
 function getSessionToken() {
@@ -183,7 +198,83 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCategories();
 
   loadProducts();
+
+  startOnlinePresence(); // [ใหม่] เริ่มระบบนับผู้ใช้งานออนไลน์
 });
+
+// ========================================================================
+// [ใหม่] ระบบแสดงจำนวนผู้ใช้งานออนไลน์ (Online Presence)
+// ========================================================================
+
+const ONLINE_HEARTBEAT_INTERVAL_MS = 20000; // ส่งสัญญาณทุก 20 วินาที
+
+function startOnlinePresence() {
+  sendHeartbeat();
+  fetchOnlineCount();
+
+  if (STATE.onlinePollingInterval) clearInterval(STATE.onlinePollingInterval);
+  STATE.onlinePollingInterval = setInterval(() => {
+    sendHeartbeat();
+    fetchOnlineCount();
+  }, ONLINE_HEARTBEAT_INTERVAL_MS);
+
+  // อัปเดตสถานะทันทีเมื่อผู้ใช้กลับมาที่แท็บนี้อีกครั้ง (สลับแท็บไปมา)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      sendHeartbeat();
+      fetchOnlineCount();
+    }
+  });
+}
+
+async function sendHeartbeat() {
+  if (!STATE.isApiConfigured) {
+    // Demo Mode: จำลองตัวเลขผู้ใช้งานออนไลน์แบบง่ายๆ (นับตัวเองเป็น 1 คนเสมอ)
+    STATE.onlineCount = 1;
+    updateOnlineCountUI();
+    return;
+  }
+
+  try {
+    const visitorId = getOrCreateVisitorId();
+    const empId = STATE.currentUser ? STATE.currentUser.empId : '';
+
+    await fetch(CONFIG.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'heartbeat', visitorId: visitorId, empId: empId })
+    });
+  } catch (err) {
+    // ไม่ต้องแจ้งเตือนผู้ใช้ ถ้า heartbeat ส่งไม่สำเร็จเป็นครั้งคราว
+    console.log('Heartbeat error:', err);
+  }
+}
+
+async function fetchOnlineCount() {
+  if (!STATE.isApiConfigured) return;
+
+  try {
+    const response = await fetch(`${CONFIG.API_URL}?action=getOnlineCount&_t=${Date.now()}`);
+    const result = await response.json();
+    if (result && result.success) {
+      STATE.onlineCount = result.onlineCount || 0;
+      updateOnlineCountUI();
+    }
+  } catch (err) {
+    console.log('Fetch online count error:', err);
+  }
+}
+
+function updateOnlineCountUI() {
+  const el = document.getElementById('onlineCountBadge');
+  const textEl = document.getElementById('onlineCountText');
+  if (!el) return;
+
+  const count = Math.max(1, STATE.onlineCount || 1);
+  if (textEl) textEl.textContent = `${count} คนกำลังใช้งาน`;
+  el.classList.remove('hidden');
+  el.classList.add('flex');
+}
 
 function getFoodCategoryName() {
   const foodCat = CONFIG.CATEGORIES.find(c => c.id === 'food');
@@ -1096,13 +1187,13 @@ function renderProductGrid() {
           </div>
 
           <div class="pt-3 mt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <div class="flex items-center gap-1.5 truncate">
+            <div class="flex items-center gap-1.5 truncate min-w-0">
               <div class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[9px] flex-shrink-0">
                 ${initials}
               </div>
               <span class="truncate font-medium">${escapeHtml(item.sellerName || item.empId)}</span>
             </div>
-            ${item.sellerPlant ? `<span class="text-[10px] text-slate-400 flex-shrink-0">${item.sellerPlant}</span>` : ''}
+            ${item.sellerDept ? `<span class="text-[10px] text-slate-400 flex-shrink-0 truncate max-w-[90px]">${escapeHtml(item.sellerDept)}</span>` : ''}
           </div>
         </div>
       </div>
@@ -1125,7 +1216,8 @@ function openProductDetail(productId) {
   document.getElementById('detailDescription').textContent = item.description || 'ไม่มีรายละเอียดเพิ่มเติม';
   document.getElementById('detailSellerAvatar').textContent = item.sellerName ? item.sellerName.substring(0, 2) : 'EM';
   document.getElementById('detailSellerName').textContent = item.sellerName || item.empId;
-  document.getElementById('detailSellerDept').textContent = `${item.sellerDept || 'พนักงาน'} ${item.sellerPlant ? '• ' + item.sellerPlant : ''} (รหัส ${item.empId})`;
+  // [แก้ไข] แสดงข้อมูลผู้ขายเพียงแค่ ชื่อ-นามสกุล และ แผนก เท่านั้น (ไม่แสดง Plant/ตำแหน่ง/รหัสพนักงาน เพื่อความเป็นส่วนตัว)
+  document.getElementById('detailSellerDept').textContent = item.sellerDept || 'พนักงาน';
 
   const phoneBtn = document.getElementById('detailPhoneBtn');
   const phoneText = document.getElementById('detailPhoneText');

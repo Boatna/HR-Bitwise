@@ -13,7 +13,8 @@ const ADMIN_STATE = {
       totalLogs: 0,
       totalReservations: 0,      // [ใหม่]
       pendingReservations: 0,    // [ใหม่]
-      confirmedReservations: 0   // [ใหม่]
+      confirmedReservations: 0,  // [ใหม่]
+      onlineCount: 0             // [ใหม่]
     },
     products: [],
     logs: [],
@@ -29,7 +30,29 @@ const ADMIN_STORAGE_KEY = 'emp_marketplace_user';
 document.addEventListener('DOMContentLoaded', () => {
   ADMIN_STATE.isApiConfigured = Boolean(CONFIG.API_URL && CONFIG.API_URL.trim() !== '');
   tryAutoLoginFromStorage();
+  startAdminOnlineCountPolling(); // [ใหม่]
 });
+
+// [ใหม่] รีเฟรชจำนวนผู้ใช้งานออนไลน์แบบเบาๆ (ไม่ต้องโหลดข้อมูลทั้งหมดของ Dashboard ซ้ำ) ทุก 20 วินาที
+function startAdminOnlineCountPolling() {
+  refreshAdminOnlineCount();
+  setInterval(refreshAdminOnlineCount, 20000);
+}
+
+async function refreshAdminOnlineCount() {
+  if (!ADMIN_STATE.currentUser || !ADMIN_STATE.isApiConfigured) return;
+  try {
+    const response = await fetch(`${CONFIG.API_URL}?action=getOnlineCount&_t=${Date.now()}`);
+    const result = await response.json();
+    if (result && result.success) {
+      ADMIN_STATE.adminData.stats.onlineCount = result.onlineCount || 0;
+      const el = document.getElementById('adminStatOnlineUsers');
+      if (el) el.textContent = ADMIN_STATE.adminData.stats.onlineCount;
+    }
+  } catch (e) {
+    console.log('Online count refresh error:', e);
+  }
+}
 
 async function tryAutoLoginFromStorage() {
   const saved = localStorage.getItem(ADMIN_STORAGE_KEY);
@@ -248,6 +271,7 @@ function renderAdminDashboard() {
   document.getElementById('adminStatDeletedProd').textContent = stats.deletedProducts || 0;
   document.getElementById('adminStatEmployees').textContent = `${stats.totalEmployees || 0} คน`;
   document.getElementById('adminStatPendingReservations').textContent = stats.pendingReservations || 0; // [ใหม่]
+  document.getElementById('adminStatOnlineUsers').textContent = stats.onlineCount || 0; // [ใหม่]
 
   renderAdminProductTable();
   renderAdminReservationsTable(); // [ใหม่]
