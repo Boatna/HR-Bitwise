@@ -1,39 +1,39 @@
 :root {
-  --bg: #F0F7FF;
-  --bg-line: rgba(37, 99, 235, .06);
+  --bg: #FFFFFF;
+  --bg-line: rgba(74, 127, 181, .05);
   --surface: #FFFFFF;
-  --surface-tint: #F8FAFF;
-  --surface-sunken: #E8F0FE;
-  --line: #B8D0E8;
-  --line-soft: #D6E6F5;
-  --ink: #1A2B4A;
-  --ink-soft: #3A5A7A;
-  --ink-faint: #7A9AB8;
-  --brand-900: #0A1E3D;
-  --brand-700: #1A3A6A;
-  --brand-600: #1E4D8C;
-  --brand-500: #2563EB;
-  --brand-400: #3B82F6;
-  --brand-300: #60A5FA;
-  --brand-100: #DBEAFE;
-  --brand-50: #EFF6FF;
-  --steel-500: #475569;
-  --good-600: #0B7A4E;
-  --good-100: #D1FAE5;
-  --good-50: #ECFDF5;
-  --warn-600: #B45309;
-  --warn-100: #FEF3C7;
-  --warn-50: #FFFBEB;
-  --bad-600: #B91C1C;
-  --bad-100: #FEE2E2;
-  --bad-50: #FEF2F2;
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
-  --r-xl: 18px;
-  --shadow-1: 0 1px 3px rgba(37, 99, 235, .08), 0 1px 2px rgba(37, 99, 235, .04);
-  --shadow-2: 0 4px 16px rgba(37, 99, 235, .12), 0 2px 8px rgba(37, 99, 235, .06);
-  --shadow-3: 0 12px 40px rgba(37, 99, 235, .16), 0 4px 16px rgba(37, 99, 235, .08);
+  --surface-tint: #F5FAFE;
+  --surface-sunken: #EAF2FB;
+  --line: #D9E6F4;
+  --line-soft: #E7F0F9;
+  --ink: #1D2530;
+  --ink-soft: #5A6B7E;
+  --ink-faint: #9AACBE;
+  --brand-900: #223C55;
+  --brand-700: #345E8C;
+  --brand-600: #4A7FB5;
+  --brand-500: #6FA0D8;
+  --brand-400: #8FB9E0;
+  --brand-300: #AFCFEF;
+  --brand-100: #E4EFFA;
+  --brand-50: #F3F8FD;
+  --steel-500: #63748A;
+  --good-600: #2F8F5E;
+  --good-100: #DEF3E8;
+  --good-50: #F1FAF5;
+  --warn-600: #B07A17;
+  --warn-100: #FBEFD4;
+  --warn-50: #FDF8ED;
+  --bad-600: #C25B4E;
+  --bad-100: #FBE4E0;
+  --bad-50: #FDF3F1;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --shadow-1: 0 1px 3px rgba(74, 127, 181, .07), 0 1px 2px rgba(74, 127, 181, .04);
+  --shadow-2: 0 6px 20px rgba(74, 127, 181, .10), 0 2px 8px rgba(74, 127, 181, .05);
+  --shadow-3: 0 16px 48px rgba(74, 127, 181, .14), 0 6px 18px rgba(74, 127, 181, .07);
 }
 
 * {
@@ -43,21 +43,32 @@
 
 .num,
 .display,
-h1,
 h2,
-.stat-number,
-.title-main,
 .btn-primary,
 .btn-secondary,
 .btn-success,
 .btn-danger,
 .badge,
 .tab-btn,
-.stat-label,
+.stat-label {
+  font-family: 'Space Grotesk', 'Sarabun', sans-serif;
+}
+
+h1,
+.stat-number,
+.title-main,
 .section-title,
 .company-name,
-.code-pill {
-  font-family: 'Space Grotesk', 'Sarabun', sans-serif;
+.kz-card-title {
+  font-family: 'Fraunces', 'Sarabun', sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.code-pill,
+.kz-card-id,
+.form-code .code-pill {
+  font-family: 'IBM Plex Mono', 'Space Grotesk', 'Sarabun', sans-serif;
 }
 
 .num {
@@ -72,8 +83,8 @@ body {
 body {
   background-color: var(--bg);
   background-image:
-    radial-gradient(800px 400px at 90% -5%, rgba(59, 130, 246, .06) 0%, rgba(59, 130, 246, 0) 60%),
-    radial-gradient(600px 300px at -5% 5%, rgba(37, 99, 235, .05) 0%, rgba(37, 99, 235, 0) 55%),
+    radial-gradient(800px 400px at 90% -5%, rgba(111, 160, 216, .07) 0%, rgba(111, 160, 216, 0) 60%),
+    radial-gradient(600px 300px at -5% 5%, rgba(74, 127, 181, .05) 0%, rgba(74, 127, 181, 0) 55%),
     repeating-linear-gradient(0deg, var(--bg-line) 0 1px, transparent 1px 96px),
     repeating-linear-gradient(90deg, var(--bg-line) 0 1px, transparent 1px 96px);
   min-height: 100vh;
@@ -84,6 +95,27 @@ body {
 ::selection {
   background: var(--brand-100);
   color: var(--brand-900);
+}
+
+.login-blob {
+  position: absolute;
+  top: -12%;
+  right: -14%;
+  width: min(560px, 70vw);
+  height: min(560px, 70vw);
+  z-index: 0;
+  pointer-events: none;
+  transition: transform .3s ease-out;
+  will-change: transform;
+}
+
+@media (max-width: 639px) {
+  .login-blob {
+    top: -18%;
+    right: -30%;
+    width: 80vw;
+    height: 80vw;
+  }
 }
 
 .card {
@@ -370,14 +402,14 @@ body {
 .form-logo .logo-icon {
   width: 42px;
   height: 42px;
-  padding: 8px 0;
+  padding: 6px;
   border-radius: 12px;
-  background: linear-gradient(160deg, var(--brand-500), var(--brand-900));
+  background: #fff;
+  border: 1px solid var(--line-soft);
   margin: 0 auto 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
   box-shadow: var(--shadow-1);
 }
 
@@ -1128,22 +1160,56 @@ body {
   transform: scale(1.01);
 }
 
-#loadingBar {
+.loading-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
+  inset: 0;
   z-index: 9999;
-  background: linear-gradient(90deg, var(--brand-300), var(--brand-500), var(--brand-600), var(--brand-500), var(--brand-300));
-  background-size: 200% 100%;
-  animation: loading 1.4s ease-in-out infinite;
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, .86);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .25s ease, visibility 0s linear .25s;
 }
 
-@keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.loading-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity .18s ease;
+}
+
+.loading-overlay-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.loading-logo img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  opacity: .92;
+}
+
+.loading-overlay .loading-spinner {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid var(--brand-100);
+  border-top-color: var(--brand-500);
+  animation: procspin .8s linear infinite;
+}
+
+.loading-overlay .loading-text {
+  margin: 0;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--ink-faint);
+  font-family: 'Space Grotesk', 'Sarabun', sans-serif;
+  letter-spacing: .01em;
 }
 
 ::-webkit-scrollbar {
@@ -1348,7 +1414,7 @@ body {
 }
 
 @media print {
-  #loadingBar, #btnLogout, #tabBar, .modal-backdrop, #btnOpenForm, #btnAdminTools,
+  #loadingOverlay, #btnLogout, #tabBar, .modal-backdrop, #btnOpenForm, #btnAdminTools,
   .btn-primary, .btn-secondary, .btn-success, .btn-danger, .count-save-btn {
     display: none !important;
   }
@@ -1356,7 +1422,6 @@ body {
   body { background: white !important; }
 }
 
-/* ===== Processing Modal (ขั้นตอนก่อน/ระหว่างบันทึกข้อมูล) ===== */
 .proc-spinner {
   width: 32px;
   height: 32px;

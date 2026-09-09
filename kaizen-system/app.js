@@ -131,6 +131,7 @@ let selectedFiles = [];
 let existingFileUrlsForEdit = [];
 let currentCommentKaizenId = null;
 let isLoading = false;
+let loadingBarRefCount = 0;
 let PROGRESS_EMPLOYEES = [];
 let progressBeYear = null;
 let progressCurrentMonth = null;
@@ -172,15 +173,18 @@ function driveImageThumb(url) {
 }
 
 function showLoading() {
+  loadingBarRefCount++;
   isLoading = true;
-  const bar = document.getElementById('loadingBar');
-  if (bar) bar.style.display = 'block';
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.classList.add('visible');
 }
 
 function hideLoading() {
+  loadingBarRefCount = Math.max(0, loadingBarRefCount - 1);
+  if (loadingBarRefCount > 0) return; // อีกคำขอหนึ่งยังโหลดอยู่ อย่าเพิ่งซ่อนหน้า loading
   isLoading = false;
-  const bar = document.getElementById('loadingBar');
-  if (bar) bar.style.display = 'none';
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.classList.remove('visible');
 }
 
 function showError(err, title) {
@@ -3079,6 +3083,24 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('loginId').focus();
   }
 });
+
+(function initLoginBlobParallax() {
+  var blob = document.getElementById('loginBlob');
+  var loginScreen = document.getElementById('loginScreen');
+  if (!blob || !loginScreen) return;
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) return;
+
+  loginScreen.addEventListener('mousemove', function(e) {
+    var rect = loginScreen.getBoundingClientRect();
+    var x = (e.clientX - rect.left) / rect.width - 0.5;
+    var y = (e.clientY - rect.top) / rect.height - 0.5;
+    blob.style.transform = 'translate(' + (x * 16) + 'px,' + (y * 16) + 'px)';
+  });
+  loginScreen.addEventListener('mouseleave', function() {
+    blob.style.transform = 'translate(0,0)';
+  });
+})();
 
 window.addEventListener('beforeunload', function(e) {
   if (!document.getElementById('formModal').classList.contains('hidden') && isSubmitting) {
