@@ -1,0 +1,638 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบใบสมัครเข้ารับการฝึกอบรมฝีมือแรงงาน/ทดสอบมาตรฐานฝีมือแรงงาน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sarabun: ['Sarabun', 'sans-serif'],
+          },
+          colors: {
+            bw: {
+              blue: '#0284c7',
+              dark: '#0f172a',
+              sky: '#38bdf8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sarabun min-h-screen flex flex-col antialiased">
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="assets/BW-HR.png" alt="HR Bitwise Logo" class="h-10 w-10 object-contain rounded-full shadow-sm" onerror="this.src='assets/dsd-logo.png';">
+        <div>
+          <div class="font-bold text-slate-900 text-sm sm:text-base leading-tight">ศูนย์ฝึกอบรมมาตรฐานแรงงาน บิทไวส์(ประเทศไทย)</div>
+          <div class="text-[11px] text-sky-700 font-medium">ร่วมกับ กรมพัฒนาฝีมือแรงงาน กระทรวงแรงงาน</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> เปิดรับสมัครออนไลน์
+        </span>
+      </div>
+
+    </div>
+  </header>
+  <main class="flex-grow max-w-5xl mx-auto w-full px-4 sm:px-6 py-8">
+    <section id="registration-section" class="space-y-6">
+      <div class="bg-gradient-to-r from-sky-600 via-blue-700 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+        <div class="relative z-10">
+          <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold tracking-wide mb-3">
+            <span>🏛️</span> กรมพัฒนาฝีมือแรงงาน กระทรวงแรงงาน
+          </div>
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-bold leading-snug">
+            ใบสมัครเข้ารับการฝึกอบรมฝีมือแรงงาน / ทดสอบมาตรฐานฝีมือแรงงาน
+          </h1>
+          <p class="text-sky-100 text-xs sm:text-sm mt-2 max-w-2xl">
+            โครงการพัฒนาทักษะและยกระดับมาตรฐานฝีมือแรงงาน โดยกลุ่ม ศูนย์ฝึกอบรมมาตรฐานแรงงาน บิทไวส์(ประเทศไทย) ร่วมส่งเสริมศักยภาพแรงงานสู่สากล
+          </p>
+        </div>
+      </div>
+      <form id="registration-form" class="space-y-6">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
+          <h2 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+            <span class="w-2.5 h-6 bg-sky-500 rounded-full inline-block"></span>
+            ข้อมูลการสมัคร
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="md:col-span-2">
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">หน่วยงานที่รับสมัคร <span class="text-rose-500">*</span></label>
+              <select id="agency" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-50/50">
+                <option value="กลุ่ม HR Bitwise Group">ศูนย์ฝึกอบรมมาตรฐานแรงงาน บิทไวส์(ประเทศไทย)</option>
+                <option value="สถาบันพัฒนาฝีมือแรงงาน">สถาบันพัฒนาฝีมือแรงงาน (สพร.)</option>
+                <option value="สำนักงานพัฒนาฝีมือแรงงาน">สำนักงานพัฒนาฝีมือแรงงาน (สนพ.)</option>
+              </select>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">วัตถุประสงค์การฝึกอบรม (เลือกได้มากกว่า 1 ข้อ)</label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-sky-50 transition">
+                  <input type="checkbox" name="objectives" value="ฝึกเตรียมเข้าทำงาน" class="rounded text-sky-600 focus:ring-sky-500">
+                  <span>ฝึกเตรียมเข้าทำงาน</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-sky-50 transition">
+                  <input type="checkbox" name="objectives" value="ฝึกยกระดับฝีมือแรงงาน" class="rounded text-sky-600 focus:ring-sky-500" checked>
+                  <span>ฝึกยกระดับฝีมือแรงงาน</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-sky-50 transition">
+                  <input type="checkbox" name="objectives" value="ฝึกอาชีพเสริม" class="rounded text-sky-600 focus:ring-sky-500">
+                  <span>ฝึกอาชีพเสริม</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-sky-50 transition">
+                  <input type="checkbox" name="objectives" value="ฝึกคนครัวบนเรือ" class="rounded text-sky-600 focus:ring-sky-500">
+                  <span>ฝึกคนครัวบนเรือ</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">การทดสอบมาตรฐาน</label>
+              <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-700 bg-sky-50/70 p-3 rounded-xl border border-sky-200 cursor-pointer hover:bg-sky-100/70 transition">
+                <input type="checkbox" name="tests" value="ทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ" class="rounded text-sky-600 focus:ring-sky-500" checked>
+                <span class="font-medium text-sky-900">ทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ</span>
+              </label>
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">หลักสูตร (ฝึกอบรม) <span class="text-rose-500">*</span></label>
+              <input type="text" id="course" required placeholder="เช่น ช่างเครื่องปรับอากาศในบ้านและการพาณิชย์ขนาดเล็ก" value="ช่างเครื่องปรับอากาศในบ้านและการพาณิชย์ขนาดเล็ก" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">จำนวนชั่วโมงฝึก (ชั่วโมง) <span class="text-rose-500">*</span></label>
+              <input type="number" id="trainingHours" required min="1" placeholder="เช่น 30" value="30" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">สาขา (ทดสอบ) <span class="text-rose-500">*</span></label>
+              <select id="branch" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-50/50">
+                <option value="ช่างเครื่องปรับอากาศในบ้านและการพาณิชย์ขนาดเล็ก">ช่างเครื่องปรับอากาศในบ้านและการพาณิชย์ขนาดเล็ก</option>
+                <option value="ช่างไฟฟ้าภายในอาคาร">ช่างไฟฟ้าภายในอาคาร</option>
+                <option value="ช่างเชื่อมอาร์กโลหะด้วยมือ">ช่างเชื่อมอาร์กโลหะด้วยมือ</option>
+                <option value="ช่างซ่อมบำรุงยานยนต์สมัยใหม่">ช่างซ่อมบำรุงยานยนต์สมัยใหม่</option>
+                <option value="ผู้ประกอบอาหารไทย">ผู้ประกอบอาหารไทย</option>
+                <option value="คอมพิวเตอร์และธุรกิจดิจิทัล">คอมพิวเตอร์และธุรกิจดิจิทัล</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">ระดับ (ทดสอบ)</label>
+              <select id="level" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-50/50">
+                <option value="ระดับ 1">ระดับ 1</option>
+                <option value="ระดับ 2">ระดับ 2</option>
+                <option value="ระดับ 3">ระดับ 3</option>
+              </select>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">ประเภทผู้สมัคร (ทดสอบ)</label>
+              <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                <label class="flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 cursor-pointer">
+                  <input type="checkbox" name="applicantTypes" value="ผู้รับการฝึกจาก กพร." class="rounded text-sky-600">
+                  <span>ผู้รับการฝึก กพร.</span>
+                </label>
+                <label class="flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 cursor-pointer">
+                  <input type="checkbox" name="applicantTypes" value="จากสถานศึกษา" class="rounded text-sky-600">
+                  <span>จากสถานศึกษา</span>
+                </label>
+                <label class="flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 cursor-pointer">
+                  <input type="checkbox" name="applicantTypes" value="จากภาครัฐ" class="rounded text-sky-600">
+                  <span>จากภาครัฐ</span>
+                </label>
+                <label class="flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 cursor-pointer">
+                  <input type="checkbox" name="applicantTypes" value="จากเอกชน" class="rounded text-sky-600">
+                  <span>จากเอกชน</span>
+                </label>
+                <label class="flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 cursor-pointer">
+                  <input type="checkbox" name="applicantTypes" value="บุคคลทั่วไป" class="rounded text-sky-600" checked>
+                  <span>บุคคลทั่วไป</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">วันที่เริ่มการฝึกอบรม <span class="text-rose-500">*</span></label>
+              <input type="date" id="startDate" required value="2026-09-20" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: 1. ข้อมูลส่วนบุคคล -->
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
+          <h2 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+            <span class="w-2.5 h-6 bg-sky-500 rounded-full inline-block"></span>
+            1. ข้อมูลส่วนบุคคล (Personal Information)
+          </h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">คำนำหน้า <span class="text-rose-500">*</span></label>
+              <select id="title" required class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-50/50">
+                <option value="นาย">นาย</option>
+                <option value="นาง">นาง</option>
+                <option value="นางสาว">นางสาว</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">ชื่อ (ภาษาไทย) <span class="text-rose-500">*</span></label>
+              <input type="text" id="firstName" required placeholder="เช่น สมเกียรติ" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">นามสกุล (ภาษาไทย) <span class="text-rose-500">*</span></label>
+              <input type="text" id="lastName" required placeholder="เช่น มั่นคง" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">เพศ <span class="text-rose-500">*</span></label>
+              <select id="gender" required class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-50/50">
+                <option value="ชาย">ชาย</option>
+                <option value="หญิง">หญิง</option>
+                <option value="ไม่ระบุ">ไม่ระบุ</option>
+              </select>
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">ชื่อ-นามสกุล ภาษาอังกฤษ <span class="text-rose-500">*</span></label>
+              <input type="text" id="fullNameEn" required placeholder="เช่น Somkiat Munkhong" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">เลขประจำตัวประชาชน (13 หลัก) <span class="text-rose-500">*</span></label>
+              <input type="text" id="idCard" required maxlength="17" placeholder="x-xxxx-xxxxx-xx-x" class="w-full text-sm font-mono rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">สัญชาติ <span class="text-rose-500">*</span></label>
+              <input type="text" id="nationality" required value="ไทย" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">วัน/เดือน/ปีเกิด <span class="text-rose-500">*</span></label>
+              <input type="date" id="birthDate" required class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">เบอร์โทรศัพท์ <span class="text-rose-500">*</span></label>
+              <input type="tel" id="phone" required placeholder="08x-xxx-xxxx" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">อีเมล (ถ้ามี)</label>
+              <input type="email" id="email" placeholder="example@domain.com" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+          </div>
+
+          <!-- ที่อยู่ตามบัตรประชาชน -->
+          <div class="mt-6 pt-5 border-t border-slate-100">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 mb-4">🏠 ที่อยู่ตามทะเบียนบ้าน / ตามบัตรประชาชน</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">เลขที่ <span class="text-rose-500">*</span></label>
+                <input type="text" id="addressNo" required placeholder="เช่น 99/5" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">หมู่</label>
+                <input type="text" id="moo" placeholder="เช่น 3" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">ถนน</label>
+                <input type="text" id="street" placeholder="เช่น บางนา-ตราด" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">ซอย</label>
+                <input type="text" id="soi" placeholder="เช่น ซอย 12" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">จังหวัด <span class="text-rose-500">*</span></label>
+                <select id="address-province" required class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 bg-slate-50/50">
+                  <option value="">-- เลือกจังหวัด --</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">เขต/อำเภอ <span class="text-rose-500">*</span></label>
+                <select id="address-district" required class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 bg-slate-50/50">
+                  <option value="">-- เลือกเขต/อำเภอ --</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">แขวง/ตำบล <span class="text-rose-500">*</span></label>
+                <select id="address-subdistrict" required class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 bg-slate-50/50">
+                  <option value="">-- เลือกแขวง/ตำบล --</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">รหัสไปรษณีย์ <span class="text-rose-500">*</span></label>
+                <input type="text" id="address-zipcode" required placeholder="10xxx" class="w-full text-sm font-mono rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+            </div>
+          </div>
+
+          <!-- วุฒิการศึกษา & สภาพร่างกาย -->
+          <div class="mt-6 pt-5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">วุฒิการศึกษาสูงสุด <span class="text-rose-500">*</span></label>
+              <select id="education" required class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 bg-slate-50/50">
+                <option value="ประถมศึกษา">ประถมศึกษา</option>
+                <option value="มัธยมต้น">มัธยมต้น</option>
+                <option value="มัธยมปลาย">มัธยมปลาย</option>
+                <option value="อนุปริญญา">อนุปริญญา</option>
+                <option value="ปวช.">ปวช.</option>
+                <option value="ปวส./ปวท." selected>ปวส./ปวท.</option>
+                <option value="ปริญญาตรีขึ้นไป">ปริญญาตรีขึ้นไป</option>
+                <option value="ไม่จบการศึกษา">ไม่จบการศึกษา</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">สาขาที่เรียน <span class="text-rose-500">*</span></label>
+              <input type="text" id="educationMajor" required placeholder="เช่น ช่างไฟฟ้า / เครื่องทำความเย็น" value="ช่างไฟฟ้ากำลัง" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5">
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">สภาพร่างกาย <span class="text-rose-500">*</span></label>
+              <div class="flex items-center gap-6 mb-3">
+                <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                  <input type="checkbox" id="body-normal" value="ปกติ" checked class="rounded text-sky-600">
+                  <span>ปกติ</span>
+                </label>
+                <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                  <input type="checkbox" id="body-disability" value="พิการ" class="rounded text-rose-600">
+                  <span class="text-rose-700 font-medium">พิการ (เลือกเพื่อระบุประเภทความพิการ)</span>
+                </label>
+              </div>
+
+              <div id="disability-details-container" class="hidden bg-rose-50/60 border border-rose-200 rounded-xl p-4">
+                <label class="block text-xs font-bold text-rose-800 mb-2">ประเภทความพิการ (เลือกได้มากกว่า 1 ข้อ):</label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-slate-700">
+                  <label class="flex items-center gap-1.5"><input type="checkbox" name="disabilities" value="การเห็น" class="rounded text-rose-600"> การเห็น</label>
+                  <label class="flex items-center gap-1.5"><input type="checkbox" name="disabilities" value="การได้ยินหรือสื่อความหมาย" class="rounded text-rose-600"> การได้ยินหรือสื่อความหมาย</label>
+                  <label class="flex items-center gap-1.5"><input type="checkbox" name="disabilities" value="การเคลื่อนไหวหรือทางร่างกาย" class="rounded text-rose-600"> การเคลื่อนไหวหรือร่างกาย</label>
+                  <label class="flex items-center gap-1.5"><input type="checkbox" name="disabilities" value="ทางจิตใจหรือพฤติกรรม" class="rounded text-rose-600"> ทางจิตใจหรือพฤติกรรม</label>
+                  <label class="flex items-center gap-1.5"><input type="checkbox" name="disabilities" value="ทางสติปัญญา" class="rounded text-rose-600"> ทางสติปัญญา</label>
+                  <label class="flex items-center gap-1.5"><input type="checkbox" name="disabilities" value="การเรียนรู้" class="rounded text-rose-600"> การเรียนรู้</label>
+                  <label class="flex items-center gap-1.5"><input type="checkbox" name="disabilities" value="ทางออทิสติก" class="rounded text-rose-600"> ทางออทิสติก</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- แนบไฟล์หลักฐาน -->
+          <div class="mt-6 pt-5 border-t border-slate-100">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 mb-3">แนบเอกสารและรูปถ่ายประกอบการสมัคร</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div class="border border-dashed border-slate-300 rounded-xl p-3 text-center bg-slate-50/50 hover:bg-slate-50 transition">
+                <div class="text-xs font-semibold text-slate-700 mb-1">ภาพถ่ายหน้าตรง <span class="text-rose-500">*</span></div>
+                <label for="filePhoto" class="cursor-pointer inline-block text-xs bg-sky-600 hover:bg-sky-700 text-white font-medium px-3 py-1.5 rounded-lg shadow-sm">
+                  เลือกไฟล์รูปภาพ
+                </label>
+                <input type="file" id="filePhoto" accept="image/*" class="hidden">
+                <div id="filePhotoLabel" class="text-[11px] text-slate-400 mt-1 truncate">ยังไม่ได้เลือกไฟล์</div>
+              </div>
+
+              <div class="border border-dashed border-slate-300 rounded-xl p-3 text-center bg-slate-50/50 hover:bg-slate-50 transition">
+                <div class="text-xs font-semibold text-slate-700 mb-1">บัตรประชาชน (ด้านหน้าเท่านั้น) <span class="text-rose-500">*</span></div>
+                <label for="fileIdCard" class="cursor-pointer inline-block text-xs bg-sky-600 hover:bg-sky-700 text-white font-medium px-3 py-1.5 rounded-lg shadow-sm">
+                  เลือกไฟล์บัตรประชาชน
+                </label>
+                <input type="file" id="fileIdCard" accept="image/*,application/pdf" class="hidden">
+                <div id="fileIdCardLabel" class="text-[11px] text-slate-400 mt-1 truncate">ยังไม่ได้เลือกไฟล์</div>
+              </div>
+
+              <div class="border border-dashed border-slate-300 rounded-xl p-3 text-center bg-slate-50/50 hover:bg-slate-50 transition">
+                <div class="text-xs font-semibold text-slate-700 mb-1">วุฒิการศึกษา <span class="text-rose-500">*</span></div>
+                <label for="fileEdu" class="cursor-pointer inline-block text-xs bg-sky-600 hover:bg-sky-700 text-white font-medium px-3 py-1.5 rounded-lg shadow-sm">
+                  เลือกไฟล์วุฒิ
+                </label>
+                <input type="file" id="fileEdu" accept="image/*,application/pdf" class="hidden">
+                <div id="fileEduLabel" class="text-[11px] text-slate-400 mt-1 truncate">ยังไม่ได้เลือกไฟล์</div>
+              </div>
+
+              <div class="border border-dashed border-slate-300 rounded-xl p-3 text-center bg-slate-50/50 hover:bg-slate-50 transition">
+                <div class="text-xs font-semibold text-slate-700 mb-1">วุฒิการศึกษา (ทรานสคริปต์)</div>
+                <label for="fileTranscript" class="cursor-pointer inline-block text-xs bg-slate-700 hover:bg-slate-800 text-white font-medium px-3 py-1.5 rounded-lg shadow-sm">
+                  เลือกไฟล์ทรานสคริปต์
+                </label>
+                <input type="file" id="fileTranscript" accept="image/*,application/pdf" class="hidden">
+                <div id="fileTranscriptLabel" class="text-[11px] text-slate-400 mt-1 truncate">ยังไม่ได้เลือกไฟล์</div>
+              </div>
+
+              <div class="border border-dashed border-slate-300 rounded-xl p-3 text-center bg-slate-50/50 hover:bg-slate-50 transition">
+                <div class="text-xs font-semibold text-slate-700 mb-1">ใบรับรองการทำงาน (ถ้ามี)</div>
+                <label for="fileWorkCert" class="cursor-pointer inline-block text-xs bg-slate-700 hover:bg-slate-800 text-white font-medium px-3 py-1.5 rounded-lg shadow-sm">
+                  เลือกใบรับรองงาน
+                </label>
+                <input type="file" id="fileWorkCert" accept="image/*,application/pdf" class="hidden">
+                <div id="fileWorkCertLabel" class="text-[11px] text-slate-400 mt-1 truncate">ยังไม่ได้เลือกไฟล์</div>
+              </div>
+            </div>
+          </div>
+        </div>        <!-- Card: 2. สถานภาพแรงงาน -->
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
+          <h2 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+            <span class="w-2.5 h-6 bg-sky-500 rounded-full inline-block"></span>
+            2. สถานภาพแรงงาน
+          </h2>
+
+          <div class="flex flex-wrap items-center gap-6 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <label class="flex items-center gap-2.5 text-sm font-bold text-slate-800 cursor-pointer">
+              <input type="radio" name="empStatusChoice" id="emp-working" value="working" checked class="w-4 h-4 text-sky-600 focus:ring-sky-500">
+              <span>1. ทำงาน (กรอกรายละเอียดข้อ 2.1 ด้านล่าง)</span>
+            </label>
+            <label class="flex items-center gap-2.5 text-sm font-bold text-slate-800 cursor-pointer">
+              <input type="radio" name="empStatusChoice" id="emp-unemployed" value="unemployed" class="w-4 h-4 text-sky-600 focus:ring-sky-500">
+              <span>2. ไม่ทำงาน หรือ ว่างงาน (กรอกรายละเอียดข้อ 2.2 ด้านล่าง)</span>
+            </label>
+          </div>
+
+          <!-- ข้อ 2.1 ผู้มีงานทำ -->
+          <div id="section-2-1" class="space-y-5 border-l-4 border-sky-500 pl-4 py-1">
+            <h3 class="text-sm font-bold text-sky-900">2.1 รายละเอียดสำหรับผู้มีงานทำ</h3>
+            
+            <div class="space-y-3">
+              <label class="block text-xs font-semibold text-slate-700">ประเภทหน่วยงานที่สังกัด <span class="text-rose-500">*</span></label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+                <label class="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer">
+                  <input type="radio" name="workSector" value="private" checked class="text-sky-600">
+                  <span>ภาคเอกชน</span>
+                </label>
+                <label class="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer">
+                  <input type="radio" name="workSector" value="state_enterprise" class="text-sky-600">
+                  <span>รัฐวิสาหกิจ</span>
+                </label>
+                
+                <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <label class="flex items-center gap-2 cursor-pointer mb-2">
+                    <input type="radio" name="workSector" id="sector-govt" value="government" class="text-sky-600">
+                    <span class="font-medium">ภาครัฐ</span>
+                  </label>
+                  <select id="govt-sub-select" disabled class="w-full text-xs rounded-lg border border-slate-300 p-1.5 bg-white disabled:opacity-50">
+                    <option value="ข้าราชการพลเรือน">ข้าราชการพลเรือน</option>
+                    <option value="ข้าราชการตำรวจ">ข้าราชการตำรวจ</option>
+                    <option value="ข้าราชการทหาร">ข้าราชการทหาร</option>
+                    <option value="ข้าราชการครู">ข้าราชการครู</option>
+                  </select>
+                </div>
+
+                <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <label class="flex items-center gap-2 cursor-pointer mb-2">
+                    <input type="radio" name="workSector" id="sector-business" value="business" class="text-sky-600">
+                    <span class="font-medium">ประกอบธุรกิจส่วนตัว / อาชีพอิสระ</span>
+                  </label>
+                  <select id="freelance-sub-select" disabled class="w-full text-xs rounded-lg border border-slate-300 p-1.5 bg-white disabled:opacity-50">
+                    <option value="วิสาหกิจชุมชน">วิสาหกิจชุมชน</option>
+                    <option value="เกษตรกร">เกษตรกร</option>
+                    <option value="ผู้รับจ้างทั่วไปโดยการจ้าง (Freelance)">ผู้รับจ้างทั่วไปโดยการจ้าง (Freelance)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">รายได้เฉลี่ยต่อเดือน (บาท)</label>
+                <input type="text" id="monthlyIncome" placeholder="เช่น 18,000 หรือ 15,001 - 20,000" value="18,500" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">อาชีพ</label>
+                <input type="text" id="occupation" placeholder="เช่น ช่างเครื่องปรับอากาศ" value="ช่างบริการเครื่องทำความเย็น" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ตำแหน่ง</label>
+                <input type="text" id="position" placeholder="เช่น ช่างซ่อมบำรุง" value="ช่างซ่อมบำรุง" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">อายุงาน (ปี)</label>
+                <input type="number" id="workExperienceYears" min="0" placeholder="เช่น 2" value="2" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อสถานที่ทำงาน / หน่วยงาน</label>
+                <input type="text" id="workplaceName" placeholder="เช่น บริษัท บิทไวส์ (ประเทศไทย) จำกัด" value="บริษัท บิทไวส์ (ประเทศไทย) จำกัด" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">จังหวัดที่ทำงาน</label>
+                <input type="text" id="workplaceProvince" placeholder="เช่น สมุทรปราการ" value="สมุทรปราการ" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">โทรศัพท์ที่ทำงาน</label>
+                <input type="tel" id="workplacePhone" placeholder="02-xxx-xxxx" value="02-765-4321" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">กลุ่มอุตสาหกรรมที่ทำงาน </label>
+              <select id="industryGroup" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 bg-slate-50/50">
+                <option value="อิเล็กทรอนิกส์อัจฉริยะ">อิเล็กทรอนิกส์อัจฉริยะ</option>
+                <option value="การแปรรูปอาหาร">การแปรรูปอาหาร</option>
+                <option value="การเกษตรและเทคโนโลยีชีวภาพ">การเกษตรและเทคโนโลยีชีวภาพ</option>
+                <option value="ท่องเที่ยวกลุ่มรายได้ดีและท่องเที่ยวเชิงสุขภาพ">ท่องเที่ยวกลุ่มรายได้ดีและท่องเที่ยวเชิงสุขภาพ</option>
+                <option value="ยานยนต์สมัยใหม่">ยานยนต์สมัยใหม่</option>
+                <option value="ดิจิทัล">ดิจิทัล</option>
+                <option value="เชื้อเพลิง/เคมีชีวภาพ">เชื้อเพลิง/เคมีชีวภาพ</option>
+                <option value="ขนส่งและการบิน">ขนส่งและการบิน</option>
+                <option value="การแพทย์ครบวงจร">การแพทย์ครบวงจร</option>
+                <option value="หุ่นยนต์เพื่ออุตสาหกรรม">หุ่นยนต์เพื่ออุตสาหกรรม</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- ข้อ 2.2 ผู้ที่ไม่มีงานทำ -->
+          <div id="section-2-2" class="hidden space-y-4 border-l-4 border-amber-500 pl-4 py-1">
+            <h3 class="text-sm font-bold text-amber-900">2.2 รายละเอียดสำหรับผู้ที่ไม่มีงานทำ / ว่างงาน</h3>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">สถานภาพปัจจุบัน <span class="text-rose-500">*</span></label>
+              <select id="unemployedReason" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 bg-slate-50/50">
+                <option value="อยู่ในระหว่างหางาน">อยู่ในระหว่างหางาน</option>
+                <option value="นักเรียน/นักศึกษา">นักเรียน/นักศึกษา</option>
+                <option value="ผู้ประกันตนที่ถูกเลิกจ้าง">ผู้ประกันตนที่ถูกเลิกจ้าง</option>
+                <option value="ผู้ต้องขัง">ผู้ต้องขัง</option>
+                <option value="ทหารก่อนปลด">ทหารก่อนปลด</option>
+                <option value="อื่นๆ (ว่างงานชั่วคราว)">อื่นๆ (ระบุ)</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Card: 3. แหล่งที่ทราบการฝึก & 4. PDPA -->
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-6">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+              <span class="w-2.5 h-6 bg-sky-500 rounded-full inline-block"></span>
+              3. แหล่งที่ทราบการฝึกอบรม
+            </h2>
+            <select id="infoSource" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 bg-slate-50/50">
+              <option value="สื่อออนไลน์ต่างๆ (Facebook, เว็บไซต์, Line)">สื่อออนไลน์ต่างๆ (Facebook, เว็บไซต์, Line)</option>
+              <option value="โทรทัศน์">โทรทัศน์</option>
+              <option value="วิทยุ">วิทยุ</option>
+              <option value="หนังสือพิมพ์">หนังสือพิมพ์</option>
+              <option value="เจ้าหน้าที่/สถาบันพัฒนาฝีมือแรงงานแนะนำ">เจ้าหน้าที่/สถาบันพัฒนาฝีมือแรงงานแนะนำ</option>
+            </select>
+          </div>
+
+          <div class="pt-2">
+            <h2 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+              <span class="w-2.5 h-6 bg-sky-500 rounded-full inline-block"></span>
+              4. การเปิดเผยข้อมูลส่วนบุคคล
+            </h2>
+
+            <div class="bg-slate-50 rounded-xl p-4 text-xs text-slate-700 leading-relaxed border border-slate-200 mb-4">
+              ข้าพเจ้าได้อ่านและรับทราบนโยบายการคุ้มครองข้อมูลส่วนบุคคลของบริษัทและกรมพัฒนาฝีมือแรงงานแล้ว และตกลงยินยอมให้ประมวลผลข้อมูลตามวัตถุประสงค์
+            </div>
+
+            <label class="flex items-start gap-3 p-3 bg-sky-50/60 rounded-xl border border-sky-200 cursor-pointer hover:bg-sky-50 transition mb-4">
+              <input type="checkbox" id="pdpa-consent" required checked class="mt-0.5 w-4 h-4 rounded text-sky-600 focus:ring-sky-500">
+              <span class="text-xs sm:text-sm font-semibold text-sky-900">
+                ยินยอมเปิดเผยข้อมูลส่วนบุคคล เพื่อใช้ประโยชน์ในการเชื่อมโยงและบูรณาการข้อมูลกับหน่วยงานภาครัฐและกลุ่มศูนย์ฝึกอบรมมาตรฐานแรงงาน บิทไวส์(ประเทศไทย)
+              </span>
+            </label>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-2">ความประสงค์จะให้จัดหางานให้เมื่อผ่านการฝึกอบรม/ทดสอบมาตรฐานหรือไม่:</label>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs sm:text-sm">
+                <label class="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer">
+                  <input type="radio" name="jobAssist" value="not_needed" checked class="text-sky-600">
+                  <span>ไม่ต้องการ</span>
+                </label>
+                <label class="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer">
+                  <input type="radio" name="jobAssist" value="domestic" class="text-sky-600">
+                  <span>ต้องการจัดหางานในประเทศ</span>
+                </label>
+                <label class="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer">
+                  <input type="radio" name="jobAssist" value="overseas" class="text-sky-600">
+                  <span>ต้องการจัดหางานต่างประเทศ</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-6 border-t border-slate-100 flex flex-col sm:flex-row gap-3 justify-end">
+            <button type="reset" class="px-6 py-3 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+              ล้างข้อมูลฟอร์ม
+            </button>
+            <button type="submit" class="px-8 py-3 text-sm font-bold text-white bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+              <span>🚀 ยืนยันการส่งใบสมัคร</span>
+            </button>
+          </div>
+
+        </div>
+
+      </form>
+    </section>
+  </main>
+
+  <footer class="w-full bg-white border-t border-slate-200 mt-auto py-5 shadow-sm">
+    <div class="w-full px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+      <div class="flex items-center gap-2">
+        <img src="assets/BW-HR.png" alt="BW Logo" class="h-6 w-6 object-contain rounded-full" onerror="this.src='assets/dsd-logo.png';">
+        <span class="font-semibold text-slate-700">ปฏิทินการดำเนินงานกลุ่ม HR Bitwise Group</span>
+      </div>
+      <div class="text-[11px] text-slate-400 text-center sm:text-right">
+        ระบบสารสนเทศทะเบียนสมัครฝึกอบรมและทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ © 2026 HR Bitwise Group
+      </div>
+    </div>
+  </footer>
+
+  <div id="success-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center relative border border-slate-100">
+      <div class="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 shadow-inner">
+        ✓
+      </div>
+      <h3 class="text-xl font-bold text-slate-900">บันทึกใบสมัครเรียบร้อยแล้ว!</h3>
+      <p class="text-xs text-slate-500 mt-1 mb-4">ระบบได้บันทึกข้อมูลการสมัครฝึกอบรม/ทดสอบมาตรฐานของท่านแล้ว</p>
+
+      <div id="success-modal-details" class="mb-6">
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2 justify-center">
+        <button id="btn-print-immediate" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5">
+          <span>🖨️ สั่งพิมพ์เอกสาร A4</span>
+        </button>
+        <button id="btn-download-immediate" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5">
+          <span>📥 ดาวน์โหลด PDF</span>
+        </button>
+        <button onclick="closeSuccessModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="global-spinner-overlay" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-[2px] hidden items-center justify-center">
+    <div class="bg-white rounded-2xl p-5 shadow-2xl flex items-center gap-3">
+      <div class="spinner-border"></div>
+      <span class="text-sm font-semibold text-slate-800">กำลังประมวลผลข้อมูล...</span>
+    </div>
+  </div>
+
+  <div id="pdf-render-scratch" style="position: absolute; left: -9999px; top: -9999px;"></div>
+  <script src="thai-address-data.js"></script>
+  <script src="pdf-generator.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
