@@ -1,155 +1,54 @@
-﻿// app.js - สคริปต์สำหรับหน้ารับสมัครผู้เข้ารับการฝึกอบรม (index.html)
-const STORAGE_KEYS = {
+﻿const STORAGE_KEYS = {
   APPLICANTS: 'bw_skill_applicants',
   CALENDAR_EVENTS: 'bw_calendar_events',
-  GOOGLE_SHEET_URL: 'bw_google_sheet_url',
   ADMIN_PIN: 'bw_admin_pin',
   NOTIFICATIONS: 'bw_notifications'
 };
 
-const SAMPLE_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="150" viewBox="0 0 120 150"><rect width="120" height="150" fill="%23f1f5f9"/><circle cx="60" cy="50" r="25" fill="%230284c7"/><path d="M24 135 C24 95 96 95 96 135 Z" fill="%230f172a"/><circle cx="60" cy="48" r="21" fill="%23fed7aa"/><path d="M44 42 Q60 32 76 42 Q60 38 44 42 Z" fill="%231e293b"/><text x="60" y="144" font-family="sans-serif" font-size="8" fill="%2364748b" text-anchor="middle">HR Bitwise</text></svg>';
-
-const DEFAULT_APPLICANTS = [
-  {
-    id: 'BW-202609-001',
-    submittedAt: '2026-09-08 10:30',
-    submittedAtDate: '08/09/2569',
-    agency: 'กลุ่ม HR Bitwise Group',
-    objectives: ['ฝึกยกระดับฝีมือแรงงาน'],
-    tests: ['ทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ'],
-    course: 'ช่างเครื่องปรับอากาศในบ้านและการพาณิชย์ขนาดเล็ก',
-    trainingHours: 30,
-    branch: 'ช่างเครื่องปรับอากาศ',
-    level: 'ระดับ 1',
-    applicantTypes: ['บุคคลทั่วไป'],
-    startDate: '2026-09-20',
-    title: 'นาย',
-    firstName: 'สมชาย',
-    lastName: 'สายลมเย็น',
-    gender: 'ชาย',
-    fullNameEn: 'Somchai Sailomyen',
-    idCard: '1-1002-34567-89-0',
-    nationality: 'ไทย',
-    birthDate: '1995-05-14',
-    phone: '081-234-5678',
-    email: 'somchai.s@email.com',
-    addressNo: '99/12',
-    moo: '3',
-    street: 'สุขุมวิท',
-    soi: 'สุขุมวิท 71',
-    province: 'สมุทรปราการ',
-    district: 'บางพลี',
-    subdistrict: 'บางแก้ว',
-    zipcode: '10540',
-    education: 'ปวส./ปวท.',
-    educationMajor: 'ช่างไฟฟ้ากำลัง',
-    bodyCondition: 'ปกติ',
-    disabilities: [],
-    employmentStatus: 'employed',
-    workSector: 'private',
-    govtType: '',
-    freelanceType: '',
-    monthlyIncome: '18,500',
-    occupation: 'ช่างบริการ',
-    position: 'ช่างเทคนิค',
-    workExperienceYears: '3',
-    workplaceName: 'บริษัท สยามเซอร์วิส จำกัด',
-    workplaceProvince: 'สมุทรปราการ',
-    workplacePhone: '02-765-4321',
-    industryGroup: 'อิเล็กทรอนิกส์อัจฉริยะ',
-    unemployedReason: '',
-    infoSource: 'สื่อออนไลน์ต่างๆ',
-    pdpaConsent: true,
-    jobAssist: 'not_needed',
-    photoDataUrl: SAMPLE_AVATAR,
-    hasPhoto: true,
-    hasIdCardFile: true,
-    hasEducationFile: true,
-    hasTranscriptFile: false,
-    hasWorkCertFile: true,
-    attended: true
-  },
-  {
-    id: 'BW-202609-002',
-    submittedAt: '2026-09-09 14:15',
-    submittedAtDate: '09/09/2569',
-    agency: 'กลุ่ม HR Bitwise Group',
-    objectives: ['ฝึกเตรียมเข้าทำงาน'],
-    tests: ['ทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ'],
-    course: 'เทคนิคการติดตั้งระบบปรับอากาศ VRV/VRF',
-    trainingHours: 60,
-    branch: 'ช่างเครื่องทำความเย็น',
-    level: 'ระดับ 2',
-    applicantTypes: ['จากสถานศึกษา', 'บุคคลทั่วไป'],
-    startDate: '2026-09-20',
-    title: 'นางสาว',
-    firstName: 'วรรณา',
-    lastName: 'ทองประเสริฐ',
-    gender: 'หญิง',
-    fullNameEn: 'Wanna Thongprasert',
-    idCard: '3-1004-98765-43-2',
-    nationality: 'ไทย',
-    birthDate: '2001-08-22',
-    phone: '089-876-5432',
-    email: 'wanna.th@email.com',
-    addressNo: '45/8',
-    moo: '2',
-    street: 'ศรีนครินทร์',
-    soi: 'วัดด่านสำโรง',
-    province: 'สมุทรปราการ',
-    district: 'เมืองสมุทรปราการ',
-    subdistrict: 'สำโรงเหนือ',
-    zipcode: '10270',
-    education: 'ปริญญาตรีขึ้นไป',
-    educationMajor: 'วิศวกรรมเครื่องกล',
-    bodyCondition: 'ปกติ',
-    disabilities: [],
-    employmentStatus: 'unemployed',
-    workSector: '',
-    govtType: '',
-    freelanceType: '',
-    monthlyIncome: '',
-    occupation: '',
-    position: '',
-    workExperienceYears: '',
-    workplaceName: '',
-    workplaceProvince: '',
-    workplacePhone: '',
-    industryGroup: '',
-    unemployedReason: 'นักเรียน/นักศึกษา',
-    infoSource: 'สื่อออนไลน์ต่างๆ',
-    pdpaConsent: true,
-    jobAssist: 'domestic',
-    photoDataUrl: '',
-    hasPhoto: true,
-    hasIdCardFile: true,
-    hasEducationFile: true,
-    hasTranscriptFile: true,
-    hasWorkCertFile: false,
-    attended: false
-  }
-];
+function escapeHtml(str) {
+  if (str === undefined || str === null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 let applicants = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-  initApplicantsData();
+document.addEventListener('DOMContentLoaded', async () => {
+  await initApplicantsData();
   setupFormDynamicControls();
   setupAddressDropdowns();
 });
 
-function initApplicantsData() {
+function loadLocalApplicants() {
   const saved = localStorage.getItem(STORAGE_KEYS.APPLICANTS);
   if (saved) {
-    try { applicants = JSON.parse(saved); }
-    catch (e) { applicants = DEFAULT_APPLICANTS; }
-  } else {
-    applicants = DEFAULT_APPLICANTS;
-    localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
+    try { return JSON.parse(saved); } catch (e) { return []; }
+  }
+  return [];
+}
+
+async function initApplicantsData() {
+  applicants = loadLocalApplicants();
+  try {
+    const result = await fetchGasApi(GAS_WEB_APP_URL + '?action=getApplicants');
+    if (result && result.status === 'success' && Array.isArray(result.data)) {
+      const byId = new Map();
+      applicants.forEach(a => byId.set(a.id, a));
+      result.data.forEach(a => byId.set(a.id, Object.assign({}, byId.get(a.id) || {}, a)));
+      applicants = Array.from(byId.values());
+      localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
+    } else if (result && result.status === 'error') {
+      console.warn('ไม่สามารถซิงค์ข้อมูลผู้สมัครจาก Google Sheet ได้:', result.message);
+    }
+  } catch (err) {
+    console.warn('ไม่สามารถซิงค์ข้อมูลผู้สมัครจาก Google Sheet ได้ (จะใช้ข้อมูลในเครื่องแทน):', err);
   }
 }
 
-// ฟังก์ชันแปลงไฟล์เป็น Base64 Data URL
 function readFileAsDataUrl(file) {
   return new Promise((resolve) => {
     if (!file) {
@@ -187,7 +86,6 @@ function setupFormDynamicControls() {
     });
   }
 
-  // สถานภาพแรงงาน (ข้อ 2)
   const empWorking = document.getElementById('emp-working');
   const empUnemployed = document.getElementById('emp-unemployed');
   const section21 = document.getElementById('section-2-1');
@@ -208,7 +106,6 @@ function setupFormDynamicControls() {
     empUnemployed.addEventListener('change', updateEmploymentView);
   }
 
-  // ตัวเลือกย่อยภาครัฐ / ธุรกิจส่วนตัว
   const sectorGovt = document.getElementById('sector-govt');
   const govtSub = document.getElementById('govt-sub-select');
   const freelanceSub = document.getElementById('freelance-sub-select');
@@ -221,7 +118,6 @@ function setupFormDynamicControls() {
     });
   });
 
-  // จัดรูปแบบเลขบัตรประชาชน
   const idCardInput = document.getElementById('idCard');
   if (idCardInput) {
     idCardInput.addEventListener('input', (e) => {
@@ -236,7 +132,6 @@ function setupFormDynamicControls() {
     });
   }
 
-  // พรีวิวไฟล์รูปภาพและเอกสาร
   const photoInput = document.getElementById('filePhoto');
   const photoLabel = document.getElementById('filePhotoLabel');
   if (photoInput && photoLabel) {
@@ -277,10 +172,18 @@ function setupFormDynamicControls() {
   }
 }
 
+// [FIX บั๊ก #1] เดิม "เขต/อำเภอ" และ "แขวง/ตำบล" เป็น <select> ที่บังคับกรอก (required)
+// แต่ THAI_DISTRICT_MAP มีข้อมูลแค่ ~6 จังหวัด จาก 77 จังหวัด ทำให้จังหวัดอื่นๆ ที่เหลือ
+// dropdown ตำบลจะไม่มีตัวเลือกให้เลือกเลย และส่งฟอร์มไม่ได้ตลอดกาล
+// ตอนนี้เปลี่ยนเป็น <input type="text" list="..."> (combobox) แทน:
+//   - ถ้ามีข้อมูลในระบบ จะมีตัวเลือกให้กด autocomplete เหมือนเดิม
+//   - ถ้าไม่มีข้อมูล ผู้ใช้ยังพิมพ์ชื่ออำเภอ/ตำบลเองได้ตามปกติ ไม่ติดบล็อกฟอร์ม
 function setupAddressDropdowns() {
   const provSelect = document.getElementById('address-province');
-  const distSelect = document.getElementById('address-district');
-  const subdistSelect = document.getElementById('address-subdistrict');
+  const distInput = document.getElementById('address-district');
+  const subdistInput = document.getElementById('address-subdistrict');
+  const distDatalist = document.getElementById('district-options');
+  const subdistDatalist = document.getElementById('subdistrict-options');
   const zipInput = document.getElementById('address-zipcode');
 
   if (!provSelect || typeof THAI_PROVINCES === 'undefined') return;
@@ -293,45 +196,60 @@ function setupAddressDropdowns() {
     provSelect.appendChild(opt);
   });
 
-  provSelect.addEventListener('change', () => {
-    const prov = provSelect.value;
-    distSelect.innerHTML = '<option value="">-- เลือกเขต/อำเภอ --</option>';
-    subdistSelect.innerHTML = '<option value="">-- เลือกแขวง/ตำบล --</option>';
-    zipInput.value = '';
-
+  function fillDistrictDatalist(prov) {
+    if (!distDatalist) return;
+    distDatalist.innerHTML = '';
     if (typeof THAI_DISTRICT_MAP !== 'undefined' && THAI_DISTRICT_MAP[prov]) {
       THAI_DISTRICT_MAP[prov].forEach(d => {
         const opt = document.createElement('option');
         opt.value = d.district;
-        opt.textContent = d.district;
-        distSelect.appendChild(opt);
+        distDatalist.appendChild(opt);
       });
-    } else {
-      const opt = document.createElement('option');
-      opt.value = 'เมือง' + prov;
-      opt.textContent = 'อำเภอเมือง' + prov;
-      distSelect.appendChild(opt);
     }
-  });
+  }
 
-  distSelect.addEventListener('change', () => {
-    const prov = provSelect.value;
-    const distName = distSelect.value;
-    subdistSelect.innerHTML = '<option value="">-- เลือกแขวง/ตำบล --</option>';
-
+  function fillSubdistrictDatalist(prov, distName) {
+    if (!subdistDatalist) return;
+    subdistDatalist.innerHTML = '';
     if (typeof THAI_DISTRICT_MAP !== 'undefined' && THAI_DISTRICT_MAP[prov]) {
       const found = THAI_DISTRICT_MAP[prov].find(d => d.district === distName);
       if (found) {
-        zipInput.value = found.zip || '';
         found.subdistricts.forEach(s => {
           const opt = document.createElement('option');
           opt.value = s;
-          opt.textContent = s;
-          subdistSelect.appendChild(opt);
+          subdistDatalist.appendChild(opt);
         });
       }
     }
+  }
+
+  if (!distInput || !subdistInput) return;
+
+  provSelect.addEventListener('change', () => {
+    const prov = provSelect.value;
+    distInput.value = '';
+    subdistInput.value = '';
+    zipInput.value = '';
+    fillDistrictDatalist(prov);
+    if (subdistDatalist) subdistDatalist.innerHTML = '';
   });
+
+  function handleDistrictInput() {
+    const prov = provSelect.value;
+    const distName = distInput.value.trim();
+    subdistInput.value = '';
+    fillSubdistrictDatalist(prov, distName);
+
+    if (typeof THAI_DISTRICT_MAP !== 'undefined' && THAI_DISTRICT_MAP[prov]) {
+      const found = THAI_DISTRICT_MAP[prov].find(d => d.district === distName);
+      if (found && found.zip) {
+        zipInput.value = found.zip;
+      }
+    }
+  }
+
+  distInput.addEventListener('input', handleDistrictInput);
+  distInput.addEventListener('change', handleDistrictInput);
 }
 
 async function handleFormSubmit(e) {
@@ -346,7 +264,7 @@ async function handleFormSubmit(e) {
 
   showLoading(true);
 
-  // อ่านรูปถ่ายหน้าตรงเป็น Base64
+  const sheetUrl = GAS_WEB_APP_URL;
   let photoDataUrl = '';
   const photoInput = document.getElementById('filePhoto');
   if (photoInput && photoInput.files && photoInput.files[0]) {
@@ -363,7 +281,7 @@ async function handleFormSubmit(e) {
   const thaiYear = now.getFullYear() + 543;
   const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${thaiYear}`;
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  const newId = `BW-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(applicants.length + 1).padStart(3, '0')}`;
+  const newId = `BW-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getTime()).slice(-6)}`;
 
   const newApplicant = {
     id: newId,
@@ -417,6 +335,11 @@ async function handleFormSubmit(e) {
     pdpaConsent: true,
     jobAssist: document.querySelector('input[name="jobAssist"]:checked')?.value || 'not_needed',
     photoDataUrl: photoDataUrl,
+    photoUrl: '',
+    idCardFileUrl: '',
+    educationFileUrl: '',
+    transcriptFileUrl: '',
+    workCertFileUrl: '',
     hasPhoto: Boolean(photoDataUrl),
     hasIdCardFile: Boolean(document.getElementById('fileIdCard')?.files?.[0]),
     hasEducationFile: Boolean(document.getElementById('fileEdu')?.files?.[0]),
@@ -424,11 +347,28 @@ async function handleFormSubmit(e) {
     hasWorkCertFile: Boolean(document.getElementById('fileWorkCert')?.files?.[0]),
     attended: false
   };
+  if (sheetUrl) {
+    try {
+      const subfolder = newApplicant.id;
+      const [photoUrl, idCardUrl, eduUrl, transcriptUrl, workCertUrl] = await Promise.all([
+        uploadFileToDrive(sheetUrl, document.getElementById('filePhoto')?.files?.[0], `รูปถ่าย_${newApplicant.id}`, subfolder),
+        uploadFileToDrive(sheetUrl, document.getElementById('fileIdCard')?.files?.[0], `บัตรประชาชน_${newApplicant.id}`, subfolder),
+        uploadFileToDrive(sheetUrl, document.getElementById('fileEdu')?.files?.[0], `วุฒิการศึกษา_${newApplicant.id}`, subfolder),
+        uploadFileToDrive(sheetUrl, document.getElementById('fileTranscript')?.files?.[0], `ทรานสคริปต์_${newApplicant.id}`, subfolder),
+        uploadFileToDrive(sheetUrl, document.getElementById('fileWorkCert')?.files?.[0], `ใบรับรองงาน_${newApplicant.id}`, subfolder)
+      ]);
+      newApplicant.photoUrl = photoUrl;
+      newApplicant.idCardFileUrl = idCardUrl;
+      newApplicant.educationFileUrl = eduUrl;
+      newApplicant.transcriptFileUrl = transcriptUrl;
+      newApplicant.workCertFileUrl = workCertUrl;
+    } catch (err) {
+      console.warn('อัปโหลดไฟล์ขึ้น Google Drive ไม่สำเร็จ (ข้อมูลยังถูกบันทึกในเครื่องได้ตามปกติ):', err);
+    }
+  }
 
   applicants.unshift(newApplicant);
   localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
-
-  // บันทึกการแจ้งเตือน
   let list = [];
   try { list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]'); } catch (e) { list = []; }
   list.unshift({
@@ -440,17 +380,14 @@ async function handleFormSubmit(e) {
   });
   if (list.length > 20) list = list.slice(0, 20);
   localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
-
-  // ซิงค์เข้า Google Sheet
-  const sheetUrl = localStorage.getItem(STORAGE_KEYS.GOOGLE_SHEET_URL);
   if (sheetUrl) {
     try {
-      await fetch(sheetUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'addApplicant', data: newApplicant })
-      });
+      const payloadForSheet = Object.assign({}, newApplicant);
+      delete payloadForSheet.photoDataUrl;
+      const result = await callGasApi(sheetUrl, { action: 'addApplicant', data: payloadForSheet });
+      if (!result || result.status !== 'success') {
+        console.warn('บันทึกลง Google Sheet ไม่สำเร็จ:', result && result.message);
+      }
     } catch (err) {
       console.warn('Google Sheet Sync note:', err);
     }
@@ -467,16 +404,16 @@ function showSubmitSuccessModal(applicant) {
     details.innerHTML = `
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-left text-sm space-y-2">
         <div class="flex items-center gap-3 border-b border-blue-200 pb-2 mb-2">
-          ${applicant.photoDataUrl ? `<img src="${applicant.photoDataUrl}" class="w-12 h-14 object-cover rounded border border-blue-300 shadow-sm">` : ''}
+          ${applicant.photoDataUrl ? `<img src="${escapeHtml(applicant.photoDataUrl)}" class="w-12 h-14 object-cover rounded border border-blue-300 shadow-sm">` : ''}
           <div>
             <div class="text-xs text-blue-600 font-semibold">รหัสผู้สมัคร</div>
-            <div class="text-blue-900 font-bold text-base">${applicant.id}</div>
+            <div class="text-blue-900 font-bold text-base">${escapeHtml(applicant.id)}</div>
           </div>
         </div>
-        <div><strong>ชื่อ-นามสกุล:</strong> ${applicant.title} ${applicant.firstName} ${applicant.lastName}</div>
-        <div><strong>หลักสูตร:</strong> ${applicant.course || '-'}</div>
-        <div><strong>เบอร์โทรศัพท์:</strong> ${applicant.phone}</div>
-        <div><strong>วันที่สมัคร:</strong> ${applicant.submittedAtDate}</div>
+        <div><strong>ชื่อ-นามสกุล:</strong> ${escapeHtml(applicant.title)} ${escapeHtml(applicant.firstName)} ${escapeHtml(applicant.lastName)}</div>
+        <div><strong>หลักสูตร:</strong> ${escapeHtml(applicant.course) || '-'}</div>
+        <div><strong>เบอร์โทรศัพท์:</strong> ${escapeHtml(applicant.phone)}</div>
+        <div><strong>วันที่สมัคร:</strong> ${escapeHtml(applicant.submittedAtDate)}</div>
       </div>
     `;
 
@@ -488,6 +425,11 @@ function showSubmitSuccessModal(applicant) {
     const downloadBtn = document.getElementById('btn-download-immediate');
     if (downloadBtn) {
       downloadBtn.onclick = () => downloadApplicantPDF(applicant);
+    }
+
+    const saveDriveBtn = document.getElementById('btn-savedrive-immediate');
+    if (saveDriveBtn) {
+      saveDriveBtn.onclick = () => saveApplicantPdfToDrive(applicant);
     }
 
     modal.classList.remove('hidden');

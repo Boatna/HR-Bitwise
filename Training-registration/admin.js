@@ -1,56 +1,22 @@
-﻿// admin.js - ตรรกะการทำงานสำหรับหน้าผู้ดูแลระบบ (admin.html)
-const STORAGE_KEYS = {
+﻿const STORAGE_KEYS = {
   APPLICANTS: 'bw_skill_applicants',
   CALENDAR_EVENTS: 'bw_calendar_events',
-  GOOGLE_SHEET_URL: 'bw_google_sheet_url',
   ADMIN_PIN: 'bw_admin_pin',
-  NOTIFICATIONS: 'bw_notifications'
+  NOTIFICATIONS: 'bw_notifications',
+  NOTIF_SEEN: 'bw_admin_notif_seen_ids'
 };
 
 const DEFAULT_PIN = '123456';
 
-const DEFAULT_EVENTS = [
-  {
-    id: 'evt-1',
-    date: '2026-09-12',
-    title: 'เปิดรับสมัครฝึกอบรม ช่างเครื่องปรับอากาศในบ้าน ระดับ 1',
-    responsible: 'ฝ่ายฝึกอบรม HR Bitwise Group',
-    location: 'ศูนย์ฝึกอบรม Bitwise Academy',
-    details: 'รับสมัครผู้เข้าฝึกอบรมหลักสูตรยกระดับฝีมือแรงงาน จำนวน 25 คน'
-  },
-  {
-    id: 'evt-2',
-    date: '2026-09-15',
-    title: 'ปฐมนิเทศและทดสอบความรู้พื้นฐานผู้สมัคร',
-    responsible: 'อ.สมเกียรติ / ทีมวิทยากร กพร.',
-    location: 'ห้องอบรมสัมมนา 1',
-    details: 'ตรวจเช็คความพร้อมและเอกสารตัวจริงของผู้เข้ารับการฝึก'
-  },
-  {
-    id: 'evt-3',
-    date: '2026-09-20',
-    title: 'เริ่มการฝึกอบรมภาคทฤษฎีและปฏิบัติ (ช่างแอร์บ้าน)',
-    responsible: 'ทีมเทคนิคและวิศวกร Bitwise',
-    location: 'โรงฝึกงานอาคาร 2',
-    details: 'เรียนรู้ระบบวงจรน้ำยา ระบบควบคุมไฟฟ้า และการติดตั้งมาตรฐาน'
-  },
-  {
-    id: 'evt-4',
-    date: '2026-09-28',
-    title: 'ทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ สาขาช่างเครื่องปรับอากาศ',
-    responsible: 'คณะกรรมการผู้ทดสอบมาตรฐาน กพร.',
-    location: 'ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน Bitwise',
-    details: 'ทดสอบภาคความรู้และภาคปฏิบัติ ระดับ 1'
-  },
-  {
-    id: 'evt-5',
-    date: '2026-10-05',
-    title: 'พิธีมอบวุฒิบัตรและสัมภาษณ์บรรจุงาน',
-    responsible: 'ฝ่ายบุคคล (HR Bitwise Group)',
-    location: 'ห้องประชุมใหญ่ Bitwise Group',
-    details: 'มอบวุฒิบัตรผู้ผ่านการทดสอบมาตรฐาน และรับสมัครเข้าทำงานทันที'
-  }
-];
+function escapeHtml(str) {
+  if (str === undefined || str === null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 let applicants = [];
 let calendarEvents = [];
@@ -59,40 +25,82 @@ let pinBuffer = '';
 let isAuthenticated = false;
 
 document.addEventListener('DOMContentLoaded', () => {
-  initAdminData();
+  applicants = loadLocalApplicants();
+  calendarEvents = loadLocalEvents();
+  if (!localStorage.getItem(STORAGE_KEYS.CALENDAR_EVENTS)) {
+    localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+  }
+
   setupPinLock();
   setupAdminNavigation();
   renderCalendar();
   renderApplicantsTable();
   updateNotificationsUI();
+
+  syncFromGoogleSheet(GAS_WEB_APP_URL, { silent: true })
+    .then(() => {
+      renderCalendar();
+      renderApplicantsTable();
+      updateNotificationsUI();
+    })
+    .catch(() => { });
 });
 
-function initAdminData() {
-  const savedApplicants = localStorage.getItem(STORAGE_KEYS.APPLICANTS);
-  if (savedApplicants) {
-    try { applicants = JSON.parse(savedApplicants); } catch (e) { applicants = []; }
-  } else {
-    applicants = [];
+function loadLocalApplicants() {
+  const saved = localStorage.getItem(STORAGE_KEYS.APPLICANTS);
+  if (saved) {
+    try { return JSON.parse(saved); } catch (e) { return []; }
   }
-
-  const savedEvents = localStorage.getItem(STORAGE_KEYS.CALENDAR_EVENTS);
-  if (savedEvents) {
-    try { calendarEvents = JSON.parse(savedEvents); } catch (e) { calendarEvents = DEFAULT_EVENTS; }
-  } else {
-    calendarEvents = DEFAULT_EVENTS;
-    localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
-  }
-
-  const savedSheetUrl = localStorage.getItem(STORAGE_KEYS.GOOGLE_SHEET_URL);
-  const sheetInput = document.getElementById('sheet-api-url');
-  if (savedSheetUrl && sheetInput) {
-    sheetInput.value = savedSheetUrl;
-  }
+  return [];
 }
 
-// --------------------------------------------------------------------------
-// ระบบ PIN Mobile 6 หลัก (Screen Lock)
-// --------------------------------------------------------------------------
+function loadLocalEvents() {
+  const saved = localStorage.getItem(STORAGE_KEYS.CALENDAR_EVENTS);
+  if (saved) {
+    try { return JSON.parse(saved); } catch (e) { return []; }
+  }
+  return [];
+}
+
+async function syncFromGoogleSheet(sheetUrl, opts) {
+  const options = opts || {};
+  let ok = true;
+
+  try {
+    const applicantsResult = await fetchGasApi(sheetUrl + '?action=getApplicants');
+    if (applicantsResult && applicantsResult.status === 'success' && Array.isArray(applicantsResult.data)) {
+      const byId = new Map();
+      applicants.forEach(a => byId.set(a.id, a));
+      applicantsResult.data.forEach(a => byId.set(a.id, Object.assign({}, byId.get(a.id) || {}, a)));
+      applicants = Array.from(byId.values())
+        .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+      localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
+    } else {
+      ok = false;
+      if (!options.silent) console.warn('ดึงข้อมูลผู้สมัครจาก Google Sheet ไม่สำเร็จ:', applicantsResult && applicantsResult.message);
+    }
+  } catch (err) {
+    ok = false;
+    if (!options.silent) console.warn('ดึงข้อมูลผู้สมัครจาก Google Sheet ไม่สำเร็จ:', err);
+  }
+
+  try {
+    const eventsResult = await fetchGasApi(sheetUrl + '?action=getCalendarEvents');
+    if (eventsResult && eventsResult.status === 'success' && Array.isArray(eventsResult.data) && eventsResult.data.length > 0) {
+      const byId = new Map();
+      calendarEvents.forEach(e => byId.set(e.id, e));
+      eventsResult.data.forEach(e => byId.set(e.id, Object.assign({}, byId.get(e.id) || {}, e)));
+      calendarEvents = Array.from(byId.values());
+      localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+    }
+  } catch (err) {
+    ok = false;
+    if (!options.silent) console.warn('ดึงข้อมูลปฏิทินจาก Google Sheet ไม่สำเร็จ:', err);
+  }
+
+  return ok;
+}
+
 function setupPinLock() {
   const pinDigits = [1, 2, 3, 4, 5, 6].map(i => document.getElementById(`pin-digit-${i}`));
   const keypad = document.getElementById('pin-keypad');
@@ -131,7 +139,7 @@ function setupPinLock() {
     }
   }
 
-  function verifyPin() {
+  async function verifyPin() {
     const currentPin = localStorage.getItem(STORAGE_KEYS.ADMIN_PIN) || DEFAULT_PIN;
     if (pinBuffer === currentPin) {
       isAuthenticated = true;
@@ -141,6 +149,16 @@ function setupPinLock() {
       updatePinBoxes();
       renderCalendar();
       renderApplicantsTable();
+      updateNotificationsUI();
+
+      showLoading(true);
+      syncFromGoogleSheet(GAS_WEB_APP_URL, { silent: true })
+        .then(() => {
+          renderCalendar();
+          renderApplicantsTable();
+          updateNotificationsUI();
+        })
+        .finally(() => showLoading(false));
     } else {
       const pinContainer = document.getElementById('pin-boxes-container');
       if (pinContainer) {
@@ -169,7 +187,6 @@ function setupPinLock() {
     }
   });
 
-  // ปุ่มออกจากระบบ
   document.getElementById('btn-admin-logout')?.addEventListener('click', () => {
     isAuthenticated = false;
     pinBuffer = '';
@@ -198,9 +215,6 @@ function setupAdminNavigation() {
   });
 }
 
-// --------------------------------------------------------------------------
-// ปฏิทินการดำเนินการสอน (2-Column Training Calendar)
-// --------------------------------------------------------------------------
 const THAI_MONTH_NAMES = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
@@ -245,7 +259,7 @@ function renderCalendar() {
 
     cell.innerHTML = `
       <span class="text-sm font-semibold">${day}</span>
-      ${hasEvent ? `<span class="text-[10px] truncate block text-blue-800 bg-blue-100 rounded px-1 mt-1 font-medium">${dayEvents[0].title}</span>` : ''}
+      ${hasEvent ? `<span class="text-[10px] truncate block text-blue-800 bg-blue-100 rounded px-1 mt-1 font-medium">${escapeHtml(dayEvents[0].title)}</span>` : ''}
     `;
 
     cell.addEventListener('click', () => {
@@ -282,21 +296,20 @@ function renderMonthlyEventsTable(year, month) {
   monthEvents.forEach(evt => {
     const tr = document.createElement('tr');
     tr.className = 'border-b border-gray-100 hover:bg-sky-50 transition-colors';
-
-    const dObj = new Date(evt.date);
-    const thaiDateText = `${dObj.getDate()} ${THAI_MONTH_NAMES[dObj.getMonth()]} ${dObj.getFullYear() + 543}`;
+    const [ey, em, ed] = evt.date.split('-').map(Number);
+    const thaiDateText = `${ed} ${THAI_MONTH_NAMES[em - 1]} ${ey + 543}`;
 
     tr.innerHTML = `
       <td class="px-4 py-3 font-semibold text-blue-900 whitespace-nowrap text-xs sm:text-sm">
         ${thaiDateText}
       </td>
       <td class="px-4 py-3">
-        <div class="font-medium text-gray-800 text-xs sm:text-sm">${evt.title}</div>
-        ${evt.location ? `<div class="text-[11px] text-gray-500">📍 ${evt.location}</div>` : ''}
+        <div class="font-medium text-gray-800 text-xs sm:text-sm">${escapeHtml(evt.title)}</div>
+        ${evt.location ? `<div class="text-[11px] text-gray-500">📍 ${escapeHtml(evt.location)}</div>` : ''}
       </td>
       <td class="px-4 py-3 text-gray-700">
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-          ${evt.responsible}
+          ${escapeHtml(evt.responsible)}
         </span>
       </td>
     `;
@@ -309,16 +322,16 @@ function openDateEventModal(dateStr, events) {
   const content = document.getElementById('event-modal-content');
   if (!modal || !content) return;
 
-  const dObj = new Date(dateStr);
-  const thaiDateText = `${dObj.getDate()} ${THAI_MONTH_NAMES[dObj.getMonth()]} ${dObj.getFullYear() + 543}`;
+  const [dy, dm, dd] = dateStr.split('-').map(Number);
+  const thaiDateText = `${dd} ${THAI_MONTH_NAMES[dm - 1]} ${dy + 543}`;
 
   let eventsHtml = '';
   if (events && events.length > 0) {
     eventsHtml = events.map(e => `
       <div class="bg-sky-50 border border-sky-200 rounded-xl p-3 mb-2">
-        <div class="font-bold text-sm text-sky-900">${e.title}</div>
-        <div class="text-xs text-gray-700 mt-1"><strong>ผู้รับผิดชอบ:</strong> ${e.responsible}</div>
-        ${e.location ? `<div class="text-xs text-gray-700"><strong>สถานที่:</strong> ${e.location}</div>` : ''}
+        <div class="font-bold text-sm text-sky-900">${escapeHtml(e.title)}</div>
+        <div class="text-xs text-gray-700 mt-1"><strong>ผู้รับผิดชอบ:</strong> ${escapeHtml(e.responsible)}</div>
+        ${e.location ? `<div class="text-xs text-gray-700"><strong>สถานที่:</strong> ${escapeHtml(e.location)}</div>` : ''}
       </div>
     `).join('');
   } else {
@@ -349,7 +362,7 @@ function openDateEventModal(dateStr, events) {
   modal.classList.add('flex');
 }
 
-function addNewEvent(dateStr) {
+async function addNewEvent(dateStr) {
   const title = document.getElementById('new-evt-title')?.value;
   const resp = document.getElementById('new-evt-resp')?.value || 'ฝ่ายฝึกอบรม HR Bitwise Group';
   const loc = document.getElementById('new-evt-loc')?.value || '';
@@ -372,6 +385,15 @@ function addNewEvent(dateStr) {
   localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
   closeEventModal();
   renderCalendar();
+
+  try {
+    const result = await callGasApi(GAS_WEB_APP_URL, { action: 'addEvent', event: newEvt });
+    if (!result || result.status !== 'success') {
+      console.warn('บันทึกกิจกรรมลง Google Sheet ไม่สำเร็จ:', result && result.message);
+    }
+  } catch (err) {
+    console.warn('บันทึกกิจกรรมลง Google Sheet ไม่สำเร็จ:', err);
+  }
 }
 
 function closeEventModal() {
@@ -382,9 +404,6 @@ function closeEventModal() {
   }
 }
 
-// --------------------------------------------------------------------------
-// ตารางผู้สมัคร และการจัดการสถานะเข้าเรียน
-// --------------------------------------------------------------------------
 function renderApplicantsTable() {
   const tbody = document.getElementById('applicants-table-body');
   const countBadge = document.getElementById('applicant-total-count');
@@ -436,10 +455,10 @@ function renderApplicantsTable() {
 
     tr.innerHTML = `
       <td class="px-4 py-3 text-center text-gray-500 font-medium">${index + 1}</td>
-      <td class="px-4 py-3 font-semibold text-gray-900">${app.firstName}</td>
-      <td class="px-4 py-3 font-semibold text-gray-900">${app.lastName}</td>
-      <td class="px-4 py-3 text-gray-600 max-w-[200px] truncate" title="${app.course}">${app.course || '-'}</td>
-      <td class="px-4 py-3 text-gray-500">${app.phone || '-'}</td>
+      <td class="px-4 py-3 font-semibold text-gray-900">${escapeHtml(app.firstName)}</td>
+      <td class="px-4 py-3 font-semibold text-gray-900">${escapeHtml(app.lastName)}</td>
+      <td class="px-4 py-3 text-gray-600 max-w-[200px] truncate" title="${escapeHtml(app.course)}">${escapeHtml(app.course) || '-'}</td>
+      <td class="px-4 py-3 text-gray-500">${escapeHtml(app.phone) || '-'}</td>
       <td class="px-4 py-3 text-center">${statusBadge}</td>
       <td class="px-4 py-3 text-center">
         <div class="flex items-center justify-center gap-2">
@@ -453,26 +472,24 @@ function renderApplicantsTable() {
   });
 }
 
-function toggleAttendance(applicantId) {
+async function toggleAttendance(applicantId) {
   const target = applicants.find(a => a.id === applicantId);
-  if (target) {
-    target.attended = !target.attended;
-    localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
-    renderApplicantsTable();
+  if (!target) return;
 
-    const sheetUrl = localStorage.getItem(STORAGE_KEYS.GOOGLE_SHEET_URL);
-    if (sheetUrl) {
-      fetch(sheetUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'updateAttendance',
-          applicantId: target.id,
-          attended: target.attended
-        })
-      }).catch(e => console.warn(e));
+  target.attended = !target.attended;
+  localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
+  renderApplicantsTable();
+  try {
+    const result = await callGasApi(GAS_WEB_APP_URL, {
+      action: 'updateAttendance',
+      applicantId: target.id,
+      attended: target.attended
+    });
+    if (!result || result.status !== 'success') {
+      console.warn('อัปเดตสถานะเข้าเรียนบน Google Sheet ไม่สำเร็จ:', result && result.message);
     }
+  } catch (e) {
+    console.warn('อัปเดตสถานะเข้าเรียนบน Google Sheet ไม่สำเร็จ:', e);
   }
 }
 
@@ -487,6 +504,9 @@ function previewApplicantForm(applicantId) {
 
     document.getElementById('modal-print-btn').onclick = () => printApplicantForm(app);
     document.getElementById('modal-download-btn').onclick = () => downloadApplicantPDF(app);
+    const saveDriveBtn = document.getElementById('modal-save-drive-btn');
+    if (saveDriveBtn) saveDriveBtn.onclick = () => saveApplicantPdfToDrive(app);
+    markNotificationSeen(app.id);
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -501,14 +521,47 @@ function closePdfPreviewModal() {
   }
 }
 
-// --------------------------------------------------------------------------
-// Notifications & Google Sheet Sync
-// --------------------------------------------------------------------------
+function getSeenNotificationIds() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIF_SEEN) || '[]'); }
+  catch (e) { return []; }
+}
+
+function markNotificationSeen(applicantId) {
+  const seen = getSeenNotificationIds();
+  if (!seen.includes(applicantId)) {
+    seen.push(applicantId);
+    localStorage.setItem(STORAGE_KEYS.NOTIF_SEEN, JSON.stringify(seen));
+  }
+  updateNotificationsUI();
+}
+
+function computeSheetBasedNotifications() {
+  const seen = getSeenNotificationIds();
+  return [...applicants]
+    .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0))
+    .slice(0, 20)
+    .filter(a => !seen.includes(a.id))
+    .map(a => ({
+      applicantId: a.id,
+      title: 'มีผู้สมัครใหม่เข้ามา!',
+      message: `${a.title || ''} ${a.firstName || ''} ${a.lastName || ''} สมัครหลักสูตร ${a.course || '-'}`,
+      time: a.submittedAtDate || a.submittedAt || ''
+    }));
+}
+
 function updateNotificationsUI() {
-  let list = [];
+  let localList = [];
   try {
-    list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
-  } catch (e) { list = []; }
+    localList = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+  } catch (e) { localList = []; }
+
+  const sheetList = computeSheetBasedNotifications();
+
+  const byApplicant = new Map();
+  sheetList.forEach(n => byApplicant.set(n.applicantId, n));
+  localList.forEach(n => { if (!byApplicant.has(n.applicantId)) byApplicant.set(n.applicantId, n); });
+
+  const list = Array.from(byApplicant.values());
 
   const badge = document.getElementById('notif-badge');
   const listContainer = document.getElementById('notif-dropdown-list');
@@ -529,10 +582,10 @@ function updateNotificationsUI() {
       listContainer.innerHTML = list.map(n => `
         <div class="p-3 border-b hover:bg-blue-50 cursor-pointer transition text-left" onclick="previewApplicantForm('${n.applicantId}')">
           <div class="font-bold text-xs text-blue-900 flex justify-between">
-            <span>${n.title}</span>
-            <span class="text-[10px] text-gray-400">${n.time}</span>
+            <span>${escapeHtml(n.title)}</span>
+            <span class="text-[10px] text-gray-400">${escapeHtml(n.time)}</span>
           </div>
-          <div class="text-xs text-gray-700 mt-1">${n.message}</div>
+          <div class="text-xs text-gray-700 mt-1">${escapeHtml(n.message)}</div>
         </div>
       `).join('');
     }
@@ -542,34 +595,6 @@ function updateNotificationsUI() {
 function toggleNotifDropdown() {
   const dropdown = document.getElementById('notif-dropdown');
   if (dropdown) dropdown.classList.toggle('hidden');
-}
-
-function saveGoogleSheetUrl() {
-  const input = document.getElementById('sheet-api-url');
-  if (input) {
-    const url = input.value.trim();
-    localStorage.setItem(STORAGE_KEYS.GOOGLE_SHEET_URL, url);
-    alert('บันทึก Google Apps Script Web App URL เรียบร้อยแล้ว!');
-  }
-}
-
-async function testGoogleSheetConnection() {
-  const url = localStorage.getItem(STORAGE_KEYS.GOOGLE_SHEET_URL);
-  if (!url) {
-    alert('กรุณากรอก Google Apps Script Web App URL ก่อนทดสอบ');
-    return;
-  }
-
-  showLoading(true);
-  try {
-    const resp = await fetch(url + '?action=ping');
-    const data = await resp.json();
-    alert('✓ เชื่อมต่อ Google Sheets สำเร็จ: ' + (data.message || 'OK'));
-  } catch (e) {
-    alert('เชื่อมต่อเรียบร้อยผ่านโหมด Web App endpoint');
-  } finally {
-    showLoading(false);
-  }
 }
 
 function showLoading(show) {
@@ -582,5 +607,17 @@ function showLoading(show) {
       spinner.classList.add('hidden');
       spinner.classList.remove('flex');
     }
+  }
+}
+
+async function refreshFromSheetButton() {
+  showLoading(true);
+  const ok = await syncFromGoogleSheet(GAS_WEB_APP_URL, { silent: false });
+  renderApplicantsTable();
+  renderCalendar();
+  updateNotificationsUI();
+  showLoading(false);
+  if (!ok) {
+    alert('ไม่สามารถดึงข้อมูลล่าสุดจาก Google Sheet ได้ครบถ้วน กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือค่า GAS_WEB_APP_URL ในไฟล์ gs-api.js');
   }
 }

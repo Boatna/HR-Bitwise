@@ -36,7 +36,7 @@
       <div class="flex items-center gap-3">
         <img src="assets/BW-HR.png" alt="HR Bitwise Logo" class="h-10 w-10 object-contain rounded-full shadow-sm" onerror="this.src='assets/dsd-logo.png';">
         <div>
-          <div class="font-bold text-slate-900 text-sm sm:text-base leading-tight">ศูนย์ฝึกอบรมมาตรฐานแรงงาน บิทไวส์(ประเทศไทย)</div>
+          <div class="font-bold text-slate-900 text-sm sm:text-base leading-tight">ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์</div>
           <div class="text-[11px] text-sky-700 font-medium">ร่วมกับ กรมพัฒนาฝีมือแรงงาน กระทรวงแรงงาน</div>
         </div>
       </div>
@@ -59,7 +59,7 @@
             ใบสมัครเข้ารับการฝึกอบรมฝีมือแรงงาน / ทดสอบมาตรฐานฝีมือแรงงาน
           </h1>
           <p class="text-sky-100 text-xs sm:text-sm mt-2 max-w-2xl">
-            โครงการพัฒนาทักษะและยกระดับมาตรฐานฝีมือแรงงาน โดยกลุ่ม ศูนย์ฝึกอบรมมาตรฐานแรงงาน บิทไวส์(ประเทศไทย) ร่วมส่งเสริมศักยภาพแรงงานสู่สากล
+            โครงการพัฒนาทักษะและยกระดับมาตรฐานฝีมือแรงงาน โดยกลุ่ม ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์ ร่วมส่งเสริมศักยภาพแรงงานสู่สากล
           </p>
         </div>
       </div>
@@ -74,7 +74,7 @@
             <div class="md:col-span-2">
               <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">หน่วยงานที่รับสมัคร <span class="text-rose-500">*</span></label>
               <select id="agency" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-50/50">
-                <option value="กลุ่ม HR Bitwise Group">ศูนย์ฝึกอบรมมาตรฐานแรงงาน บิทไวส์(ประเทศไทย)</option>
+                <option value="กลุ่ม HR Bitwise Group">ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์</option>
                 <option value="สถาบันพัฒนาฝีมือแรงงาน">สถาบันพัฒนาฝีมือแรงงาน (สพร.)</option>
                 <option value="สำนักงานพัฒนาฝีมือแรงงาน">สำนักงานพัฒนาฝีมือแรงงาน (สนพ.)</option>
               </select>
@@ -112,12 +112,12 @@
 
             <div>
               <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">หลักสูตร (ฝึกอบรม) <span class="text-rose-500">*</span></label>
-              <input type="text" id="course" required placeholder="เช่น ช่างเครื่องปรับอากาศในบ้านและการพาณิชย์ขนาดเล็ก" value="ช่างเครื่องปรับอากาศในบ้านและการพาณิชย์ขนาดเล็ก" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+              <input type="text" id="course" required placeholder="เช่น ช่างเครื่องปรับอากาศในบ้านและการพาณิชย์ขนาดเล็ก" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
             </div>
 
             <div>
               <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">จำนวนชั่วโมงฝึก (ชั่วโมง) <span class="text-rose-500">*</span></label>
-              <input type="number" id="trainingHours" required min="1" placeholder="เช่น 30" value="30" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+              <input type="number" id="trainingHours" required min="1" placeholder="เช่น 30" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
             </div>
 
             <div>
@@ -169,12 +169,11 @@
 
             <div>
               <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">วันที่เริ่มการฝึกอบรม <span class="text-rose-500">*</span></label>
-              <input type="date" id="startDate" required value="2026-09-20" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+              <input type="date" id="startDate" required class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
             </div>
           </div>
         </div>
 
-        <!-- Card: 1. ข้อมูลส่วนบุคคล -->
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
           <h2 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
             <span class="w-2.5 h-6 bg-sky-500 rounded-full inline-block"></span>
@@ -240,8 +239,6 @@
               <input type="email" id="email" placeholder="example@domain.com" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none">
             </div>
           </div>
-
-          <!-- ที่อยู่ตามบัตรประชาชน -->
           <div class="mt-6 pt-5 border-t border-slate-100">
             <h3 class="text-xs sm:text-sm font-bold text-slate-800 mb-4">🏠 ที่อยู่ตามทะเบียนบ้าน / ตามบัตรประชาชน</h3>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -269,18 +266,25 @@
                 </select>
               </div>
 
+              <!-- [FIX บั๊ก #1]
+                   เดิมเป็น <select required> ซึ่งจะไม่มีตัวเลือกให้กดเลย ถ้าจังหวัดที่เลือกไม่มี
+                   ข้อมูลอยู่ใน THAI_DISTRICT_MAP (มีข้อมูลจริงแค่ ~6 จังหวัด จาก 77 จังหวัด)
+                   ทำให้ผู้สมัครส่วนใหญ่ของประเทศกรอกฟอร์มไม่ผ่าน (ส่งไม่ได้เลย)
+                   เปลี่ยนเป็น input + datalist: มีข้อมูลก็เลือกได้ตามเดิม ไม่มีก็พิมพ์เองได้ -->
               <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">เขต/อำเภอ <span class="text-rose-500">*</span></label>
-                <select id="address-district" required class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 bg-slate-50/50">
-                  <option value="">-- เลือกเขต/อำเภอ --</option>
-                </select>
+                <input type="text" id="address-district" list="district-options" required
+                       placeholder="พิมพ์หรือเลือกเขต/อำเภอ"
+                       class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 bg-slate-50/50">
+                <datalist id="district-options"></datalist>
               </div>
 
               <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">แขวง/ตำบล <span class="text-rose-500">*</span></label>
-                <select id="address-subdistrict" required class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 bg-slate-50/50">
-                  <option value="">-- เลือกแขวง/ตำบล --</option>
-                </select>
+                <input type="text" id="address-subdistrict" list="subdistrict-options" required
+                       placeholder="พิมพ์หรือเลือกแขวง/ตำบล"
+                       class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 bg-slate-50/50">
+                <datalist id="subdistrict-options"></datalist>
               </div>
 
               <div>
@@ -289,8 +293,6 @@
               </div>
             </div>
           </div>
-
-          <!-- วุฒิการศึกษา & สภาพร่างกาย -->
           <div class="mt-6 pt-5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">วุฒิการศึกษาสูงสุด <span class="text-rose-500">*</span></label>
@@ -308,7 +310,7 @@
 
             <div>
               <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">สาขาที่เรียน <span class="text-rose-500">*</span></label>
-              <input type="text" id="educationMajor" required placeholder="เช่น ช่างไฟฟ้า / เครื่องทำความเย็น" value="ช่างไฟฟ้ากำลัง" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5">
+              <input type="text" id="educationMajor" required placeholder="เช่น ช่างไฟฟ้า / เครื่องทำความเย็น" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5">
             </div>
 
             <div class="sm:col-span-2">
@@ -338,8 +340,6 @@
               </div>
             </div>
           </div>
-
-          <!-- แนบไฟล์หลักฐาน -->
           <div class="mt-6 pt-5 border-t border-slate-100">
             <h3 class="text-xs sm:text-sm font-bold text-slate-800 mb-3">แนบเอกสารและรูปถ่ายประกอบการสมัคร</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -389,7 +389,7 @@
               </div>
             </div>
           </div>
-        </div>        <!-- Card: 2. สถานภาพแรงงาน -->
+        </div>
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
           <h2 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
             <span class="w-2.5 h-6 bg-sky-500 rounded-full inline-block"></span>
@@ -407,7 +407,6 @@
             </label>
           </div>
 
-          <!-- ข้อ 2.1 ผู้มีงานทำ -->
           <div id="section-2-1" class="space-y-5 border-l-4 border-sky-500 pl-4 py-1">
             <h3 class="text-sm font-bold text-sky-900">2.1 รายละเอียดสำหรับผู้มีงานทำ</h3>
             
@@ -453,34 +452,34 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">รายได้เฉลี่ยต่อเดือน (บาท)</label>
-                <input type="text" id="monthlyIncome" placeholder="เช่น 18,000 หรือ 15,001 - 20,000" value="18,500" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+                <input type="text" id="monthlyIncome" placeholder="เช่น 18,000 หรือ 15,001 - 20,000" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">อาชีพ</label>
-                <input type="text" id="occupation" placeholder="เช่น ช่างเครื่องปรับอากาศ" value="ช่างบริการเครื่องทำความเย็น" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+                <input type="text" id="occupation" placeholder="เช่น ช่างเครื่องปรับอากาศ" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">ตำแหน่ง</label>
-                <input type="text" id="position" placeholder="เช่น ช่างซ่อมบำรุง" value="ช่างซ่อมบำรุง" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+                <input type="text" id="position" placeholder="เช่น ช่างซ่อมบำรุง" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">อายุงาน (ปี)</label>
-                <input type="number" id="workExperienceYears" min="0" placeholder="เช่น 2" value="2" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+                <input type="number" id="workExperienceYears" min="0" placeholder="เช่น 2" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อสถานที่ทำงาน / หน่วยงาน</label>
-                <input type="text" id="workplaceName" placeholder="เช่น บริษัท บิทไวส์ (ประเทศไทย) จำกัด" value="บริษัท บิทไวส์ (ประเทศไทย) จำกัด" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+                <input type="text" id="workplaceName" placeholder="เช่น บริษัท บิทไวส์ (ประเทศไทย) จำกัด" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">จังหวัดที่ทำงาน</label>
-                <input type="text" id="workplaceProvince" placeholder="เช่น สมุทรปราการ" value="สมุทรปราการ" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+                <input type="text" id="workplaceProvince" placeholder="เช่น สมุทรปราการ" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">โทรศัพท์ที่ทำงาน</label>
-                <input type="tel" id="workplacePhone" placeholder="02-xxx-xxxx" value="02-765-4321" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
+                <input type="tel" id="workplacePhone" placeholder="02-xxx-xxxx" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2">
               </div>
             </div>
 
@@ -501,7 +500,6 @@
             </div>
           </div>
 
-          <!-- ข้อ 2.2 ผู้ที่ไม่มีงานทำ -->
           <div id="section-2-2" class="hidden space-y-4 border-l-4 border-amber-500 pl-4 py-1">
             <h3 class="text-sm font-bold text-amber-900">2.2 รายละเอียดสำหรับผู้ที่ไม่มีงานทำ / ว่างงาน</h3>
             <div>
@@ -518,8 +516,6 @@
           </div>
 
         </div>
-
-        <!-- Card: 3. แหล่งที่ทราบการฝึก & 4. PDPA -->
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-6">
           <div>
             <h2 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
@@ -590,10 +586,10 @@
     <div class="w-full px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
       <div class="flex items-center gap-2">
         <img src="assets/BW-HR.png" alt="BW Logo" class="h-6 w-6 object-contain rounded-full" onerror="this.src='assets/dsd-logo.png';">
-        <span class="font-semibold text-slate-700">ปฏิทินการดำเนินงานกลุ่ม HR Bitwise Group</span>
+        <span class="font-semibold text-slate-700">ปฏิทินการดำเนินงานศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์</span>
       </div>
       <div class="text-[11px] text-slate-400 text-center sm:text-right">
-        ระบบสารสนเทศทะเบียนสมัครฝึกอบรมและทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ © 2026 HR Bitwise Group
+        ระบบสารสนเทศทะเบียนสมัครฝึกอบรมและทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ © 2026 ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์
       </div>
     </div>
   </footer>
@@ -616,6 +612,9 @@
         <button id="btn-download-immediate" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5">
           <span>📥 ดาวน์โหลด PDF</span>
         </button>
+        <button id="btn-savedrive-immediate" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5">
+          <span>💾 บันทึกลง Google Drive</span>
+        </button>
         <button onclick="closeSuccessModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition">
           ปิดหน้าต่าง
         </button>
@@ -632,6 +631,7 @@
 
   <div id="pdf-render-scratch" style="position: absolute; left: -9999px; top: -9999px;"></div>
   <script src="thai-address-data.js"></script>
+  <script src="gs-api.js"></script>
   <script src="pdf-generator.js"></script>
   <script src="app.js"></script>
 </body>

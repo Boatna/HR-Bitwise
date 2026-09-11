@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบผู้ดูแลระบบ (Admin Portal) - HR Bitwise Group</title>
+  <title>ระบบผู้ดูแลระบบ - ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -37,7 +37,7 @@
         <img src="assets/BW-HR.png" alt="HR Bitwise Logo" class="h-10 w-10 object-contain rounded-full shadow-sm" onerror="this.src='assets/dsd-logo.png';">
         <div>
           <div class="font-bold text-slate-900 text-sm sm:text-base leading-tight">ระบบผู้ดูแลระบบ (Admin Portal)</div>
-          <div class="text-[11px] text-sky-700 font-medium">กลุ่ม HR Bitwise Group ร่วมกับ กรมพัฒนาฝีมือแรงงาน</div>
+          <div class="text-[11px] text-sky-700 font-medium">ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์</div>
         </div>
       </div>
       <div class="flex items-center gap-2 sm:gap-3">
@@ -71,19 +71,16 @@
     </div>
   </header>
 
-  <!-- Main Content Area -->
   <main class="flex-grow max-w-6xl mx-auto w-full px-4 sm:px-6 py-8">
 
-    <!-- 1. PIN Lock Screen (แสดงเมื่อยังไม่ได้ปลดล็อค PIN) -->
     <div id="pin-lock-screen" class="flex flex-col items-center justify-center py-12">
       <div class="bg-white rounded-3xl p-8 sm:p-10 max-w-sm w-full shadow-xl border border-slate-200 text-center">
         <div class="w-16 h-16 bg-sky-50 text-sky-600 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-inner mb-4">
           🔒
         </div>
         <h2 class="text-xl font-bold text-slate-900">เข้าสู่ระบบผู้ดูแล (Admin)</h2>
-        <p class="text-xs text-slate-500 mt-1 mb-6">กรุณาป้อนรหัส PIN 6 หลักเพื่อเข้าถึงระบบ<br><span class="text-sky-600 font-semibold">(รหัสเริ่มต้น: 123456)</span></p>
+        <p class="text-xs text-slate-500 mt-1 mb-6">กรุณาป้อนรหัส PIN 6 หลักเพื่อเข้าถึงระบบ<br><span class="text-sky-600 font-semibold"></span></p>
 
-        <!-- 6 ช่องตัวเลข PIN -->
         <div id="pin-boxes-container" class="flex justify-center gap-2 mb-6">
           <div id="pin-digit-1" class="pin-digit-box"></div>
           <div id="pin-digit-2" class="pin-digit-box"></div>
@@ -93,7 +90,6 @@
           <div id="pin-digit-6" class="pin-digit-box"></div>
         </div>
 
-        <!-- Mobile Style Numeric Keypad -->
         <div id="pin-keypad" class="grid grid-cols-3 gap-3 justify-items-center max-w-[240px] mx-auto">
           <button type="button" data-key="1" class="keypad-btn">1</button>
           <button type="button" data-key="2" class="keypad-btn">2</button>
@@ -114,22 +110,16 @@
         </div>
       </div>
     </div>
-
-    <!-- 2. Admin Main Screen (แสดงหลังจากปลดล็อค PIN สำเร็จ) -->
     <div id="admin-main-screen" class="hidden space-y-6">
-      
-      <!-- Admin Top Banner -->
       <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div class="inline-flex items-center gap-2 text-xs text-sky-400 font-semibold mb-1">
             <span>🛡️</span> ระบบบริหารจัดการสำหรับเจ้าหน้าที่ (Admin Portal)
           </div>
           <h1 class="text-xl sm:text-2xl font-bold">ปฏิทินการสอน & ทะเบียนผู้สมัครฝึกอบรม</h1>
-          <p class="text-xs text-slate-400 mt-0.5">กลุ่ม HR Bitwise Group ร่วมส่งเสริมมาตรฐานฝีมือแรงงาน</p>
+          <p class="text-xs text-slate-400 mt-0.5">ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์</p>
         </div>
       </div>
-
-      <!-- Admin Tabs Navigation -->
       <div class="flex border-b border-slate-200 bg-white rounded-xl p-1 shadow-sm gap-1">
         <button data-tab="tab-calendar" class="admin-tab-btn flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-lg border-b-2 border-blue-600 text-blue-600 bg-blue-50 transition flex items-center justify-center gap-2">
           <span>📅 ปฏิทินการดำเนินการสอน</span>
@@ -137,15 +127,8 @@
         <button data-tab="tab-applicants" class="admin-tab-btn flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-lg border-b-2 border-transparent text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-2">
           <span>👥 ข้อมูลผู้สมัคร & สถานะเข้าเรียน</span>
         </button>
-        <button data-tab="tab-settings" class="admin-tab-btn flex-1 py-2.5 px-4 text-xs sm:text-sm font-bold rounded-lg border-b-2 border-transparent text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-2">
-          <span>⚙️ ตั้งค่า Google Sheets</span>
-        </button>
       </div>
-
-      <!-- TAB 1: ปฏิทินการดำเนินการสอน (2-Column Layout สัมพันธ์กัน) -->
       <div id="tab-calendar" class="admin-tab-content space-y-6">
-        
-        <!-- แถวควบคุมเดือน -->
         <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center justify-between">
           <button onclick="changeCalendarMonth(-1)" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs sm:text-sm font-semibold transition">
             ◀ เดือนก่อนหน้า
@@ -157,11 +140,7 @@
             เดือนถัดไป ▶
           </button>
         </div>
-
-        <!-- กล่อง 2 Columns สัมพันธ์กัน -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          <!-- คอลัมน์ซ้าย: ปฏิทินรายเดือน (lg:col-span-5) -->
           <div class="lg:col-span-5 bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
             <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
               <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
@@ -171,7 +150,6 @@
               <span class="text-[11px] text-slate-500">คลิกวันที่เพื่อดูหรือเพิ่มกิจกรรม</span>
             </div>
 
-            <!-- วันในสัปดาห์ (หัวชื่อวันเติมสีพื้นสีฟ้าตามที่กำหนด) -->
             <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs mb-1">
               <div class="cal-day-header rounded-t-md">อา.</div>
               <div class="cal-day-header rounded-t-md">จ.</div>
@@ -194,8 +172,6 @@
               </span>
             </div>
           </div>
-
-          <!-- คอลัมน์ขวา: ตารางแสดงข้อมูลกิจกรรมในเดือนนั้นๆ (lg:col-span-7) -->
           <div class="lg:col-span-7 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
@@ -230,7 +206,7 @@
 
         </div>
 
-      </div>      <!-- TAB 2: ข้อมูลผู้สมัคร & สถานะเข้าเรียน -->
+      </div>
       <div id="tab-applicants" class="admin-tab-content hidden space-y-6">
         
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -258,6 +234,9 @@
               <option value="attended">ได้เข้ามาเรียนแล้ว</option>
               <option value="pending">ยังไม่มา</option>
             </select>
+            <button onclick="refreshFromSheetButton()" class="px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 transition whitespace-nowrap">
+              🔄 รีเฟรชจาก Google Sheet
+            </button>
           </div>
         </div>
 
@@ -283,49 +262,20 @@
 
       </div>
 
-      <!-- TAB 3: ตั้งค่า Google Sheets -->
-      <div id="tab-settings" class="admin-tab-content hidden space-y-6">
-        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 max-w-3xl">
-          <h3 class="font-bold text-base text-slate-900 mb-2">เชื่อมต่อ Google Sheets ผ่าน Google Apps Script</h3>
-          <p class="text-xs text-slate-500 mb-6">
-            นำ URL Web App ที่ได้จากการ Deploy Google Apps Script มาใส่ในช่องด้านล่าง เพื่อบันทึกและดึงข้อมูลใบสมัครแบบอัตโนมัติ
-          </p>
-
-          <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Google Apps Script Web App URL</label>
-              <input type="url" id="sheet-api-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs sm:text-sm font-mono rounded-xl border border-slate-300 px-3.5 py-2.5">
-            </div>
-
-            <div class="flex gap-3">
-              <button onclick="saveGoogleSheetUrl()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-sm transition">
-                บันทึกการตั้งค่า
-              </button>
-              <button onclick="testGoogleSheetConnection()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition">
-                ทดสอบการเชื่อมต่อ
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div>
   </main>
 
-  <!-- Footer (Fluid width, พื้นหลังขาว: ปฏิทินการดำเนินงานกลุ่ม HR Bitwise Group) -->
   <footer class="w-full bg-white border-t border-slate-200 mt-auto py-5 shadow-sm">
     <div class="w-full px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
       <div class="flex items-center gap-2">
         <img src="assets/BW-HR.png" alt="BW Logo" class="h-6 w-6 object-contain rounded-full" onerror="this.src='assets/dsd-logo.png';">
-        <span class="font-semibold text-slate-700">ปฏิทินการดำเนินงานกลุ่ม HR Bitwise Group</span>
+        <span class="font-semibold text-slate-700">ปฏิทินการดำเนินงานกลุ่ม ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์</span>
       </div>
       <div class="text-[11px] text-slate-400 text-center sm:text-right">
-        ระบบสารสนเทศทะเบียนสมัครฝึกอบรมและทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ © 2026 HR Bitwise Group
+        ระบบสารสนเทศทะเบียนสมัครฝึกอบรมและทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ © 2026 ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์
       </div>
     </div>
   </footer>
-
-  <!-- Modal ดูรายละเอียด & เพิ่มกิจกรรมในปฏิทิน -->
   <div id="event-detail-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl relative border border-slate-100">
       <button onclick="closeEventModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
@@ -335,8 +285,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Modal ดูตัวอย่างแบบฟอร์มเอกสารราชการ (PDF Preview & Print) -->
   <div id="pdf-preview-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-2 sm:p-4">
     <div class="bg-white rounded-2xl max-w-4xl w-full h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
       <div class="p-4 bg-slate-900 text-white flex items-center justify-between flex-shrink-0">
@@ -351,6 +299,9 @@
           <button id="modal-download-btn" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs rounded-lg transition flex items-center gap-1 shadow-sm">
             <span>📥 โหลด PDF</span>
           </button>
+          <button id="modal-save-drive-btn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition flex items-center gap-1 shadow-sm">
+            <span>💾 บันทึกลง Drive</span>
+          </button>
           <button onclick="closePdfPreviewModal()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition ml-2">
             ✕ ปิด
           </button>
@@ -361,8 +312,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Global Loading Spinner Overlay -->
   <div id="global-spinner-overlay" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-[2px] hidden items-center justify-center">
     <div class="bg-white rounded-2xl p-5 shadow-2xl flex items-center gap-3">
       <div class="spinner-border"></div>
@@ -371,8 +320,7 @@
   </div>
 
   <div id="pdf-render-scratch" style="position: absolute; left: -9999px; top: -9999px;"></div>
-
-  <!-- Scripts -->
+  <script src="gs-api.js"></script>
   <script src="pdf-generator.js"></script>
   <script src="admin.js"></script>
 </body>

@@ -1,9 +1,18 @@
-﻿// pdf-generator.js - ฟังก์ชันสำหรับสร้างและพรีวิวเอกสารแบบฟอร์มราชการ กรมพัฒนาฝีมือแรงงาน
+﻿function escapeHtml(str) {
+  if (str === undefined || str === null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function renderOfficialFormHTML(data) {
   const check = (val) => val ? '☑' : '☐';
   const valOrDot = (val, minDots = 15) => {
-    if (val && String(val).trim() !== '') {
-      return `<span class="font-semibold text-blue-900 px-1 border-b border-dotted border-gray-600">${val}</span>`;
+    if (val !== undefined && val !== null && String(val).trim() !== '') {
+      return `<span class="font-semibold text-blue-900 px-1 border-b border-dotted border-gray-600">${escapeHtml(val)}</span>`;
     }
     return `<span class="dotted-line inline-block" style="min-width: ${minDots * 5}px;">&nbsp;</span>`;
   };
@@ -13,7 +22,7 @@ function renderOfficialFormHTML(data) {
   const tests = d.tests || [];
   const applicantTypes = d.applicantTypes || [];
   const disabilities = d.disabilities || [];
-  const workTypes = d.workTypes || [];
+  const photoSrc = d.photoDataUrl || d.photoUrl || '';
 
   return `
   <div id="official-form-printable" class="a4-page font-sarabun text-gray-900 bg-white leading-relaxed text-[12px] p-6 max-w-[210mm] mx-auto">
@@ -24,16 +33,23 @@ function renderOfficialFormHTML(data) {
         <img src="assets/dsd-logo.png" alt="DSD Logo" class="h-16 w-auto object-contain" onerror="this.src='assets/BW-HR.png';">
         <div>
           <div class="text-xs text-gray-500 font-medium">กรมพัฒนาฝีมือแรงงาน กระทรวงแรงงาน</div>
-          <div class="font-bold text-sm text-gray-800">กลุ่ม HR Bitwise Group ร่วมส่งเสริมมาตรฐานฝีมือแรงงาน</div>
-          <div class="text-[11px] text-gray-500 mt-1">แบบฟอร์ม กพร. สมัครฝึกอบรม/ทดสอบฯ | รหัส: <span class="font-bold text-blue-900">${d.id || '-'}</span></div>
+          <div class="font-bold text-sm text-gray-800">ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์</div>
+          <div class="text-[11px] text-gray-500 mt-1">แบบฟอร์ม กพร. สมัครฝึกอบรม/ทดสอบฯ | รหัส: <span class="font-bold text-blue-900">${escapeHtml(d.id) || '-'}</span></div>
         </div>
       </div>
 
-      <!-- กล่องรูปถ่ายหน้าตรงของผู้สมัคร ขนาด 1 - 1.5 นิ้ว -->
+      <!-- กล่องรูปถ่ายหน้าตรงของผู้สมัคร ขนาด 1 - 1.5 นิ้ว
+           [FIX] เดิมมี crossorigin="anonymous" ติดอยู่ที่ <img> เสมอ ซึ่งถ้า photoSrc เป็นลิงก์ Google Drive
+           (photoUrl) และ Drive ไม่ได้ตอบ header CORS ที่ครบถ้วน เบราว์เซอร์จะปฏิเสธโหลดรูปทันที (รูปไม่ขึ้นเลย
+           ไม่ใช่แค่ตอนแปลงเป็น PDF) จึงเอา crossorigin ออกจากการแสดงผลปกติ ให้โหลดรูปได้ตามปกติเสมอ
+           ส่วนตอนแปลงเป็น PDF จริงๆ ตอนนี้ resolveApplicantPhotoForRender() จะดึงรูปมาฝังเป็น data URI
+           (Base64) ก่อนเรียก renderOfficialFormHTML เสมอ เมื่อรูปต้นทางเป็นลิงก์ Google Drive
+           ทำให้ไม่มีปัญหา CORS/canvas tainted อีกต่อไป (ดูบั๊ก #2 ในสรุปการแก้ไข) -->
       <div class="flex-shrink-0 ml-4">
-        ${d.photoDataUrl 
+        ${photoSrc 
           ? `<div class="w-[84px] h-[108px] border-2 border-gray-400 rounded-sm overflow-hidden bg-white shadow-sm flex items-center justify-center">
-              <img src="${d.photoDataUrl}" alt="รูปถ่ายหน้าตรง" class="w-full h-full object-cover">
+              <img src="${escapeHtml(photoSrc)}" alt="รูปถ่ายหน้าตรง" class="w-full h-full object-cover"
+                   onerror="this.parentElement.innerHTML='&lt;span style=&quot;font-size:10px;color:#999;text-align:center;padding:4px;&quot;&gt;ไม่พบรูปภาพ&lt;/span&gt;'">
              </div>`
           : `<div class="w-[84px] h-[108px] border-2 border-dashed border-gray-400 rounded-sm flex flex-col items-center justify-center text-center p-1 bg-gray-50 text-gray-400 text-[10px] leading-tight">
               <span class="text-base mb-1">📷</span>
@@ -231,17 +247,80 @@ function renderOfficialFormHTML(data) {
     <!-- Attached Files Summary -->
     <div class="mt-2.5 pt-1.5 border-t border-gray-300 text-[10.5px] text-gray-600 flex flex-wrap gap-4">
       <span class="font-semibold text-gray-700">เอกสารแนบประกอบการสมัคร:</span>
-      <span>${check(d.hasPhoto || Boolean(d.photoDataUrl))} ภาพถ่ายหน้าตรง</span>
-      <span>${check(d.hasIdCardFile)} บัตรประชาชน (ด้านหน้า)</span>
-      <span>${check(d.hasEducationFile)} วุฒิการศึกษา</span>
-      <span>${check(d.hasTranscriptFile)} ทรานสคริปต์</span>
-      <span>${check(d.hasWorkCertFile)} ใบรับรองการทำงาน</span>
+      <span>${check(d.hasPhoto || Boolean(photoSrc))} ภาพถ่ายหน้าตรง</span>
+      <span>${check(d.hasIdCardFile || Boolean(d.idCardFileUrl))} บัตรประชาชน (ด้านหน้า)</span>
+      <span>${check(d.hasEducationFile || Boolean(d.educationFileUrl))} วุฒิการศึกษา</span>
+      <span>${check(d.hasTranscriptFile || Boolean(d.transcriptFileUrl))} ทรานสคริปต์</span>
+      <span>${check(d.hasWorkCertFile || Boolean(d.workCertFileUrl))} ใบรับรองการทำงาน</span>
     </div>
   </div>
   `;
 }
 
-// เปิดหน้าต่างสำหรับพิมพ์เอกสาร
+function lockA4Layout(element) {
+  if (!element) return;
+  element.style.width = '210mm';
+  element.style.maxWidth = '210mm';
+  element.style.minHeight = '297mm';
+  element.style.margin = '0';
+  element.style.boxShadow = 'none';
+  element.style.padding = '12mm 16mm';
+  element.style.fontSize = '12.5px';
+  element.style.lineHeight = '1.45';
+  element.style.boxSizing = 'border-box';
+}
+
+// [FIX บั๊ก #2] ถ้าข้อมูลผู้สมัครมีแค่ "photoUrl" (ลิงก์ Google Drive จากการ sync กับ Sheet)
+// และไม่มี "photoDataUrl" (Base64 ในเครื่อง) ให้ไปดึงไฟล์จาก Drive มาเป็น data URI ก่อน
+// เพื่อป้องกันปัญหา html2canvas วาดรูปข้าม origin ไม่ได้ (canvas tainted) ตอนสร้าง PDF
+async function resolveApplicantPhotoForRender(applicantData) {
+  const d = Object.assign({}, applicantData);
+
+  // มี Base64 อยู่แล้ว (เช่น เพิ่งสมัครใหม่ในเครื่องนี้) ใช้ได้เลย ไม่ต้องดึงซ้ำ
+  if (d.photoDataUrl) return d;
+
+  if (d.photoUrl &&
+      typeof GAS_WEB_APP_URL !== 'undefined' && GAS_WEB_APP_URL &&
+      typeof extractDriveFileId === 'function' &&
+      typeof fetchFileAsDataUri === 'function') {
+    try {
+      const fileId = extractDriveFileId(d.photoUrl);
+      if (fileId) {
+        const dataUri = await fetchFileAsDataUri(GAS_WEB_APP_URL, fileId);
+        if (dataUri) {
+          d.photoDataUrl = dataUri;
+        }
+      }
+    } catch (err) {
+      console.warn('ไม่สามารถดึงรูปถ่ายจาก Google Drive มาฝังใน PDF ได้ จะลองใช้ลิงก์ตรงแทน (อาจไม่ขึ้นรูปใน PDF):', err);
+    }
+  }
+
+  return d;
+}
+
+// [FIX บั๊ก #4] รอให้ฟอนต์ (Sarabun) และรูปภาพทั้งหมดในองค์ประกอบที่จะ capture โหลดเสร็จก่อน
+// ป้องกันปัญหา html2canvas จับภาพตอนฟอนต์/รูปยังโหลดไม่เสร็จ ทำให้ตัวอักษรเพี้ยนหรือรูปว่างเปล่า
+function waitForElementReady(element, timeoutMs = 4000) {
+  const fontsReady = (document.fonts && document.fonts.ready)
+    ? document.fonts.ready.catch(() => {})
+    : Promise.resolve();
+
+  const images = element ? Array.from(element.querySelectorAll('img')) : [];
+  const imagePromises = images.map(img => {
+    if (img.complete) return Promise.resolve();
+    return new Promise(resolve => {
+      img.addEventListener('load', resolve, { once: true });
+      img.addEventListener('error', resolve, { once: true });
+    });
+  });
+
+  const readyPromise = Promise.all([fontsReady, ...imagePromises]);
+  const timeoutGuard = new Promise(resolve => setTimeout(resolve, timeoutMs));
+
+  return Promise.race([readyPromise, timeoutGuard]);
+}
+
 function printApplicantForm(applicantData) {
   const printWindow = window.open('', '_blank');
   const formHtml = renderOfficialFormHTML(applicantData);
@@ -251,21 +330,36 @@ function printApplicantForm(applicantData) {
     <html lang="th">
     <head>
       <meta charset="UTF-8">
-      <title>พิมพ์ใบสมัคร - ${applicantData.firstName || ''} ${applicantData.lastName || ''}</title>
+      <title>พิมพ์ใบสมัคร - ${escapeHtml(applicantData.firstName || '')} ${escapeHtml(applicantData.lastName || '')}</title>
       <link rel="stylesheet" href="styles.css">
       <script src="https://cdn.tailwindcss.com"></script>
       <style>
-        @page { size: A4 portrait; margin: 10mm; }
+        /* margin ของหน้ากระดาษกำหนดเป็น 0 เพราะ .a4-page มี padding 12mm/16mm
+           อยู่แล้ว (กำหนดผ่าน styles.css) — ถ้าตั้ง margin ที่ @page ซ้ำอีกชั้น
+           จะกลายเป็นระยะขอบสองเท่า ทำให้พื้นที่เนื้อหาเหลือน้อยเกินไป */
+        @page { size: A4 portrait; margin: 0; }
         body { font-family: 'Sarabun', sans-serif; background: #fff; }
       </style>
     </head>
-    <body class="p-4">
+    <body class="p-0">
       ${formHtml}
       <script>
         window.onload = function() {
-          setTimeout(function() {
-            window.print();
-          }, 400);
+          var el = document.getElementById('official-form-printable');
+          if (el) {
+            el.style.width = '210mm';
+            el.style.maxWidth = '210mm';
+            el.style.margin = '0';
+            el.style.boxShadow = 'none';
+            el.style.boxSizing = 'border-box';
+          }
+          // รอฟอนต์ให้พร้อมก่อนสั่งพิมพ์ (กันข้อความเพี้ยนเวลาเน็ตช้า/ฟอนต์ยังโหลดไม่เสร็จ)
+          var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+          fontsReady.then(function() {
+            setTimeout(function() {
+              window.print();
+            }, 400);
+          });
         };
       </script>
     </body>
@@ -274,24 +368,105 @@ function printApplicantForm(applicantData) {
   printWindow.document.close();
 }
 
-// ดาวน์โหลด PDF ผ่าน html2pdf หรือสั่งพิมพ์
-function downloadApplicantPDF(applicantData) {
+// [FIX บั๊ก #2 + #4] เปลี่ยนเป็น async: ดึงรูปจาก Drive มาฝังก่อน (ถ้าจำเป็น)
+// แล้วรอฟอนต์/รูปโหลดเสร็จก่อนค่อย capture เป็น PDF
+async function downloadApplicantPDF(applicantData) {
   const container = document.getElementById('pdf-render-scratch');
   if (!container) return;
 
-  container.innerHTML = renderOfficialFormHTML(applicantData);
+  const dataForRender = await resolveApplicantPhotoForRender(applicantData);
+
+  container.innerHTML = renderOfficialFormHTML(dataForRender);
   const element = document.getElementById('official-form-printable');
+  lockA4Layout(element);
+
+  await waitForElementReady(element);
+
+  const opt = {
+    margin: 0,
+    filename: `ใบสมัคร_${applicantData.firstName || 'applicant'}_${applicantData.lastName || ''}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      windowWidth: 900,
+      scrollX: 0,
+      scrollY: 0
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] }
+  };
 
   if (typeof html2pdf !== 'undefined') {
-    const opt = {
-      margin: [6, 6, 6, 6],
-      filename: `ใบสมัคร_${applicantData.firstName || 'applicant'}_${applicantData.lastName || ''}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
     html2pdf().set(opt).from(element).save();
   } else {
-    printApplicantForm(applicantData);
+    printApplicantForm(dataForRender);
+  }
+}
+
+async function saveApplicantPdfToDrive(applicantData) {
+  if (typeof GAS_WEB_APP_URL === 'undefined' || !GAS_WEB_APP_URL) {
+    alert('ไม่พบการตั้งค่า Google Apps Script Web App URL (GAS_WEB_APP_URL) กรุณาตั้งค่าในไฟล์ gs-api.js ก่อน');
+    return;
+  }
+  if (typeof html2pdf === 'undefined') {
+    alert('ไม่พบไลบรารี html2pdf ไม่สามารถสร้างไฟล์ PDF ได้');
+    return;
+  }
+  if (typeof callGasApi !== 'function') {
+    alert('ไม่พบฟังก์ชันเชื่อมต่อ Google Apps Script (gs-api.js) กรุณาตรวจสอบว่าโหลดสคริปต์ gs-api.js แล้ว');
+    return;
+  }
+
+  if (typeof showLoading === 'function') showLoading(true);
+  const scratch = document.getElementById('pdf-render-scratch');
+  try {
+    if (!scratch) throw new Error('ไม่พบพื้นที่สร้าง PDF ชั่วคราว (#pdf-render-scratch)');
+
+    // [FIX บั๊ก #2] ดึงรูปจาก Google Drive มาฝังเป็น Base64 ก่อน ถ้าไม่มี Base64 ในเครื่องอยู่แล้ว
+    const dataForRender = await resolveApplicantPhotoForRender(applicantData);
+
+    scratch.innerHTML = renderOfficialFormHTML(dataForRender);
+    const element = document.getElementById('official-form-printable');
+    lockA4Layout(element);
+
+    // [FIX บั๊ก #4] รอฟอนต์/รูปโหลดเสร็จก่อน capture
+    await waitForElementReady(element);
+
+    const opt = {
+      margin: 0,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        windowWidth: 900,
+        scrollX: 0,
+        scrollY: 0
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] }
+    };
+
+    const pdfDataUri = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+
+    const fileName = `ใบสมัคร_${applicantData.firstName || 'applicant'}_${applicantData.lastName || ''}_${applicantData.id || Date.now()}.pdf`;
+
+    const result = await callGasApi(GAS_WEB_APP_URL, {
+      action: 'savePdfToDrive',
+      fileName,
+      base64Data: pdfDataUri,
+      subfolder: applicantData.id || ''
+    });
+
+    if (result && result.status === 'success') {
+      alert('บันทึก PDF ลง Google Drive สำเร็จ!\nลิงก์ไฟล์: ' + result.url);
+    } else {
+      alert('ไม่สามารถบันทึกลง Google Drive ได้: ' + (result && result.message ? result.message : 'ไม่ทราบสาเหตุ'));
+    }
+  } catch (err) {
+    console.error(err);
+    alert('เกิดข้อผิดพลาดขณะสร้าง/บันทึก PDF ลง Google Drive: ' + (err && err.message ? err.message : err));
+  } finally {
+    if (typeof showLoading === 'function') showLoading(false);
   }
 }
