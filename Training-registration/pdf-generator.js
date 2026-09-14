@@ -86,27 +86,28 @@ function renderOfficialFormHTML(data) {
   const selInd = d.industryGroup || '';
   const infoSrc = d.infoSource || '';
   return `
-  <div id="official-form-printable" style="width:210mm;height:297mm;max-height:297mm;box-sizing:border-box;overflow:hidden;padding:9mm 13mm 6mm 13mm;background:#fff;font-family:'Sarabun','TH Sarabun PSK',sans-serif;font-size:10.2px;line-height:1.7;letter-spacing:0.25px;color:#111;">
+  <div id="official-form-printable" style="width:210mm;height:297mm;max-height:297mm;box-sizing:border-box;overflow:hidden;padding:9mm 13mm 6mm 13mm;background:#fff;font-family:'Sarabun','TH Sarabun PSK',sans-serif;font-size:10.4px;line-height:1.7;letter-spacing:0.25px;color:#111;">
 
     <!-- ===== HEADER (โลโก้ซ้าย + ชื่อฟอร์มกึ่งกลาง + รูปถ่ายขวา เหมือนแบบฟอร์มต้นฉบับ) ===== -->
-    <table style="width:100%;border-collapse:collapse;margin-bottom:4px;">
+    <!-- [แก้ไข] ขยายขนาดตราหน่วยงาน (โลโก้) และรูปถ่ายผู้สมัครให้ใหญ่ขึ้น ตามที่ขอ -->
+    <table style="width:100%;border-collapse:collapse;margin-bottom:5px;">
       <tr>
-        <td style="width:58px;vertical-align:top;padding-top:2px;">
-          <img src="assets/dsd-logo.png" alt="DSD" style="height:50px;width:auto;object-fit:contain;" onerror="this.src='assets/BW-HR.png';">
+        <td style="width:76px;vertical-align:top;padding-top:2px;">
+          <img src="assets/dsd-logo.png" alt="DSD" style="height:66px;width:auto;object-fit:contain;" onerror="this.src='assets/BW-HR.png';">
         </td>
         <td style="vertical-align:middle;text-align:center;padding:0 6px;">
-          <div style="font-size:13px;font-weight:700;line-height:1.3;">ใบสมัครเข้ารับการฝึกอบรมฝีมือแรงงาน/ทดสอบมาตรฐานฝีมือแรงงาน</div>
+          <div style="font-size:16.5px;font-weight:700;line-height:1.35;">ใบสมัครเข้ารับการฝึกอบรมฝีมือแรงงาน/ทดสอบมาตรฐานฝีมือแรงงาน</div>
         </td>
-        <td style="width:64px;vertical-align:top;text-align:center;">
+        <td style="width:84px;vertical-align:top;text-align:center;">
           ${photoSrc
-            ? `<div style="width:58px;height:74px;border:1px solid #555;overflow:hidden;margin:0 auto;"><img src="${escapeHtml(photoSrc)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:58px;height:74px;border:1px solid #555;display:flex;align-items:center;justify-content:center;font-size:8px;color:#999;\\'>ไม่พบรูป</div>'"></div>`
-            : `<div style="width:58px;height:74px;border:1px dashed #888;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:7.5px;color:#666;margin:0 auto;">📷<br>รูปถ่าย<br>1-1.5 นิ้ว</div>`
+            ? `<div style="width:76px;height:96px;border:1px solid #555;overflow:hidden;margin:0 auto;"><img src="${escapeHtml(photoSrc)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:76px;height:96px;border:1px solid #555;display:flex;align-items:center;justify-content:center;font-size:8.5px;color:#999;\\'>ไม่พบรูป</div>'"></div>`
+            : `<div style="width:76px;height:96px;border:1px dashed #888;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:8.5px;color:#666;margin:0 auto;">📷<br>รูปถ่าย<br>1-1.5 นิ้ว</div>`
           }
         </td>
       </tr>
     </table>
-    <div style="font-weight:700;font-size:10.5px;border-bottom:1.5px solid #222;padding-bottom:4px;margin-bottom:6px;">
-      กรมพัฒนาฝีมือแรงงาน กระทรวงแรงงาน&nbsp; หน่วยงาน:&nbsp;${dot(d.agency || 'ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์', 260)}
+    <div style="font-weight:700;font-size:11.5px;border-bottom:1.5px solid #222;padding-bottom:4px;margin-bottom:6px;">
+      กรมพัฒนาฝีมือแรงงาน กระทรวงแรงงาน&nbsp; หน่วยงาน:&nbsp;${dot(d.agency || 'ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์', 250)}
     </div>
 
     <!-- ===== ความประสงค์ ===== -->
@@ -140,7 +141,8 @@ function renderOfficialFormHTML(data) {
     </div>
 
     <!-- ===== 1. ข้อมูลส่วนบุคคล ===== -->
-    <div style="font-weight:700;font-size:10.6px;margin:4px 0 2px 0;">1. ข้อมูลส่วนบุคคล</div>
+    <!-- [แก้ไข] ขยายขนาดตัวอักษรหัวข้อหลัก (1./2./3./4.) ให้ใหญ่และเด่นขึ้น เหมาะกับหนังสือราชการ -->
+    <div style="font-weight:700;font-size:12.5px;margin:4px 0 2px 0;">1. ข้อมูลส่วนบุคคล</div>
     <div style="margin-bottom:2px;">
       ชื่อ-สกุล ภาษาไทย (นาย/นาง/นางสาว) ${dot((d.title||'') + ' ' + (d.firstName||'') + ' ' + (d.lastName||''), 210)}&nbsp;&nbsp; เพศ ${dot(d.gender, 45)}
     </div>
@@ -187,7 +189,7 @@ function renderOfficialFormHTML(data) {
 
     <!-- ===== 2. สถานภาพแรงงาน ===== -->
     <div style="margin-bottom:2px;">
-      <span style="font-weight:700;font-size:10.6px;">2. สถานภาพแรงงาน</span>&nbsp;&nbsp;
+      <span style="font-weight:700;font-size:12.5px;">2. สถานภาพแรงงาน</span>&nbsp;&nbsp;
       ${chk(isEmployed)} ทำงาน (กรอกข้อ 2.1)&nbsp;&nbsp;&nbsp;&nbsp;
       ${chk(isUnemployed)} ไม่ทำงานหรือว่างงาน (กรอกข้อ 2.2)
     </div>
@@ -240,7 +242,7 @@ function renderOfficialFormHTML(data) {
 
     <!-- ===== 3. แหล่งที่ทราบการฝึก ===== -->
     <div style="margin-bottom:2px;">
-      <span style="font-weight:700;font-size:10.6px;">3. แหล่งที่ทราบการฝึก</span>&nbsp;
+      <span style="font-weight:700;font-size:12.5px;">3. แหล่งที่ทราบการฝึก</span>&nbsp;
       ${chk(infoSrc==='โทรทัศน์')} โทรทัศน์&nbsp;
       ${chk(infoSrc==='วิทยุ')} วิทยุ&nbsp;
       ${chk(infoSrc==='หนังสือพิมพ์')} หนังสือพิมพ์&nbsp;
@@ -250,7 +252,7 @@ function renderOfficialFormHTML(data) {
 
     <!-- ===== 4. การเปิดเผยข้อมูลส่วนบุคคล ===== -->
     <div style="margin-bottom:2px;">
-      <span style="font-weight:700;font-size:10.6px;">4. การเปิดเผยข้อมูลส่วนบุคคล</span>&nbsp;
+      <span style="font-weight:700;font-size:12.5px;">4. การเปิดเผยข้อมูลส่วนบุคคล</span>&nbsp;
       ข้าพเจ้าได้อ่านและรับทราบนโยบายการคุ้มครองข้อมูลส่วนบุคคลของกรมพัฒนาฝีมือแรงงานแล้วและ
     </div>
     <div style="padding-left:10px;margin-bottom:2px;">
@@ -311,7 +313,7 @@ function fitOfficialFormToA4(element, opts) {
   if (!element) return;
   const options = opts || {};
   const minFontPx = options.minFontPx || 7.8;
-  const maxFontPx = options.maxFontPx || 10.2;
+  const maxFontPx = options.maxFontPx || 10.4;
   const step = options.step || 0.15;
   const lineHeight = options.lineHeight || 1.7;
   const letterSpacingPx = (options.letterSpacingPx !== undefined) ? options.letterSpacingPx : 0.25;
@@ -353,7 +355,7 @@ function lockA4Layout(element) {
   element.style.margin = '0';
   element.style.boxShadow = 'none';
   element.style.padding = '9mm 13mm 6mm 13mm';
-  element.style.fontSize = '10.2px';
+  element.style.fontSize = '10.4px';
   element.style.lineHeight = '1.7';
   element.style.letterSpacing = '0.25px';
   element.style.boxSizing = 'border-box';
@@ -479,7 +481,7 @@ function printApplicantForm(applicantData) {
         function fitToA4Local(el) {
           if (!el) return;
           var targetHeightPx = mmToPxLocal(297);
-          var minFontPx = 7.8, fontPx = 10.2, step = 0.15;
+          var minFontPx = 7.8, fontPx = 10.4, step = 0.15;
           el.style.height = 'auto';
           el.style.maxHeight = 'none';
           el.style.overflow = 'visible';
@@ -524,6 +526,23 @@ function printApplicantForm(applicantData) {
   printWindow.document.close();
 }
 
+async function renderElementToA4Pdf(element) {
+  if (typeof html2canvas === 'undefined') {
+    throw new Error('ไม่พบไลบรารี html2canvas กรุณาตรวจสอบว่าไฟล์ index.html/admin.html โหลดสคริปต์ html2canvas แล้ว');
+  }
+  const JsPdfCtor = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : window.jsPDF;
+  if (!JsPdfCtor) {
+    throw new Error('ไม่พบไลบรารี jsPDF กรุณาตรวจสอบว่าไฟล์ index.html/admin.html โหลดสคริปต์ jsPDF แล้ว');
+  }
+
+  const canvas = await html2canvas(element, buildHtml2CanvasOptions(element));
+  const imgData = canvas.toDataURL('image/jpeg', 0.98);
+
+  const pdf = new JsPdfCtor({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+  pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+  return pdf;
+}
+
 async function downloadApplicantPDF(applicantData) {
   const container = document.getElementById('pdf-render-scratch');
   if (!container) return;
@@ -539,19 +558,12 @@ async function downloadApplicantPDF(applicantData) {
   fitOfficialFormToA4(element);
   await waitForLayoutSettle();
 
-  const opt = {
-    margin: 0,
-    filename: `ใบสมัคร_${applicantData.firstName || 'applicant'}_${applicantData.lastName || ''}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: buildHtml2CanvasOptions(element),
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-  };
-
-  if (typeof html2pdf !== 'undefined') {
-    html2pdf().set(opt).from(element).save();
-  } else {
-    printApplicantForm(dataForRender);
+  try {
+    const pdf = await renderElementToA4Pdf(element);
+    pdf.save(`ใบสมัคร_${applicantData.firstName || 'applicant'}_${applicantData.lastName || ''}.pdf`);
+  } catch (err) {
+    console.error(err);
+    alert('เกิดข้อผิดพลาดขณะสร้างไฟล์ PDF: ' + (err && err.message ? err.message : err));
   }
 }
 
@@ -559,10 +571,6 @@ async function saveApplicantPdfToDrive(applicantData) {
   const webAppUrl = (typeof getGasWebAppUrl === 'function' ? getGasWebAppUrl() : '') || (typeof GAS_WEB_APP_URL !== 'undefined' ? GAS_WEB_APP_URL : '');
   if (!webAppUrl) {
     alert('ไม่พบการตั้งค่า Google Apps Script Web App URL กรุณาตั้งค่าในไฟล์ gs-api.js หรือหน้าแอดมินก่อน');
-    return;
-  }
-  if (typeof html2pdf === 'undefined') {
-    alert('ไม่พบไลบรารี html2pdf ไม่สามารถสร้างไฟล์ PDF ได้');
     return;
   }
   if (typeof callGasApi !== 'function') {
@@ -584,15 +592,8 @@ async function saveApplicantPdfToDrive(applicantData) {
     fitOfficialFormToA4(element);
     await waitForLayoutSettle();
 
-    const opt = {
-      margin: 0,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: buildHtml2CanvasOptions(element),
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
-
-    const pdfDataUri = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+    const pdf = await renderElementToA4Pdf(element);
+    const pdfDataUri = pdf.output('datauristring');
 
     const fileName = `ใบสมัคร_${applicantData.firstName || 'applicant'}_${applicantData.lastName || ''}_${applicantData.id || Date.now()}.pdf`;
 

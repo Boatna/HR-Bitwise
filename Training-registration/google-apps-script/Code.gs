@@ -362,10 +362,33 @@ function parseApplicantRow(row, tz) {
   return obj;
 }
 
+// [แก้ไข] เดิมฟังก์ชันนี้ไม่มีการล็อก (lock) เลย เมื่อฝั่งหน้าเว็บอัปโหลดไฟล์ 5 ไฟล์
+// (รูปถ่าย/บัตรประชาชน/วุฒิการศึกษา/ทรานสคริปต์/ใบรับรองงาน) พร้อมกันแบบขนาน (Promise.all)
+// โดยตั้งชื่อโฟลเดอร์ย่อยเดียวกัน (รหัสผู้สมัคร) ทุกไฟล์ — คำขอทั้ง 5 รายการนี้ไปถึง Apps Script
+// เกือบพร้อมกัน แต่ละคำขอจะรันฟังก์ชันนี้แยกกัน (แต่ละ execution เป็นคนละ instance) แล้วเช็คว่า
+// "มีโฟลเดอร์ชื่อนี้หรือยัง" พร้อมๆ กัน ซึ่งตอนเช็คยังไม่มีทั้งคู่ (race condition) จึงสร้างโฟลเดอร์
+// ชื่อซ้ำกันขึ้นมาหลายโฟลเดอร์ ทำให้ไฟล์ของผู้สมัครคนเดียวกันกระจัดกระจายไปคนละโฟลเดอร์
+//
+// แก้ใหม่: ใช้ LockService.getScriptLock() ล็อกเฉพาะช่วง "เช็ค + สร้างโฟลเดอร์" ให้ทำงานทีละคำขอ
+// เท่านั้น (ใช้เวลาสั้นมาก ไม่กระทบความเร็วโดยรวม) การอัปโหลดไฟล์จริงยังคงทำงานขนานกันได้ตามปกติ
 function getOrCreateFolder(name, parent) {
-  const folders = parent.getFoldersByName(name);
-  if (folders.hasNext()) return folders.next();
-  return parent.createFolder(name);
+  const lock = LockService.getScriptLock();
+  let gotLock = false;
+  try {
+    gotLock = lock.tryLock(30000);
+  } catch (e) {
+    gotLock = false;
+  }
+  try {
+    // ตรวจซ้ำอีกครั้งหลังได้ lock แล้ว เผื่อ request อื่นสร้างโฟลเดอร์นี้ไปแล้วระหว่างที่เรารอ
+    const folders = parent.getFoldersByName(name);
+    if (folders.hasNext()) return folders.next();
+    return parent.createFolder(name);
+  } finally {
+    if (gotLock) {
+      try { lock.releaseLock(); } catch (e) { /* ignore */ }
+    }
+  }
 }
 
 function getUploadFolder(subfolder) {
