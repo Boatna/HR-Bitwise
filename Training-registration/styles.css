@@ -1,8 +1,26 @@
-﻿/* styles.css - สไตล์สำหรับระบบใบสมัครและระบบแอดมิน HR Bitwise Group */
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@font-face {
+  font-family: 'TH Sarabun PSK';
+  src: url('assets/fonts/THSarabunPSK.woff2') format('woff2'),
+       url('assets/fonts/THSarabunPSK.woff') format('woff'),
+       url('assets/fonts/THSarabunPSK.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TH Sarabun PSK';
+  src: url('assets/fonts/THSarabunPSK-Bold.woff2') format('woff2'),
+       url('assets/fonts/THSarabunPSK-Bold.woff') format('woff'),
+       url('assets/fonts/THSarabunPSK-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --font-sarabun: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-doc: 'TH Sarabun PSK', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
   --primary-blue: #0284c7;
   --primary-navy: #0f172a;
 }
@@ -14,7 +32,6 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -30,9 +47,8 @@ body {
   background: #94a3b8;
 }
 
-/* Calendar Styling */
 .cal-day-header {
-  background-color: #38bdf8; /* สีฟ้าตามข้อกำหนด */
+  background-color: #38bdf8;
   color: #ffffff;
   font-weight: 600;
   text-align: center;
@@ -70,7 +86,6 @@ body {
   border-radius: 50%;
 }
 
-/* PIN Mobile Pad */
 .pin-digit-box {
   width: 44px;
   height: 52px;
@@ -122,7 +137,6 @@ body {
   margin-top: -2px;
 }
 
-/* Loading Spin */
 .spinner-border {
   border: 3px solid rgba(2, 132, 199, 0.2);
   border-top-color: #0284c7;
@@ -136,7 +150,6 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* Official Print Layout (Form DSD A4) */
 @media print {
   body * {
     visibility: hidden;
@@ -144,43 +157,79 @@ body {
   #official-form-printable, #official-form-printable * {
     visibility: visible;
   }
+  html, body {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
   #official-form-printable {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100% !important;
+    width: 210mm !important;
     max-width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
     margin: 0 !important;
-    padding: 10mm 15mm !important;
+    padding: 9mm 13mm 6mm 13mm !important;
     box-shadow: none !important;
     background: #ffffff !important;
     color: #000000 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
   }
   .no-print {
     display: none !important;
   }
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
 }
 
-/* A4 Page Container on Screen */
-.a4-page {
+.a4-page,
+.official-form-doc {
   width: 210mm;
-  min-height: 297mm;
-  padding: 12mm 16mm;
+  max-width: 210mm;
+  height: 297mm;
+  max-height: 297mm;
+  padding: 9mm 13mm 6mm 13mm;
   margin: 0 auto;
   background: white;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-  font-size: 13px;
-  line-height: 1.45;
+  box-sizing: border-box;
+  font-family: var(--font-doc);
+  font-size: 11pt;
+  line-height: 1.35;
   color: #111827;
+  overflow: hidden;
 }
 
 @media (max-width: 800px) {
-  .a4-page {
-    width: 100%;
+  .a4-page,
+  .official-form-doc {
     padding: 16px;
-    font-size: 11.5px;
-    line-height: 1.4;
+    line-height: 1.45;
   }
+}
+
+@media screen and (max-width: 900px) {
+  .a4-page-screen-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
 }
 
 .dotted-line {

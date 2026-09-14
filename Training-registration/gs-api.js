@@ -1,4 +1,86 @@
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxcdLlZBuw9rT1MFVQjl4EgKcnHF2JoPcnBBPvTObHO0MwxUfelNoUFukg8S8iNKli9/exec';
+function escapeHtml(str) {
+  if (str === undefined || str === null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatPhoneNumber(phone) {
+  if (phone === undefined || phone === null) return '';
+  let str = String(phone).trim();
+  if (str.startsWith("'")) {
+    str = str.substring(1).trim();
+  }
+  if (!str) return '';
+  const digits = str.replace(/\D/g, '');
+  if (digits.length === 9 && !str.startsWith('0')) {
+    if (digits.startsWith('8') || digits.startsWith('9') || digits.startsWith('6')) {
+      str = '0' + str;
+    }
+  } else if (digits.length === 8 && !str.startsWith('0')) {
+    str = '0' + str;
+  }
+  return str;
+}
+
+function cleanAddressNo(val) {
+  if (val === undefined || val === null) return '';
+  if (val instanceof Date || Object.prototype.toString.call(val) === '[object Date]') {
+    return `${val.getDate()}/${val.getMonth() + 1}`;
+  }
+  let str = String(val).trim();
+  if (str.startsWith("'")) {
+    str = str.substring(1).trim();
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    const parts = str.split('T')[0].split('-');
+    return `${parseInt(parts[2], 10)}/${parseInt(parts[1], 10)}`;
+  }
+  return str;
+}
+
+const DEFAULT_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzeFJjibVAJEfoTU0oYB1iQ3RqqwCPP8Vvn81pJj54vr83PlGvqvOP9qQnESbZiHguh/exec';
+
+function getGasWebAppUrl() {
+  try {
+    const custom = localStorage.getItem('bw_gas_web_app_url');
+    if (custom && custom.trim()) return custom.trim();
+  } catch (e) { }
+  return DEFAULT_GAS_WEB_APP_URL;
+}
+
+function setGasWebAppUrl(url) {
+  try {
+    if (url && url.trim()) {
+      localStorage.setItem('bw_gas_web_app_url', url.trim());
+      GAS_WEB_APP_URL = url.trim();
+    } else {
+      localStorage.removeItem('bw_gas_web_app_url');
+      GAS_WEB_APP_URL = DEFAULT_GAS_WEB_APP_URL;
+    }
+  } catch (e) { }
+}
+
+let GAS_WEB_APP_URL = getGasWebAppUrl();
+
+async function pingGasApi(url, timeoutMs = 15000) {
+  const targetUrl = (url || getGasWebAppUrl()).trim();
+  const startTime = Date.now();
+  try {
+    const sep = targetUrl.includes('?') ? '&' : '?';
+    const res = await fetchGasApi(targetUrl + sep + 'action=ping', timeoutMs);
+    const latency = Date.now() - startTime;
+    if (res && res.status === 'success') {
+      return { ok: true, latency, message: res.message || 'เชื่อมต่อสำเร็จ', timestamp: res.timestamp || new Date().toISOString() };
+    }
+    return { ok: false, latency, message: (res && res.message) || 'ตอบกลับไม่ถูกต้อง' };
+  } catch (err) {
+    return { ok: false, latency: Date.now() - startTime, message: (err && err.message) || String(err) };
+  }
+}
 
 async function callGasApi(url, payload, timeoutMs = 25000) {
   const controller = new AbortController();
@@ -56,7 +138,7 @@ function fileToBase64(file) {
   });
 }
 
-async function uploadFileToDrive(sheetUrl, file, fileName, subfolder) {
+async function uploadFileToDrive(sheetUrl, file, fileName, subfolder, timeoutMs = 60000) {
   if (!file || !sheetUrl) return '';
   try {
     const base64Data = await fileToBase64(file);
@@ -66,7 +148,7 @@ async function uploadFileToDrive(sheetUrl, file, fileName, subfolder) {
       mimeType: file.type || 'application/octet-stream',
       base64Data,
       subfolder: subfolder || ''
-    });
+    }, timeoutMs);
     if (result && result.status === 'success') {
       return result.directUrl || result.url || '';
     }
@@ -87,10 +169,10 @@ function extractDriveFileId(url) {
   return '';
 }
 
-async function fetchFileAsDataUri(sheetUrl, fileId) {
+async function fetchFileAsDataUri(sheetUrl, fileId, timeoutMs = 45000) {
   if (!fileId || !sheetUrl) return '';
   try {
-    const result = await fetchGasApi(sheetUrl + '?action=getFileBase64&fileId=' + encodeURIComponent(fileId));
+    const result = await fetchGasApi(sheetUrl + '?action=getFileBase64&fileId=' + encodeURIComponent(fileId), timeoutMs);
     if (result && result.status === 'success' && result.dataUri) {
       return result.dataUri;
     }

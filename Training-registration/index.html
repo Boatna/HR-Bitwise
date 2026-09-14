@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -17,6 +17,7 @@
         extend: {
           fontFamily: {
             sarabun: ['Sarabun', 'sans-serif'],
+            docsarabun: ['TH Sarabun PSK', 'Sarabun', 'sans-serif'],
           },
           colors: {
             bw: {
@@ -32,11 +33,11 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sarabun min-h-screen flex flex-col antialiased">
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-auto min-h-[64px] py-2 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <img src="assets/BW-HR.png" alt="HR Bitwise Logo" class="h-10 w-10 object-contain rounded-full shadow-sm" onerror="this.src='assets/dsd-logo.png';">
         <div>
-          <div class="font-bold text-slate-900 text-sm sm:text-base leading-tight">ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์</div>
+          <div class="font-bold text-slate-900 text-sm sm:text-base leading-tight">ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์</div>
           <div class="text-[11px] text-sky-700 font-medium">ร่วมกับ กรมพัฒนาฝีมือแรงงาน กระทรวงแรงงาน</div>
         </div>
       </div>
@@ -59,7 +60,7 @@
             ใบสมัครเข้ารับการฝึกอบรมฝีมือแรงงาน / ทดสอบมาตรฐานฝีมือแรงงาน
           </h1>
           <p class="text-sky-100 text-xs sm:text-sm mt-2 max-w-2xl">
-            โครงการพัฒนาทักษะและยกระดับมาตรฐานฝีมือแรงงาน โดยกลุ่ม ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์ ร่วมส่งเสริมศักยภาพแรงงานสู่สากล
+            โครงการพัฒนาทักษะและยกระดับมาตรฐานฝีมือแรงงาน โดยกลุ่ม ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์ ร่วมส่งเสริมศักยภาพแรงงานสู่สากล
           </p>
         </div>
       </div>
@@ -74,7 +75,7 @@
             <div class="md:col-span-2">
               <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">หน่วยงานที่รับสมัคร <span class="text-rose-500">*</span></label>
               <select id="agency" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-50/50">
-                <option value="กลุ่ม HR Bitwise Group">ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์</option>
+                <option value="ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์">ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์</option>
                 <option value="สถาบันพัฒนาฝีมือแรงงาน">สถาบันพัฒนาฝีมือแรงงาน (สพร.)</option>
                 <option value="สำนักงานพัฒนาฝีมือแรงงาน">สำนักงานพัฒนาฝีมือแรงงาน (สนพ.)</option>
               </select>
@@ -177,7 +178,7 @@
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
           <h2 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
             <span class="w-2.5 h-6 bg-sky-500 rounded-full inline-block"></span>
-            1. ข้อมูลส่วนบุคคล (Personal Information)
+            ข้อมูลส่วนบุคคล (Personal Information)
           </h2>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
@@ -265,12 +266,6 @@
                   <option value="">-- เลือกจังหวัด --</option>
                 </select>
               </div>
-
-              <!-- [FIX บั๊ก #1]
-                   เดิมเป็น <select required> ซึ่งจะไม่มีตัวเลือกให้กดเลย ถ้าจังหวัดที่เลือกไม่มี
-                   ข้อมูลอยู่ใน THAI_DISTRICT_MAP (มีข้อมูลจริงแค่ ~6 จังหวัด จาก 77 จังหวัด)
-                   ทำให้ผู้สมัครส่วนใหญ่ของประเทศกรอกฟอร์มไม่ผ่าน (ส่งไม่ได้เลย)
-                   เปลี่ยนเป็น input + datalist: มีข้อมูลก็เลือกได้ตามเดิม ไม่มีก็พิมพ์เองได้ -->
               <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">เขต/อำเภอ <span class="text-rose-500">*</span></label>
                 <input type="text" id="address-district" list="district-options" required
@@ -348,7 +343,7 @@
                 <label for="filePhoto" class="cursor-pointer inline-block text-xs bg-sky-600 hover:bg-sky-700 text-white font-medium px-3 py-1.5 rounded-lg shadow-sm">
                   เลือกไฟล์รูปภาพ
                 </label>
-                <input type="file" id="filePhoto" accept="image/*" class="hidden">
+                <input type="file" id="filePhoto" accept="image/*" required class="hidden">
                 <div id="filePhotoLabel" class="text-[11px] text-slate-400 mt-1 truncate">ยังไม่ได้เลือกไฟล์</div>
               </div>
 
@@ -357,7 +352,7 @@
                 <label for="fileIdCard" class="cursor-pointer inline-block text-xs bg-sky-600 hover:bg-sky-700 text-white font-medium px-3 py-1.5 rounded-lg shadow-sm">
                   เลือกไฟล์บัตรประชาชน
                 </label>
-                <input type="file" id="fileIdCard" accept="image/*,application/pdf" class="hidden">
+                <input type="file" id="fileIdCard" accept="image/*,application/pdf" required class="hidden">
                 <div id="fileIdCardLabel" class="text-[11px] text-slate-400 mt-1 truncate">ยังไม่ได้เลือกไฟล์</div>
               </div>
 
@@ -366,7 +361,7 @@
                 <label for="fileEdu" class="cursor-pointer inline-block text-xs bg-sky-600 hover:bg-sky-700 text-white font-medium px-3 py-1.5 rounded-lg shadow-sm">
                   เลือกไฟล์วุฒิ
                 </label>
-                <input type="file" id="fileEdu" accept="image/*,application/pdf" class="hidden">
+                <input type="file" id="fileEdu" accept="image/*,application/pdf" required class="hidden">
                 <div id="fileEduLabel" class="text-[11px] text-slate-400 mt-1 truncate">ยังไม่ได้เลือกไฟล์</div>
               </div>
 
@@ -393,7 +388,7 @@
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
           <h2 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
             <span class="w-2.5 h-6 bg-sky-500 rounded-full inline-block"></span>
-            2. สถานภาพแรงงาน
+            สถานภาพแรงงาน
           </h2>
 
           <div class="flex flex-wrap items-center gap-6 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -423,28 +418,32 @@
                 </label>
                 
                 <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                  <label class="flex items-center gap-2 cursor-pointer mb-2">
+                  <label class="flex items-center gap-2 cursor-pointer mb-1">
                     <input type="radio" name="workSector" id="sector-govt" value="government" class="text-sky-600">
                     <span class="font-medium">ภาครัฐ</span>
                   </label>
-                  <select id="govt-sub-select" disabled class="w-full text-xs rounded-lg border border-slate-300 p-1.5 bg-white disabled:opacity-50">
-                    <option value="ข้าราชการพลเรือน">ข้าราชการพลเรือน</option>
-                    <option value="ข้าราชการตำรวจ">ข้าราชการตำรวจ</option>
-                    <option value="ข้าราชการทหาร">ข้าราชการทหาร</option>
-                    <option value="ข้าราชการครู">ข้าราชการครู</option>
-                  </select>
+                  <div id="govt-sub-container" class="hidden mt-1.5">
+                    <select id="govt-sub-select" class="w-full text-xs rounded-lg border border-slate-300 p-1.5 bg-white">
+                      <option value="ข้าราชการพลเรือน">ข้าราชการพลเรือน</option>
+                      <option value="ข้าราชการตำรวจ">ข้าราชการตำรวจ</option>
+                      <option value="ข้าราชการทหาร">ข้าราชการทหาร</option>
+                      <option value="ข้าราชการครู">ข้าราชการครู</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                  <label class="flex items-center gap-2 cursor-pointer mb-2">
+                  <label class="flex items-center gap-2 cursor-pointer mb-1">
                     <input type="radio" name="workSector" id="sector-business" value="business" class="text-sky-600">
                     <span class="font-medium">ประกอบธุรกิจส่วนตัว / อาชีพอิสระ</span>
                   </label>
-                  <select id="freelance-sub-select" disabled class="w-full text-xs rounded-lg border border-slate-300 p-1.5 bg-white disabled:opacity-50">
-                    <option value="วิสาหกิจชุมชน">วิสาหกิจชุมชน</option>
-                    <option value="เกษตรกร">เกษตรกร</option>
-                    <option value="ผู้รับจ้างทั่วไปโดยการจ้าง (Freelance)">ผู้รับจ้างทั่วไปโดยการจ้าง (Freelance)</option>
-                  </select>
+                  <div id="freelance-sub-container" class="hidden mt-1.5">
+                    <select id="freelance-sub-select" class="w-full text-xs rounded-lg border border-slate-300 p-1.5 bg-white">
+                      <option value="วิสาหกิจชุมชน">วิสาหกิจชุมชน</option>
+                      <option value="เกษตรกร">เกษตรกร</option>
+                      <option value="ผู้รับจ้างทั่วไปโดยไม่มีนายจ้าง (Freelance)">ผู้รับจ้างทั่วไปโดยไม่มีนายจ้าง (Freelance)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -505,13 +504,14 @@
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1.5">สถานภาพปัจจุบัน <span class="text-rose-500">*</span></label>
               <select id="unemployedReason" class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 bg-slate-50/50">
-                <option value="อยู่ในระหว่างหางาน">อยู่ในระหว่างหางาน</option>
+                <option value="อยู่ระหว่างหางาน">อยู่ระหว่างหางาน</option>
                 <option value="นักเรียน/นักศึกษา">นักเรียน/นักศึกษา</option>
                 <option value="ผู้ประกันตนที่ถูกเลิกจ้าง">ผู้ประกันตนที่ถูกเลิกจ้าง</option>
                 <option value="ผู้ต้องขัง">ผู้ต้องขัง</option>
                 <option value="ทหารก่อนปลด">ทหารก่อนปลด</option>
-                <option value="อื่นๆ (ว่างงานชั่วคราว)">อื่นๆ (ระบุ)</option>
+                <option value="other">อื่นๆ (โปรดระบุ)</option>
               </select>
+              <input type="text" id="unemployedReasonOtherText" placeholder="โปรดระบุสถานภาพปัจจุบัน" class="hidden mt-2 w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5">
             </div>
           </div>
 
@@ -586,10 +586,10 @@
     <div class="w-full px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
       <div class="flex items-center gap-2">
         <img src="assets/BW-HR.png" alt="BW Logo" class="h-6 w-6 object-contain rounded-full" onerror="this.src='assets/dsd-logo.png';">
-        <span class="font-semibold text-slate-700">ปฏิทินการดำเนินงานศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์</span>
+        <span class="font-semibold text-slate-700">ปฏิทินการดำเนินงานศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์</span>
       </div>
       <div class="text-[11px] text-slate-400 text-center sm:text-right">
-        ระบบสารสนเทศทะเบียนสมัครฝึกอบรมและทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ © 2026 ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซนต์เตอร์
+        ระบบสารสนเทศทะเบียนสมัครฝึกอบรมและทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ © 2026 ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์
       </div>
     </div>
   </footer>
@@ -605,7 +605,7 @@
       <div id="success-modal-details" class="mb-6">
       </div>
 
-      <div class="flex flex-col sm:flex-row gap-2 justify-center">
+      <div class="grid grid-cols-2 sm:flex sm:flex-row gap-2 justify-center items-center">
         <button id="btn-print-immediate" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5">
           <span>🖨️ สั่งพิมพ์เอกสาร A4</span>
         </button>
@@ -628,8 +628,7 @@
       <span class="text-sm font-semibold text-slate-800">กำลังประมวลผลข้อมูล...</span>
     </div>
   </div>
-
-  <div id="pdf-render-scratch" style="position: absolute; left: -9999px; top: -9999px;"></div>
+  <div id="pdf-render-scratch" style="position: fixed; top: 0; left: 0; opacity: 0; pointer-events: none; z-index: -1;"></div>
   <script src="thai-address-data.js"></script>
   <script src="gs-api.js"></script>
   <script src="pdf-generator.js"></script>

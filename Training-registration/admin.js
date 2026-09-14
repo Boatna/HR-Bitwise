@@ -1,28 +1,19 @@
-﻿const STORAGE_KEYS = {
+const STORAGE_KEYS = {
   APPLICANTS: 'bw_skill_applicants',
   CALENDAR_EVENTS: 'bw_calendar_events',
-  ADMIN_PIN: 'bw_admin_pin',
   NOTIFICATIONS: 'bw_notifications',
   NOTIF_SEEN: 'bw_admin_notif_seen_ids'
 };
-
-const DEFAULT_PIN = '123456';
-
-function escapeHtml(str) {
-  if (str === undefined || str === null) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
 
 let applicants = [];
 let calendarEvents = [];
 let currentCalendarMonth = new Date();
 let pinBuffer = '';
 let isAuthenticated = false;
+let currentManagerName = '';
+let pinVerifying = false;
+let pinFailCount = 0;
+let pinLockedUntil = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
   applicants = loadLocalApplicants();
@@ -33,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setupPinLock();
   setupAdminNavigation();
+  setupNotifDropdownAutoClose();
   renderCalendar();
   renderApplicantsTable();
   updateNotificationsUI();
@@ -49,7 +41,17 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadLocalApplicants() {
   const saved = localStorage.getItem(STORAGE_KEYS.APPLICANTS);
   if (saved) {
-    try { return JSON.parse(saved); } catch (e) { return []; }
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        parsed.forEach(a => {
+          if (a.phone) a.phone = formatPhoneNumber(a.phone);
+          if (a.workplacePhone) a.workplacePhone = formatPhoneNumber(a.workplacePhone);
+          if (a.addressNo) a.addressNo = cleanAddressNo(a.addressNo);
+        });
+      }
+      return parsed;
+    } catch (e) { return []; }
   }
   return [];
 }
@@ -69,12 +71,35 @@ async function syncFromGoogleSheet(sheetUrl, opts) {
   try {
     const applicantsResult = await fetchGasApi(sheetUrl + '?action=getApplicants');
     if (applicantsResult && applicantsResult.status === 'success' && Array.isArray(applicantsResult.data)) {
-      const byId = new Map();
-      applicants.forEach(a => byId.set(a.id, a));
-      applicantsResult.data.forEach(a => byId.set(a.id, Object.assign({}, byId.get(a.id) || {}, a)));
-      applicants = Array.from(byId.values())
+      // [แก้ไข] เดิมโค้ดใช้วิธี "รวม" (merge) ข้อมูลเก่าที่แคชไว้ในเครื่อง (localStorage) เข้ากับ
+      // ข้อมูลใหม่จากชีต โดยไม่เคยลบรายการที่ไม่มีในผลลัพธ์ใหม่ออก ผลคือถ้าไปลบแถวออกจาก
+      // Google Sheet โดยตรง แถวนั้นจะไม่หายไปจากหน้าแอดมินเลย เพราะ id เดิมยังค้างอยู่ใน
+      // localStorage ตลอดไป
+      //
+      // แก้ใหม่: ให้ข้อมูลจาก Google Sheet เป็น "ความจริงหลัก" (source of truth) เสมอ
+      // สร้างรายการผู้สมัครใหม่จากข้อมูลชีตล้วนๆ เท่านั้น ถ้า id ไหนถูกลบออกจากชีต
+      // ก็จะหายไปจากแอดมินไปด้วยโดยอัตโนมัติในรอบ sync ถัดไป
+      // (ยังคง "แคชรูปถ่าย" เดิมของผู้สมัครที่ยังอยู่ไว้ให้ เพื่อไม่ต้องดึงจาก Drive ซ้ำโดยไม่จำเป็น)
+      const localById = new Map();
+      applicants.forEach(a => localById.set(a.id, a));
+
+      applicants = applicantsResult.data
+        .map(a => {
+          if (a.phone) a.phone = formatPhoneNumber(a.phone);
+          if (a.workplacePhone) a.workplacePhone = formatPhoneNumber(a.workplacePhone);
+          if (a.addressNo) a.addressNo = cleanAddressNo(a.addressNo);
+          const localMatch = localById.get(a.id);
+          if (localMatch && localMatch.photoDataUrl && !a.photoDataUrl) {
+            a.photoDataUrl = localMatch.photoDataUrl;
+          }
+          return a;
+        })
         .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
       localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
+
+      // [เพิ่มใหม่] เคลียร์สถานะ "อ่านแล้ว" และรายการแจ้งเตือนของผู้สมัครที่ถูกลบออกจากชีตไปแล้ว
+      // ไม่งั้นตัวเลขแจ้งเตือน (badge) จะค้างนับรวมรายการที่ไม่มีอยู่จริงตลอดไป
+      pruneStaleNotificationData(applicants);
     } else {
       ok = false;
       if (!options.silent) console.warn('ดึงข้อมูลผู้สมัครจาก Google Sheet ไม่สำเร็จ:', applicantsResult && applicantsResult.message);
@@ -86,12 +111,12 @@ async function syncFromGoogleSheet(sheetUrl, opts) {
 
   try {
     const eventsResult = await fetchGasApi(sheetUrl + '?action=getCalendarEvents');
-    if (eventsResult && eventsResult.status === 'success' && Array.isArray(eventsResult.data) && eventsResult.data.length > 0) {
-      const byId = new Map();
-      calendarEvents.forEach(e => byId.set(e.id, e));
-      eventsResult.data.forEach(e => byId.set(e.id, Object.assign({}, byId.get(e.id) || {}, e)));
-      calendarEvents = Array.from(byId.values());
+    if (eventsResult && eventsResult.status === 'success' && Array.isArray(eventsResult.data)) {
+      calendarEvents = eventsResult.data;
       localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+    } else {
+      ok = false;
+      if (!options.silent) console.warn('ดึงข้อมูลปฏิทินจาก Google Sheet ไม่สำเร็จ:', eventsResult && eventsResult.message);
     }
   } catch (err) {
     ok = false;
@@ -104,6 +129,7 @@ async function syncFromGoogleSheet(sheetUrl, opts) {
 function setupPinLock() {
   const pinDigits = [1, 2, 3, 4, 5, 6].map(i => document.getElementById(`pin-digit-${i}`));
   const keypad = document.getElementById('pin-keypad');
+  const pinStatusEl = document.getElementById('pin-status-text');
 
   function updatePinBoxes() {
     pinDigits.forEach((box, index) => {
@@ -118,7 +144,17 @@ function setupPinLock() {
     });
   }
 
+  function setPinStatus(text) {
+    if (pinStatusEl) pinStatusEl.textContent = text || '';
+  }
+
+  function remainingLockSeconds() {
+    return Math.max(0, Math.ceil((pinLockedUntil - Date.now()) / 1000));
+  }
+
   function handleKey(val) {
+    if (pinVerifying || remainingLockSeconds() > 0) return;
+
     if (val === 'CLEAR') {
       pinBuffer = '';
       updatePinBoxes();
@@ -140,13 +176,37 @@ function setupPinLock() {
   }
 
   async function verifyPin() {
-    const currentPin = localStorage.getItem(STORAGE_KEYS.ADMIN_PIN) || DEFAULT_PIN;
-    if (pinBuffer === currentPin) {
-      isAuthenticated = true;
-      document.getElementById('pin-lock-screen')?.classList.add('hidden');
-      document.getElementById('admin-main-screen')?.classList.remove('hidden');
+    if (!GAS_WEB_APP_URL) {
+      alert('ยังไม่ได้ตั้งค่า Google Apps Script Web App URL (GAS_WEB_APP_URL) ในไฟล์ gs-api.js จึงตรวจสอบรหัส PIN ไม่ได้');
       pinBuffer = '';
       updatePinBoxes();
+      return;
+    }
+
+    pinVerifying = true;
+    const pinToCheck = pinBuffer;
+    setPinStatus('กำลังตรวจสอบรหัส PIN...');
+
+    let result;
+    try {
+      result = await callGasApi(GAS_WEB_APP_URL, { action: 'verifyManagerPin', pin: pinToCheck }, 20000);
+    } catch (err) {
+      result = { status: 'error', message: String(err) };
+    }
+
+    pinVerifying = false;
+    pinBuffer = '';
+    updatePinBoxes();
+
+    if (result && result.status === 'success') {
+      pinFailCount = 0;
+      pinLockedUntil = 0;
+      isAuthenticated = true;
+      currentManagerName = result.name || '';
+      updateManagerNameDisplay();
+      setPinStatus('');
+      document.getElementById('pin-lock-screen')?.classList.add('hidden');
+      document.getElementById('admin-main-screen')?.classList.remove('hidden');
       renderCalendar();
       renderApplicantsTable();
       updateNotificationsUI();
@@ -165,9 +225,24 @@ function setupPinLock() {
         pinContainer.classList.add('animate-bounce');
         setTimeout(() => pinContainer.classList.remove('animate-bounce'), 600);
       }
-      alert('รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง (รหัสตั้งต้น: 123456)');
-      pinBuffer = '';
-      updatePinBoxes();
+
+      pinFailCount += 1;
+      if (pinFailCount >= 5) {
+        pinLockedUntil = Date.now() + 30000;
+        pinFailCount = 0;
+        const tick = () => {
+          const secs = remainingLockSeconds();
+          if (secs > 0) {
+            setPinStatus(`กรอกผิดหลายครั้งเกินไป กรุณารออีก ${secs} วินาที`);
+            setTimeout(tick, 1000);
+          } else {
+            setPinStatus('');
+          }
+        };
+        tick();
+      } else {
+        setPinStatus('รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+      }
     }
   }
 
@@ -189,11 +264,24 @@ function setupPinLock() {
 
   document.getElementById('btn-admin-logout')?.addEventListener('click', () => {
     isAuthenticated = false;
+    currentManagerName = '';
     pinBuffer = '';
     updatePinBoxes();
+    updateManagerNameDisplay();
     document.getElementById('admin-main-screen')?.classList.add('hidden');
     document.getElementById('pin-lock-screen')?.classList.remove('hidden');
   });
+}
+
+function updateManagerNameDisplay() {
+  const el = document.getElementById('current-manager-name');
+  if (el) el.textContent = currentManagerName ? `👤 ${currentManagerName}` : '';
+}
+
+function escJsAttr(str) {
+  return String(str === undefined || str === null ? '' : str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'");
 }
 function setupAdminNavigation() {
   document.querySelectorAll('.admin-tab-btn').forEach(btn => {
@@ -221,6 +309,7 @@ const THAI_MONTH_NAMES = [
 ];
 
 function changeCalendarMonth(offset) {
+  currentCalendarMonth.setDate(1);
   currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() + offset);
   renderCalendar();
 }
@@ -238,38 +327,52 @@ function renderCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const grid = document.getElementById('cal-days-grid');
-  if (!grid) return;
-  grid.innerHTML = '';
+  if (grid) {
+    grid.innerHTML = '';
 
-  for (let i = 0; i < firstDay; i++) {
-    const emptyCell = document.createElement('div');
-    emptyCell.className = 'cal-day-cell p-2 bg-gray-50 border border-gray-100 opacity-30 rounded-lg';
-    grid.appendChild(emptyCell);
-  }
+    for (let i = 0; i < firstDay; i++) {
+      const emptyCell = document.createElement('div');
+      emptyCell.className = 'cal-day-cell p-2 bg-gray-50 border border-gray-100 opacity-30 rounded-lg';
+      grid.appendChild(emptyCell);
+    }
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const cell = document.createElement('div');
-    const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const dayEvents = calendarEvents.filter(e => e.date === dayDateStr);
-    const hasEvent = dayEvents.length > 0;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const cell = document.createElement('div');
+      const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayEvents = calendarEvents.filter(e => normalizeEventDateStr(e) === dayDateStr);
+      const hasEvent = dayEvents.length > 0;
 
-    cell.className = `cal-day-cell p-2 border border-gray-200 text-center flex flex-col justify-between rounded-lg ${
-      hasEvent ? 'cal-has-event' : 'hover:bg-blue-50 cursor-pointer'
-    }`;
+      cell.className = `cal-day-cell p-2 border border-gray-200 text-center flex flex-col justify-between rounded-lg ${
+        hasEvent ? 'cal-has-event' : 'hover:bg-blue-50 cursor-pointer'
+      }`;
 
-    cell.innerHTML = `
-      <span class="text-sm font-semibold">${day}</span>
-      ${hasEvent ? `<span class="text-[10px] truncate block text-blue-800 bg-blue-100 rounded px-1 mt-1 font-medium">${escapeHtml(dayEvents[0].title)}</span>` : ''}
-    `;
+      cell.innerHTML = `
+        <span class="text-sm font-semibold">${day}</span>
+        ${hasEvent ? `<span class="text-[10px] truncate block text-blue-800 bg-blue-100 rounded px-1 mt-1 font-medium">${escapeHtml(dayEvents[0].title)}</span>` : ''}
+      `;
 
-    cell.addEventListener('click', () => {
-      openDateEventModal(dayDateStr, dayEvents);
-    });
+      cell.addEventListener('click', () => {
+        openDateEventModal(dayDateStr, dayEvents);
+      });
 
-    grid.appendChild(cell);
+      grid.appendChild(cell);
+    }
   }
 
   renderMonthlyEventsTable(year, month);
+}
+
+function normalizeEventDateStr(evt) {
+  if (!evt || evt.date === undefined || evt.date === null) return '';
+  if (evt.date instanceof Date) {
+    const y = evt.date.getFullYear();
+    const m = String(evt.date.getMonth() + 1).padStart(2, '0');
+    const d = String(evt.date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const str = String(evt.date).trim();
+  const match = str.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : str;
 }
 
 function renderMonthlyEventsTable(year, month) {
@@ -279,8 +382,9 @@ function renderMonthlyEventsTable(year, month) {
 
   const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
   const monthEvents = calendarEvents
-    .filter(e => e.date.startsWith(monthPrefix))
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .map(e => Object.assign({}, e, { __dateStr: normalizeEventDateStr(e) }))
+    .filter(e => e.__dateStr && e.__dateStr.startsWith(monthPrefix))
+    .sort((a, b) => a.__dateStr.localeCompare(b.__dateStr));
 
   if (monthEvents.length === 0) {
     tbody.innerHTML = `
@@ -296,7 +400,7 @@ function renderMonthlyEventsTable(year, month) {
   monthEvents.forEach(evt => {
     const tr = document.createElement('tr');
     tr.className = 'border-b border-gray-100 hover:bg-sky-50 transition-colors';
-    const [ey, em, ed] = evt.date.split('-').map(Number);
+    const [ey, em, ed] = evt.__dateStr.split('-').map(Number);
     const thaiDateText = `${ed} ${THAI_MONTH_NAMES[em - 1]} ${ey + 543}`;
 
     tr.innerHTML = `
@@ -351,7 +455,7 @@ function openDateEventModal(dateStr, events) {
         <input type="text" id="new-evt-title" placeholder="ชื่อการดำเนินงาน / กิจกรรม" class="w-full text-xs border rounded-lg px-3 py-2">
         <input type="text" id="new-evt-resp" placeholder="ผู้รับผิดชอบ (เช่น ฝ่ายฝึกอบรม HR Bitwise)" class="w-full text-xs border rounded-lg px-3 py-2">
         <input type="text" id="new-evt-loc" placeholder="สถานที่" class="w-full text-xs border rounded-lg px-3 py-2">
-        <button onclick="addNewEvent('${dateStr}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-xs transition">
+        <button onclick="addNewEvent('${escJsAttr(dateStr)}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-xs transition">
           บันทึกกิจกรรมลงปฏิทิน
         </button>
       </div>
@@ -385,14 +489,22 @@ async function addNewEvent(dateStr) {
   localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
   closeEventModal();
   renderCalendar();
-
+  showLoading(true);
   try {
     const result = await callGasApi(GAS_WEB_APP_URL, { action: 'addEvent', event: newEvt });
     if (!result || result.status !== 'success') {
-      console.warn('บันทึกกิจกรรมลง Google Sheet ไม่สำเร็จ:', result && result.message);
+      calendarEvents = calendarEvents.filter(e => e.id !== newEvt.id);
+      localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+      renderCalendar();
+      alert('บันทึกกิจกรรมลง Google Sheet ไม่สำเร็จ: ' + (result && result.message ? result.message : 'ไม่ทราบสาเหตุ') + '\nกรุณาลองใหม่อีกครั้ง (กิจกรรมนี้ถูกยกเลิกจากปฏิทินแล้ว เนื่องจากบันทึกไม่สำเร็จจริง)');
     }
   } catch (err) {
-    console.warn('บันทึกกิจกรรมลง Google Sheet ไม่สำเร็จ:', err);
+    calendarEvents = calendarEvents.filter(e => e.id !== newEvt.id);
+    localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+    renderCalendar();
+    alert('เกิดข้อผิดพลาดขณะบันทึกกิจกรรมลง Google Sheet กรุณาลองใหม่อีกครั้ง: ' + err);
+  } finally {
+    showLoading(false);
   }
 }
 
@@ -446,10 +558,10 @@ function renderApplicantsTable() {
     tr.className = 'border-b border-gray-100 hover:bg-gray-50 transition-colors text-sm';
 
     const statusBadge = app.attended
-      ? `<button onclick="toggleAttendance('${app.id}')" title="คลิกเพื่อเปลี่ยนสถานะ" class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-semibold text-xs inline-flex items-center gap-1 border border-emerald-300 hover:bg-emerald-200 transition">
+      ? `<button onclick="toggleAttendance('${escJsAttr(app.id)}')" title="คลิกเพื่อเปลี่ยนสถานะ" class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-semibold text-xs inline-flex items-center gap-1 border border-emerald-300 hover:bg-emerald-200 transition">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span> ได้เข้ามาเรียนแล้ว
          </button>`
-      : `<button onclick="toggleAttendance('${app.id}')" title="คลิกเพื่อเปลี่ยนสถานะ" class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full font-semibold text-xs inline-flex items-center gap-1 border border-amber-300 hover:bg-amber-200 transition">
+      : `<button onclick="toggleAttendance('${escJsAttr(app.id)}')" title="คลิกเพื่อเปลี่ยนสถานะ" class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full font-semibold text-xs inline-flex items-center gap-1 border border-amber-300 hover:bg-amber-200 transition">
           <span class="w-2 h-2 rounded-full bg-amber-500"></span> ยังไม่มา
          </button>`;
 
@@ -458,11 +570,11 @@ function renderApplicantsTable() {
       <td class="px-4 py-3 font-semibold text-gray-900">${escapeHtml(app.firstName)}</td>
       <td class="px-4 py-3 font-semibold text-gray-900">${escapeHtml(app.lastName)}</td>
       <td class="px-4 py-3 text-gray-600 max-w-[200px] truncate" title="${escapeHtml(app.course)}">${escapeHtml(app.course) || '-'}</td>
-      <td class="px-4 py-3 text-gray-500">${escapeHtml(app.phone) || '-'}</td>
+      <td class="px-4 py-3 text-gray-500">${escapeHtml(formatPhoneNumber(app.phone)) || '-'}</td>
       <td class="px-4 py-3 text-center">${statusBadge}</td>
       <td class="px-4 py-3 text-center">
         <div class="flex items-center justify-center gap-2">
-          <button onclick="previewApplicantForm('${app.id}')" class="px-2.5 py-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg transition font-medium flex items-center gap-1" title="ดูแบบฟอร์ม / พิมพ์ PDF">
+          <button onclick="previewApplicantForm('${escJsAttr(app.id)}')" class="px-2.5 py-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg transition font-medium flex items-center gap-1" title="ดูแบบฟอร์ม / พิมพ์ PDF">
             <span>📄</span> พิมพ์ PDF
           </button>
         </div>
@@ -493,24 +605,41 @@ async function toggleAttendance(applicantId) {
   }
 }
 
-function previewApplicantForm(applicantId) {
+async function previewApplicantForm(applicantId) {
   const app = applicants.find(a => a.id === applicantId);
   if (!app) return;
 
   const modal = document.getElementById('pdf-preview-modal');
   const container = document.getElementById('pdf-preview-container');
-  if (modal && container) {
-    container.innerHTML = renderOfficialFormHTML(app);
+  if (!modal || !container) return;
 
-    document.getElementById('modal-print-btn').onclick = () => printApplicantForm(app);
-    document.getElementById('modal-download-btn').onclick = () => downloadApplicantPDF(app);
-    const saveDriveBtn = document.getElementById('modal-save-drive-btn');
-    if (saveDriveBtn) saveDriveBtn.onclick = () => saveApplicantPdfToDrive(app);
-    markNotificationSeen(app.id);
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+  showLoading(true);
+  let resolvedApp = app;
+  try {
+    resolvedApp = await resolveApplicantPhotoForRender(app);
+  } catch (err) {
+    console.warn('ไม่สามารถดึงรูปถ่ายผู้สมัครมาฝังในเอกสารได้ จะแสดงผลเท่าที่มีข้อมูล:', err);
+  } finally {
+    showLoading(false);
   }
+
+  container.innerHTML = `<div class="a4-page-screen-wrapper">${renderOfficialFormHTML(resolvedApp)}</div>`;
+  const previewFormEl = document.getElementById('official-form-printable');
+  if (previewFormEl && typeof fitOfficialFormToA4 === 'function') {
+    if (typeof waitForElementReady === 'function') {
+      await waitForElementReady(previewFormEl);
+    }
+    fitOfficialFormToA4(previewFormEl);
+  }
+
+  document.getElementById('modal-print-btn').onclick = () => printApplicantForm(resolvedApp);
+  document.getElementById('modal-download-btn').onclick = () => downloadApplicantPDF(resolvedApp);
+  const saveDriveBtn = document.getElementById('modal-save-drive-btn');
+  if (saveDriveBtn) saveDriveBtn.onclick = () => saveApplicantPdfToDrive(resolvedApp);
+  markNotificationSeen(app.id);
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
 }
 
 function closePdfPreviewModal() {
@@ -580,7 +709,7 @@ function updateNotificationsUI() {
       listContainer.innerHTML = '<div class="p-4 text-center text-sm text-gray-400">ไม่มีการแจ้งเตือนใหม่</div>';
     } else {
       listContainer.innerHTML = list.map(n => `
-        <div class="p-3 border-b hover:bg-blue-50 cursor-pointer transition text-left" onclick="previewApplicantForm('${n.applicantId}')">
+        <div class="p-3 border-b hover:bg-blue-50 cursor-pointer transition text-left" onclick="previewApplicantForm('${escJsAttr(n.applicantId)}')">
           <div class="font-bold text-xs text-blue-900 flex justify-between">
             <span>${escapeHtml(n.title)}</span>
             <span class="text-[10px] text-gray-400">${escapeHtml(n.time)}</span>
@@ -592,9 +721,49 @@ function updateNotificationsUI() {
   }
 }
 
+// [เพิ่มใหม่] ลบสถานะ "อ่านแล้ว" (NOTIF_SEEN) และรายการแจ้งเตือนที่ค้างอยู่ (NOTIFICATIONS)
+// ของผู้สมัครที่ไม่มีอยู่ใน currentApplicants แล้ว (เช่น ถูกลบออกจาก Google Sheet โดยตรง)
+// ป้องกันปัญหาตัวเลขแจ้งเตือน (badge) ค้าง ไม่ลดลง หรือกดแล้วไม่มีอะไรเกิดขึ้น
+function pruneStaleNotificationData(currentApplicants) {
+  const validIds = new Set((currentApplicants || []).map(a => a.id));
+
+  try {
+    const seen = getSeenNotificationIds().filter(id => validIds.has(id));
+    localStorage.setItem(STORAGE_KEYS.NOTIF_SEEN, JSON.stringify(seen));
+  } catch (e) { /* ignore */ }
+
+  try {
+    const localList = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+    const filtered = Array.isArray(localList) ? localList.filter(n => validIds.has(n.applicantId)) : [];
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(filtered));
+  } catch (e) { /* ignore */ }
+}
+
 function toggleNotifDropdown() {
   const dropdown = document.getElementById('notif-dropdown');
   if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+// [เพิ่มใหม่] เดิมดรอปดาวน์แจ้งเตือนไม่มีทางปิดเองเมื่อคลิกที่อื่น ทำให้รู้สึกว่า "ค้าง"
+// เพิ่มการปิดอัตโนมัติเมื่อคลิกนอกกรอบดรอปดาวน์ หรือกดปุ่ม Esc
+function setupNotifDropdownAutoClose() {
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('notif-dropdown');
+    if (!dropdown || dropdown.classList.contains('hidden')) return;
+
+    const clickedInsideDropdown = e.target.closest('#notif-dropdown');
+    const clickedBellButton = e.target.closest('button[onclick="toggleNotifDropdown()"]');
+    if (!clickedInsideDropdown && !clickedBellButton) {
+      dropdown.classList.add('hidden');
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const dropdown = document.getElementById('notif-dropdown');
+      if (dropdown) dropdown.classList.add('hidden');
+    }
+  });
 }
 
 function showLoading(show) {

@@ -1,21 +1,12 @@
-﻿const STORAGE_KEYS = {
+const STORAGE_KEYS = {
   APPLICANTS: 'bw_skill_applicants',
   CALENDAR_EVENTS: 'bw_calendar_events',
   ADMIN_PIN: 'bw_admin_pin',
   NOTIFICATIONS: 'bw_notifications'
 };
 
-function escapeHtml(str) {
-  if (str === undefined || str === null) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
 let applicants = [];
+let isSubmittingForm = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initApplicantsData();
@@ -26,7 +17,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 function loadLocalApplicants() {
   const saved = localStorage.getItem(STORAGE_KEYS.APPLICANTS);
   if (saved) {
-    try { return JSON.parse(saved); } catch (e) { return []; }
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        parsed.forEach(a => {
+          if (a.phone) a.phone = formatPhoneNumber(a.phone);
+          if (a.workplacePhone) a.workplacePhone = formatPhoneNumber(a.workplacePhone);
+          if (a.addressNo) a.addressNo = cleanAddressNo(a.addressNo);
+        });
+      }
+      return parsed;
+    } catch (e) { return []; }
   }
   return [];
 }
@@ -36,10 +37,22 @@ async function initApplicantsData() {
   try {
     const result = await fetchGasApi(GAS_WEB_APP_URL + '?action=getApplicants');
     if (result && result.status === 'success' && Array.isArray(result.data)) {
-      const byId = new Map();
-      applicants.forEach(a => byId.set(a.id, a));
-      result.data.forEach(a => byId.set(a.id, Object.assign({}, byId.get(a.id) || {}, a)));
-      applicants = Array.from(byId.values());
+      // [แก้ไข] เช่นเดียวกับ admin.js: ให้ข้อมูลจาก Google Sheet เป็นความจริงหลักเสมอ
+      // แทนที่จะ "รวม" กับของเก่าในเครื่องแบบไม่มีวันลบ (ซึ่งทำให้แถวที่ถูกลบออกจากชีต
+      // โดยตรงไม่เคยหายไปจากแคชในเครื่อง) — ยังคงแคชรูปถ่ายเดิมไว้ให้ถ้ามี
+      const localById = new Map();
+      applicants.forEach(a => localById.set(a.id, a));
+
+      applicants = result.data.map(a => {
+        if (a.phone) a.phone = formatPhoneNumber(a.phone);
+        if (a.workplacePhone) a.workplacePhone = formatPhoneNumber(a.workplacePhone);
+        if (a.addressNo) a.addressNo = cleanAddressNo(a.addressNo);
+        const localMatch = localById.get(a.id);
+        if (localMatch && localMatch.photoDataUrl && !a.photoDataUrl) {
+          a.photoDataUrl = localMatch.photoDataUrl;
+        }
+        return a;
+      });
       localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
     } else if (result && result.status === 'error') {
       console.warn('ไม่สามารถซิงค์ข้อมูลผู้สมัครจาก Google Sheet ได้:', result.message);
@@ -63,7 +76,6 @@ function readFileAsDataUrl(file) {
 }
 
 function setupFormDynamicControls() {
-  // สภาพร่างกาย
   const bodyNormal = document.getElementById('body-normal');
   const bodyDisability = document.getElementById('body-disability');
   const disabilityContainer = document.getElementById('disability-details-container');
@@ -107,16 +119,49 @@ function setupFormDynamicControls() {
   }
 
   const sectorGovt = document.getElementById('sector-govt');
+  const govtContainer = document.getElementById('govt-sub-container');
   const govtSub = document.getElementById('govt-sub-select');
-  const freelanceSub = document.getElementById('freelance-sub-select');
   const sectorBusiness = document.getElementById('sector-business');
+  const freelanceContainer = document.getElementById('freelance-sub-container');
+  const freelanceSub = document.getElementById('freelance-sub-select');
+
+  function updateSectorDropdowns() {
+    if (govtContainer && sectorGovt) {
+      if (sectorGovt.checked) {
+        govtContainer.classList.remove('hidden');
+        if (govtSub) govtSub.disabled = false;
+      } else {
+        govtContainer.classList.add('hidden');
+        if (govtSub) govtSub.disabled = true;
+      }
+    }
+    if (freelanceContainer && sectorBusiness) {
+      if (sectorBusiness.checked) {
+        freelanceContainer.classList.remove('hidden');
+        if (freelanceSub) freelanceSub.disabled = false;
+      } else {
+        freelanceContainer.classList.add('hidden');
+        if (freelanceSub) freelanceSub.disabled = true;
+      }
+    }
+  }
 
   document.querySelectorAll('input[name="workSector"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (govtSub && sectorGovt) govtSub.disabled = !sectorGovt.checked;
-      if (freelanceSub && sectorBusiness) freelanceSub.disabled = !sectorBusiness.checked;
-    });
+    radio.addEventListener('change', updateSectorDropdowns);
   });
+  updateSectorDropdowns();
+  const unemployedReasonSelect = document.getElementById('unemployedReason');
+  const unemployedReasonOtherText = document.getElementById('unemployedReasonOtherText');
+  if (unemployedReasonSelect && unemployedReasonOtherText) {
+    unemployedReasonSelect.addEventListener('change', () => {
+      if (unemployedReasonSelect.value === 'other') {
+        unemployedReasonOtherText.classList.remove('hidden');
+      } else {
+        unemployedReasonOtherText.classList.add('hidden');
+        unemployedReasonOtherText.value = '';
+      }
+    });
+  }
 
   const idCardInput = document.getElementById('idCard');
   if (idCardInput) {
@@ -172,12 +217,6 @@ function setupFormDynamicControls() {
   }
 }
 
-// [FIX บั๊ก #1] เดิม "เขต/อำเภอ" และ "แขวง/ตำบล" เป็น <select> ที่บังคับกรอก (required)
-// แต่ THAI_DISTRICT_MAP มีข้อมูลแค่ ~6 จังหวัด จาก 77 จังหวัด ทำให้จังหวัดอื่นๆ ที่เหลือ
-// dropdown ตำบลจะไม่มีตัวเลือกให้เลือกเลย และส่งฟอร์มไม่ได้ตลอดกาล
-// ตอนนี้เปลี่ยนเป็น <input type="text" list="..."> (combobox) แทน:
-//   - ถ้ามีข้อมูลในระบบ จะมีตัวเลือกให้กด autocomplete เหมือนเดิม
-//   - ถ้าไม่มีข้อมูล ผู้ใช้ยังพิมพ์ชื่ออำเภอ/ตำบลเองได้ตามปกติ ไม่ติดบล็อกฟอร์ม
 function setupAddressDropdowns() {
   const provSelect = document.getElementById('address-province');
   const distInput = document.getElementById('address-district');
@@ -254,6 +293,15 @@ function setupAddressDropdowns() {
 
 async function handleFormSubmit(e) {
   e.preventDefault();
+  if (isSubmittingForm) return;
+
+  const idCardEl = document.getElementById('idCard');
+  const idCardDigits = (idCardEl?.value || '').replace(/\D/g, '');
+  if (idCardDigits.length !== 13) {
+    alert('กรุณากรอกเลขประจำตัวประชาชนให้ครบ 13 หลัก');
+    idCardEl?.focus();
+    return;
+  }
 
   const pdpaCheck = document.getElementById('pdpa-consent');
   if (!pdpaCheck || !pdpaCheck.checked) {
@@ -262,7 +310,37 @@ async function handleFormSubmit(e) {
     return;
   }
 
+  const requiredFileFields = [
+    { id: 'filePhoto', label: 'ภาพถ่ายหน้าตรง' },
+    { id: 'fileIdCard', label: 'บัตรประชาชน (ด้านหน้า)' },
+    { id: 'fileEdu', label: 'วุฒิการศึกษา' }
+  ];
+  for (const f of requiredFileFields) {
+    const fileInput = document.getElementById(f.id);
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+      alert(`กรุณาแนบไฟล์ "${f.label}" ซึ่งเป็นเอกสารที่จำเป็นต้องแนบก่อนส่งใบสมัคร`);
+      fileInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+  }
+
+  if (!document.getElementById('emp-working')?.checked) {
+    const unemployedSelectEl = document.getElementById('unemployedReason');
+    const unemployedOtherEl = document.getElementById('unemployedReasonOtherText');
+    if (unemployedSelectEl?.value === 'other' && !(unemployedOtherEl?.value || '').trim()) {
+      alert('กรุณาระบุสถานภาพปัจจุบัน (ช่อง "อื่นๆ")');
+      unemployedOtherEl?.focus();
+      return;
+    }
+  }
+
+  isSubmittingForm = true;
+  const submitBtn = document.querySelector('#registration-form button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+
   showLoading(true);
+
+  try {
 
   const sheetUrl = GAS_WEB_APP_URL;
   let photoDataUrl = '';
@@ -287,7 +365,7 @@ async function handleFormSubmit(e) {
     id: newId,
     submittedAt: `${now.toISOString().split('T')[0]} ${timeStr}`,
     submittedAtDate: dateStr,
-    agency: document.getElementById('agency')?.value || 'กลุ่ม HR Bitwise Group',
+    agency: document.getElementById('agency')?.value || 'ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์',
     objectives: getChecked('input[name="objectives"]'),
     tests: getChecked('input[name="tests"]'),
     course: document.getElementById('course')?.value || '',
@@ -304,9 +382,9 @@ async function handleFormSubmit(e) {
     idCard: document.getElementById('idCard')?.value || '',
     nationality: document.getElementById('nationality')?.value || 'ไทย',
     birthDate: document.getElementById('birthDate')?.value || '',
-    phone: document.getElementById('phone')?.value || '',
+    phone: formatPhoneNumber(document.getElementById('phone')?.value || ''),
     email: document.getElementById('email')?.value || '',
-    addressNo: document.getElementById('addressNo')?.value || '',
+    addressNo: (document.getElementById('addressNo')?.value || '').trim(),
     moo: document.getElementById('moo')?.value || '',
     street: document.getElementById('street')?.value || '',
     soi: document.getElementById('soi')?.value || '',
@@ -319,18 +397,26 @@ async function handleFormSubmit(e) {
     bodyCondition: document.getElementById('body-disability')?.checked ? 'พิการ' : 'ปกติ',
     disabilities: getChecked('input[name="disabilities"]'),
     employmentStatus: document.getElementById('emp-working')?.checked ? 'employed' : 'unemployed',
-    workSector: document.querySelector('input[name="workSector"]:checked')?.value || '',
-    govtType: document.getElementById('govt-sub-select')?.value || '',
-    freelanceType: document.getElementById('freelance-sub-select')?.value || '',
-    monthlyIncome: document.getElementById('monthlyIncome')?.value || '',
-    occupation: document.getElementById('occupation')?.value || '',
-    position: document.getElementById('position')?.value || '',
-    workExperienceYears: document.getElementById('workExperienceYears')?.value || '',
-    workplaceName: document.getElementById('workplaceName')?.value || '',
-    workplaceProvince: document.getElementById('workplaceProvince')?.value || '',
-    workplacePhone: document.getElementById('workplacePhone')?.value || '',
-    industryGroup: document.getElementById('industryGroup')?.value || '',
-    unemployedReason: document.getElementById('unemployedReason')?.value || '',
+    workSector: document.getElementById('emp-working')?.checked ? (document.querySelector('input[name="workSector"]:checked')?.value || '') : '',
+    govtType: (document.getElementById('emp-working')?.checked && document.querySelector('input[name="workSector"]:checked')?.value === 'government')
+      ? (document.getElementById('govt-sub-select')?.value || '')
+      : '',
+    freelanceType: (document.getElementById('emp-working')?.checked && document.querySelector('input[name="workSector"]:checked')?.value === 'business')
+      ? (document.getElementById('freelance-sub-select')?.value || '')
+      : '',
+    monthlyIncome: document.getElementById('emp-working')?.checked ? (document.getElementById('monthlyIncome')?.value || '') : '',
+    occupation: document.getElementById('emp-working')?.checked ? (document.getElementById('occupation')?.value || '') : '',
+    position: document.getElementById('emp-working')?.checked ? (document.getElementById('position')?.value || '') : '',
+    workExperienceYears: document.getElementById('emp-working')?.checked ? (document.getElementById('workExperienceYears')?.value || '') : '',
+    workplaceName: document.getElementById('emp-working')?.checked ? (document.getElementById('workplaceName')?.value || '') : '',
+    workplaceProvince: document.getElementById('emp-working')?.checked ? (document.getElementById('workplaceProvince')?.value || '') : '',
+    workplacePhone: document.getElementById('emp-working')?.checked ? formatPhoneNumber(document.getElementById('workplacePhone')?.value || '') : '',
+    industryGroup: document.getElementById('emp-working')?.checked ? (document.getElementById('industryGroup')?.value || '') : '',
+    unemployedReason: !document.getElementById('emp-working')?.checked
+      ? ((document.getElementById('unemployedReason')?.value === 'other')
+          ? (document.getElementById('unemployedReasonOtherText')?.value || '').trim()
+          : (document.getElementById('unemployedReason')?.value || ''))
+      : '',
     infoSource: document.getElementById('infoSource')?.value || '',
     pdpaConsent: true,
     jobAssist: document.querySelector('input[name="jobAssist"]:checked')?.value || 'not_needed',
@@ -395,6 +481,12 @@ async function handleFormSubmit(e) {
 
   showLoading(false);
   showSubmitSuccessModal(newApplicant);
+
+  } finally {
+    isSubmittingForm = false;
+    if (submitBtn) submitBtn.disabled = false;
+    showLoading(false);
+  }
 }
 
 function showSubmitSuccessModal(applicant) {
@@ -412,7 +504,7 @@ function showSubmitSuccessModal(applicant) {
         </div>
         <div><strong>ชื่อ-นามสกุล:</strong> ${escapeHtml(applicant.title)} ${escapeHtml(applicant.firstName)} ${escapeHtml(applicant.lastName)}</div>
         <div><strong>หลักสูตร:</strong> ${escapeHtml(applicant.course) || '-'}</div>
-        <div><strong>เบอร์โทรศัพท์:</strong> ${escapeHtml(applicant.phone)}</div>
+        <div><strong>เบอร์โทรศัพท์:</strong> ${escapeHtml(formatPhoneNumber(applicant.phone))}</div>
         <div><strong>วันที่สมัคร:</strong> ${escapeHtml(applicant.submittedAtDate)}</div>
       </div>
     `;
@@ -444,6 +536,26 @@ function closeSuccessModal() {
     modal.classList.remove('flex');
     const form = document.getElementById('registration-form');
     if (form) form.reset();
+    const photoLabel = document.getElementById('filePhotoLabel');
+    if (photoLabel) {
+      photoLabel.innerHTML = 'ยังไม่ได้เลือกไฟล์';
+      photoLabel.classList.remove('text-green-600', 'font-semibold');
+    }
+    ['fileIdCard', 'fileEdu', 'fileTranscript', 'fileWorkCert'].forEach(inputId => {
+      const label = document.getElementById(inputId + 'Label');
+      if (label) {
+        label.innerHTML = 'ยังไม่ได้เลือกไฟล์';
+        label.classList.remove('text-green-600', 'font-semibold');
+      }
+    });
+
+    document.getElementById('disability-details-container')?.classList.add('hidden');
+    const unemployedOtherEl = document.getElementById('unemployedReasonOtherText');
+    if (unemployedOtherEl) unemployedOtherEl.classList.add('hidden');
+    const section21 = document.getElementById('section-2-1');
+    const section22 = document.getElementById('section-2-2');
+    if (section21) section21.classList.remove('hidden');
+    if (section22) section22.classList.add('hidden');
   }
 }
 
