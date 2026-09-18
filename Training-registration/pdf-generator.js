@@ -86,7 +86,7 @@ function renderOfficialFormHTML(data) {
   const selInd = d.industryGroup || '';
   const infoSrc = d.infoSource || '';
   return `
-  <div id="official-form-printable" style="width:210mm;height:297mm;max-height:297mm;box-sizing:border-box;overflow:hidden;padding:9mm 13mm 6mm 13mm;background:#fff;font-family:'Sarabun','TH Sarabun PSK',sans-serif;font-size:10.4px;line-height:1.7;letter-spacing:0.25px;color:#111;">
+  <div id="official-form-printable" style="width:210mm;height:297mm;max-height:297mm;box-sizing:border-box;overflow:hidden;padding:9mm 13mm 6mm 13mm;background:#fff;font-family:'Angsana New','AngsanaUPC','TH Sarabun PSK','Sarabun',sans-serif;font-size:10.4px;line-height:1.7;letter-spacing:0.25px;color:#111;">
 
     <!-- ===== HEADER (โลโก้ซ้าย + ชื่อฟอร์มกึ่งกลาง + รูปถ่ายขวา เหมือนแบบฟอร์มต้นฉบับ) ===== -->
     <!-- [แก้ไข] ขยายขนาดตราหน่วยงาน (โลโก้) และรูปถ่ายผู้สมัครให้ใหญ่ขึ้น ตามที่ขอ -->
@@ -453,7 +453,7 @@ function printApplicantForm(applicantData) {
           margin: 0;
           padding: 0;
           background: #fff;
-          font-family: 'Sarabun', sans-serif;
+          font-family: 'Angsana New', 'AngsanaUPC', 'TH Sarabun PSK', 'Sarabun', sans-serif;
           overflow: hidden;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
@@ -475,7 +475,7 @@ function printApplicantForm(applicantData) {
     <body class="p-0 m-0">
       ${formHtml}
       <script>
-        // [แก้ไข] หน้าต่างพิมพ์นี้เป็นเอกสารแยก (window.open) ไม่ได้แชร์ฟังก์ชันกับหน้าเว็บหลัก
+        // หน้าต่างพิมพ์นี้เป็นเอกสารแยก (window.open) ไม่ได้แชร์ฟังก์ชันกับหน้าเว็บหลัก
         // จึงคัดลอกตรรกะ "ย่อฟอนต์ให้พอดี A4" มาไว้ในสคริปต์นี้โดยตรง (เทียบเท่า fitOfficialFormToA4 ในไฟล์ pdf-generator.js)
         function mmToPxLocal(mm) { return mm * 96 / 25.4; }
         function fitToA4Local(el) {
@@ -601,7 +601,7 @@ async function saveApplicantPdfToDrive(applicantData) {
       action: 'savePdfToDrive',
       fileName,
       base64Data: pdfDataUri,
-      subfolder: applicantData.id || ''
+      subfolder: (typeof buildApplicantFolderName === 'function') ? buildApplicantFolderName(applicantData) : (applicantData.id || '')
     });
 
     if (result && result.status === 'success') {

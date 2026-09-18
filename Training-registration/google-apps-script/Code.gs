@@ -29,11 +29,7 @@ function formatPhoneNumber(phone) {
   }
   if (!str) return '';
   const digits = str.replace(/\D/g, '');
-  if (digits.length === 9 && !str.startsWith('0')) {
-    if (digits.startsWith('8') || digits.startsWith('9') || digits.startsWith('6')) {
-      str = '0' + str;
-    }
-  } else if (digits.length === 8 && !str.startsWith('0')) {
+  if ((digits.length === 9 || digits.length === 8) && !str.startsWith('0')) {
     str = '0' + str;
   }
   return str;
@@ -53,6 +49,33 @@ function normalizeAddressNo(v) {
     return parseInt(parts[2], 10) + '/' + parseInt(parts[1], 10);
   }
   return str;
+}
+
+const SESSION_CACHE_PREFIX = 'admsess_';
+const SESSION_TTL_SECONDS = 21600; // 6 ชั่วโมง (ค่าสูงสุดที่ CacheService ของ Apps Script รองรับ)
+
+function createSession_(managerName) {
+  const token = Utilities.getUuid();
+  const cache = CacheService.getScriptCache();
+  cache.put(SESSION_CACHE_PREFIX + token, managerName || 'admin', SESSION_TTL_SECONDS);
+  return token;
+}
+
+function getSessionManagerName_(token) {
+  if (!token) return null;
+  const cache = CacheService.getScriptCache();
+  return cache.get(SESSION_CACHE_PREFIX + token);
+}
+
+function isValidSession_(token) {
+  return Boolean(getSessionManagerName_(token));
+}
+
+function unauthorizedResponse_() {
+  return createJsonResponse({
+    status: 'unauthorized',
+    message: 'เซสชันผู้ดูแลระบบหมดอายุหรือไม่ถูกต้อง กรุณาเข้าสู่ระบบด้วยรหัส PIN อีกครั้ง'
+  });
 }
 
 const APPLICANT_FIELDS = [
@@ -232,8 +255,6 @@ function setupSheets() {
   }
 }
 
-// [เพิ่มใหม่] ฟังก์ชันสำหรับรันครั้งเดียวจากเมนู Apps Script (Run > repairExistingPlainTextColumns)
-// ซ่อมแซมคอลัมน์ข้อความล้วน วันที่ รหัส PIN เบอร์โทร และเลขที่บ้าน ให้ถูกต้อง
 function repairExistingPlainTextColumns() {
   const ss = getSS_();
   const tz = ss.getSpreadsheetTimeZone();
@@ -334,7 +355,6 @@ function parseApplicantRow(row, tz) {
     if (typeof parsedVal === 'string' && parsedVal.charAt(0) === "'") {
       parsedVal = parsedVal.substring(1);
     }
-    // If addressNo in sheet got turned into Date, prefer the original from __raw if available
     if (f.key === 'addressNo') {
       const isDate = raw instanceof Date || Object.prototype.toString.call(raw) === '[object Date]';
       if (rawJsonObj && rawJsonObj.addressNo && (isDate || /^\d{4}-\d{2}-\d{2}/.test(String(raw)))) {
@@ -344,7 +364,6 @@ function parseApplicantRow(row, tz) {
       obj[f.key] = normalizeAddressNo(parsedVal);
       return;
     }
-    // If phone in sheet lost its leading 0, restore it or prefer __raw
     if (f.key === 'phone' || f.key === 'workplacePhone') {
       if (rawJsonObj && rawJsonObj[f.key] && (!parsedVal || !String(parsedVal).startsWith('0'))) {
         obj[f.key] = formatPhoneNumber(rawJsonObj[f.key]);
@@ -362,15 +381,6 @@ function parseApplicantRow(row, tz) {
   return obj;
 }
 
-// [แก้ไข] เดิมฟังก์ชันนี้ไม่มีการล็อก (lock) เลย เมื่อฝั่งหน้าเว็บอัปโหลดไฟล์ 5 ไฟล์
-// (รูปถ่าย/บัตรประชาชน/วุฒิการศึกษา/ทรานสคริปต์/ใบรับรองงาน) พร้อมกันแบบขนาน (Promise.all)
-// โดยตั้งชื่อโฟลเดอร์ย่อยเดียวกัน (รหัสผู้สมัคร) ทุกไฟล์ — คำขอทั้ง 5 รายการนี้ไปถึง Apps Script
-// เกือบพร้อมกัน แต่ละคำขอจะรันฟังก์ชันนี้แยกกัน (แต่ละ execution เป็นคนละ instance) แล้วเช็คว่า
-// "มีโฟลเดอร์ชื่อนี้หรือยัง" พร้อมๆ กัน ซึ่งตอนเช็คยังไม่มีทั้งคู่ (race condition) จึงสร้างโฟลเดอร์
-// ชื่อซ้ำกันขึ้นมาหลายโฟลเดอร์ ทำให้ไฟล์ของผู้สมัครคนเดียวกันกระจัดกระจายไปคนละโฟลเดอร์
-//
-// แก้ใหม่: ใช้ LockService.getScriptLock() ล็อกเฉพาะช่วง "เช็ค + สร้างโฟลเดอร์" ให้ทำงานทีละคำขอ
-// เท่านั้น (ใช้เวลาสั้นมาก ไม่กระทบความเร็วโดยรวม) การอัปโหลดไฟล์จริงยังคงทำงานขนานกันได้ตามปกติ
 function getOrCreateFolder(name, parent) {
   const lock = LockService.getScriptLock();
   let gotLock = false;
@@ -380,7 +390,6 @@ function getOrCreateFolder(name, parent) {
     gotLock = false;
   }
   try {
-    // ตรวจซ้ำอีกครั้งหลังได้ lock แล้ว เผื่อ request อื่นสร้างโฟลเดอร์นี้ไปแล้วระหว่างที่เรารอ
     const folders = parent.getFoldersByName(name);
     if (folders.hasNext()) return folders.next();
     return parent.createFolder(name);
@@ -485,7 +494,8 @@ function handleVerifyManagerPin(postData) {
       const status = String(data[i][2] || '').trim();
       if (!name) continue;
       if (rowPin === pin && status === 'ใช้งาน') {
-        return createJsonResponse({ status: 'success', name: name });
+        const token = createSession_(name);
+        return createJsonResponse({ status: 'success', name: name, token: token });
       }
     }
     return createJsonResponse({ status: 'error', message: 'รหัส PIN ไม่ถูกต้องหรือไม่มีสิทธิ์เข้าใช้งาน' });
@@ -494,12 +504,21 @@ function handleVerifyManagerPin(postData) {
   }
 }
 
+const AUTH_REQUIRED_GET_ACTIONS = ['getApplicants', 'getCalendarEvents', 'getFileBase64'];
+
 function doGet(e) {
   const action = e && e.parameter && e.parameter.action ? e.parameter.action : 'ping';
   const ss = getSS_();
 
   if (action === 'ping') {
     return createJsonResponse({ status: 'success', message: 'HR Bitwise Google Sheet API พร้อมใช้งาน', timestamp: new Date().toISOString() });
+  }
+
+  if (AUTH_REQUIRED_GET_ACTIONS.indexOf(action) !== -1) {
+    const token = e && e.parameter ? e.parameter.token : '';
+    if (!isValidSession_(token)) {
+      return unauthorizedResponse_();
+    }
   }
 
   if (action === 'getApplicants') {
@@ -536,6 +555,7 @@ function doGet(e) {
 }
 
 const LOCK_REQUIRED_ACTIONS = ['addApplicant', 'updateAttendance', 'addEvent'];
+const AUTH_REQUIRED_POST_ACTIONS = ['updateAttendance', 'addEvent'];
 
 function doPost(e) {
   const ss = getSS_();
@@ -548,6 +568,10 @@ function doPost(e) {
     }
     const postData = JSON.parse(e.postData.contents);
     action = postData.action;
+
+    if (AUTH_REQUIRED_POST_ACTIONS.indexOf(action) !== -1 && !isValidSession_(postData.token)) {
+      return unauthorizedResponse_();
+    }
 
     let lock = null;
     if (LOCK_REQUIRED_ACTIONS.indexOf(action) !== -1) {

@@ -15,6 +15,13 @@ let pinVerifying = false;
 let pinFailCount = 0;
 let pinLockedUntil = 0;
 
+function parseSubmittedAtDate(value) {
+  if (!value) return new Date(0);
+  const isoLike = String(value).trim().replace(' ', 'T');
+  const d = new Date(isoLike);
+  return isNaN(d.getTime()) ? new Date(0) : d;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   applicants = loadLocalApplicants();
   calendarEvents = loadLocalEvents();
@@ -28,14 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCalendar();
   renderApplicantsTable();
   updateNotificationsUI();
-
-  syncFromGoogleSheet(GAS_WEB_APP_URL, { silent: true })
-    .then(() => {
-      renderCalendar();
-      renderApplicantsTable();
-      updateNotificationsUI();
-    })
-    .catch(() => { });
+  
 });
 
 function loadLocalApplicants() {
@@ -69,17 +69,14 @@ async function syncFromGoogleSheet(sheetUrl, opts) {
   let ok = true;
 
   try {
-    const applicantsResult = await fetchGasApi(sheetUrl + '?action=getApplicants');
+    const applicantsResult = await fetchGasApi(withAuthToken(sheetUrl + '?action=getApplicants'));
+    if (applicantsResult && applicantsResult.status === 'unauthorized') {
+      if (isAuthenticated) {
+        forceAdminLogout('เซสชันผู้ดูแลระบบหมดอายุหรือไม่ถูกต้อง กรุณาเข้าสู่ระบบด้วยรหัส PIN อีกครั้ง');
+      }
+      return false;
+    }
     if (applicantsResult && applicantsResult.status === 'success' && Array.isArray(applicantsResult.data)) {
-      // [แก้ไข] เดิมโค้ดใช้วิธี "รวม" (merge) ข้อมูลเก่าที่แคชไว้ในเครื่อง (localStorage) เข้ากับ
-      // ข้อมูลใหม่จากชีต โดยไม่เคยลบรายการที่ไม่มีในผลลัพธ์ใหม่ออก ผลคือถ้าไปลบแถวออกจาก
-      // Google Sheet โดยตรง แถวนั้นจะไม่หายไปจากหน้าแอดมินเลย เพราะ id เดิมยังค้างอยู่ใน
-      // localStorage ตลอดไป
-      //
-      // แก้ใหม่: ให้ข้อมูลจาก Google Sheet เป็น "ความจริงหลัก" (source of truth) เสมอ
-      // สร้างรายการผู้สมัครใหม่จากข้อมูลชีตล้วนๆ เท่านั้น ถ้า id ไหนถูกลบออกจากชีต
-      // ก็จะหายไปจากแอดมินไปด้วยโดยอัตโนมัติในรอบ sync ถัดไป
-      // (ยังคง "แคชรูปถ่าย" เดิมของผู้สมัครที่ยังอยู่ไว้ให้ เพื่อไม่ต้องดึงจาก Drive ซ้ำโดยไม่จำเป็น)
       const localById = new Map();
       applicants.forEach(a => localById.set(a.id, a));
 
@@ -94,11 +91,8 @@ async function syncFromGoogleSheet(sheetUrl, opts) {
           }
           return a;
         })
-        .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+        .sort((a, b) => parseSubmittedAtDate(b.submittedAt) - parseSubmittedAtDate(a.submittedAt));
       localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
-
-      // [เพิ่มใหม่] เคลียร์สถานะ "อ่านแล้ว" และรายการแจ้งเตือนของผู้สมัครที่ถูกลบออกจากชีตไปแล้ว
-      // ไม่งั้นตัวเลขแจ้งเตือน (badge) จะค้างนับรวมรายการที่ไม่มีอยู่จริงตลอดไป
       pruneStaleNotificationData(applicants);
     } else {
       ok = false;
@@ -110,7 +104,13 @@ async function syncFromGoogleSheet(sheetUrl, opts) {
   }
 
   try {
-    const eventsResult = await fetchGasApi(sheetUrl + '?action=getCalendarEvents');
+    const eventsResult = await fetchGasApi(withAuthToken(sheetUrl + '?action=getCalendarEvents'));
+    if (eventsResult && eventsResult.status === 'unauthorized') {
+      if (isAuthenticated) {
+        forceAdminLogout('เซสชันผู้ดูแลระบบหมดอายุหรือไม่ถูกต้อง กรุณาเข้าสู่ระบบด้วยรหัส PIN อีกครั้ง');
+      }
+      return false;
+    }
     if (eventsResult && eventsResult.status === 'success' && Array.isArray(eventsResult.data)) {
       calendarEvents = eventsResult.data;
       localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
@@ -203,6 +203,7 @@ function setupPinLock() {
       pinLockedUntil = 0;
       isAuthenticated = true;
       currentManagerName = result.name || '';
+      adminSessionToken = result.token || '';
       updateManagerNameDisplay();
       setPinStatus('');
       document.getElementById('pin-lock-screen')?.classList.add('hidden');
@@ -210,7 +211,6 @@ function setupPinLock() {
       renderCalendar();
       renderApplicantsTable();
       updateNotificationsUI();
-
       showLoading(true);
       syncFromGoogleSheet(GAS_WEB_APP_URL, { silent: true })
         .then(() => {
@@ -265,12 +265,35 @@ function setupPinLock() {
   document.getElementById('btn-admin-logout')?.addEventListener('click', () => {
     isAuthenticated = false;
     currentManagerName = '';
+    adminSessionToken = '';
     pinBuffer = '';
     updatePinBoxes();
     updateManagerNameDisplay();
     document.getElementById('admin-main-screen')?.classList.add('hidden');
     document.getElementById('pin-lock-screen')?.classList.remove('hidden');
+    clearCachedAdminData_();
   });
+}
+
+function forceAdminLogout(message) {
+  isAuthenticated = false;
+  currentManagerName = '';
+  adminSessionToken = '';
+  updateManagerNameDisplay();
+  document.getElementById('admin-main-screen')?.classList.add('hidden');
+  document.getElementById('pin-lock-screen')?.classList.remove('hidden');
+  clearCachedAdminData_();
+  if (message) alert(message);
+}
+
+function clearCachedAdminData_() {
+  applicants = [];
+  calendarEvents = [];
+  try { localStorage.removeItem(STORAGE_KEYS.APPLICANTS); } catch (e) { /* ignore */ }
+  try { localStorage.removeItem(STORAGE_KEYS.CALENDAR_EVENTS); } catch (e) { /* ignore */ }
+  renderApplicantsTable();
+  renderCalendar();
+  updateNotificationsUI();
 }
 
 function updateManagerNameDisplay() {
@@ -491,12 +514,17 @@ async function addNewEvent(dateStr) {
   renderCalendar();
   showLoading(true);
   try {
-    const result = await callGasApi(GAS_WEB_APP_URL, { action: 'addEvent', event: newEvt });
+    const result = await callGasApi(GAS_WEB_APP_URL, { action: 'addEvent', event: newEvt, token: adminSessionToken });
     if (!result || result.status !== 'success') {
       calendarEvents = calendarEvents.filter(e => e.id !== newEvt.id);
       localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
       renderCalendar();
-      alert('บันทึกกิจกรรมลง Google Sheet ไม่สำเร็จ: ' + (result && result.message ? result.message : 'ไม่ทราบสาเหตุ') + '\nกรุณาลองใหม่อีกครั้ง (กิจกรรมนี้ถูกยกเลิกจากปฏิทินแล้ว เนื่องจากบันทึกไม่สำเร็จจริง)');
+      // [เพิ่มใหม่] ถ้า session token หมดอายุ/ไม่ถูกต้อง ให้พากลับไปหน้า PIN แทนที่จะแค่ alert เฉยๆ
+      if (result && result.status === 'unauthorized') {
+        forceAdminLogout(result.message || 'เซสชันผู้ดูแลระบบหมดอายุ กรุณาเข้าสู่ระบบด้วยรหัส PIN อีกครั้ง');
+      } else {
+        alert('บันทึกกิจกรรมลง Google Sheet ไม่สำเร็จ: ' + (result && result.message ? result.message : 'ไม่ทราบสาเหตุ') + '\nกรุณาลองใหม่อีกครั้ง (กิจกรรมนี้ถูกยกเลิกจากปฏิทินแล้ว เนื่องจากบันทึกไม่สำเร็จจริง)');
+      }
     }
   } catch (err) {
     calendarEvents = calendarEvents.filter(e => e.id !== newEvt.id);
@@ -587,7 +615,7 @@ function renderApplicantsTable() {
 async function toggleAttendance(applicantId) {
   const target = applicants.find(a => a.id === applicantId);
   if (!target) return;
-
+  const previousAttended = target.attended;
   target.attended = !target.attended;
   localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
   renderApplicantsTable();
@@ -595,13 +623,24 @@ async function toggleAttendance(applicantId) {
     const result = await callGasApi(GAS_WEB_APP_URL, {
       action: 'updateAttendance',
       applicantId: target.id,
-      attended: target.attended
+      attended: target.attended,
+      token: adminSessionToken
     });
     if (!result || result.status !== 'success') {
-      console.warn('อัปเดตสถานะเข้าเรียนบน Google Sheet ไม่สำเร็จ:', result && result.message);
+      target.attended = previousAttended;
+      localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
+      renderApplicantsTable();
+      if (result && result.status === 'unauthorized') {
+        forceAdminLogout(result.message || 'เซสชันผู้ดูแลระบบหมดอายุ กรุณาเข้าสู่ระบบด้วยรหัส PIN อีกครั้ง');
+      } else {
+        alert('อัปเดตสถานะเข้าเรียนลง Google Sheet ไม่สำเร็จ: ' + (result && result.message ? result.message : 'ไม่ทราบสาเหตุ') + '\nสถานะบนหน้าจอถูกย้อนกลับเป็นค่าเดิมแล้ว กรุณาลองใหม่อีกครั้ง');
+      }
     }
   } catch (e) {
-    console.warn('อัปเดตสถานะเข้าเรียนบน Google Sheet ไม่สำเร็จ:', e);
+    target.attended = previousAttended;
+    localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
+    renderApplicantsTable();
+    alert('เกิดข้อผิดพลาดขณะอัปเดตสถานะเข้าเรียนลง Google Sheet กรุณาลองใหม่อีกครั้ง: ' + e);
   }
 }
 
@@ -624,6 +663,9 @@ async function previewApplicantForm(applicantId) {
   }
 
   container.innerHTML = `<div class="a4-page-screen-wrapper">${renderOfficialFormHTML(resolvedApp)}</div>`;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
   const previewFormEl = document.getElementById('official-form-printable');
   if (previewFormEl && typeof fitOfficialFormToA4 === 'function') {
     if (typeof waitForElementReady === 'function') {
@@ -637,9 +679,6 @@ async function previewApplicantForm(applicantId) {
   const saveDriveBtn = document.getElementById('modal-save-drive-btn');
   if (saveDriveBtn) saveDriveBtn.onclick = () => saveApplicantPdfToDrive(resolvedApp);
   markNotificationSeen(app.id);
-
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
 }
 
 function closePdfPreviewModal() {
@@ -667,9 +706,9 @@ function markNotificationSeen(applicantId) {
 function computeSheetBasedNotifications() {
   const seen = getSeenNotificationIds();
   return [...applicants]
-    .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0))
-    .slice(0, 20)
     .filter(a => !seen.includes(a.id))
+    .sort((a, b) => parseSubmittedAtDate(b.submittedAt) - parseSubmittedAtDate(a.submittedAt))
+    .slice(0, 20)
     .map(a => ({
       applicantId: a.id,
       title: 'มีผู้สมัครใหม่เข้ามา!',
@@ -683,6 +722,8 @@ function updateNotificationsUI() {
   try {
     localList = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
   } catch (e) { localList = []; }
+  const seen = getSeenNotificationIds();
+  localList = localList.filter(n => !seen.includes(n.applicantId));
 
   const sheetList = computeSheetBasedNotifications();
 
@@ -721,9 +762,6 @@ function updateNotificationsUI() {
   }
 }
 
-// [เพิ่มใหม่] ลบสถานะ "อ่านแล้ว" (NOTIF_SEEN) และรายการแจ้งเตือนที่ค้างอยู่ (NOTIFICATIONS)
-// ของผู้สมัครที่ไม่มีอยู่ใน currentApplicants แล้ว (เช่น ถูกลบออกจาก Google Sheet โดยตรง)
-// ป้องกันปัญหาตัวเลขแจ้งเตือน (badge) ค้าง ไม่ลดลง หรือกดแล้วไม่มีอะไรเกิดขึ้น
 function pruneStaleNotificationData(currentApplicants) {
   const validIds = new Set((currentApplicants || []).map(a => a.id));
 
@@ -744,8 +782,6 @@ function toggleNotifDropdown() {
   if (dropdown) dropdown.classList.toggle('hidden');
 }
 
-// [เพิ่มใหม่] เดิมดรอปดาวน์แจ้งเตือนไม่มีทางปิดเองเมื่อคลิกที่อื่น ทำให้รู้สึกว่า "ค้าง"
-// เพิ่มการปิดอัตโนมัติเมื่อคลิกนอกกรอบดรอปดาวน์ หรือกดปุ่ม Esc
 function setupNotifDropdownAutoClose() {
   document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('notif-dropdown');

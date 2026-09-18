@@ -4,16 +4,16 @@ const STORAGE_KEYS = {
   ADMIN_PIN: 'bw_admin_pin',
   NOTIFICATIONS: 'bw_notifications'
 };
-
+ 
 let applicants = [];
 let isSubmittingForm = false;
-
+ 
 document.addEventListener('DOMContentLoaded', async () => {
   await initApplicantsData();
   setupFormDynamicControls();
   setupAddressDropdowns();
 });
-
+ 
 function loadLocalApplicants() {
   const saved = localStorage.getItem(STORAGE_KEYS.APPLICANTS);
   if (saved) {
@@ -34,34 +34,8 @@ function loadLocalApplicants() {
 
 async function initApplicantsData() {
   applicants = loadLocalApplicants();
-  try {
-    const result = await fetchGasApi(GAS_WEB_APP_URL + '?action=getApplicants');
-    if (result && result.status === 'success' && Array.isArray(result.data)) {
-      // [แก้ไข] เช่นเดียวกับ admin.js: ให้ข้อมูลจาก Google Sheet เป็นความจริงหลักเสมอ
-      // แทนที่จะ "รวม" กับของเก่าในเครื่องแบบไม่มีวันลบ (ซึ่งทำให้แถวที่ถูกลบออกจากชีต
-      // โดยตรงไม่เคยหายไปจากแคชในเครื่อง) — ยังคงแคชรูปถ่ายเดิมไว้ให้ถ้ามี
-      const localById = new Map();
-      applicants.forEach(a => localById.set(a.id, a));
-
-      applicants = result.data.map(a => {
-        if (a.phone) a.phone = formatPhoneNumber(a.phone);
-        if (a.workplacePhone) a.workplacePhone = formatPhoneNumber(a.workplacePhone);
-        if (a.addressNo) a.addressNo = cleanAddressNo(a.addressNo);
-        const localMatch = localById.get(a.id);
-        if (localMatch && localMatch.photoDataUrl && !a.photoDataUrl) {
-          a.photoDataUrl = localMatch.photoDataUrl;
-        }
-        return a;
-      });
-      localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
-    } else if (result && result.status === 'error') {
-      console.warn('ไม่สามารถซิงค์ข้อมูลผู้สมัครจาก Google Sheet ได้:', result.message);
-    }
-  } catch (err) {
-    console.warn('ไม่สามารถซิงค์ข้อมูลผู้สมัครจาก Google Sheet ได้ (จะใช้ข้อมูลในเครื่องแทน):', err);
-  }
 }
-
+ 
 function readFileAsDataUrl(file) {
   return new Promise((resolve) => {
     if (!file) {
@@ -74,12 +48,12 @@ function readFileAsDataUrl(file) {
     reader.readAsDataURL(file);
   });
 }
-
+ 
 function setupFormDynamicControls() {
   const bodyNormal = document.getElementById('body-normal');
   const bodyDisability = document.getElementById('body-disability');
   const disabilityContainer = document.getElementById('disability-details-container');
-
+ 
   if (bodyNormal && bodyDisability && disabilityContainer) {
     bodyNormal.addEventListener('change', () => {
       if (bodyNormal.checked) {
@@ -87,7 +61,7 @@ function setupFormDynamicControls() {
         disabilityContainer.classList.add('hidden');
       }
     });
-
+ 
     bodyDisability.addEventListener('change', () => {
       if (bodyDisability.checked) {
         bodyNormal.checked = false;
@@ -97,12 +71,12 @@ function setupFormDynamicControls() {
       }
     });
   }
-
+ 
   const empWorking = document.getElementById('emp-working');
   const empUnemployed = document.getElementById('emp-unemployed');
   const section21 = document.getElementById('section-2-1');
   const section22 = document.getElementById('section-2-2');
-
+ 
   function updateEmploymentView() {
     if (empWorking && empWorking.checked) {
       section21.classList.remove('hidden');
@@ -112,19 +86,19 @@ function setupFormDynamicControls() {
       section22.classList.remove('hidden');
     }
   }
-
+ 
   if (empWorking && empUnemployed) {
     empWorking.addEventListener('change', updateEmploymentView);
     empUnemployed.addEventListener('change', updateEmploymentView);
   }
-
+ 
   const sectorGovt = document.getElementById('sector-govt');
   const govtContainer = document.getElementById('govt-sub-container');
   const govtSub = document.getElementById('govt-sub-select');
   const sectorBusiness = document.getElementById('sector-business');
   const freelanceContainer = document.getElementById('freelance-sub-container');
   const freelanceSub = document.getElementById('freelance-sub-select');
-
+ 
   function updateSectorDropdowns() {
     if (govtContainer && sectorGovt) {
       if (sectorGovt.checked) {
@@ -145,7 +119,7 @@ function setupFormDynamicControls() {
       }
     }
   }
-
+ 
   document.querySelectorAll('input[name="workSector"]').forEach(radio => {
     radio.addEventListener('change', updateSectorDropdowns);
   });
@@ -162,7 +136,7 @@ function setupFormDynamicControls() {
       }
     });
   }
-
+ 
   const idCardInput = document.getElementById('idCard');
   if (idCardInput) {
     idCardInput.addEventListener('input', (e) => {
@@ -176,7 +150,7 @@ function setupFormDynamicControls() {
       e.target.value = formatted;
     });
   }
-
+ 
   const photoInput = document.getElementById('filePhoto');
   const photoLabel = document.getElementById('filePhotoLabel');
   if (photoInput && photoLabel) {
@@ -196,7 +170,7 @@ function setupFormDynamicControls() {
       }
     });
   }
-
+ 
   const otherFileInputs = ['fileIdCard', 'fileEdu', 'fileTranscript', 'fileWorkCert'];
   otherFileInputs.forEach(inputId => {
     const input = document.getElementById(inputId);
@@ -210,13 +184,13 @@ function setupFormDynamicControls() {
       });
     }
   });
-
+ 
   const regForm = document.getElementById('registration-form');
   if (regForm) {
     regForm.addEventListener('submit', handleFormSubmit);
   }
 }
-
+ 
 function setupAddressDropdowns() {
   const provSelect = document.getElementById('address-province');
   const distInput = document.getElementById('address-district');
@@ -224,9 +198,9 @@ function setupAddressDropdowns() {
   const distDatalist = document.getElementById('district-options');
   const subdistDatalist = document.getElementById('subdistrict-options');
   const zipInput = document.getElementById('address-zipcode');
-
+ 
   if (!provSelect || typeof THAI_PROVINCES === 'undefined') return;
-
+ 
   provSelect.innerHTML = '<option value="">-- เลือกจังหวัด --</option>';
   THAI_PROVINCES.forEach(p => {
     const opt = document.createElement('option');
@@ -234,7 +208,7 @@ function setupAddressDropdowns() {
     opt.textContent = p;
     provSelect.appendChild(opt);
   });
-
+ 
   function fillDistrictDatalist(prov) {
     if (!distDatalist) return;
     distDatalist.innerHTML = '';
@@ -246,7 +220,7 @@ function setupAddressDropdowns() {
       });
     }
   }
-
+ 
   function fillSubdistrictDatalist(prov, distName) {
     if (!subdistDatalist) return;
     subdistDatalist.innerHTML = '';
@@ -261,9 +235,9 @@ function setupAddressDropdowns() {
       }
     }
   }
-
+ 
   if (!distInput || !subdistInput) return;
-
+ 
   provSelect.addEventListener('change', () => {
     const prov = provSelect.value;
     distInput.value = '';
@@ -272,13 +246,13 @@ function setupAddressDropdowns() {
     fillDistrictDatalist(prov);
     if (subdistDatalist) subdistDatalist.innerHTML = '';
   });
-
+ 
   function handleDistrictInput() {
     const prov = provSelect.value;
     const distName = distInput.value.trim();
     subdistInput.value = '';
     fillSubdistrictDatalist(prov, distName);
-
+ 
     if (typeof THAI_DISTRICT_MAP !== 'undefined' && THAI_DISTRICT_MAP[prov]) {
       const found = THAI_DISTRICT_MAP[prov].find(d => d.district === distName);
       if (found && found.zip) {
@@ -286,15 +260,15 @@ function setupAddressDropdowns() {
       }
     }
   }
-
+ 
   distInput.addEventListener('input', handleDistrictInput);
   distInput.addEventListener('change', handleDistrictInput);
 }
-
+ 
 async function handleFormSubmit(e) {
   e.preventDefault();
   if (isSubmittingForm) return;
-
+ 
   const idCardEl = document.getElementById('idCard');
   const idCardDigits = (idCardEl?.value || '').replace(/\D/g, '');
   if (idCardDigits.length !== 13) {
@@ -302,14 +276,14 @@ async function handleFormSubmit(e) {
     idCardEl?.focus();
     return;
   }
-
+ 
   const pdpaCheck = document.getElementById('pdpa-consent');
   if (!pdpaCheck || !pdpaCheck.checked) {
     alert('กรุณาทำเครื่องหมายยินยอมเปิดเผยข้อมูลส่วนบุคคล (PDPA) เพื่อดำเนินการต่อ');
     pdpaCheck.focus();
     return;
   }
-
+ 
   const requiredFileFields = [
     { id: 'filePhoto', label: 'ภาพถ่ายหน้าตรง' },
     { id: 'fileIdCard', label: 'บัตรประชาชน (ด้านหน้า)' },
@@ -323,7 +297,7 @@ async function handleFormSubmit(e) {
       return;
     }
   }
-
+ 
   if (!document.getElementById('emp-working')?.checked) {
     const unemployedSelectEl = document.getElementById('unemployedReason');
     const unemployedOtherEl = document.getElementById('unemployedReasonOtherText');
@@ -333,15 +307,15 @@ async function handleFormSubmit(e) {
       return;
     }
   }
-
+ 
   isSubmittingForm = true;
   const submitBtn = document.querySelector('#registration-form button[type="submit"]');
   if (submitBtn) submitBtn.disabled = true;
-
+ 
   showLoading(true);
-
+ 
   try {
-
+ 
   const sheetUrl = GAS_WEB_APP_URL;
   let photoDataUrl = '';
   const photoInput = document.getElementById('filePhoto');
@@ -352,15 +326,15 @@ async function handleFormSubmit(e) {
       console.warn('Error reading photo:', err);
     }
   }
-
+ 
   const getChecked = (selector) => Array.from(document.querySelectorAll(selector + ':checked')).map(el => el.value);
-
+ 
   const now = new Date();
   const thaiYear = now.getFullYear() + 543;
   const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${thaiYear}`;
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const newId = `BW-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getTime()).slice(-6)}`;
-
+ 
   const newApplicant = {
     id: newId,
     submittedAt: `${now.toISOString().split('T')[0]} ${timeStr}`,
@@ -435,7 +409,8 @@ async function handleFormSubmit(e) {
   };
   if (sheetUrl) {
     try {
-      const subfolder = newApplicant.id;
+      // [แก้ไข] ใช้ชื่อ-นามสกุลผู้สมัครเป็นชื่อโฟลเดอร์ย่อยแทนรหัสผู้สมัคร
+      const subfolder = buildApplicantFolderName(newApplicant);
       const [photoUrl, idCardUrl, eduUrl, transcriptUrl, workCertUrl] = await Promise.all([
         uploadFileToDrive(sheetUrl, document.getElementById('filePhoto')?.files?.[0], `รูปถ่าย_${newApplicant.id}`, subfolder),
         uploadFileToDrive(sheetUrl, document.getElementById('fileIdCard')?.files?.[0], `บัตรประชาชน_${newApplicant.id}`, subfolder),
@@ -452,7 +427,7 @@ async function handleFormSubmit(e) {
       console.warn('อัปโหลดไฟล์ขึ้น Google Drive ไม่สำเร็จ (ข้อมูลยังถูกบันทึกในเครื่องได้ตามปกติ):', err);
     }
   }
-
+ 
   applicants.unshift(newApplicant);
   localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
   let list = [];
@@ -478,17 +453,17 @@ async function handleFormSubmit(e) {
       console.warn('Google Sheet Sync note:', err);
     }
   }
-
+ 
   showLoading(false);
   showSubmitSuccessModal(newApplicant);
-
+ 
   } finally {
     isSubmittingForm = false;
     if (submitBtn) submitBtn.disabled = false;
     showLoading(false);
   }
 }
-
+ 
 function showSubmitSuccessModal(applicant) {
   const modal = document.getElementById('success-modal');
   const details = document.getElementById('success-modal-details');
@@ -508,27 +483,27 @@ function showSubmitSuccessModal(applicant) {
         <div><strong>วันที่สมัคร:</strong> ${escapeHtml(applicant.submittedAtDate)}</div>
       </div>
     `;
-
+ 
     const printBtn = document.getElementById('btn-print-immediate');
     if (printBtn) {
       printBtn.onclick = () => printApplicantForm(applicant);
     }
-
+ 
     const downloadBtn = document.getElementById('btn-download-immediate');
     if (downloadBtn) {
       downloadBtn.onclick = () => downloadApplicantPDF(applicant);
     }
-
+ 
     const saveDriveBtn = document.getElementById('btn-savedrive-immediate');
     if (saveDriveBtn) {
       saveDriveBtn.onclick = () => saveApplicantPdfToDrive(applicant);
     }
-
+ 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
   }
 }
-
+ 
 function closeSuccessModal() {
   const modal = document.getElementById('success-modal');
   if (modal) {
@@ -548,7 +523,7 @@ function closeSuccessModal() {
         label.classList.remove('text-green-600', 'font-semibold');
       }
     });
-
+ 
     document.getElementById('disability-details-container')?.classList.add('hidden');
     const unemployedOtherEl = document.getElementById('unemployedReasonOtherText');
     if (unemployedOtherEl) unemployedOtherEl.classList.add('hidden');
@@ -558,7 +533,7 @@ function closeSuccessModal() {
     if (section22) section22.classList.add('hidden');
   }
 }
-
+ 
 function showLoading(show) {
   const spinner = document.getElementById('global-spinner-overlay');
   if (spinner) {

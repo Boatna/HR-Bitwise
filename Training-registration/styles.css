@@ -20,7 +20,7 @@
 
 :root {
   --font-sarabun: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-doc: 'TH Sarabun PSK', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-doc: 'Angsana New', 'AngsanaUPC', 'TH Sarabun PSK', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
   --primary-blue: #0284c7;
   --primary-navy: #0f172a;
 }
@@ -203,7 +203,7 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
   box-sizing: border-box;
   font-family: var(--font-doc);
-  font-size: 11pt;
+  font-size: 16pt;
   line-height: 1.35;
   color: #111827;
   overflow: hidden;

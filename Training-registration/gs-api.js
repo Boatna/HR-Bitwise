@@ -16,11 +16,7 @@ function formatPhoneNumber(phone) {
   }
   if (!str) return '';
   const digits = str.replace(/\D/g, '');
-  if (digits.length === 9 && !str.startsWith('0')) {
-    if (digits.startsWith('8') || digits.startsWith('9') || digits.startsWith('6')) {
-      str = '0' + str;
-    }
-  } else if (digits.length === 8 && !str.startsWith('0')) {
+  if ((digits.length === 9 || digits.length === 8) && !str.startsWith('0')) {
     str = '0' + str;
   }
   return str;
@@ -42,7 +38,25 @@ function cleanAddressNo(val) {
   return str;
 }
 
-const DEFAULT_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzeFJjibVAJEfoTU0oYB1iQ3RqqwCPP8Vvn81pJj54vr83PlGvqvOP9qQnESbZiHguh/exec';
+function buildApplicantFolderName(applicant) {
+  const a = applicant || {};
+  const parts = [a.title, a.firstName, a.lastName]
+    .map(s => (s === undefined || s === null) ? '' : String(s).trim())
+    .filter(Boolean);
+  let name = parts.join(' ').replace(/\s+/g, ' ').trim();
+  name = name.replace(/[\/\\:*?"<>|]/g, '').trim();
+  if (!name) name = a.id || ('ผู้สมัคร_' + Date.now());
+  return name;
+}
+
+let adminSessionToken = '';
+function withAuthToken(url) {
+  if (!adminSessionToken) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return url + sep + 'token=' + encodeURIComponent(adminSessionToken);
+}
+
+const DEFAULT_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwKO9EpYh8n-siSSvCJcJ1IRz7ucCkdrakl91YlzvHL4sx9XExVeITpQ430-bBa9Z36/exec';
 
 function getGasWebAppUrl() {
   try {
@@ -172,7 +186,8 @@ function extractDriveFileId(url) {
 async function fetchFileAsDataUri(sheetUrl, fileId, timeoutMs = 45000) {
   if (!fileId || !sheetUrl) return '';
   try {
-    const result = await fetchGasApi(sheetUrl + '?action=getFileBase64&fileId=' + encodeURIComponent(fileId), timeoutMs);
+    const url = withAuthToken(sheetUrl + '?action=getFileBase64&fileId=' + encodeURIComponent(fileId));
+    const result = await fetchGasApi(url, timeoutMs);
     if (result && result.status === 'success' && result.dataUri) {
       return result.dataUri;
     }
