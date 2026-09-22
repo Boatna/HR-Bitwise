@@ -1,11 +1,17 @@
 let allNurses = [], allDrugs = [], allEmployees = [];
-let exportModal, historyModal, newEmployeeModal;
+let exportModal, historyModal, newEmployeeModal, apiSettingsModal;
 let currentExportType = '';
 
 document.addEventListener('DOMContentLoaded', () => {
   exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
   historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
   newEmployeeModal = new bootstrap.Modal(document.getElementById('newEmployeeModal'));
+  
+  const settingsModalEl = document.getElementById('apiSettingsModal');
+  if (settingsModalEl) {
+    apiSettingsModal = new bootstrap.Modal(settingsModalEl);
+  }
+
   updateTimestampBadge();
 
   const yearSelect = document.getElementById('export-year');
@@ -51,6 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
     inbQtyEl.addEventListener('input', calculateInboundTotal);
   }
 
+  const attendNurseSelect = document.getElementById('attend-nurse-select');
+  if (attendNurseSelect) {
+    attendNurseSelect.addEventListener('change', filterAttendanceBySelectedNurse);
+  }
+
   document.addEventListener('click', e => {
     if (!e.target.closest('#search-keyword') && !e.target.closest('#suggestion-box')) {
       const box = document.getElementById('suggestion-box');
@@ -81,7 +92,7 @@ function checkApiSetup() {
       banner.innerHTML = `
         <div>
           <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-          <strong>เชื่อมต่อ Google Sheets API ไม่สำเร็จ:</strong> กรุณาตรวจสอบ URL ใน api.js (ApiConfig.DEFAULT_URL) หรือติดต่อผู้ดูแลระบบ
+          <strong>ยังไม่ได้กำหนด Google Sheets Web App URL:</strong> กรุณาคลิกปุ่ม <strong>"ตั้งค่า API"</strong> ด้านบนเพื่อระบุ URL
         </div>
       `;
     }
@@ -99,13 +110,17 @@ function showPage(id) {
   }
 
   if (id === 'home') initSystem(false);
-  if (id === 'attendance') searchAttendance();
+  if (id === 'attendance') {
+    const nurseId = document.getElementById('attend-nurse-select')?.value || '';
+    searchAttendance(nurseId);
+  }
   if (id === 'inventory') loadInventory();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 let loaderWatchdogTimer = null;
 let loaderHintTimer = null;
+
 function toggleLoader(show) {
   const loader = document.getElementById('loader');
   const hint = document.getElementById('loader-hint');
@@ -164,9 +179,10 @@ async function initSystem(showLoading = true) {
     allNurses = data.nurses || [];
     allDrugs = data.drugs || [];
     allEmployees = data.employees || [];
+
     let nOpts = '<option value="" disabled selected>-- เลือกพยาบาล --</option>';
     allNurses.forEach(n => {
-      nOpts += `<option value="${n.id}">${n.name}</option>`;
+      nOpts += `<option value="${escapeHtml(n.id)}">${escapeHtml(n.name)}</option>`;
     });
     ['attend', 'outbound', 'inbound'].forEach(p => {
       const el = document.getElementById(p + '-nurse-select');
@@ -177,7 +193,7 @@ async function initSystem(showLoading = true) {
     let dOpts = '<option value="" disabled selected>-- เลือกยา --</option>';
     let dOptsOpt = '<option value="">- ไม่จ่ายยา -</option>';
     allDrugs.forEach(d => {
-      let o = `<option value="${d.id}">${d.name}</option>`;
+      let o = `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`;
       dOpts += o;
       dOptsOpt += o;
     });
@@ -191,7 +207,7 @@ async function initSystem(showLoading = true) {
 
     let sOpts = '<option value="" disabled selected>-- เลือกอาการ --</option>';
     (data.symptomList || []).forEach(s => {
-      sOpts += `<option value="${s}">${s}</option>`;
+      sOpts += `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`;
     });
     const symEl = document.getElementById('pat-symptom-select');
     if (symEl) symEl.innerHTML = sOpts;
@@ -244,14 +260,14 @@ function renderHomeSummary(db) {
     } else {
       db.recent.forEach(r => {
         let drugDisplay = r.drug && r.drug !== '-'
-          ? `<span class="text-primary small"><i class="fas fa-pills me-1"></i>${r.drug}</span>`
+          ? `<span class="text-primary small"><i class="fas fa-pills me-1"></i>${escapeHtml(r.drug)}</span>`
           : '<span class="text-muted">-</span>';
         tb.innerHTML += `<tr>
-          <td>${r.date}</td>
-          <td>${r.time}</td>
-          <td class="fw-bold text-truncate" style="max-width:140px;">${r.patient}</td>
-          <td><span class="badge bg-light text-dark border">${r.dept}</span></td>
-          <td class="text-truncate" style="max-width:140px;">${r.symptom}</td>
+          <td>${escapeHtml(r.date)}</td>
+          <td>${escapeHtml(r.time)}</td>
+          <td class="fw-bold text-truncate" style="max-width:140px;">${escapeHtml(r.patient)}</td>
+          <td><span class="badge bg-light text-dark border">${escapeHtml(r.dept)}</span></td>
+          <td class="text-truncate" style="max-width:140px;">${escapeHtml(r.symptom)}</td>
           <td>${drugDisplay}</td>
         </tr>`;
       });
@@ -263,6 +279,7 @@ function handleSearchInput(e) {
   const val = e.target.value.toLowerCase().trim();
   const box = document.getElementById('suggestion-box');
   const patIdEl = document.getElementById('pat-id');
+  
   if (patIdEl && patIdEl.value) {
     patIdEl.value = '';
     document.getElementById('pat-pos').value = '';
@@ -281,15 +298,15 @@ function handleSearchInput(e) {
   }
 
   const matches = allEmployees.filter(emp =>
-    String(emp.id).toLowerCase().includes(val) ||
-    String(emp.name).toLowerCase().includes(val)
+    String(emp.id || '').toLowerCase().includes(val) ||
+    String(emp.name || '').toLowerCase().includes(val)
   ).slice(0, 6);
 
   if (matches.length > 0) {
     matches.forEach(m => {
       const item = document.createElement('a');
       item.className = 'list-group-item list-group-item-action';
-      item.innerHTML = `<strong>${m.id}</strong> - ${m.name} <small class="text-muted">(${m.dept || 'ไม่ระบุแผนก'})</small>`;
+      item.innerHTML = `<strong>${escapeHtml(m.id)}</strong> - ${escapeHtml(m.name)} <small class="text-muted">(${escapeHtml(m.dept || 'ไม่ระบุแผนก')})</small>`;
       item.onclick = () => {
         selectEmployee(m);
         box.style.display = 'none';
@@ -301,12 +318,16 @@ function handleSearchInput(e) {
     const notFoundItem = document.createElement('div');
     notFoundItem.className = 'list-group-item p-3 text-center bg-light';
     notFoundItem.innerHTML = `
-      <div class="text-muted small mb-2"><i class="fas fa-user-slash me-1 text-danger"></i>ไม่พบข้อมูล "${val}" ในระบบ</div>
-      <button type="button" class="btn btn-sm btn-success fw-bold px-3" onclick="openNewEmployeeModal('${val}')">
+      <div class="text-muted small mb-2"><i class="fas fa-user-slash me-1 text-danger"></i>ไม่พบข้อมูล "${escapeHtml(val)}" ในระบบ</div>
+      <button type="button" class="btn btn-sm btn-success fw-bold px-3" id="quick-add-emp-btn">
         <i class="fas fa-user-plus me-1"></i>เพิ่มข้อมูลพนักงานใหม่
       </button>
     `;
     box.appendChild(notFoundItem);
+    const btn = notFoundItem.querySelector('#quick-add-emp-btn');
+    if (btn) {
+      btn.onclick = () => openNewEmployeeModal(val);
+    }
     box.style.display = 'block';
   }
 }
@@ -325,10 +346,16 @@ function searchEmployee() {
   const kw = document.getElementById('search-keyword').value.trim().toLowerCase();
   if (!kw) return;
 
-  const found = allEmployees.find(e =>
-    String(e.id).toLowerCase() === kw ||
-    String(e.name).toLowerCase().includes(kw)
-  );
+  let found = allEmployees.find(e => String(e.id || '').toLowerCase() === kw);
+  if (!found) {
+    found = allEmployees.find(e => String(e.name || '').toLowerCase() === kw);
+  }
+  if (!found) {
+    found = allEmployees.find(e => String(e.id || '').toLowerCase().includes(kw));
+  }
+  if (!found) {
+    found = allEmployees.find(e => String(e.name || '').toLowerCase().includes(kw));
+  }
 
   if (found) {
     selectEmployee(found);
@@ -387,8 +414,16 @@ async function submitNewEmployee() {
     toggleLoader(false);
     if (res.success) {
       newEmployeeModal.hide();
-      allEmployees.push(res.employee || empData);
-      selectEmployee(res.employee || empData);
+      
+      const existingIdx = allEmployees.findIndex(e => String(e.id || '').trim() === id);
+      const savedObj = res.employee || empData;
+      if (existingIdx !== -1) {
+        allEmployees[existingIdx] = savedObj;
+      } else {
+        allEmployees.push(savedObj);
+      }
+      
+      selectEmployee(savedObj);
 
       await Swal.fire({
         icon: 'success',
@@ -509,26 +544,35 @@ function preventDuplicateDrugSelection() {
 async function submitOutbound() {
   const submitBtn = document.querySelector('#outboundForm button[onclick="submitOutbound()"]');
   if (submitBtn?.disabled) return;
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.dataset.originalHtml = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>กำลังบันทึก...';
-  }
+  
+  const restoreSubmitButton = () => { 
+    if (submitBtn) { 
+      submitBtn.disabled = false; 
+      submitBtn.innerHTML = submitBtn.dataset.originalHtml || '<i class="fas fa-save me-2"></i>บันทึกการรักษา'; 
+    } 
+  };
 
   const nurseId = document.getElementById('outbound-nurse-select').value;
-  const restoreSubmitButton = () => { if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = submitBtn.dataset.originalHtml || 'บันทึกการรักษา'; } };
   const patId = document.getElementById('pat-id').value;
   const symptom = document.getElementById('pat-symptom-select').value;
 
   if (!nurseId || !patId || !symptom) {
-    restoreSubmitButton();
     return Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุ พยาบาล, ค้นหาผู้ป่วย และเลือกอาการให้ครบถ้วน', 'warning');
   }
 
   let items = [];
-  ['1', '2'].forEach(i => {
+  for (const i of ['1', '2']) {
     const d = document.getElementById(`outbound-drug-${i}`).value;
-    const q = parseFloat(document.getElementById(`outbound-qty-${i}`).value);
+    const qRaw = document.getElementById(`outbound-qty-${i}`).value;
+    const q = parseFloat(qRaw);
+
+    if (d && (!q || q <= 0)) {
+      return Swal.fire('กรอกจำนวนไม่ถูกต้อง', `คุณได้เลือกยาตัวที่ ${i} แต่ยังไม่ได้ระบุจำนวน หรือระบุจำนวนเป็น 0`, 'warning');
+    }
+    if (!d && q > 0) {
+      return Swal.fire('ยังไม่ได้เลือกยา', `คุณได้ระบุจำนวนในช่องยาตัวที่ ${i} แต่ยังไม่ได้เลือกชื่อยา`, 'warning');
+    }
+
     if (d && q > 0) {
       items.push({
         drugId: d,
@@ -538,15 +582,13 @@ async function submitOutbound() {
         price: document.getElementById(`outbound-price-${i}`).value
       });
     }
-  });
+  }
 
   if (items.length === 0) {
-    restoreSubmitButton();
     return Swal.fire('ไม่พบรายการยา', 'กรุณาเลือกยาและระบุจำนวนอย่างน้อย 1 รายการ', 'warning');
   }
 
   if (items.length > 1 && String(items[0].drugId) === String(items[1].drugId)) {
-    restoreSubmitButton();
     return Swal.fire('เลือกยาซ้ำ', 'กรุณาเลือกรายการยาตัวที่ 1 และตัวที่ 2 ให้แตกต่างกัน', 'warning');
   }
 
@@ -556,9 +598,16 @@ async function submitOutbound() {
     return { ...item, drugName: master?.name || item.drugName, unit: master?.unit || item.unit, price: price.toFixed(2), total: Number(item.quantity) * price };
   });
 
-  const nurse = allNurses.find(n => n.id == nurseId);
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>กำลังบันทึก...';
+  }
+
+  const nurse = allNurses.find(n => String(n.id) === String(nurseId));
   const referralEl = document.getElementById('pat-referral');
   const isReferred = referralEl ? referralEl.value === 'yes' : false;
+  
   const form = {
     nurseId: nurse ? nurse.id : nurseId,
     nurseName: nurse ? nurse.name : '',
@@ -582,14 +631,23 @@ async function submitOutbound() {
         icon: 'success',
         title: 'บันทึกสำเร็จ',
         text: res.message,
-        timer: 1600,
+        timer: 1800,
         showConfirmButton: false
       });
+      
+      // ล้างข้อมูลและ Hidden Inputs ให้ครบถ้วน
       document.getElementById('outboundForm').reset();
+      document.getElementById('search-keyword').value = '';
       document.getElementById('pat-display-id').innerText = '-';
       document.getElementById('pat-name').innerText = '-';
       document.getElementById('pat-dept').innerText = '-';
       document.getElementById('pat-id').value = '';
+      document.getElementById('pat-pos').value = '';
+      document.getElementById('pat-plant').value = '';
+      
+      const refSelect = document.getElementById('pat-referral');
+      if (refSelect) refSelect.value = 'no';
+
       ['1', '2'].forEach(i => {
         document.getElementById(`outbound-qty-${i}`).value = '';
         document.getElementById(`outbound-total-${i}`).value = '';
@@ -599,6 +657,8 @@ async function submitOutbound() {
         document.getElementById(`outbound-drugName-${i}`).value = '';
       });
       document.getElementById('outbound-grand-total').innerText = '฿0.00';
+      
+      preventDuplicateDrugSelection();
       showPage('home');
     } else {
       Swal.fire({ icon: 'error', title: 'แจ้งเตือน', text: res.message });
@@ -628,9 +688,14 @@ async function submitInbound() {
     submitBtn.dataset.originalHtml = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>กำลังบันทึก...';
   }
-  const restoreInboundBtn = () => { if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = submitBtn.dataset.originalHtml || 'ยืนยันรับยาเข้าคลัง'; } };
+  const restoreInboundBtn = () => { 
+    if (submitBtn) { 
+      submitBtn.disabled = false; 
+      submitBtn.innerHTML = submitBtn.dataset.originalHtml || '<i class="fas fa-save me-2"></i>ยืนยันรับยาเข้าคลัง'; 
+    } 
+  };
 
-  const nurse = allNurses.find(x => x.id == nurseId);
+  const nurse = allNurses.find(x => String(x.id) === String(nurseId));
   let drugName = document.getElementById('inbound-drugName').value;
 
   if (!drugName) {
@@ -658,6 +723,10 @@ async function submitInbound() {
       await Swal.fire('สำเร็จ', res.message, 'success');
       document.getElementById('inboundForm').reset();
       document.getElementById('inbound-total').value = '';
+      document.getElementById('inbound-unit').value = '';
+      document.getElementById('inbound-price').value = '';
+      document.getElementById('inbound-drugName').value = '';
+      document.getElementById('inbound-drugId').value = '';
       showPage('inventory');
     } else {
       Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
@@ -677,7 +746,7 @@ async function submitAttendance(status) {
   const id = document.getElementById('attend-nurse-select').value;
   if (!id) return Swal.fire('เตือน', 'กรุณาเลือกรายชื่อพยาบาลก่อน', 'warning');
 
-  const n = allNurses.find(x => x.id == id);
+  const n = allNurses.find(x => String(x.id) === String(id));
   isSubmittingAttendance = true;
   toggleLoader(true);
   try {
@@ -691,7 +760,7 @@ async function submitAttendance(status) {
       timer: 1500,
       showConfirmButton: false
     });
-    searchAttendance();
+    searchAttendance(id);
   } catch (err) {
     toggleLoader(false);
     Swal.fire('เกิดข้อผิดพลาด', String(err.message || err), 'error');
@@ -701,13 +770,19 @@ async function submitAttendance(status) {
   }
 }
 
-async function searchAttendance() {
+function filterAttendanceBySelectedNurse() {
+  const select = document.getElementById('attend-nurse-select');
+  const nurseId = select ? select.value : '';
+  searchAttendance(nurseId);
+}
+
+async function searchAttendance(filterId = '') {
   const tb = document.getElementById('attend-tbody');
   if (!tb) return;
   tb.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">กำลังโหลดข้อมูล...</td></tr>';
 
   try {
-    const data = await AppApi.getAttendanceHistory("");
+    const data = await AppApi.getAttendanceHistory(filterId);
     tb.innerHTML = '';
     if (!data || !data.length) {
       tb.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">ไม่พบข้อมูลประวัติการลงเวลา</td></tr>';
@@ -715,15 +790,15 @@ async function searchAttendance() {
       data.forEach(r => {
         const cls = r.status === 'เข้าเวร' ? 'bg-success' : 'bg-danger';
         tb.innerHTML += `<tr>
-          <td>${r.date}</td>
-          <td>${r.time}</td>
-          <td>${r.name}</td>
-          <td><span class="badge ${cls}">${r.status}</span></td>
+          <td>${escapeHtml(r.date)}</td>
+          <td>${escapeHtml(r.time)}</td>
+          <td>${escapeHtml(r.name)}</td>
+          <td><span class="badge ${cls}">${escapeHtml(r.status)}</span></td>
         </tr>`;
       });
     }
   } catch (err) {
-    tb.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">โหลดข้อมูลไม่สำเร็จ: ${err.message}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -758,18 +833,27 @@ function renderInvTable(data) {
         : '<span class="badge bg-success">ปกติ</span>');
     const cls = b <= 0 ? 'table-danger' : (b < 10 ? 'table-warning' : '');
 
-    tbody.innerHTML += `<tr class="${cls}">
-      <td><span class="fw-bold text-primary">${r[0]}</span></td>
-      <td class="fw-bold">${r[1]}</td>
-      <td>${r[2]}</td>
+    const tr = document.createElement('tr');
+    tr.className = cls;
+    tr.innerHTML = `
+      <td><span class="fw-bold text-primary">${escapeHtml(r[0])}</span></td>
+      <td class="fw-bold">${escapeHtml(r[1])}</td>
+      <td>${escapeHtml(r[2])}</td>
       <td class="text-end fw-bold fs-6">${b}</td>
       <td class="text-center">${badge}</td>
       <td class="text-center">
-        <button class="btn btn-sm btn-outline-info" onclick="viewHistory('${r[0]}', '${r[1]}')" title="ดูประวัติ">
+        <button class="btn btn-sm btn-outline-info hist-btn" type="button" title="ดูประวัติ">
           <i class="fas fa-list-alt me-1"></i>ประวัติ
         </button>
       </td>
-    </tr>`;
+    `;
+    
+    const btn = tr.querySelector('.hist-btn');
+    if (btn) {
+      btn.onclick = () => viewHistory(r[0], r[1]);
+    }
+
+    tbody.appendChild(tr);
   });
 }
 
@@ -802,16 +886,16 @@ async function viewHistory(id, name) {
         const color = x.type === 'รับเข้า' ? 'text-success' : 'text-danger';
         const sign = x.qty > 0 ? '+' : '';
         tb.innerHTML += `<tr>
-          <td>${x.date}</td>
-          <td><span class="${color} fw-bold">${x.type}</span></td>
+          <td>${escapeHtml(x.date)}</td>
+          <td><span class="${color} fw-bold">${escapeHtml(x.type)}</span></td>
           <td class="text-end fw-bold ${color}">${sign}${x.qty}</td>
-          <td>${x.by}</td>
-          <td class="small text-muted">${x.note}</td>
+          <td>${escapeHtml(x.by)}</td>
+          <td class="small text-muted">${escapeHtml(x.note)}</td>
         </tr>`;
       });
     }
   } catch (err) {
-    tb.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3">โหลดประวัติไม่สำเร็จ: ${err.message}</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3">โหลดประวัติไม่สำเร็จ: ${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -869,6 +953,7 @@ function downloadBase64File(base64Data, fileName) {
     }
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: mimeType });
+    
     if (window.navigator && window.navigator.msSaveOrOpenBlob) {
       window.navigator.msSaveOrOpenBlob(blob, fileName);
       return;
@@ -890,8 +975,109 @@ function downloadBase64File(base64Data, fileName) {
       icon: 'error',
       title: 'ดาวน์โหลดไฟล์ไม่สำเร็จ',
       html: `เบราว์เซอร์หรือแอปที่เปิดอยู่นี้อาจไม่รองรับการดาวน์โหลดไฟล์อัตโนมัติ<br>
-             กรุณาลองเปิดด้วย <strong>Chrome</strong> หรือ <strong>Safari</strong> โดยตรง
-             (ไม่ใช่เปิดผ่านแอป LINE หรือ Facebook)`
+             กรุณาลองเปิดด้วย <strong>Chrome</strong> หรือ <strong>Safari</strong> โดยตรง`
     });
   }
 }
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/* =========================================================================
+   API Settings Modal Handlers
+   ========================================================================= */
+function openApiSettingsModal() {
+  const input = document.getElementById('settings-api-url');
+  const defaultHint = document.getElementById('settings-default-url-hint');
+  if (input) input.value = ApiConfig.getUrl();
+  if (defaultHint) defaultHint.innerText = ApiConfig.DEFAULT_URL;
+  if (apiSettingsModal) apiSettingsModal.show();
+}
+
+async function testApiConnection() {
+  const input = document.getElementById('settings-api-url');
+  const testUrl = input ? input.value.trim() : '';
+
+  if (!testUrl || !testUrl.startsWith('https://script.google.com/macros/s/')) {
+    return Swal.fire('URL ไม่ถูกต้อง', 'URL ต้องขึ้นต้นด้วย https://script.google.com/macros/s/', 'warning');
+  }
+
+  toggleLoader(true);
+  try {
+    const res = await fetch(`${testUrl}?action=ping`, { method: 'GET', redirect: 'follow' });
+    const json = await res.json();
+    toggleLoader(false);
+    if (json && json.success) {
+      Swal.fire({
+        icon: 'success',
+        title: 'เชื่อมต่อสำเร็จ!',
+        html: `<p class="mb-1 text-success"><strong>${json.message}</strong></p><small class="text-muted">เวลาเซิร์ฟเวอร์: ${json.timestamp || '-'}</small>`
+      });
+    } else {
+      Swal.fire('เชื่อมต่อไม่สำเร็จ', json?.message || 'ไม่ได้รับข้อความตอบรับที่ถูกต้อง', 'error');
+    }
+  } catch (err) {
+    toggleLoader(false);
+    Swal.fire('การเชื่อมต่อล้มเหลว', `ไม่สามารถเรียก API ได้: ${err.message}`, 'error');
+  }
+}
+
+function resetApiUrlToDefault() {
+  const input = document.getElementById('settings-api-url');
+  if (input) input.value = ApiConfig.DEFAULT_URL;
+  ApiConfig.resetUrl();
+  Swal.fire({
+    icon: 'info',
+    title: 'รีเซ็ตค่าแล้ว',
+    text: 'รีเซ็ต URL กลับเป็นค่าเริ่มต้นเรียบร้อยแล้ว กด "บันทึก URL" เพื่อนำไปใช้',
+    timer: 2000,
+    showConfirmButton: false
+  });
+}
+
+function saveApiSettings() {
+  const input = document.getElementById('settings-api-url');
+  const url = input ? input.value.trim() : '';
+
+  if (!url || !url.startsWith('https://script.google.com/macros/s/')) {
+    return Swal.fire('URL ไม่ถูกต้อง', 'กรุณาระบุ Google Apps Script Web App URL ที่ถูกต้อง', 'warning');
+  }
+
+  ApiConfig.setUrl(url);
+  if (apiSettingsModal) apiSettingsModal.hide();
+
+  Swal.fire({
+    icon: 'success',
+    title: 'บันทึก URL เรียบร้อย',
+    text: 'ระบบจะเริ่มโหลดข้อมูลจาก Google Sheets ใหม่ทันที',
+    timer: 1500,
+    showConfirmButton: false
+  }).then(() => {
+    location.reload();
+  });
+}
+
+window.showPage = showPage;
+window.submitOutbound = submitOutbound;
+window.submitInbound = submitInbound;
+window.submitAttendance = submitAttendance;
+window.filterAttendanceBySelectedNurse = filterAttendanceBySelectedNurse;
+window.searchEmployee = searchEmployee;
+window.openNewEmployeeModal = openNewEmployeeModal;
+window.submitNewEmployee = submitNewEmployee;
+window.updateDrugInfo = updateDrugInfo;
+window.filterInventory = filterInventory;
+window.viewHistory = viewHistory;
+window.showExportModal = showExportModal;
+window.executeExport = executeExport;
+window.openApiSettingsModal = openApiSettingsModal;
+window.testApiConnection = testApiConnection;
+window.resetApiUrlToDefault = resetApiUrlToDefault;
+window.saveApiSettings = saveApiSettings;

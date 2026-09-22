@@ -1,6 +1,7 @@
 let charts = {};
 let cachedDashboardData = null;
 let allEmployees = [];
+let apiSettingsModal = null;
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -18,6 +19,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (monthSelect) {
     monthSelect.value = new Date().getMonth() + 1;
   }
+  
+  const modalEl = document.getElementById('apiSettingsModal');
+  if (modalEl) {
+    apiSettingsModal = new bootstrap.Modal(modalEl);
+  }
+
   checkApiSetup();
 });
 
@@ -29,7 +36,7 @@ function checkApiSetup() {
     const errorDiv = document.getElementById('dashboard-error');
     if (errorDiv) {
       errorDiv.style.display = 'block';
-      errorDiv.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>เชื่อมต่อ Google Sheets API ไม่สำเร็จ กรุณาตรวจสอบ URL ใน api.js';
+      errorDiv.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>เชื่อมต่อ Google Sheets API ไม่สำเร็จ กรุณาคลิกปุ่ม "ตั้งค่า API" ด้านบนเพื่อระบุ URL';
     }
   } else {
     if (banner) banner.style.display = 'none';
@@ -47,16 +54,16 @@ async function initDashboard(showLoading = true) {
     allEmployees = initialData.employees || [];
     populateExecPlantFilter();
 
-    // ⚡ PERFORMANCE FIX: getInitialData() ฝั่งเซิร์ฟเวอร์คำนวณ dashboard เดือน/ปีปัจจุบัน (ทุก Plant)
-    // มาให้แล้วในตัว (initialData.dashboard) จึงใช้ค่านั้นแสดงผลได้เลยสำหรับการโหลดครั้งแรก
-    // แทนที่จะยิง getDashboardData(null, null, 'all') ซ้ำอีกรอบ ซึ่งเดิมทำให้ต้องรอ "คำนวณสถิติ
-    // ทั้งชีต" สองครั้งติดกันตอนเปิดหน้า Dashboard (ช้าและดูเหมือนค้าง) ตอนนี้จะยิง API จริงแค่ครั้งเดียว
-    // ส่วนตอนกดเปลี่ยนตัวกรอง (เดือน/ปี/Plant) ยังคงเรียก getDashboardData ตามปกติใน applyExecutiveFilters()
     cachedDashboardData = initialData.dashboard || null;
 
     if (cachedDashboardData) {
       renderDashboard(cachedDashboardData);
       updateTimestamp();
+      
+      const m = document.getElementById('exec-filter-month')?.value || (new Date().getMonth() + 1);
+      const y = document.getElementById('exec-filter-year')?.value || new Date().getFullYear();
+      const p = document.getElementById('exec-filter-plant')?.value || 'all';
+      updateFilterLabel(m, y, p);
     }
   } catch (error) {
     console.error('Dashboard Load Error:', error);
@@ -268,7 +275,10 @@ function renderKPIs(db) {
   if (momGrowth) {
     const growth = summary.monthGrowth || 0;
     const unitLabel = isAllMonths ? 'YoY' : 'MoM';
-    if (growth < 0) {
+    if (summary.prevMonth === 0 && summary.month > 0) {
+      momGrowth.className = 'trend-badge trend-up-blue';
+      momGrowth.innerHTML = `<i class="fas fa-arrow-up"></i> +100% ${unitLabel} (ช่วงก่อน 0 ราย)`;
+    } else if (growth < 0) {
       momGrowth.className = 'trend-badge trend-down-green';
       momGrowth.innerHTML = `<i class="fas fa-arrow-down"></i> ${Math.abs(growth)}% ${unitLabel} (ลดลง)`;
     } else if (growth > 0) {
@@ -299,13 +309,15 @@ function renderKPIs(db) {
   const costPerCase = summary.costPerCase || 0;
   
   const sumCost = document.getElementById('sum-cost');
-  if (sumCost) sumCost.innerText = `฿${totalCost.toLocaleString()}`;
+  if (sumCost) sumCost.innerText = `฿${totalCost.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   
   const sumCostPerCase = document.getElementById('sum-cost-per-case');
-  if (sumCostPerCase) sumCostPerCase.innerText = `฿${costPerCase.toLocaleString()} / ราย`;
+  if (sumCostPerCase) sumCostPerCase.innerText = `฿${costPerCase.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ราย`;
 
+  // ✅ ตรวจสอบ readinessRate ป้องกัน 0 || 100 แสดงเป็น 100%
   const sumReadiness = document.getElementById('sum-readiness');
-  if (sumReadiness) sumReadiness.innerText = `${stockHealth.readinessRate || 100}%`;
+  const readinessValue = stockHealth.readinessRate !== undefined ? stockHealth.readinessRate : 100;
+  if (sumReadiness) sumReadiness.innerText = `${readinessValue}%`;
   
   const stockDetail = document.getElementById('stock-detail-summary');
   if (stockDetail) {
@@ -341,7 +353,12 @@ function renderTrendChart(db) {
     accidentData = THAI_MONTHS_SHORT.map((_, i) => (db.accidentTrend && db.accidentTrend[i + 1]) || 0);
     xTicks = {};
   } else {
-    const days = Array.from({ length: 31 }, (_, i) => i + 1);
+    // คำนวณจำนวนวันตามเดือนและปีที่เลือกจริง (เช่น กุมภาพันธ์ มี 28 หรือ 29 วัน)
+    const selectedMonth = parseInt(document.getElementById('exec-filter-month')?.value, 10) || (new Date().getMonth() + 1);
+    const selectedYear = parseInt(document.getElementById('exec-filter-year')?.value, 10) || new Date().getFullYear();
+    const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    
     labels = days;
     patientData = days.map(d => (db.trend && db.trend[d]) || 0);
     accidentData = days.map(d => (db.accidentTrend && db.accidentTrend[d]) || 0);
@@ -349,6 +366,7 @@ function renderTrendChart(db) {
   }
 
   charts['trendChart'] = new Chart(ctx.getContext('2d'), {
+    type: 'bar',
     data: {
       labels: labels,
       datasets: [
@@ -370,7 +388,7 @@ function renderTrendChart(db) {
           data: accidentData,
           backgroundColor: '#dc2626',
           borderRadius: 4,
-          barThickness: isAllMonths ? 16 : 8,
+          maxBarThickness: isAllMonths ? 18 : 10,
           yAxisID: 'y1'
         }
       ]
@@ -408,12 +426,8 @@ function renderTrendChart(db) {
           callbacks: {
             label: function(context) {
               let label = context.dataset.label || '';
-              if (label) {
-                label += ': ';
-              }
-              if (context.parsed.y !== null) {
-                label += context.parsed.y + ' ราย';
-              }
+              if (label) label += ': ';
+              if (context.parsed.y !== null) label += context.parsed.y + ' ราย';
               return label;
             }
           }
@@ -439,7 +453,7 @@ function renderSymptomChart(db) {
         data: symptomVals,
         backgroundColor: [
           '#1e3a8a', '#059669', '#d97706', '#dc2626', 
-          '#0284c7', '#8b5cf6', '#db2777', '#059669'
+          '#0284c7', '#8b5cf6', '#db2777', '#10b981'
         ],
         borderWidth: 2,
         borderColor: '#fff'
@@ -461,12 +475,8 @@ function renderSymptomChart(db) {
           callbacks: {
             label: function(context) {
               let label = context.label || '';
-              if (label) {
-                label += ': ';
-              }
-              if (context.parsed !== null) {
-                label += context.parsed + ' เคส';
-              }
+              if (label) label += ': ';
+              if (context.parsed !== null) label += context.parsed + ' เคส';
               return label;
             }
           }
@@ -494,7 +504,7 @@ function renderDepartmentChart(db) {
         data: deptValues,
         backgroundColor: '#3b82f6',
         borderRadius: 6,
-        barThickness: 25
+        maxBarThickness: 32
       }]
     },
     options: {
@@ -546,7 +556,7 @@ function renderDrugChart(db) {
         data: drugValues,
         backgroundColor: '#059669',
         borderRadius: 6,
-        barThickness: 20
+        maxBarThickness: 24
       }]
     },
     options: {
@@ -563,7 +573,8 @@ function renderDrugChart(db) {
           ticks: { 
             font: { size: 10 },
             callback: function(value) {
-              return value.length > 20 ? value.substring(0, 20) + '...' : value;
+              const label = this.getLabelForValue(value);
+              return label.length > 20 ? label.substring(0, 20) + '...' : label;
             }
           }
         }
@@ -582,7 +593,6 @@ function renderDrugChart(db) {
   });
 }
 
-// ➕ กราฟ "กลุ่มโรคจำแนกตามประเภท": ทั่วไป / โรคจากการทำงาน / อุบัติเหตุจากการทำงาน
 function renderCategoryChart(db) {
   const ctx = document.getElementById('categoryChart');
   if (!ctx) return;
@@ -602,20 +612,20 @@ function renderCategoryChart(db) {
         data: values,
         backgroundColor: ['#0284c7', '#d97706', '#dc2626'],
         borderRadius: 8,
-        barThickness: 55
+        maxBarThickness: 60
       }]
     },
     options: {
       maintainAspectRatio: false,
       scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: '#f1f5f9' },
-          ticks: { precision: 0 }
+        y: { 
+          beginAtZero: true, 
+          grid: { color: '#f1f5f9' }, 
+          ticks: { precision: 0 } 
         },
         x: { grid: { display: false } }
       },
-      plugins: {
+      plugins: { 
         legend: { display: false },
         tooltip: {
           callbacks: {
@@ -629,7 +639,6 @@ function renderCategoryChart(db) {
   });
 }
 
-// ➕ การ์ด "อัตราการส่งตัวโรงพยาบาลภายนอก" (Referral Rate)
 function renderReferralStats(db) {
   const summary = db.summary || {};
   const rateEl = document.getElementById('referral-rate-value');
@@ -657,10 +666,10 @@ function renderAccidentTable(db) {
   } else {
     accidents.forEach(acc => {
       tbody.innerHTML += `<tr>
-        <td><span class="badge bg-light text-dark border">${acc.date}</span></td>
-        <td class="fw-semibold text-danger">${acc.patient}</td>
-        <td><span class="badge bg-secondary-subtle text-secondary">${acc.dept}</span></td>
-        <td class="small">${acc.remarks || acc.symptom}</td>
+        <td><span class="badge bg-light text-dark border">${escapeHtml(acc.date)}</span></td>
+        <td class="fw-semibold text-danger">${escapeHtml(acc.patient)}</td>
+        <td><span class="badge bg-secondary-subtle text-secondary">${escapeHtml(acc.dept)}</span></td>
+        <td class="small">${escapeHtml(acc.remarks || acc.symptom)}</td>
       </tr>`;
     });
   }
@@ -680,14 +689,102 @@ function renderProcurementTable(db) {
       const isOut = item.status === 'หมด';
       const badgeCls = isOut ? 'bg-danger' : 'bg-warning text-dark';
       tbody.innerHTML += `<tr>
-        <td class="fw-bold">${item.id}</td>
-        <td>${item.name}</td>
-        <td class="text-end fw-bold ${isOut ? 'text-danger' : 'text-warning'}">${item.balance} ${item.unit || ''}</td>
-        <td class="text-center"><span class="badge ${badgeCls}">${item.status}</span></td>
+        <td class="fw-bold">${escapeHtml(item.id)}</td>
+        <td>${escapeHtml(item.name)}</td>
+        <td class="text-end fw-bold ${isOut ? 'text-danger' : 'text-warning'}">${item.balance} ${escapeHtml(item.unit || '')}</td>
+        <td class="text-center"><span class="badge ${badgeCls}">${escapeHtml(item.status)}</span></td>
       </tr>`;
     });
   }
 }
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/* =========================================================================
+   API Settings Modal Handlers
+   ========================================================================= */
+function openApiSettingsModal() {
+  const input = document.getElementById('settings-api-url');
+  const defaultHint = document.getElementById('settings-default-url-hint');
+  if (input) input.value = ApiConfig.getUrl();
+  if (defaultHint) defaultHint.innerText = ApiConfig.DEFAULT_URL;
+  if (apiSettingsModal) apiSettingsModal.show();
+}
+
+async function testApiConnection() {
+  const input = document.getElementById('settings-api-url');
+  const testUrl = input ? input.value.trim() : '';
+
+  if (!testUrl || !testUrl.startsWith('https://script.google.com/macros/s/')) {
+    return Swal.fire('URL ไม่ถูกต้อง', 'URL ต้องขึ้นต้นด้วย https://script.google.com/macros/s/', 'warning');
+  }
+
+  toggleLoader(true);
+  try {
+    const res = await fetch(`${testUrl}?action=ping`, { method: 'GET', redirect: 'follow' });
+    const json = await res.json();
+    toggleLoader(false);
+    if (json && json.success) {
+      Swal.fire({
+        icon: 'success',
+        title: 'เชื่อมต่อสำเร็จ!',
+        html: `<p class="mb-1 text-success"><strong>${json.message}</strong></p><small class="text-muted">เวลาเซิร์ฟเวอร์: ${json.timestamp || '-'}</small>`
+      });
+    } else {
+      Swal.fire('เชื่อมต่อไม่สำเร็จ', json?.message || 'ไม่ได้รับข้อความตอบรับที่ถูกต้อง', 'error');
+    }
+  } catch (err) {
+    toggleLoader(false);
+    Swal.fire('การเชื่อมต่อล้มเหลว', `ไม่สามารถเรียก API ได้: ${err.message}`, 'error');
+  }
+}
+
+function resetApiUrlToDefault() {
+  const input = document.getElementById('settings-api-url');
+  if (input) input.value = ApiConfig.DEFAULT_URL;
+  ApiConfig.resetUrl();
+  Swal.fire({
+    icon: 'info',
+    title: 'รีเซ็ตค่าแล้ว',
+    text: 'รีเซ็ต URL กลับเป็นค่าเริ่มต้นเรียบร้อยแล้ว กด "บันทึก URL" เพื่อนำไปใช้',
+    timer: 2000,
+    showConfirmButton: false
+  });
+}
+
+function saveApiSettings() {
+  const input = document.getElementById('settings-api-url');
+  const url = input ? input.value.trim() : '';
+
+  if (!url || !url.startsWith('https://script.google.com/macros/s/')) {
+    return Swal.fire('URL ไม่ถูกต้อง', 'กรุณาระบุ Google Apps Script Web App URL ที่ถูกต้อง', 'warning');
+  }
+
+  ApiConfig.setUrl(url);
+  if (apiSettingsModal) apiSettingsModal.hide();
+
+  Swal.fire({
+    icon: 'success',
+    title: 'บันทึก URL เรียบร้อย',
+    text: 'ระบบจะเริ่มโหลดข้อมูลจาก Google Sheets ใหม่ทันที',
+    timer: 1500,
+    showConfirmButton: false
+  }).then(() => {
+    location.reload();
+  });
+}
+
 window.applyExecutiveFilters = applyExecutiveFilters;
 window.resetExecutiveFilters = resetExecutiveFilters;
+window.openApiSettingsModal = openApiSettingsModal;
+window.testApiConnection = testApiConnection;
+window.resetApiUrlToDefault = resetApiUrlToDefault;
+window.saveApiSettings = saveApiSettings;

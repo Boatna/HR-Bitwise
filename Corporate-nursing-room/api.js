@@ -1,6 +1,6 @@
 const ApiConfig = {
   STORAGE_KEY: 'nursing_station_api_url',
-  DEFAULT_URL: 'https://script.google.com/macros/s/AKfycbxhnWfPLmGLy1qonxoztZPw-eozQQHuJ1UT9EDtzV2FLVMRCByl2ttSfHfTyAeYS81R/exec',
+  DEFAULT_URL: 'https://script.google.com/macros/s/AKfycbxonHMBnoG00VzAy3XVeNxGIB6gNhfuRPuXEBNO4EfBVBgnaJ4Zop13FbEWpcKyYBE/exec',
 
   getUrl() {
     const saved = localStorage.getItem(this.STORAGE_KEY);
@@ -13,6 +13,10 @@ const ApiConfig = {
     } else {
       localStorage.removeItem(this.STORAGE_KEY);
     }
+  },
+
+  resetUrl() {
+    localStorage.removeItem(this.STORAGE_KEY);
   }
 };
 
@@ -49,7 +53,7 @@ const AppApi = {
         return JSON.parse(text);
       } catch (e) {
         console.error("API Non-JSON Response:", text);
-        throw new Error("ระบบตอบกลับข้อมูลที่ไม่ถูกต้อง กรุณาตรวจสอบสิทธิ์ของ Apps Script ว่าตั้งค่า 'Anyone' หรือยัง");
+        throw new Error("ระบบตอบกลับข้อมูลที่ไม่ถูกต้อง กรุณาตรวจสอบสิทธิ์ของ Apps Script ว่าตั้งค่า 'Who has access' เป็น 'Anyone' หรือยัง");
       }
     } catch (err) {
       console.error(`API GET [${action}] Error:`, err);
@@ -59,6 +63,7 @@ const AppApi = {
       throw err;
     }
   },
+
   _raceWithTimeout(promise, ms) {
     let timeoutId;
     const timeoutPromise = new Promise((_, reject) => {
@@ -101,7 +106,7 @@ const AppApi = {
         return JSON.parse(text);
       } catch (e) {
         console.error("API Non-JSON Response:", text);
-        throw new Error("บันทึกข้อมูลไม่สำเร็จ Google Apps Script ตอบกลับเป็น HTML");
+        throw new Error("บันทึกข้อมูลไม่สำเร็จ Google Apps Script ตอบกลับเป็น HTML (อาจเกิดจากสิทธิ์การเข้าถึงไม่ได้ตั้งค่าเป็น Anyone หรือมี Script Error ฝั่งเซิร์ฟเวอร์)");
       }
     } catch (err) {
       console.error(`API POST [${action}] Error:`, err);
@@ -112,9 +117,14 @@ const AppApi = {
     }
   },
 
+  async ping() {
+    return await this.get('ping');
+  },
+
   async getInitialData() {
     return await this.get('getInitialData');
   },
+
   async getDashboardData(month, year, plant) {
     return await this.get('getDashboardData', { month, year, plant });
   },
