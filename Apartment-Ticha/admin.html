@@ -475,11 +475,6 @@
         <div class="card border-0 shadow-sm rounded-4 p-4 max-w-700">
           <form onsubmit="event.preventDefault(); Admin.saveSettings();">
             <div class="mb-3">
-              <label class="form-label fw-bold">Google Apps Script Web App API URL</label>
-              <input type="text" id="setting-api-url" class="form-control" placeholder="https://script.google.com/macros/s/XXXXX/exec">
-              <small class="text-muted">URL ของ Google Apps Script ที่ Deploy เป็น Web App (บันทึกลงเบราว์เซอร์อัตโนมัติ)</small>
-            </div>
-            <div class="mb-3">
               <label class="form-label fw-bold">ชื่อระบบ (System Name)</label>
               <input type="text" id="setting-system-name" class="form-control" value="ระบบบริหารหอพักพนักงาน">
             </div>
@@ -518,16 +513,9 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-4">
-          <div class="mb-3 position-relative">
+          <div class="mb-3">
             <label class="form-label fw-semibold">พนักงานผู้เข้าพัก <span class="text-danger">*</span></label>
-            <div class="input-group">
-              <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-              <input type="text" id="checkin-employee-search" class="form-control border-start-0" placeholder="พิมพ์รหัสพนักงาน หรือ ชื่อ-นามสกุล..." autocomplete="off">
-            </div>
-            <!-- ช่องซ่อนเก็บ EmployeeID ที่ถูกเลือกจริง ใช้ส่งไป submitCheckIn() -->
-            <input type="hidden" id="checkin-employee">
-            <div id="checkin-employee-suggestions" class="list-group employee-suggest-box"></div>
-            <small class="text-muted">พิมพ์เพื่อค้นหา แล้วคลิกเลือกชื่อพนักงานจากรายการที่ปรากฏ</small>
+            <select id="checkin-employee" class="form-select"></select>
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">ห้องพัก <span class="text-danger">*</span></label>

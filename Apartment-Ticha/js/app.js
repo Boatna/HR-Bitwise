@@ -1,7 +1,6 @@
 const App = {
   init() {
     this.renderHeader();
-    this.checkApiStatus();
   },
 
   renderHeader() {
@@ -16,11 +15,11 @@ const App = {
     headerContainer.innerHTML = `
       <nav class="navbar navbar-expand-lg navbar-dark navbar-dorm">
         <div class="container-fluid px-3 px-lg-4">
-          <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
-            <img src="assets/mascot.png" alt="ทาคุจัง" class="rounded-circle bg-white shadow-sm" style="width: 40px; height: 40px; object-fit: contain; padding: 2px;">
-            <div>
-              <div class="fw-bold fs-5 leading-tight">ระบบบริหารหอพักพนักงาน</div>
-              <small class="text-white-50" style="font-size: 0.725rem;">Employee Dormitory Management v1.0</small>
+          <a class="navbar-brand d-flex align-items-center gap-2 brand-link" href="index.html">
+            <img src="assets/mascot.png" alt="ทาคุจัง" class="rounded-circle bg-white shadow-sm flex-shrink-0" style="width: 40px; height: 40px; object-fit: contain; padding: 2px;">
+            <div class="brand-text">
+              <div class="fw-bold brand-title leading-tight">ระบบบริหารหอพักพนักงาน</div>
+              <small class="text-white-50 brand-subtitle">Employee Dormitory Management v1.0</small>
             </div>
           </a>
 
@@ -52,37 +51,11 @@ const App = {
                 <i class="bi bi-shield-check text-warning fs-6"></i>
                 <span class="fw-semibold">Admin (ผู้ดูแลระบบ)</span>
               </span>
-              <button class="btn btn-sm btn-outline-light" onclick="API.promptSetApiUrl()" title="ตั้งค่า Web App API URL">
-                <i class="bi bi-gear-fill me-1"></i> ตั้งค่า API
-              </button>
             </div>
           </div>
         </div>
       </nav>
-      <div id="api-banner-container"></div>
     `;
-  },
-
-  checkApiStatus() {
-    const bannerContainer = document.getElementById('api-banner-container');
-    if (!bannerContainer) return;
-
-    const apiUrl = API.getApiUrl();
-    if (!apiUrl) {
-      bannerContainer.innerHTML = `
-        <div class="api-alert-banner d-flex justify-content-between align-items-center px-4 py-2">
-          <div>
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <strong>ยังไม่ได้เชื่อมต่อ Google Apps Script:</strong> กรุณาใส่ URL ของ Web App เพื่อเริ่มใช้งานฐานข้อมูลจริง
-          </div>
-          <button class="btn btn-sm btn-dark" onclick="API.promptSetApiUrl()">
-            <i class="bi bi-gear-fill me-1"></i> ใส่ API URL
-          </button>
-        </div>
-      `;
-    } else {
-      bannerContainer.innerHTML = '';
-    }
   },
 
   updateUserBadge() {

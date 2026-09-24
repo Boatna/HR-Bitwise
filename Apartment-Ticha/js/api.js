@@ -1,18 +1,7 @@
 const API = {
-  STORAGE_KEY: 'DORM_API_URL',
+  API_URL: 'https://script.google.com/macros/s/AKfycbxsJ_N1BfWVishsxlXxkoGHuvPdLB7aIjTrdJfjmrUSHhAeJXppyNRVEgMcXlxwOwCLzg/exec',
+
   USER_STORAGE_KEY: 'DORM_CURRENT_USER',
-
-  getApiUrl() {
-    return localStorage.getItem(this.STORAGE_KEY) || '';
-  },
-
-  setApiUrl(url) {
-    if (url) {
-      localStorage.setItem(this.STORAGE_KEY, url.trim());
-    } else {
-      localStorage.removeItem(this.STORAGE_KEY);
-    }
-  },
 
   getCurrentUser() {
     const saved = localStorage.getItem(this.USER_STORAGE_KEY);
@@ -36,13 +25,6 @@ const API = {
    * ส่งคำขอไปยัง Google Apps Script Web App
    */
   async call(action, payload = {}) {
-    const apiUrl = this.getApiUrl();
-    if (!apiUrl) {
-      console.warn('Google Apps Script API URL ยังไม่ได้ตั้งค่า');
-      this.promptSetApiUrl();
-      throw new Error('กรุณาตั้งค่า Google Apps Script Web App URL ก่อนใช้งาน');
-    }
-
     const currentUser = this.getCurrentUser();
     const body = {
       action: action,
@@ -51,7 +33,7 @@ const API = {
     };
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await fetch(this.API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'text/plain;charset=utf-8' // ป้องกัน CORS Preflight Options บน Google Apps Script
@@ -72,39 +54,6 @@ const API = {
     } catch (error) {
       console.error(`API Call failed [${action}]:`, error);
       throw error;
-    }
-  },
-
-  promptSetApiUrl() {
-    if (typeof Swal !== 'undefined') {
-      Swal.fire({
-        title: 'ตั้งค่า Google Apps Script Web App URL',
-        text: 'กรุณากรอก Web App Executable URL ที่ได้จากการ Deploy ใน Google Apps Script',
-        input: 'text',
-        inputValue: this.getApiUrl(),
-        inputPlaceholder: 'https://script.google.com/macros/s/AKfycbyn9Mh9wIkcU2r-AiEihOXeBeGuQoD4C_-adNao7oVuS6be6dQg71mPDbMCN5yxFDCnLg/exec',
-        showCancelButton: true,
-        confirmButtonText: 'บันทึก URL',
-        cancelButtonText: 'ยกเลิก',
-        inputValidator: (value) => {
-          if (!value || !value.startsWith('https://script.google.com/macros/s/')) {
-            return 'กรุณากรอก URL ที่ถูกต้องของ Google Apps Script Web App!';
-          }
-        }
-      }).then((result) => {
-        if (result.isConfirmed && result.value) {
-          this.setApiUrl(result.value);
-          Swal.fire({
-            icon: 'success',
-            title: 'บันทึกเรียบร้อย',
-            text: 'กำลังโหลดข้อมูลใหม่...',
-            timer: 1500,
-            showConfirmButton: false
-          }).then(() => {
-            window.location.reload();
-          });
-        }
-      });
     }
   },
 

@@ -20,18 +20,11 @@ const Admin = {
       });
     });
 
-    // ค้นหาพนักงานด้วยรหัสพนักงาน หรือ ชื่อ-นามสกุล (real-time filter)
     document.getElementById('search-employee')?.addEventListener('input', () => {
       this.filterEmployees();
     });
   },
 
-  /**
-   * เปรียบเทียบ ID สองค่าแบบทนทาน (กันปัญหาช่องว่างแฝงจาก Google Sheet
-   * หรือกรณีค่าหนึ่งเป็น Number อีกค่าเป็น String)
-   * แก้บั๊ก: ฟอร์มแก้ไข (พนักงาน/อาคาร/ห้องพัก) เปิดมาแล้วว่างเปล่า
-   * เพราะเดิมเทียบด้วย === ตรงๆ ซึ่งพังง่ายกับข้อมูลที่มีช่องว่างแฝง
-   */
   _idEquals(a, b) {
     if (a === null || a === undefined) a = '';
     if (b === null || b === undefined) b = '';
@@ -906,7 +899,6 @@ const Admin = {
   },
 
   async loadSettings() {
-    document.getElementById('setting-api-url').value = API.getApiUrl();
     try {
       const s = await API.getSettings();
       if (s) {
@@ -921,9 +913,6 @@ const Admin = {
   },
 
   async saveSettings() {
-    const apiUrl = document.getElementById('setting-api-url')?.value;
-    API.setApiUrl(apiUrl);
-
     const systemName = document.getElementById('setting-system-name')?.value;
     const companyName = document.getElementById('setting-company-name')?.value;
     const email = document.getElementById('setting-email')?.value;
@@ -939,10 +928,9 @@ const Admin = {
       });
       App.closeLoading();
       App.showToast('บันทึกการตั้งค่าสำเร็จ', 'success');
-      App.checkApiStatus();
     } catch (e) {
       App.closeLoading();
-      App.showToast('บันทึก API URL ในเครื่องแล้ว แต่บันทึกลง Sheet ไม่สำเร็จ: ' + e.message, 'warning');
+      App.showError('บันทึกการตั้งค่าไม่สำเร็จ', e.message);
     }
   }
 };
