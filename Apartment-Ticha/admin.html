@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบจัดการหอพัก (Admin Center) | ระบบบริหารหอพักพนักงาน</title>
+
+  <!-- Google Font: Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 & Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  
+  <!-- SweetAlert2 -->
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <div id="navbar-container"></div>
+
+  <!-- Admin Main Layout -->
+  <div class="admin-wrapper">
+
+    <!-- Admin Sidebar -->
+    <aside class="admin-sidebar shadow-sm">
+      <div class="px-3 py-2 mb-2 d-flex align-items-center gap-2 border-bottom">
+        <img src="assets/mascot.png" alt="ทาคุจัง" class="rounded-circle shadow-sm bg-white p-1" style="width: 44px; height: 44px; object-fit: contain;">
+        <div>
+          <div class="fw-bold text-dark fs-6 mb-0">ทาคุจัง</div>
+          <small class="text-muted" style="font-size: 0.75rem;">พนักงานดูแลหอพัก</small>
+        </div>
+      </div>
+      <div class="sidebar-heading">งานบริหารการเข้าพัก</div>
+      <nav class="nav flex-column">
+        <a class="nav-link active" href="#" data-tab="occupancy">
+          <i class="bi bi-people-fill text-primary"></i> การเข้าพัก (Occupancy)
+        </a>
+        <a class="nav-link" href="#" data-tab="requests">
+          <i class="bi bi-inbox-fill text-warning"></i> คำขอเข้าพัก (Requests)
+        </a>
+        <a class="nav-link" href="#" data-tab="repairs">
+          <i class="bi bi-wrench-adjustable text-danger"></i> งานแจ้งซ่อม (Repairs)
+        </a>
+        <a class="nav-link" href="#" data-tab="maintenance">
+          <i class="bi bi-cone-striped text-orange" style="color: #ea580c;"></i> ปิดปรับปรุงห้อง
+        </a>
+      </nav>
+
+      <div class="sidebar-heading mt-3">ข้อมูลพื้นฐาน</div>
+      <nav class="nav flex-column">
+        <a class="nav-link" href="#" data-tab="employees">
+          <i class="bi bi-person-badge"></i> ข้อมูลพนักงาน
+        </a>
+        <a class="nav-link" href="#" data-tab="buildings">
+          <i class="bi bi-buildings"></i> ข้อมูลอาคาร
+        </a>
+        <a class="nav-link" href="#" data-tab="rooms">
+          <i class="bi bi-door-open"></i> ข้อมูลห้องและเตียง
+        </a>
+        <a class="nav-link" href="#" data-tab="assets">
+          <i class="bi bi-box-seam"></i> ทรัพย์สินในห้อง
+        </a>
+        <a class="nav-link" href="#" data-tab="keys">
+          <i class="bi bi-key-fill text-warning"></i> กุญแจห้องพัก
+        </a>
+      </nav>
+
+      <div class="sidebar-heading mt-3">รายงานและความปลอดภัย</div>
+      <nav class="nav flex-column">
+        <a class="nav-link" href="#" data-tab="reports">
+          <i class="bi bi-file-earmark-bar-graph"></i> รายงานและส่งออก
+        </a>
+        <a class="nav-link" href="#" data-tab="audit">
+          <i class="bi bi-journal-text"></i> Audit Log
+        </a>
+        <a class="nav-link" href="#" data-tab="settings">
+          <i class="bi bi-sliders"></i> การตั้งค่า (Settings)
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Admin Main Content Area -->
+    <main class="admin-content">
+
+      <!-- ========================================== -->
+      <!-- TAB 1: OCCUPANCY -->
+      <!-- ========================================== -->
+      <section id="tab-occupancy" class="tab-content-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark">
+              <i class="bi bi-people-fill text-primary me-2"></i>จัดการการเข้าพัก (Occupancy & Movement)
+            </h3>
+            <p class="text-muted mb-0">รายการผู้พักอาศัยปัจจุบัน การเช็คอิน การย้ายห้อง และการเช็คเอาท์</p>
+          </div>
+          <button class="btn btn-primary shadow-sm" onclick="OccupancyWorkflow.openCheckInModal()">
+            <i class="bi bi-box-arrow-in-right me-1"></i> ทำรายการ Check-in ใหม่
+          </button>
+        </div>
+
+        <div class="table-card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>รหัสพนักงาน</th>
+                  <th>ชื่อ-นามสกุล / ข้อมูล</th>
+                  <th>อาคาร</th>
+                  <th>ห้องพัก</th>
+                  <th>เตียง</th>
+                  <th>วันที่เข้าพัก</th>
+                  <th>คาดว่าจะออก</th>
+                  <th>การดำเนินการ</th>
+                </tr>
+              </thead>
+              <tbody id="occupancy-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: EMPLOYEES -->
+      <!-- ========================================== -->
+      <section id="tab-employees" class="tab-content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-person-badge text-primary me-2"></i>ข้อมูลพนักงาน</h3>
+            <p class="text-muted mb-0">จัดการรายชื่อพนักงาน ข้อมูลติดต่อ และแผนกสังกัด</p>
+          </div>
+          <button class="btn btn-primary shadow-sm" onclick="Admin.openEmployeeModal()">
+            <i class="bi bi-plus-lg me-1"></i> เพิ่มพนักงานใหม่
+          </button>
+        </div>
+
+        <!-- ช่องค้นหาพนักงาน: ค้นหาได้ทั้งรหัสพนักงาน หรือ ชื่อ-นามสกุล -->
+        <div class="card border-0 shadow-sm rounded-4 mb-3">
+          <div class="card-body p-3">
+            <div class="row g-2 align-items-center">
+              <div class="col-12 col-md-6">
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                  <input type="text" id="search-employee" class="form-control border-start-0" placeholder="ค้นหารหัสพนักงาน หรือ ชื่อ-นามสกุล...">
+                </div>
+              </div>
+              <div class="col-12 col-md-auto">
+                <small class="text-muted" id="employee-search-result-count"></small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>รหัส</th>
+                  <th>ชื่อ-นามสกุล</th>
+                  <th>แผนก</th>
+                  <th>ตำแหน่ง</th>
+                  <th>เบอร์โทร</th>
+                  <th>อีเมล</th>
+                  <th>จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="employees-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: BUILDINGS -->
+      <!-- ========================================== -->
+      <section id="tab-buildings" class="tab-content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-buildings text-primary me-2"></i>ข้อมูลอาคาร</h3>
+            <p class="text-muted mb-0">รายชื่ออาคารหอพัก จำนวนชั้น และที่ตั้ง</p>
+          </div>
+          <button class="btn btn-primary shadow-sm" onclick="Admin.openBuildingModal()">
+            <i class="bi bi-plus-lg me-1"></i> เพิ่มอาคารใหม่
+          </button>
+        </div>
+
+        <div class="row" id="buildings-list-container"></div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: ROOMS -->
+      <!-- ========================================== -->
+      <section id="tab-rooms" class="tab-content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-door-open text-primary me-2"></i>ข้อมูลห้องพักและเตียง</h3>
+            <p class="text-muted mb-0">จัดการห้องพัก กำหนดความจุเตียง และสิ่งอำนวยความสะดวก</p>
+          </div>
+          <button class="btn btn-primary shadow-sm" onclick="Admin.openRoomModal()">
+            <i class="bi bi-plus-lg me-1"></i> เพิ่มห้องพักใหม่
+          </button>
+        </div>
+
+        <div class="table-card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>เลขห้อง</th>
+                  <th>อาคาร</th>
+                  <th>ประเภท</th>
+                  <th>ความจุ</th>
+                  <th>ผู้พัก / เตียง</th>
+                  <th>เพศ</th>
+                  <th>สถานะ</th>
+                  <th>จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="rooms-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 5: REQUESTS -->
+      <!-- ========================================== -->
+      <section id="tab-requests" class="tab-content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-inbox-fill text-warning me-2"></i>คำขอเข้าพัก (Room Requests)</h3>
+            <p class="text-muted mb-0">รายการคำขอเข้าพักที่ส่งเข้ามา รอการตรวจสอบและอนุมัติ</p>
+          </div>
+        </div>
+
+        <div class="table-card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>รหัสคำขอ</th>
+                  <th>รหัสพนักงาน</th>
+                  <th>วันที่ขอ</th>
+                  <th>อาคาร/ประเภทที่ต้องการ</th>
+                  <th>เหตุผลความจำเป็น</th>
+                  <th>สถานะ</th>
+                  <th>การอนุมัติ</th>
+                </tr>
+              </thead>
+              <tbody id="requests-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 6: REPAIRS -->
+      <!-- ========================================== -->
+      <section id="tab-repairs" class="tab-content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-wrench-adjustable text-danger me-2"></i>งานแจ้งซ่อม (Repair Requests)</h3>
+            <p class="text-muted mb-0">ติดตามสถานะงานแจ้งซ่อมบำรุงอุปกรณ์ภายในห้องพัก</p>
+          </div>
+          <button class="btn btn-warning shadow-sm" onclick="Admin.openRepairModal()">
+            <i class="bi bi-plus-lg me-1"></i> แจ้งซ่อมใหม่
+          </button>
+        </div>
+
+        <div class="table-card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>รหัสงาน</th>
+                  <th>ห้องพัก</th>
+                  <th>ประเภท</th>
+                  <th>รายละเอียด</th>
+                  <th>ระดับความสำคัญ</th>
+                  <th>ผู้รับผิดชอบ</th>
+                  <th>สถานะ</th>
+                  <th>การดำเนินการ</th>
+                </tr>
+              </thead>
+              <tbody id="repairs-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 7: MAINTENANCE -->
+      <!-- ========================================== -->
+      <section id="tab-maintenance" class="tab-content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-cone-striped text-orange me-2" style="color: #ea580c;"></i>การปิดปรับปรุงห้องพัก (Maintenance)</h3>
+            <p class="text-muted mb-0">บันทึกประวัติห้องที่ปิดซ่อมแซมใหญ่ (ห้องปิดซ่อมจะไม่ถูกนับเป็นห้องว่าง)</p>
+          </div>
+        </div>
+
+        <div class="table-card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>รหัสการซ่อม</th>
+                  <th>ห้องพัก</th>
+                  <th>วันที่เริ่ม</th>
+                  <th>คาดว่าจะเสร็จ</th>
+                  <th>ปัญหาที่พบ</th>
+                  <th>สถานะ</th>
+                  <th>ช่างผู้รับผิดชอบ</th>
+                </tr>
+              </thead>
+              <tbody id="maint-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 8: ASSETS -->
+      <!-- ========================================== -->
+      <section id="tab-assets" class="tab-content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-box-seam text-primary me-2"></i>ทรัพย์สินในห้องพัก (Room Assets)</h3>
+            <p class="text-muted mb-0">บันทึกทะเบียนครุภัณฑ์ แอร์ เตียง ตู้ โต๊ะ ภายในห้องพัก</p>
+          </div>
+        </div>
+
+        <div class="table-card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>รหัสทรัพย์สิน</th>
+                  <th>ห้องพัก</th>
+                  <th>ประเภท</th>
+                  <th>ชื่อรายการ</th>
+                  <th>สภาพ</th>
+                  <th>สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="assets-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 9: KEYS -->
+      <!-- ========================================== -->
+      <section id="tab-keys" class="tab-content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-key-fill text-warning me-2"></i>จัดการกุญแจห้องพัก (Keys)</h3>
+            <p class="text-muted mb-0">บันทึกการเบิกจ่ายกุญแจ การคืน และการแจ้งกุญแจสูญหาย</p>
+          </div>
+        </div>
+
+        <div class="table-card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>รหัสกุญแจ</th>
+                  <th>ห้องพัก</th>
+                  <th>ผู้ถือครอง</th>
+                  <th>วันที่จ่าย</th>
+                  <th>สถานะ</th>
+                  <th>หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody id="keys-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 10: REPORTS -->
+      <!-- ========================================== -->
+      <section id="tab-reports" class="tab-content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-file-earmark-bar-graph text-primary me-2"></i>รายงานและส่งออกข้อมูล (Reports & Export)</h3>
+            <p class="text-muted mb-0">สร้างรายงานสรุป และดาวน์โหลดไฟล์ CSV รองรับภาษาไทย</p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary shadow-sm" onclick="Reports.printReport()">
+              <i class="bi bi-printer me-1"></i> พิมพ์
+            </button>
+            <button class="btn btn-success shadow-sm" onclick="Reports.exportToCSV()">
+              <i class="bi bi-file-earmark-excel me-1"></i> ดาวน์โหลด CSV (Excel)
+            </button>
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+          <div class="card-body p-3">
+            <div class="d-flex flex-wrap gap-2">
+              <button class="btn btn-outline-primary" onclick="Reports.generateReport('rooms')">รายงานสถานะห้องพัก</button>
+              <button class="btn btn-outline-primary" onclick="Reports.generateReport('occupants')">รายงานผู้พักปัจจุบัน</button>
+              <button class="btn btn-outline-primary" onclick="Reports.generateReport('repairs')">รายงานการแจ้งซ่อม</button>
+              <button class="btn btn-outline-primary" onclick="Reports.generateReport('audit')">รายงาน Audit Log</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card shadow-sm">
+          <div class="card-header bg-white">
+            <h5 class="fw-bold text-dark mb-0" id="report-title-display">รายงาน</h5>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead id="report-table-head"></thead>
+              <tbody id="report-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+
+      <!-- ========================================== -->
+      <!-- TAB 12: AUDIT LOG -->
+      <!-- ========================================== -->
+      <section id="tab-audit" class="tab-content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-journal-text text-primary me-2"></i>บันทึกประวัติการเปลี่ยนแปลง (Audit Trail Log)</h3>
+            <p class="text-muted mb-0">บันทึกทุกการสร้าง แก้ไข ลบ เช็คอิน เช็คเอาท์ และย้ายห้องเพื่อความโปร่งใส</p>
+          </div>
+        </div>
+
+        <div class="table-card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>วัน-เวลา</th>
+                  <th>ผู้ทำรายการ</th>
+                  <th>Action</th>
+                  <th>Module</th>
+                  <th>Record ID</th>
+                  <th>หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 13: SETTINGS -->
+      <!-- ========================================== -->
+      <section id="tab-settings" class="tab-content-section d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-sliders text-primary me-2"></i>การตั้งค่าระบบ (Settings)</h3>
+            <p class="text-muted mb-0">เชื่อมโยง API และตั้งค่าพารามิเตอร์การทำงานของระบบ</p>
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 p-4 max-w-700">
+          <form onsubmit="event.preventDefault(); Admin.saveSettings();">
+            <div class="mb-3">
+              <label class="form-label fw-bold">Google Apps Script Web App API URL</label>
+              <input type="text" id="setting-api-url" class="form-control" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+              <small class="text-muted">URL ของ Google Apps Script ที่ Deploy เป็น Web App (บันทึกลงเบราว์เซอร์อัตโนมัติ)</small>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">ชื่อระบบ (System Name)</label>
+              <input type="text" id="setting-system-name" class="form-control" value="ระบบบริหารหอพักพนักงาน">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">ชื่อบริษัท / องค์กร</label>
+              <input type="text" id="setting-company-name" class="form-control" value="Bitwise Group">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">อีเมลผู้ดูแลระบบ (System Email)</label>
+              <input type="email" id="setting-email" class="form-control" value="admin@company.com">
+            </div>
+            <div class="mb-4">
+              <label class="form-label fw-bold">แจ้งเตือนก่อนครบกำหนดเช็คเอาท์ (วัน)</label>
+              <input type="number" id="setting-reminder-days" class="form-control" value="7">
+            </div>
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-save me-1"></i> บันทึกการตั้งค่า
+            </button>
+          </form>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODALS -->
+  <!-- ========================================== -->
+
+  <!-- Modal: Check-In -->
+  <div class="modal fade" id="checkInModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold"><i class="bi bi-box-arrow-in-right text-success me-2"></i>ทำรายการ Check-in</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="mb-3 position-relative">
+            <label class="form-label fw-semibold">พนักงานผู้เข้าพัก <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" id="checkin-employee-search" class="form-control border-start-0" placeholder="พิมพ์รหัสพนักงาน หรือ ชื่อ-นามสกุล..." autocomplete="off">
+            </div>
+            <!-- ช่องซ่อนเก็บ EmployeeID ที่ถูกเลือกจริง ใช้ส่งไป submitCheckIn() -->
+            <input type="hidden" id="checkin-employee">
+            <div id="checkin-employee-suggestions" class="list-group employee-suggest-box"></div>
+            <small class="text-muted">พิมพ์เพื่อค้นหา แล้วคลิกเลือกชื่อพนักงานจากรายการที่ปรากฏ</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">ห้องพัก <span class="text-danger">*</span></label>
+            <select id="checkin-room" class="form-select" onchange="OccupancyWorkflow.onCheckInRoomSelected(this.value)"></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">เตียงที่ต้องการจัดสรร <span class="text-danger">*</span></label>
+            <select id="checkin-bed" class="form-select"></select>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">วันที่เข้าพัก <span class="text-danger">*</span></label>
+              <input type="date" id="checkin-date" class="form-control">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">วันที่คาดว่าจะออก</label>
+              <input type="date" id="checkin-expected-date" class="form-control">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">เหตุผลการเข้าพัก</label>
+            <input type="text" id="checkin-reason" class="form-control" value="ย้ายเข้าตามสัญญา">
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold">หมายเหตุเพิ่มเติม</label>
+            <input type="text" id="checkin-remark" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-success px-4" onclick="OccupancyWorkflow.submitCheckIn()">บันทึก Check-in</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Check-Out -->
+  <div class="modal fade" id="checkOutModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold"><i class="bi bi-box-arrow-right text-danger me-2"></i>ทำรายการ Check-out</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="checkout-occupancy-id">
+          <div class="alert alert-secondary py-2 mb-3">
+            <div>ผู้พัก: <strong id="checkout-occupant-name" class="text-dark">-</strong></div>
+            <div>ห้องพัก: <strong id="checkout-room-info" class="text-primary">-</strong></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">วันที่ย้ายออก <span class="text-danger">*</span></label>
+            <input type="date" id="checkout-date" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">เหตุผลการย้ายออก</label>
+            <input type="text" id="checkout-reason" class="form-control" placeholder="เช่น หมดสัญญา, ลาออก, ย้ายบ้าน">
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="checkout-key-returned" checked>
+              <label class="form-check-label" for="checkout-key-returned">คืนกุญแจห้องครบถ้วน</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="checkout-prop-returned" checked>
+              <label class="form-check-label" for="checkout-prop-returned">ตรวจสอบทรัพย์สินในห้องเรียบร้อย</label>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">สภาพห้อง</label>
+              <select id="checkout-condition" class="form-select">
+                <option value="Normal">ปกติ (เรียบร้อย)</option>
+                <option value="Damage">มีความเสียหาย</option>
+                <option value="NeedsInspection">ต้องตรวจสอบเพิ่มเติม</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">ค่าเสียหาย (บาท)</label>
+              <input type="number" id="checkout-damage" class="form-control" value="0">
+            </div>
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold">หมายเหตุ</label>
+            <input type="text" id="checkout-remark" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-danger px-4" onclick="OccupancyWorkflow.submitCheckOut()">ยืนยัน Check-out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Transfer -->
+  <div class="modal fade" id="transferModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold"><i class="bi bi-arrow-left-right text-primary me-2"></i>ทำรายการย้ายห้อง (Transfer)</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="transfer-occupancy-id">
+          <div class="alert alert-secondary py-2 mb-3">
+            <div>ผู้พัก: <strong id="transfer-occupant-name" class="text-dark">-</strong></div>
+            <div>ห้องปัจจุบัน: <strong id="transfer-current-room" class="text-danger">-</strong></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">เลือกห้องพักใหม่ <span class="text-danger">*</span></label>
+            <select id="transfer-new-room" class="form-select" onchange="OccupancyWorkflow.onTransferRoomSelected(this.value)"></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">เลือกเตียงใหม่ <span class="text-danger">*</span></label>
+            <select id="transfer-new-bed" class="form-select"></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">วันที่ย้ายห้อง <span class="text-danger">*</span></label>
+            <input type="date" id="transfer-date" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">เหตุผลการขอย้าย</label>
+            <input type="text" id="transfer-reason" class="form-control" value="ขอย้ายห้อง">
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold">หมายเหตุ</label>
+            <input type="text" id="transfer-remark" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-primary px-4" onclick="OccupancyWorkflow.submitTransfer()">บันทึกการย้ายห้อง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Employee Form -->
+  <div class="modal fade" id="employeeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold"><i class="bi bi-person-plus text-primary me-2"></i>ข้อมูลพนักงาน</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="emp-id">
+          <div class="row g-2 mb-3">
+            <div class="col-4">
+              <label class="form-label fw-semibold">คำนำหน้า</label>
+              <select id="emp-prefix" class="form-select">
+                <option value="นาย">นาย</option>
+                <option value="นาง">นาง</option>
+                <option value="นางสาว">นางสาว</option>
+              </select>
+            </div>
+            <div class="col-4">
+              <label class="form-label fw-semibold">ชื่อ <span class="text-danger">*</span></label>
+              <input type="text" id="emp-firstname" class="form-control" required>
+            </div>
+            <div class="col-4">
+              <label class="form-label fw-semibold">นามสกุล <span class="text-danger">*</span></label>
+              <input type="text" id="emp-lastname" class="form-control" required>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">แผนก</label>
+              <input type="text" id="emp-dept" class="form-control" placeholder="เช่น IT, HR, QC">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">ตำแหน่ง</label>
+              <input type="text" id="emp-pos" class="form-control">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">โรงงาน / Plant</label>
+              <input type="text" id="emp-plant" class="form-control" value="Plant 1">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">เบอร์โทรศัพท์</label>
+              <input type="text" id="emp-phone" class="form-control">
+            </div>
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold">อีเมล</label>
+            <input type="email" id="emp-email" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-primary px-4" onclick="Admin.saveEmployee()">บันทึกข้อมูล</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Building Form -->
+  <div class="modal fade" id="buildingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold"><i class="bi bi-building-add text-primary me-2"></i>ข้อมูลอาคาร</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="bld-id">
+          <div class="row g-2 mb-3">
+            <div class="col-4">
+              <label class="form-label fw-semibold">รหัสอาคาร <span class="text-danger">*</span></label>
+              <input type="text" id="bld-code" class="form-control" placeholder="A, B, C">
+            </div>
+            <div class="col-8">
+              <label class="form-label fw-semibold">ชื่ออาคาร <span class="text-danger">*</span></label>
+              <input type="text" id="bld-name" class="form-control" placeholder="หอพักพนักงานชาย อาคาร A">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">จำนวนชั้น</label>
+              <input type="number" id="bld-floors" class="form-control" value="2">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">ที่ตั้ง / โซน</label>
+              <input type="text" id="bld-location" class="form-control" placeholder="โซนโรงงาน 1">
+            </div>
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold">หมายเหตุ</label>
+            <input type="text" id="bld-remark" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-primary px-4" onclick="Admin.saveBuilding()">บันทึกอาคาร</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Room Form -->
+  <div class="modal fade" id="roomModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold"><i class="bi bi-door-open-fill text-primary me-2"></i>ข้อมูลห้องพัก</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="room-id">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">อาคาร <span class="text-danger">*</span></label>
+            <select id="room-building" class="form-select"></select>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">เลขห้อง <span class="text-danger">*</span></label>
+              <input type="text" id="room-number" class="form-control" placeholder="A-101">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">ประเภทห้อง</label>
+              <select id="room-type" class="form-select">
+                <option value="Single">Single (1 เตียง)</option>
+                <option value="Double">Double (2 เตียง)</option>
+                <option value="Triple">Triple (3 เตียง)</option>
+                <option value="Quad">Quad (4 เตียง)</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-4">
+              <label class="form-label fw-semibold">ความจุ (คน) <span class="text-danger">*</span></label>
+              <input type="number" id="room-capacity" class="form-control" value="2">
+            </div>
+            <div class="col-4">
+              <label class="form-label fw-semibold">เพศที่กำหนด</label>
+              <select id="room-gender" class="form-select">
+                <option value="Male">ชาย</option>
+                <option value="Female">หญิง</option>
+                <option value="Any">ไม่จำกัด</option>
+              </select>
+            </div>
+            <div class="col-4">
+              <label class="form-label fw-semibold">ค่าเช่า (บาท)</label>
+              <input type="number" id="room-rate" class="form-control" value="1500">
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="room-has-ac" checked>
+              <label class="form-check-label" for="room-has-ac">มีเครื่องปรับอากาศ</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="room-has-furn" checked>
+              <label class="form-check-label" for="room-has-furn">มีเฟอร์นิเจอร์</label>
+            </div>
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold">หมายเหตุ</label>
+            <input type="text" id="room-remark" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-primary px-4" onclick="Admin.saveRoom()">บันทึกห้องพัก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Repair Request Form -->
+  <div class="modal fade" id="repairModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold"><i class="bi bi-wrench text-warning me-2"></i>แจ้งซ่อมอุปกรณ์</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">เลขห้องพัก <span class="text-danger">*</span></label>
+              <input type="text" id="repair-room" class="form-control" placeholder="เช่น A-101">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">ประเภทปัญหา</label>
+              <select id="repair-type" class="form-select">
+                <option value="Air Conditioner">เครื่องปรับอากาศ (แอร์)</option>
+                <option value="Electricity">ระบบไฟฟ้า / หลอดไฟ</option>
+                <option value="Plumbing">ระบบประปา / น้ำรั่ว</option>
+                <option value="Furniture">เฟอร์นิเจอร์ (เตียง, ตู้)</option>
+                <option value="Door & Lock">ประตู / ลูกบิด / กุญแจ</option>
+                <option value="Other">อื่นๆ</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">ระดับความสำคัญ</label>
+            <select id="repair-priority" class="form-select">
+              <option value="Low">ต่ำ (Low)</option>
+              <option value="Medium" selected>ปานกลาง (Medium)</option>
+              <option value="High">สูง (High)</option>
+              <option value="Urgent">เร่งด่วนฉุกเฉิก (Urgent)</option>
+            </select>
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold">รายละเอียดปัญหา <span class="text-danger">*</span></label>
+            <textarea id="repair-desc" class="form-control" rows="3" placeholder="ระบุอาการชำรุด..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-warning px-4" onclick="Admin.saveRepairRequest()">ส่งแจ้งซ่อม</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-top py-3 text-center text-muted small mt-auto">
+    <div class="container">
+      &copy; 2026 ระบบบริหารหอพักพนักงาน (Employee Dormitory Management System) | v1.0
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/occupancy.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  --font-base: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-primary: #1e3a8a;
+  --color-primary-dark: #0f172a;
+  --color-secondary: #0ea5e9;
+  --color-bg-light: #f8fafc;
+  --color-card-bg: #ffffff;
+  --color-border: #e2e8f0;
+
+  /* Status Colors */
+  --status-available: #10b981;    /* Green */
+  --status-partial: #f59e0b;      /* Yellow/Amber */
+  --status-full: #ef4444;         /* Red */
+  --status-reserved: #3b82f6;     /* Blue */
+  --status-maintenance: #f97316;  /* Orange */
+  --status-inactive: #64748b;     /* Gray */
+}
+
+body {
+  font-family: var(--font-base);
+  background-color: var(--color-bg-light);
+  color: #334155;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Navbar */
+.navbar-dorm {
+  background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.navbar-dorm .nav-link {
+  color: #cbd5e1 !important;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.navbar-dorm .nav-link:hover,
+.navbar-dorm .nav-link.active {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* KPI Summary Cards */
+.kpi-card {
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: #ffffff;
+  padding: 1.25rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+/* Room Cards Grid */
+.room-card {
+  border-radius: 12px;
+  background: #ffffff;
+  border: 2px solid transparent;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.room-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Status Borders and Badges */
+.room-card.status-Available {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+.room-card.status-Available .room-header {
+  background-color: rgba(16, 185, 129, 0.08);
+}
+
+.room-card.status-Partially-Occupied {
+  border-color: rgba(245, 158, 11, 0.5);
+}
+.room-card.status-Partially-Occupied .room-header {
+  background-color: rgba(245, 158, 11, 0.08);
+}
+
+.room-card.status-Full {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+.room-card.status-Full .room-header {
+  background-color: rgba(239, 68, 68, 0.08);
+}
+
+.room-card.status-Maintenance {
+  border-color: rgba(249, 115, 22, 0.5);
+}
+.room-card.status-Maintenance .room-header {
+  background-color: rgba(249, 115, 22, 0.1);
+}
+
+.room-card.status-Inactive {
+  border-color: rgba(100, 116, 139, 0.3);
+  opacity: 0.75;
+}
+.room-card.status-Inactive .room-header {
+  background-color: rgba(100, 116, 139, 0.08);
+}
+
+/* Badges */
+.badge-status {
+  padding: 0.35rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.badge-status.Available {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-status.Partially-Occupied {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-status.Full {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-status.Maintenance {
+  background-color: #ffedd5;
+  color: #9a3412;
+}
+
+.badge-status.Inactive {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+/* Bed Dots */
+.bed-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-right: 4px;
+}
+.bed-indicator.vacant {
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px dashed #10b981;
+}
+.bed-indicator.occupied {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #ef4444;
+}
+
+/* Admin Sidebar Layout */
+.admin-wrapper {
+  display: flex;
+  flex: 1;
+}
+
+.admin-sidebar {
+  width: 260px;
+  background-color: #ffffff;
+  border-right: 1px solid var(--color-border);
+  padding: 1rem 0;
+  flex-shrink: 0;
+}
+
+.admin-sidebar .sidebar-heading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  padding: 0.75rem 1.25rem 0.35rem;
+  letter-spacing: 0.5px;
+}
+
+.admin-sidebar .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  color: #475569;
+  font-weight: 500;
+  font-size: 0.925rem;
+  border-left: 3px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.admin-sidebar .nav-link:hover {
+  background-color: #f1f5f9;
+  color: var(--color-primary);
+}
+
+.admin-sidebar .nav-link.active {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border-left-color: #2563eb;
+  font-weight: 600;
+}
+
+.admin-content {
+  flex: 1;
+  padding: 1.75rem;
+  background-color: var(--color-bg-light);
+  overflow-x: hidden;
+}
+
+/* Table Card Styling */
+.table-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+}
+
+.table-card .card-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--color-border);
+  padding: 1rem 1.25rem;
+}
+
+.table th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-bottom: 2px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+/* API Config Alert Bar */
+.api-alert-banner {
+  background-color: #fef3c7;
+  border-bottom: 1px solid #fcd34d;
+  color: #92400e;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Floor Section */
+.floor-section {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.floor-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+  .admin-wrapper {
+    flex-direction: column;
+  }
+  .admin-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    padding: 0.5rem;
+  }
+  .admin-sidebar .nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+  .admin-sidebar .sidebar-heading {
+    display: none;
+  }
+  .admin-sidebar .nav-link {
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+  }
+  .admin-sidebar .nav-link.active {
+    border-left: none;
+    border-bottom-color: #2563eb;
+  }
+  .admin-content {
+    padding: 1rem;
+  }
+}
+
+/* Employee Search Autocomplete (Check-in Modal) */
+.employee-suggest-box {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1065; /* สูงกว่า Bootstrap modal (~1055) เพื่อไม่ให้ถูกบัง */
+  max-height: 240px;
+  overflow-y: auto;
+  display: none;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+  background: #ffffff;
+  margin-top: 4px;
+}
+
+.employee-suggest-box .list-group-item {
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+  background-color: #ffffff;
+}
+
+.employee-suggest-box .list-group-item:last-child {
+  border-bottom: none;
+}
+
+.employee-suggest-box .list-group-item:hover,
+.employee-suggest-box .list-group-item:focus {
+  background-color: #eff6ff;
+}
+
+/* Print Styles */
+@media print {
+  .navbar-dorm,
+  .admin-sidebar,
+  .btn,
+  .no-print {
+    display: none !important;
+  }
+  body, .admin-content {
+    background: #ffffff !important;
+    padding: 0 !important;
+  }
+  .table-card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
