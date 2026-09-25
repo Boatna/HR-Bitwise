@@ -1,5 +1,12 @@
 # ระบบบริหารหอพักพนักงาน (Employee Dormitory Management System) v1.0
 
+> **หมายเหตุการอัปเดต (Patch Notes):**
+> - เพิ่มไฟล์ `google-apps-script/Code.gs` และ `google-apps-script/setup_sheets.gs` ฉบับเต็ม (ไฟล์เดิมไม่ได้แนบมาในชุดที่ตรวจสอบ จึงเขียนขึ้นใหม่ทั้งหมดให้ตรงกับ Business Rules ในเอกสารนี้ และตรงกับทุก action ที่ `js/api.js` เรียกใช้)
+> - แก้ไข `js/app.js`, `js/admin.js`, `js/rooms.js`, `js/dashboard.js`, `js/reports.js`: เพิ่มฟังก์ชัน escape ข้อความ (`App.escHtml` / `App.escAttr`) ป้องกันปุ่มทำงานผิดพลาดหรือหน้าเว็บแสดงผลเพี้ยน หากชื่อพนักงาน/หมายเหตุ/รายละเอียดมีอักขระพิเศษ เช่น `'`, `"`, `<`, `>`
+> - Backend บังคับใช้กฎ: ห้ามเช็คอินซ้อน (พนักงาน 1 คน มีห้อง Active ได้ห้องเดียว), ห้ามลบห้อง/พนักงานที่ยังมีสถานะ Active อยู่ (ใช้ Soft Delete), ปิด/เปิดเตียงอัตโนมัติเมื่อแก้ไขความจุห้อง, และคำนวณสถานะห้องแบบ Real-time ตาม Business Rule 27 เสมอ (ไม่มีการเก็บสถานะห้องตรง ๆ ในตาราง)
+> - `js/api.js`, `js/occupancy.js`, ไฟล์ `.html`, และ `css/style.css` ตรวจสอบแล้วไม่พบข้อผิดพลาด จึงคงไว้ตามเดิม
+
+
 ระบบบริหารจัดการหอพักพนักงานองค์กรแบบครบวงจร พัฒนาตาม Master Specification v1.0 โครงสร้างระบบแยกส่วนชัดเจนระหว่าง Frontend (HTML/CSS/JS + Bootstrap 5 + Chart.js) และ Backend (Google Apps Script Web API) พร้อมฐานข้อมูล Google Sheets 18 ตาราง
 
 ---

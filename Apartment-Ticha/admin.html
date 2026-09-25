@@ -4,31 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ระบบจัดการหอพัก (Admin Center) | ระบบบริหารหอพักพนักงาน</title>
-
-  <!-- Google Font: Prompt -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-
-  <!-- Bootstrap 5 & Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  
-  <!-- SweetAlert2 -->
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-
-  <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
-  <!-- Navigation Bar -->
   <div id="navbar-container"></div>
-
-  <!-- Admin Main Layout -->
   <div class="admin-wrapper">
-
-    <!-- Admin Sidebar -->
     <aside class="admin-sidebar shadow-sm">
       <div class="px-3 py-2 mb-2 d-flex align-items-center gap-2 border-bottom">
         <img src="assets/mascot.png" alt="ทาคุจัง" class="rounded-circle shadow-sm bg-white p-1" style="width: 44px; height: 44px; object-fit: contain;">
@@ -86,12 +72,7 @@
       </nav>
     </aside>
 
-    <!-- Admin Main Content Area -->
     <main class="admin-content">
-
-      <!-- ========================================== -->
-      <!-- TAB 1: OCCUPANCY -->
-      <!-- ========================================== -->
       <section id="tab-occupancy" class="tab-content-section">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -125,10 +106,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ========================================== -->
-      <!-- TAB 2: EMPLOYEES -->
-      <!-- ========================================== -->
       <section id="tab-employees" class="tab-content-section d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -139,8 +116,6 @@
             <i class="bi bi-plus-lg me-1"></i> เพิ่มพนักงานใหม่
           </button>
         </div>
-
-        <!-- ช่องค้นหาพนักงาน: ค้นหาได้ทั้งรหัสพนักงาน หรือ ชื่อ-นามสกุล -->
         <div class="card border-0 shadow-sm rounded-4 mb-3">
           <div class="card-body p-3">
             <div class="row g-2 align-items-center">
@@ -176,10 +151,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ========================================== -->
-      <!-- TAB 3: BUILDINGS -->
-      <!-- ========================================== -->
       <section id="tab-buildings" class="tab-content-section d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -193,10 +164,6 @@
 
         <div class="row" id="buildings-list-container"></div>
       </section>
-
-      <!-- ========================================== -->
-      <!-- TAB 4: ROOMS -->
-      <!-- ========================================== -->
       <section id="tab-rooms" class="tab-content-section d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -228,10 +195,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ========================================== -->
-      <!-- TAB 5: REQUESTS -->
-      <!-- ========================================== -->
       <section id="tab-requests" class="tab-content-section d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -259,10 +222,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ========================================== -->
-      <!-- TAB 6: REPAIRS -->
-      <!-- ========================================== -->
       <section id="tab-repairs" class="tab-content-section d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -294,16 +253,15 @@
           </div>
         </div>
       </section>
-
-      <!-- ========================================== -->
-      <!-- TAB 7: MAINTENANCE -->
-      <!-- ========================================== -->
       <section id="tab-maintenance" class="tab-content-section d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-cone-striped text-orange me-2" style="color: #ea580c;"></i>การปิดปรับปรุงห้องพัก (Maintenance)</h3>
             <p class="text-muted mb-0">บันทึกประวัติห้องที่ปิดซ่อมแซมใหญ่ (ห้องปิดซ่อมจะไม่ถูกนับเป็นห้องว่าง)</p>
           </div>
+          <button class="btn btn-warning shadow-sm" onclick="Admin.openMaintenanceModal()">
+            <i class="bi bi-plus-lg me-1"></i> ปิดปรับปรุงห้องใหม่
+          </button>
         </div>
 
         <div class="table-card shadow-sm">
@@ -318,6 +276,7 @@
                   <th>ปัญหาที่พบ</th>
                   <th>สถานะ</th>
                   <th>ช่างผู้รับผิดชอบ</th>
+                  <th>การดำเนินการ</th>
                 </tr>
               </thead>
               <tbody id="maint-table-body"></tbody>
@@ -325,10 +284,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ========================================== -->
-      <!-- TAB 8: ASSETS -->
-      <!-- ========================================== -->
       <section id="tab-assets" class="tab-content-section d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -355,10 +310,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ========================================== -->
-      <!-- TAB 9: KEYS -->
-      <!-- ========================================== -->
       <section id="tab-keys" class="tab-content-section d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -385,10 +336,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ========================================== -->
-      <!-- TAB 10: REPORTS -->
-      <!-- ========================================== -->
       <section id="tab-reports" class="tab-content-section d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -428,12 +375,6 @@
           </div>
         </div>
       </section>
-
-
-
-      <!-- ========================================== -->
-      <!-- TAB 12: AUDIT LOG -->
-      <!-- ========================================== -->
       <section id="tab-audit" class="tab-content-section d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -460,10 +401,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ========================================== -->
-      <!-- TAB 13: SETTINGS -->
-      <!-- ========================================== -->
       <section id="tab-settings" class="tab-content-section d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -499,12 +436,6 @@
 
     </main>
   </div>
-
-  <!-- ========================================== -->
-  <!-- MODALS -->
-  <!-- ========================================== -->
-
-  <!-- Modal: Check-In -->
   <div class="modal fade" id="checkInModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">
@@ -513,9 +444,14 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-4">
-          <div class="mb-3">
+          <div class="mb-3 position-relative">
             <label class="form-label fw-semibold">พนักงานผู้เข้าพัก <span class="text-danger">*</span></label>
-            <select id="checkin-employee" class="form-select"></select>
+            <input type="text" id="checkin-employee-search" class="form-control"
+                   placeholder="พิมพ์รหัสพนักงาน หรือ ชื่อ-นามสกุล..." autocomplete="off">
+            <input type="hidden" id="checkin-employee">
+            <div id="checkin-employee-suggestions"
+                 class="list-group position-absolute w-100 shadow-sm"
+                 style="z-index: 1080; max-height: 220px; overflow-y: auto; display: none;"></div>
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">ห้องพัก <span class="text-danger">*</span></label>
@@ -551,8 +487,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Modal: Check-Out -->
   <div class="modal fade" id="checkOutModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">
@@ -611,7 +545,6 @@
     </div>
   </div>
 
-  <!-- Modal: Transfer -->
   <div class="modal fade" id="transferModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">
@@ -654,7 +587,6 @@
     </div>
   </div>
 
-  <!-- Modal: Employee Form -->
   <div class="modal fade" id="employeeModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">
@@ -715,7 +647,6 @@
     </div>
   </div>
 
-  <!-- Modal: Building Form -->
   <div class="modal fade" id="buildingModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">
@@ -758,7 +689,6 @@
     </div>
   </div>
 
-  <!-- Modal: Room Form -->
   <div class="modal fade" id="roomModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">
@@ -828,7 +758,6 @@
     </div>
   </div>
 
-  <!-- Modal: Repair Request Form -->
   <div class="modal fade" id="repairModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">
@@ -839,8 +768,8 @@
         <div class="modal-body p-4">
           <div class="row g-2 mb-3">
             <div class="col-6">
-              <label class="form-label fw-semibold">เลขห้องพัก <span class="text-danger">*</span></label>
-              <input type="text" id="repair-room" class="form-control" placeholder="เช่น A-101">
+              <label class="form-label fw-semibold">ห้องพัก <span class="text-danger">*</span></label>
+              <select id="repair-room" class="form-select"></select>
             </div>
             <div class="col-6">
               <label class="form-label fw-semibold">ประเภทปัญหา</label>
@@ -876,14 +805,54 @@
     </div>
   </div>
 
-  <!-- Footer -->
+  <div class="modal fade" id="maintenanceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold"><i class="bi bi-cone-striped me-2" style="color: #ea580c;"></i>ปิดปรับปรุงห้องพัก</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="alert alert-warning py-2 small mb-3">
+            <i class="bi bi-info-circle me-1"></i>เมื่อบันทึกแล้ว ห้องนี้จะถูกคำนวณสถานะเป็น "ปิดปรับปรุง" ทันที และจะไม่ถูกนับเป็นห้องว่างจนกว่าจะกดปิดงานซ่อม
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">ห้องพัก <span class="text-danger">*</span></label>
+            <select id="maint-room" class="form-select"></select>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">วันที่เริ่มปิดปรับปรุง <span class="text-danger">*</span></label>
+              <input type="date" id="maint-start-date" class="form-control">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">คาดว่าจะเสร็จ</label>
+              <input type="date" id="maint-end-date" class="form-control">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">ปัญหาที่พบ <span class="text-danger">*</span></label>
+            <textarea id="maint-problem" class="form-control" rows="3" placeholder="เช่น ปรับปรุงระบบไฟฟ้าทั้งห้อง, ทาสีใหม่..."></textarea>
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold">ช่างผู้รับผิดชอบ</label>
+            <input type="text" id="maint-technician" class="form-control" placeholder="ชื่อช่าง/ผู้รับเหมา">
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-warning px-4" onclick="Admin.saveMaintenanceRecord()">บันทึกปิดปรับปรุง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="bg-white border-top py-3 text-center text-muted small mt-auto">
     <div class="container">
       &copy; 2026 ระบบบริหารหอพักพนักงาน (Employee Dormitory Management System) | v1.0
     </div>
   </footer>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/api.js"></script>

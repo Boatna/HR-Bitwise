@@ -17,31 +17,22 @@ const OccupancyWorkflow = {
     }
   },
 
-  /**
-   * เปิด Modal ทำรายการ Check-In
-   */
   async openCheckInModal(preselectedRoomId = null) {
     App.showLoading('กำลังเตรียมข้อมูล...');
     await this.initModalData();
     App.closeLoading();
-
-    // รีเซ็ตช่องค้นหาพนักงานทุกครั้งที่เปิด modal ใหม่
-    // (แก้ไข: เดิมเป็น <select> ที่เติมตัวเลือกทั้งหมดลงไปทุกครั้ง
-    // ตอนนี้เปลี่ยนเป็นช่องค้นหาแบบพิมพ์ค้นหา รหัสพนักงาน/ชื่อ-นามสกุล แล้วคลิกเลือกจากลิสต์)
     this.resetEmployeeSearch();
 
-    // เติมรายชื่อห้องที่มีเตียงว่าง
     const roomSelect = document.getElementById('checkin-room');
     if (roomSelect) {
       roomSelect.innerHTML = '<option value="">-- เลือกห้องพัก --</option>';
       const availableRooms = this.activeRooms.filter(r => r.availableBedsCount > 0 && r.computedStatus !== 'Maintenance');
       availableRooms.forEach(r => {
         const isSelected = preselectedRoomId && r.roomId === preselectedRoomId ? 'selected' : '';
-        roomSelect.innerHTML += `<option value="${r.roomId}" ${isSelected}>${r.roomNumber} - ${r.buildingName} (ว่าง ${r.availableBedsCount} เตียง)</option>`;
+        roomSelect.innerHTML += `<option value="${App.escHtml(r.roomId)}" ${isSelected}>${App.escHtml(r.roomNumber)} - ${App.escHtml(r.buildingName)} (ว่าง ${r.availableBedsCount} เตียง)</option>`;
       });
     }
 
-    // ตั้งค่าวันที่เริ่มต้นเป็นวันนี้
     const checkinDateInput = document.getElementById('checkin-date');
     if (checkinDateInput) {
       checkinDateInput.value = new Date().toISOString().split('T')[0];
@@ -55,16 +46,11 @@ const OccupancyWorkflow = {
 
     const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
     modal.show();
-
-    // โฟกัสช่องค้นหาพนักงานให้ทันทีเพื่อความสะดวก
     setTimeout(() => {
       document.getElementById('checkin-employee-search')?.focus();
     }, 300);
   },
 
-  /**
-   * ล้างค่าช่องค้นหาพนักงาน + ค่าที่เลือกไว้ทั้งหมด
-   */
   resetEmployeeSearch() {
     this.selectedCheckinEmployeeId = '';
     const searchInput = document.getElementById('checkin-employee-search');
@@ -78,17 +64,10 @@ const OccupancyWorkflow = {
     }
   },
 
-  /**
-   * ค้นหาพนักงานแบบ Real-time จากคำที่พิมพ์ (รหัสพนักงาน / ชื่อ / นามสกุล / ชื่อเต็ม)
-   * ใช้แทน <select> เดิม เพื่อให้ค้นหาพนักงานได้เร็วขึ้นเมื่อมีจำนวนพนักงานเยอะ
-   */
   onEmployeeSearchInput(value) {
     const suggestBox = document.getElementById('checkin-employee-suggestions');
     const hiddenInput = document.getElementById('checkin-employee');
     if (!suggestBox) return;
-
-    // ถ้าผู้ใช้พิมพ์แก้ไขข้อความหลังจากเลือกพนักงานไปแล้ว ให้ล้างค่าที่เลือกไว้ก่อน
-    // เพื่อป้องกันการบันทึกผิดคน (submit ด้วย employeeId เก่าที่ไม่ตรงกับข้อความที่พิมพ์)
     if (hiddenInput) hiddenInput.value = '';
     this.selectedCheckinEmployeeId = '';
 
@@ -109,7 +88,7 @@ const OccupancyWorkflow = {
              firstName.includes(keyword) ||
              lastName.includes(keyword) ||
              fullName.includes(keyword);
-    }).slice(0, 20); // จำกัดจำนวนผลลัพธ์ที่แสดงไม่ให้ยาวเกินไป
+    }).slice(0, 20);
 
     if (results.length === 0) {
       suggestBox.innerHTML = '<div class="list-group-item text-muted small py-2">ไม่พบพนักงานที่ตรงกับคำค้นหา</div>';
@@ -117,23 +96,24 @@ const OccupancyWorkflow = {
       return;
     }
 
+    // หมายเหตุการแก้ไข: เดิมจุดนี้แทรก e.EmployeeID / fullName / Department / Position
+    // ลงใน innerHTML แบบดิบโดยไม่ escape เลย (ไม่เหมือนไฟล์อื่นที่ใช้ App.escHtml/escAttr
+    // ทั่วทั้งระบบ) ถ้าชื่อพนักงานหรือแผนกมีอักขระ HTML พิเศษปนอยู่จะทำให้หน้าเว็บแสดงผล
+    // เพี้ยนหรือเสี่ยงต่อการแทรกโค้ดได้ จึงแก้ให้ escape ให้ครบเหมือนไฟล์อื่น ๆ
     suggestBox.innerHTML = results.map(e => {
       const fullName = e.FullName || `${e.FirstName || ''} ${e.LastName || ''}`;
       return `
         <button type="button" class="list-group-item list-group-item-action py-2"
           onmousedown="event.preventDefault()"
-          onclick="OccupancyWorkflow.selectCheckInEmployee('${e.EmployeeID}')">
-          <div class="fw-semibold text-dark">${e.EmployeeID} - ${fullName}</div>
-          <small class="text-muted">${e.Department || '-'} ${e.Position ? '| ' + e.Position : ''}</small>
+          onclick="OccupancyWorkflow.selectCheckInEmployee('${App.escAttr(e.EmployeeID)}')">
+          <div class="fw-semibold text-dark">${App.escHtml(e.EmployeeID)} - ${App.escHtml(fullName)}</div>
+          <small class="text-muted">${App.escHtml(e.Department || '-')} ${e.Position ? '| ' + App.escHtml(e.Position) : ''}</small>
         </button>
       `;
     }).join('');
     suggestBox.style.display = 'block';
   },
 
-  /**
-   * เมื่อผู้ใช้คลิกเลือกพนักงานจากลิสต์ผลการค้นหา
-   */
   selectCheckInEmployee(employeeId) {
     const emp = this.activeEmployees.find(e => String(e.EmployeeID) === String(employeeId));
     if (!emp) return;
@@ -168,7 +148,7 @@ const OccupancyWorkflow = {
     }
 
     vacantBeds.forEach(b => {
-      bedSelect.innerHTML += `<option value="${b.bedId}">เตียง ${b.bedNumber} (${b.bedType})</option>`;
+      bedSelect.innerHTML += `<option value="${App.escHtml(b.bedId)}">เตียง ${App.escHtml(b.bedNumber)} (${App.escHtml(b.bedType)})</option>`;
     });
   },
 
@@ -214,9 +194,6 @@ const OccupancyWorkflow = {
     }
   },
 
-  /**
-   * เปิด Modal ทำรายการ Check-Out
-   */
   openCheckOutModal(occupancyId, occupantName, roomNumber, bedNumber) {
     document.getElementById('checkout-occupancy-id').value = occupancyId;
     document.getElementById('checkout-occupant-name').textContent = occupantName;
@@ -270,9 +247,6 @@ const OccupancyWorkflow = {
     }
   },
 
-  /**
-   * เปิด Modal ทำรายการย้ายห้อง (Room Transfer)
-   */
   async openTransferModal(occupancyId, occupantName, currentRoomId, currentBedId, currentRoomNumber) {
     App.showLoading('กำลังเตรียมข้อมูลห้องว่าง...');
     await this.initModalData();
@@ -283,13 +257,12 @@ const OccupancyWorkflow = {
     document.getElementById('transfer-current-room').textContent = `ห้อง ${currentRoomNumber}`;
     document.getElementById('transfer-date').value = new Date().toISOString().split('T')[0];
 
-    // เติมห้องใหม่ที่มีเตียงว่าง
     const newRoomSelect = document.getElementById('transfer-new-room');
     if (newRoomSelect) {
       newRoomSelect.innerHTML = '<option value="">-- เลือกห้องพักใหม่ --</option>';
       const availableRooms = this.activeRooms.filter(r => r.availableBedsCount > 0 && r.roomId !== currentRoomId && r.computedStatus !== 'Maintenance');
       availableRooms.forEach(r => {
-        newRoomSelect.innerHTML += `<option value="${r.roomId}">${r.roomNumber} - ${r.buildingName} (ว่าง ${r.availableBedsCount} เตียง)</option>`;
+        newRoomSelect.innerHTML += `<option value="${App.escHtml(r.roomId)}">${App.escHtml(r.roomNumber)} - ${App.escHtml(r.buildingName)} (ว่าง ${r.availableBedsCount} เตียง)</option>`;
       });
     }
 
@@ -309,7 +282,7 @@ const OccupancyWorkflow = {
 
     const vacantBeds = room.beds.filter(b => !b.isOccupied && b.status === 'Active');
     vacantBeds.forEach(b => {
-      bedSelect.innerHTML += `<option value="${b.bedId}">เตียง ${b.bedNumber} (${b.bedType})</option>`;
+      bedSelect.innerHTML += `<option value="${App.escHtml(b.bedId)}">เตียง ${App.escHtml(b.bedNumber)} (${App.escHtml(b.bedType)})</option>`;
     });
   },
 
@@ -352,8 +325,6 @@ const OccupancyWorkflow = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  // ผูก event ช่องค้นหาพนักงานใน Modal Check-in ครั้งเดียวตอนโหลดหน้า
-  // (element อยู่ใน admin.html อยู่แล้วตั้งแต่โหลดหน้า ไม่ต้อง bind ซ้ำทุกครั้งที่เปิด modal)
   const searchInput = document.getElementById('checkin-employee-search');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
@@ -362,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('focus', (e) => {
       if (e.target.value) OccupancyWorkflow.onEmployeeSearchInput(e.target.value);
     });
-    // หน่วงเวลาเล็กน้อยก่อนซ่อนลิสต์ เพื่อให้ click ที่รายการทำงานได้ทัน (ใช้ onmousedown preventDefault ช่วยเสริมด้วย)
     searchInput.addEventListener('blur', () => {
       setTimeout(() => {
         const suggestBox = document.getElementById('checkin-employee-suggestions');

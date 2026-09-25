@@ -4,7 +4,6 @@ const Reports = {
 
   async generateReport(type) {
     this.currentReportType = type;
-    const tableHead = document.getElementById('report-table-head');
     const tableBody = document.getElementById('report-table-body');
     const titleEl = document.getElementById('report-title-display');
 
@@ -85,7 +84,7 @@ const Reports = {
         ], this.currentReportData);
       }
     } catch (e) {
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">เกิดข้อผิดพลาดในการโหลดรายงาน: ${e.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">เกิดข้อผิดพลาดในการโหลดรายงาน: ${App.escHtml(e.message)}</td></tr>`;
     }
   },
 
@@ -94,7 +93,7 @@ const Reports = {
     const tableBody = document.getElementById('report-table-body');
 
     if (tableHead) {
-      tableHead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+      tableHead.innerHTML = `<tr>${headers.map(h => `<th>${App.escHtml(h)}</th>`).join('')}</tr>`;
     }
 
     if (tableBody) {
@@ -103,15 +102,14 @@ const Reports = {
         return;
       }
 
+      // หมายเหตุ: หน้าจอแสดงผลถูก escape เพื่อป้องกัน HTML แทรก
+      // ส่วนข้อมูลที่ export เป็น CSV ยังคงเป็นข้อมูลดิบตามจริง (ดู exportToCSV)
       tableBody.innerHTML = rows.map(row => {
-        return `<tr>${headers.map(h => `<td>${row[h] !== undefined ? row[h] : '-'}</td>`).join('')}</tr>`;
+        return `<tr>${headers.map(h => `<td>${App.escHtml(row[h] !== undefined && row[h] !== null ? row[h] : '-')}</td>`).join('')}</tr>`;
       }).join('');
     }
   },
 
-  /**
-   * Export ข้อมูลปัจจุบันเป็นไฟล์ CSV รองรับภาษาไทย (UTF-8 BOM)
-   */
   exportToCSV() {
     if (!this.currentReportData || this.currentReportData.length === 0) {
       App.showError('ไม่มีข้อมูลสำหรับส่งออก CSV');

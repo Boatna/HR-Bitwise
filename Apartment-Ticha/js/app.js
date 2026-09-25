@@ -66,6 +66,40 @@ const App = {
     }
   },
 
+  /**
+   * แปลงข้อความให้ปลอดภัยสำหรับแทรกเป็นเนื้อหา HTML (ป้องกัน XSS / เลย์เอาต์พัง
+   * จากข้อมูลที่มีอักขระพิเศษ เช่น < > & " ')
+   */
+  escHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  },
+
+  /**
+   * แปลงข้อความให้ปลอดภัยสำหรับแทรกภายใน onclick="fn('...')" แบบ single-quote
+   * ป้องกันปุ่มพังหรือโค้ด JS เพี้ยนเมื่อชื่อ/ข้อความมีเครื่องหมาย ' หรือ \
+   *
+   * หมายเหตุการแก้ไข: ของเดิม escape เฉพาะ \ และ ' เท่านั้น แต่ค่านี้ถูกแทรกอยู่ภายใน
+   * attribute onclick="..." ที่ใช้เครื่องหมาย " ครอบอยู่ชั้นนอก ถ้าข้อความมีอักขระ "
+   * หรือ & ปนอยู่ (เช่น ชื่อพนักงาน/หมายเหตุที่มีเครื่องหมายคำพูด) จะทำให้ attribute
+   * ถูกตัดขาดกลางคันและหน้าเว็บ/ปุ่มพังได้ จึงเพิ่มการ HTML-encode & และ " เข้าไปด้วย
+   * (ต้อง encode หลังจากทำ JS-escape เพื่อให้ browser ถอดรหัส HTML entity กลับมาเป็น
+   * อักขระเดิมก่อนที่ค่านี้จะถูกตีความเป็นโค้ด JavaScript ใน onclick)
+   */
+  escAttr(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;');
+  },
+
   getStatusBadge(status) {
     const s = String(status || '').replace(/\s+/g, '-');
     let label = status;
@@ -115,7 +149,7 @@ const App = {
         break;
     }
 
-    return `<span class="badge-status ${s}"><i class="bi ${icon}"></i> ${label}</span>`;
+    return `<span class="badge-status ${s}"><i class="bi ${icon}"></i> ${this.escHtml(label)}</span>`;
   },
 
   /**

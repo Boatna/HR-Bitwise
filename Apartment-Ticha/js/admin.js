@@ -156,21 +156,21 @@ const Admin = {
 
         tableBody.innerHTML = rows.map(o => `
           <tr>
-            <td><strong class="text-primary">${o.employeeId}</strong></td>
+            <td><strong class="text-primary">${App.escHtml(o.employeeId)}</strong></td>
             <td>
-              <div class="fw-semibold text-dark">${o.fullName}</div>
-              <small class="text-muted">${o.department} | ${o.phone}</small>
+              <div class="fw-semibold text-dark">${App.escHtml(o.fullName)}</div>
+              <small class="text-muted">${App.escHtml(o.department)} | ${App.escHtml(o.phone)}</small>
             </td>
-            <td>${o.buildingName}</td>
-            <td><strong>ห้อง ${o.roomNumber}</strong></td>
-            <td><span class="badge bg-secondary">เตียง ${o.bedNumber}</span></td>
+            <td>${App.escHtml(o.buildingName)}</td>
+            <td><strong>ห้อง ${App.escHtml(o.roomNumber)}</strong></td>
+            <td><span class="badge bg-secondary">เตียง ${App.escHtml(o.bedNumber)}</span></td>
             <td>${App.formatDate(o.checkInDate)}</td>
             <td>${App.formatDate(o.expectedCheckOutDate)}</td>
             <td>
-              <button class="btn btn-sm btn-outline-primary me-1" onclick="OccupancyWorkflow.openTransferModal('${o.occupancyId}', '${o.fullName}', '${o.roomId}', '${o.bedId}', '${o.roomNumber}')" title="ย้ายห้อง">
+              <button class="btn btn-sm btn-outline-primary me-1" onclick="OccupancyWorkflow.openTransferModal('${App.escAttr(o.occupancyId)}', '${App.escAttr(o.fullName)}', '${App.escAttr(o.roomId)}', '${App.escAttr(o.bedId)}', '${App.escAttr(o.roomNumber)}')" title="ย้ายห้อง">
                 <i class="bi bi-arrow-left-right"></i> ย้ายห้อง
               </button>
-              <button class="btn btn-sm btn-outline-danger" onclick="OccupancyWorkflow.openCheckOutModal('${o.occupancyId}', '${o.fullName}', '${o.roomNumber}', '${o.bedNumber}')" title="เช็คเอาท์">
+              <button class="btn btn-sm btn-outline-danger" onclick="OccupancyWorkflow.openCheckOutModal('${App.escAttr(o.occupancyId)}', '${App.escAttr(o.fullName)}', '${App.escAttr(o.roomNumber)}', '${App.escAttr(o.bedNumber)}')" title="เช็คเอาท์">
                 <i class="bi bi-box-arrow-right"></i> เช็คเอาท์
               </button>
             </td>
@@ -178,15 +178,13 @@ const Admin = {
         `).join('');
       }
     } catch (e) {
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">${e.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">${App.escHtml(e.message)}</td></tr>`;
     }
   },
 
   async loadEmployees() {
     const tableBody = document.getElementById('employees-table-body');
     if (tableBody) tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังโหลดรายชื่อพนักงาน...</td></tr>';
-
-    // ล้างช่องค้นหาทุกครั้งที่โหลดข้อมูลใหม่ เพื่อไม่ให้ผลค้นหาเก่าค้าง
     const searchInput = document.getElementById('search-employee');
     if (searchInput) searchInput.value = '';
     this.setEmployeeResultCount('');
@@ -196,14 +194,10 @@ const Admin = {
       this.cachedEmployees = emps || [];
       this.renderEmployeesTable(this.cachedEmployees);
     } catch (e) {
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-4">${e.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-4">${App.escHtml(e.message)}</td></tr>`;
     }
   },
 
-  /**
-   * ค้นหาพนักงานจาก cachedEmployees ด้วยรหัสพนักงาน หรือ ชื่อ-นามสกุล
-   * (ค้นหาได้ทั้งชื่อจริงอย่างเดียว นามสกุลอย่างเดียว หรือชื่อเต็ม รองรับพิมพ์บางส่วนของคำ)
-   */
   filterEmployees() {
     const searchVal = (document.getElementById('search-employee')?.value || '').trim().toLowerCase();
 
@@ -245,17 +239,17 @@ const Admin = {
 
     tableBody.innerHTML = emps.map(e => `
       <tr>
-        <td><strong>${e.EmployeeID}</strong></td>
-        <td>${e.Prefix} ${e.FirstName} ${e.LastName}</td>
-        <td>${e.Department || '-'}</td>
-        <td>${e.Position || '-'}</td>
-        <td>${e.Phone || '-'}</td>
-        <td>${e.Email || '-'}</td>
+        <td><strong>${App.escHtml(e.EmployeeID)}</strong></td>
+        <td>${App.escHtml(e.Prefix)} ${App.escHtml(e.FirstName)} ${App.escHtml(e.LastName)}</td>
+        <td>${App.escHtml(e.Department || '-')}</td>
+        <td>${App.escHtml(e.Position || '-')}</td>
+        <td>${App.escHtml(e.Phone || '-')}</td>
+        <td>${App.escHtml(e.Email || '-')}</td>
         <td>
-          <button class="btn btn-sm btn-outline-secondary me-1" onclick="Admin.openEmployeeModal('${e.EmployeeID}')">
+          <button class="btn btn-sm btn-outline-secondary me-1" onclick="Admin.openEmployeeModal('${App.escAttr(e.EmployeeID)}')">
             <i class="bi bi-pencil"></i>
           </button>
-          <button class="btn btn-sm btn-outline-danger" onclick="Admin.deleteEmployee('${e.EmployeeID}', '${e.FullName}')">
+          <button class="btn btn-sm btn-outline-danger" onclick="Admin.deleteEmployee('${App.escAttr(e.EmployeeID)}', '${App.escAttr(e.FullName)}')">
             <i class="bi bi-trash"></i>
           </button>
         </td>
@@ -263,17 +257,6 @@ const Admin = {
     `).join('');
   },
 
-  /**
-   * เปิดฟอร์มแก้ไข/เพิ่มพนักงาน
-   *
-   * แก้บั๊ก: เดิมเทียบ e.EmployeeID === empId ตรงๆ ถ้ามีช่องว่างแฝงในเซลล์
-   * Google Sheet หรือ cache ยังไม่อัปเดต จะหาไม่เจอ (find() คืนค่า undefined)
-   * แล้วฟอร์มจะถูกเซ็ตเป็นค่าว่างทุกช่องแบบเงียบๆ โดยไม่มี error ใดๆ
-   *
-   * ตอนนี้: 1) เทียบ ID แบบ trim string กันปัญหาช่องว่าง/type ไม่ตรง
-   *         2) ถ้าหาไม่เจอในแคช ให้ลองดึงข้อมูลล่าสุดจาก Sheet มาเช็คอีกครั้ง
-   *         3) ถ้ายังไม่เจอจริงๆ แจ้ง error ชัดเจนแทนการเปิดฟอร์มเปล่า
-   */
   async openEmployeeModal(empId = null) {
     let emp = null;
 
@@ -281,7 +264,6 @@ const Admin = {
       emp = this.cachedEmployees.find(e => this._idEquals(e.EmployeeID, empId));
 
       if (!emp) {
-        // ข้อมูลในแคชอาจไม่ตรงกับตารางจริง ลองโหลดข้อมูลล่าสุดอีกครั้งก่อนสรุปว่าไม่พบ
         try {
           const freshList = await API.getEmployees();
           this.cachedEmployees = freshList || [];
@@ -392,17 +374,17 @@ const Admin = {
             <div class="card border rounded-3 p-3 shadow-sm h-100">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <div>
-                  <h5 class="fw-bold text-dark mb-0">${b.BuildingName}</h5>
-                  <span class="badge bg-primary-subtle text-primary">รหัส: ${b.BuildingCode}</span>
+                  <h5 class="fw-bold text-dark mb-0">${App.escHtml(b.BuildingName)}</h5>
+                  <span class="badge bg-primary-subtle text-primary">รหัส: ${App.escHtml(b.BuildingCode)}</span>
                 </div>
-                <button class="btn btn-sm btn-outline-secondary" onclick="Admin.openBuildingModal('${b.BuildingID}')">
+                <button class="btn btn-sm btn-outline-secondary" onclick="Admin.openBuildingModal('${App.escAttr(b.BuildingID)}')">
                   <i class="bi bi-pencil"></i> แก้ไข
                 </button>
               </div>
-              <p class="text-muted small mb-2">${b.Location || 'ไม่ระบุสถานที่'}</p>
+              <p class="text-muted small mb-2">${App.escHtml(b.Location || 'ไม่ระบุสถานที่')}</p>
               <div class="d-flex gap-3 small text-secondary">
-                <span><i class="bi bi-layers me-1"></i>${b.NumberOfFloors} ชั้น</span>
-                <span><i class="bi bi-door-open me-1"></i>${b.TotalRooms} ห้อง</span>
+                <span><i class="bi bi-layers me-1"></i>${App.escHtml(b.NumberOfFloors)} ชั้น</span>
+                <span><i class="bi bi-door-open me-1"></i>${App.escHtml(b.TotalRooms)} ห้อง</span>
                 <span>${App.getStatusBadge(b.Status)}</span>
               </div>
             </div>
@@ -410,13 +392,10 @@ const Admin = {
         `).join('');
       }
     } catch (e) {
-      if (container) container.innerHTML = `<div class="text-danger text-center py-4">${e.message}</div>`;
+      if (container) container.innerHTML = `<div class="text-danger text-center py-4">${App.escHtml(e.message)}</div>`;
     }
   },
 
-  /**
-   * เปิดฟอร์มแก้ไข/เพิ่มอาคาร (ใช้แนวทางป้องกันบั๊กเดียวกับ openEmployeeModal)
-   */
   async openBuildingModal(bldId = null) {
     let bld = null;
 
@@ -503,21 +482,21 @@ const Admin = {
 
         tableBody.innerHTML = rooms.map(r => `
           <tr>
-            <td><strong>${r.roomNumber}</strong></td>
-            <td>${r.buildingName}</td>
-            <td>${r.roomType}</td>
-            <td>${r.capacity} คน</td>
+            <td><strong>${App.escHtml(r.roomNumber)}</strong></td>
+            <td>${App.escHtml(r.buildingName)}</td>
+            <td>${App.escHtml(r.roomType)}</td>
+            <td>${App.escHtml(r.capacity)} คน</td>
             <td>
-              <span class="fw-bold">${r.occupiedBedsCount}</span> / ${r.activeBedsCount} 
+              <span class="fw-bold">${r.occupiedBedsCount}</span> / ${r.activeBedsCount}
               <small class="text-success ms-1">(ว่าง ${r.availableBedsCount})</small>
             </td>
             <td>${r.gender === 'Male' ? 'ชาย' : (r.gender === 'Female' ? 'หญิง' : 'ทั่วไป')}</td>
             <td>${App.getStatusBadge(r.computedStatus)}</td>
             <td>
-              <button class="btn btn-sm btn-outline-secondary me-1" onclick="Admin.openRoomModal('${r.roomId}')">
+              <button class="btn btn-sm btn-outline-secondary me-1" onclick="Admin.openRoomModal('${App.escAttr(r.roomId)}')">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button class="btn btn-sm btn-outline-danger" onclick="Admin.deleteRoom('${r.roomId}', '${r.roomNumber}')">
+              <button class="btn btn-sm btn-outline-danger" onclick="Admin.deleteRoom('${App.escAttr(r.roomId)}', '${App.escAttr(r.roomNumber)}')">
                 <i class="bi bi-trash"></i>
               </button>
             </td>
@@ -525,13 +504,10 @@ const Admin = {
         `).join('');
       }
     } catch (e) {
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">${e.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">${App.escHtml(e.message)}</td></tr>`;
     }
   },
 
-  /**
-   * เปิดฟอร์มแก้ไข/เพิ่มห้องพัก (ใช้แนวทางป้องกันบั๊กเดียวกับ openEmployeeModal)
-   */
   async openRoomModal(roomId = null) {
     let room = null;
 
@@ -555,13 +531,12 @@ const Admin = {
       }
     }
 
-    // เติมตัวเลือกอาคาร
     const bldSelect = document.getElementById('room-building');
     if (bldSelect) {
       bldSelect.innerHTML = '<option value="">-- เลือกอาคาร --</option>';
       this.cachedBuildings.forEach(b => {
         const isSel = room && this._idEquals(room.buildingId, b.BuildingID) ? 'selected' : '';
-        bldSelect.innerHTML += `<option value="${b.BuildingID}" ${isSel}>${b.BuildingName}</option>`;
+        bldSelect.innerHTML += `<option value="${App.escHtml(b.BuildingID)}" ${isSel}>${App.escHtml(b.BuildingName)}</option>`;
       });
     }
 
@@ -650,27 +625,27 @@ const Admin = {
 
         tableBody.innerHTML = requests.map(r => `
           <tr>
-            <td><strong>${r.RequestID}</strong></td>
-            <td>${r.EmployeeID}</td>
+            <td><strong>${App.escHtml(r.RequestID)}</strong></td>
+            <td>${App.escHtml(r.EmployeeID)}</td>
             <td>${App.formatDate(r.RequestDate)}</td>
-            <td>${r.PreferredBuilding || 'ไม่ระบุ'} (${r.PreferredRoomType})</td>
-            <td>${r.Reason || '-'}</td>
+            <td>${App.escHtml(r.PreferredBuilding || 'ไม่ระบุ')} (${App.escHtml(r.PreferredRoomType)})</td>
+            <td>${App.escHtml(r.Reason || '-')}</td>
             <td>${App.getStatusBadge(r.RequestStatus)}</td>
             <td>
               ${r.RequestStatus === 'Pending' ? `
-                <button class="btn btn-sm btn-success me-1" onclick="Admin.updateRequestStatus('${r.RequestID}', 'Approved')" title="อนุมัติ">
+                <button class="btn btn-sm btn-success me-1" onclick="Admin.updateRequestStatus('${App.escAttr(r.RequestID)}', 'Approved')" title="อนุมัติ">
                   <i class="bi bi-check-lg"></i> อนุมัติ
                 </button>
-                <button class="btn btn-sm btn-danger" onclick="Admin.updateRequestStatus('${r.RequestID}', 'Rejected')" title="ปฏิเสธ">
+                <button class="btn btn-sm btn-danger" onclick="Admin.updateRequestStatus('${App.escAttr(r.RequestID)}', 'Rejected')" title="ปฏิเสธ">
                   <i class="bi bi-x-lg"></i> ปฏิเสธ
                 </button>
-              ` : `<small class="text-muted">${r.ApprovedBy || 'ดำเนินการแล้ว'}</small>`}
+              ` : `<small class="text-muted">${App.escHtml(r.ApprovedBy || 'ดำเนินการแล้ว')}</small>`}
             </td>
           </tr>
         `).join('');
       }
     } catch (e) {
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-4">${e.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-4">${App.escHtml(e.message)}</td></tr>`;
     }
   },
 
@@ -704,16 +679,16 @@ const Admin = {
 
         tableBody.innerHTML = repairs.map(r => `
           <tr>
-            <td><strong>${r.RepairID}</strong></td>
-            <td>ห้อง ${r.RoomID}</td>
-            <td><span class="badge bg-secondary-subtle text-secondary">${r.IssueType}</span></td>
-            <td>${r.Description || '-'}</td>
-            <td><span class="badge ${r.Priority === 'Urgent' ? 'bg-danger' : (r.Priority === 'High' ? 'bg-warning text-dark' : 'bg-light text-dark')}">${r.Priority}</span></td>
-            <td>${r.AssignedTo || '-'}</td>
+            <td><strong>${App.escHtml(r.RepairID)}</strong></td>
+            <td>ห้อง ${App.escHtml(r.RoomID)}</td>
+            <td><span class="badge bg-secondary-subtle text-secondary">${App.escHtml(r.IssueType)}</span></td>
+            <td>${App.escHtml(r.Description || '-')}</td>
+            <td><span class="badge ${r.Priority === 'Urgent' ? 'bg-danger' : (r.Priority === 'High' ? 'bg-warning text-dark' : 'bg-light text-dark')}">${App.escHtml(r.Priority)}</span></td>
+            <td>${App.escHtml(r.AssignedTo || '-')}</td>
             <td>${App.getStatusBadge(r.Status)}</td>
             <td>
               ${r.Status !== 'Completed' ? `
-                <button class="btn btn-sm btn-outline-success" onclick="Admin.completeRepair('${r.RepairID}')">
+                <button class="btn btn-sm btn-outline-success" onclick="Admin.completeRepair('${App.escAttr(r.RepairID)}')">
                   <i class="bi bi-check2"></i> ปิดงาน
                 </button>
               ` : '<small class="text-success"><i class="bi bi-check-all"></i> เสร็จสิ้น</small>'}
@@ -722,12 +697,32 @@ const Admin = {
         `).join('');
       }
     } catch (e) {
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">${e.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">${App.escHtml(e.message)}</td></tr>`;
     }
   },
 
-  openRepairModal(roomId = '') {
-    document.getElementById('repair-room').value = roomId || '';
+  // หมายเหตุการแก้ไข: เดิมช่อง "เลขห้องพัก" ในฟอร์มแจ้งซ่อมเป็น input ข้อความอิสระ
+  // ทำให้ค่าที่บันทึกลง RoomID บางครั้งเป็น RoomID จริง (เช่น ROOM-A101 เวลาเปิดผ่าน
+  // ปุ่ม "แจ้งซ่อม" จากผังห้อง) และบางครั้งเป็นแค่เลขห้อง (เช่น A-101 เวลาพิมพ์เอง)
+  // ทำให้ข้อมูลไม่สอดคล้องกัน จึงเปลี่ยนเป็น dropdown เลือกห้องจริงจากระบบแทน
+  async openRepairModal(roomId = '') {
+    if (!this.cachedRooms || this.cachedRooms.length === 0) {
+      try {
+        this.cachedRooms = await API.getRooms();
+      } catch (err) {
+        console.error('ไม่สามารถโหลดข้อมูลห้องพักสำหรับแจ้งซ่อมได้:', err);
+      }
+    }
+
+    const roomSelect = document.getElementById('repair-room');
+    if (roomSelect) {
+      roomSelect.innerHTML = '<option value="">-- เลือกห้องพัก --</option>';
+      (this.cachedRooms || []).forEach(r => {
+        const isSel = roomId && this._idEquals(r.roomId, roomId) ? 'selected' : '';
+        roomSelect.innerHTML += `<option value="${App.escHtml(r.roomId)}" ${isSel}>${App.escHtml(r.roomNumber)} - ${App.escHtml(r.buildingName)}</option>`;
+      });
+    }
+
     document.getElementById('repair-type').value = 'Air Conditioner';
     document.getElementById('repair-priority').value = 'Medium';
     document.getElementById('repair-desc').value = '';
@@ -742,7 +737,7 @@ const Admin = {
     const description = document.getElementById('repair-desc')?.value;
 
     if (!roomId || !description) {
-      App.showError('กรุณากรอกเลขห้องและรายละเอียดปัญหา');
+      App.showError('กรุณาเลือกห้องพักและกรอกรายละเอียดปัญหา');
       return;
     }
 
@@ -785,30 +780,110 @@ const Admin = {
 
   async loadMaintenance() {
     const tableBody = document.getElementById('maint-table-body');
-    if (tableBody) tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังโหลดรายการปิดปรับปรุง...</td></tr>';
+    if (tableBody) tableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังโหลดรายการปิดปรับปรุง...</td></tr>';
 
     try {
       const maint = await API.getMaintenance();
       if (tableBody) {
         if (maint.length === 0) {
-          tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">ไม่มีรายการปิดปรับปรุงห้อง</td></tr>';
+          tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีรายการปิดปรับปรุงห้อง</td></tr>';
           return;
         }
 
+        // หมายเหตุการแก้ไข: เดิมไม่มีคอลัมน์/ปุ่มสำหรับ "ปิดงานซ่อม" เลย ทำให้ห้องที่
+        // ถูกสั่งปิดปรับปรุงจะค้างสถานะ "ปิดปรับปรุง" ตลอดไป ไม่มีทางเปิดห้องกลับมา
+        // ใช้งานได้จากหน้าเว็บ (ทั้งที่ Backend มี Actions.completeMaintenance รองรับอยู่แล้ว)
         tableBody.innerHTML = maint.map(m => `
           <tr>
-            <td><strong>${m.MaintenanceID}</strong></td>
-            <td>ห้อง ${m.RoomID}</td>
+            <td><strong>${App.escHtml(m.MaintenanceID)}</strong></td>
+            <td>ห้อง ${App.escHtml(m.RoomID)}</td>
             <td>${App.formatDate(m.StartDate)}</td>
             <td>${App.formatDate(m.ExpectedEndDate)}</td>
-            <td>${m.Problem || '-'}</td>
+            <td>${App.escHtml(m.Problem || '-')}</td>
             <td>${App.getStatusBadge(m.Status)}</td>
-            <td>${m.Technician || '-'}</td>
+            <td>${App.escHtml(m.Technician || '-')}</td>
+            <td>
+              ${m.Status !== 'Completed' ? `
+                <button class="btn btn-sm btn-outline-success" onclick="Admin.completeMaintenanceRecord('${App.escAttr(m.MaintenanceID)}')" title="เปิดห้องกลับมาใช้งาน">
+                  <i class="bi bi-check2"></i> เปิดห้องใช้งาน
+                </button>
+              ` : '<small class="text-success"><i class="bi bi-check-all"></i> เสร็จสิ้น</small>'}
+            </td>
           </tr>
         `).join('');
       }
     } catch (e) {
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-4">${e.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">${App.escHtml(e.message)}</td></tr>`;
+    }
+  },
+
+  // เปิด modal สำหรับสร้างรายการปิดปรับปรุงห้องใหม่ (ของเดิมไม่มี UI ส่วนนี้เลย)
+  async openMaintenanceModal() {
+    if (!this.cachedRooms || this.cachedRooms.length === 0) {
+      try {
+        this.cachedRooms = await API.getRooms();
+      } catch (err) {
+        console.error('ไม่สามารถโหลดข้อมูลห้องพักสำหรับปิดปรับปรุงได้:', err);
+      }
+    }
+
+    const roomSelect = document.getElementById('maint-room');
+    if (roomSelect) {
+      roomSelect.innerHTML = '<option value="">-- เลือกห้องพัก --</option>';
+      (this.cachedRooms || [])
+        .filter(r => r.computedStatus !== 'Maintenance')
+        .forEach(r => {
+          roomSelect.innerHTML += `<option value="${App.escHtml(r.roomId)}">${App.escHtml(r.roomNumber)} - ${App.escHtml(r.buildingName)}</option>`;
+        });
+    }
+
+    document.getElementById('maint-start-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('maint-end-date').value = '';
+    document.getElementById('maint-problem').value = '';
+    document.getElementById('maint-technician').value = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('maintenanceModal'));
+    modal.show();
+  },
+
+  async saveMaintenanceRecord() {
+    const roomId = document.getElementById('maint-room')?.value;
+    const startDate = document.getElementById('maint-start-date')?.value;
+    const expectedEndDate = document.getElementById('maint-end-date')?.value;
+    const problem = document.getElementById('maint-problem')?.value;
+    const technician = document.getElementById('maint-technician')?.value;
+
+    if (!roomId || !problem) {
+      App.showError('กรุณาเลือกห้องพักและกรอกปัญหาที่พบ');
+      return;
+    }
+
+    try {
+      App.showLoading('กำลังบันทึกการปิดปรับปรุงห้อง...');
+      await API.saveMaintenance({ roomId, startDate, expectedEndDate, problem, technician });
+      App.closeLoading();
+      bootstrap.Modal.getInstance(document.getElementById('maintenanceModal'))?.hide();
+      App.showToast('บันทึกการปิดปรับปรุงห้องสำเร็จ ห้องจะแสดงสถานะ "ปิดปรับปรุง" ทันที', 'success');
+      this.loadMaintenance();
+    } catch (e) {
+      App.closeLoading();
+      App.showError('บันทึกไม่สำเร็จ', e.message);
+    }
+  },
+
+  async completeMaintenanceRecord(maintenanceId) {
+    const confirmed = await App.confirm('ยืนยันปิดงานซ่อมบำรุง', 'ห้องนี้จะกลับมาพร้อมใช้งานทันที (สถานะห้องจะถูกคำนวณใหม่ตามจำนวนผู้พักจริง)');
+    if (!confirmed) return;
+
+    try {
+      App.showLoading('กำลังเปิดห้องกลับมาใช้งาน...');
+      await API.completeMaintenance(maintenanceId);
+      App.closeLoading();
+      App.showToast('เปิดห้องกลับมาใช้งานเรียบร้อยแล้ว', 'success');
+      this.loadMaintenance();
+    } catch (e) {
+      App.closeLoading();
+      App.showError('ดำเนินการไม่สำเร็จ', e.message);
     }
   },
 
@@ -826,17 +901,17 @@ const Admin = {
 
         tableBody.innerHTML = assets.map(a => `
           <tr>
-            <td><strong>${a.AssetCode || a.AssetID}</strong></td>
-            <td>ห้อง ${a.RoomID}</td>
-            <td>${a.AssetType}</td>
-            <td>${a.AssetName}</td>
-            <td><span class="badge ${a.Condition === 'Good' ? 'bg-success' : 'bg-warning text-dark'}">${a.Condition}</span></td>
+            <td><strong>${App.escHtml(a.AssetCode || a.AssetID)}</strong></td>
+            <td>ห้อง ${App.escHtml(a.RoomID)}</td>
+            <td>${App.escHtml(a.AssetType)}</td>
+            <td>${App.escHtml(a.AssetName)}</td>
+            <td><span class="badge ${a.Condition === 'Good' ? 'bg-success' : 'bg-warning text-dark'}">${App.escHtml(a.Condition)}</span></td>
             <td>${App.getStatusBadge(a.Status)}</td>
           </tr>
         `).join('');
       }
     } catch (e) {
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${e.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${App.escHtml(e.message)}</td></tr>`;
     }
   },
 
@@ -854,17 +929,17 @@ const Admin = {
 
         tableBody.innerHTML = keys.map(k => `
           <tr>
-            <td><strong>${k.KeyNumber || k.KeyID}</strong></td>
-            <td>ห้อง ${k.RoomID}</td>
-            <td>${k.EmployeeID || '<span class="text-muted">-</span>'}</td>
+            <td><strong>${App.escHtml(k.KeyNumber || k.KeyID)}</strong></td>
+            <td>ห้อง ${App.escHtml(k.RoomID)}</td>
+            <td>${k.EmployeeID ? App.escHtml(k.EmployeeID) : '<span class="text-muted">-</span>'}</td>
             <td>${App.formatDate(k.IssueDate)}</td>
             <td>${App.getStatusBadge(k.Status)}</td>
-            <td>${k.Remark || '-'}</td>
+            <td>${App.escHtml(k.Remark || '-')}</td>
           </tr>
         `).join('');
       }
     } catch (e) {
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${e.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${App.escHtml(e.message)}</td></tr>`;
     }
   },
 
@@ -884,17 +959,17 @@ const Admin = {
 
         tableBody.innerHTML = logs.slice().reverse().map(l => `
           <tr>
-            <td><small class="text-muted">${l.Timestamp}</small></td>
-            <td><strong>${l.UserEmail}</strong></td>
-            <td><span class="badge bg-secondary-subtle text-secondary">${l.Action}</span></td>
-            <td>${l.Module}</td>
-            <td>${l.RecordID}</td>
-            <td>${l.Remark || '-'}</td>
+            <td><small class="text-muted">${App.escHtml(l.Timestamp)}</small></td>
+            <td><strong>${App.escHtml(l.UserEmail)}</strong></td>
+            <td><span class="badge bg-secondary-subtle text-secondary">${App.escHtml(l.Action)}</span></td>
+            <td>${App.escHtml(l.Module)}</td>
+            <td>${App.escHtml(l.RecordID)}</td>
+            <td>${App.escHtml(l.Remark || '-')}</td>
           </tr>
         `).join('');
       }
     } catch (e) {
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${e.message}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${App.escHtml(e.message)}</td></tr>`;
     }
   },
 

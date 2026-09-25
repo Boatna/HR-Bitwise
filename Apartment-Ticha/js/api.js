@@ -1,5 +1,5 @@
 const API = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbxsJ_N1BfWVishsxlXxkoGHuvPdLB7aIjTrdJfjmrUSHhAeJXppyNRVEgMcXlxwOwCLzg/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbxNSDmo8XJcWQdsRCAcsycyNC40wClnRJd4ubmh_rzG6z4iEbD34h7LeV5KZ5N0qlUOSw/exec',
 
   USER_STORAGE_KEY: 'DORM_CURRENT_USER',
 
@@ -21,9 +21,6 @@ const API = {
     localStorage.setItem(this.USER_STORAGE_KEY, JSON.stringify(user));
   },
 
-  /**
-   * ส่งคำขอไปยัง Google Apps Script Web App
-   */
   async call(action, payload = {}) {
     const currentUser = this.getCurrentUser();
     const body = {
@@ -36,7 +33,7 @@ const API = {
       const response = await fetch(this.API_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'text/plain;charset=utf-8' // ป้องกัน CORS Preflight Options บน Google Apps Script
+          'Content-Type': 'text/plain;charset=utf-8'
         },
         body: JSON.stringify(body)
       });
@@ -122,6 +119,11 @@ const API = {
   },
   saveMaintenance(data) {
     return this.call('saveMaintenance', { data });
+  },
+  // เดิมไม่มีเมธอดนี้ใน api.js ทั้งที่ Backend (Code.gs) มี Actions.completeMaintenance
+  // อยู่แล้ว ทำให้ไม่มีทางเรียก "ปิดงานซ่อม/เปิดห้องกลับมาใช้งาน" จากหน้าเว็บได้เลย
+  completeMaintenance(maintenanceId) {
+    return this.call('completeMaintenance', { maintenanceId });
   },
   getRepairRequests() {
     return this.call('getRepairRequests');

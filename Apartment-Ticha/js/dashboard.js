@@ -24,7 +24,7 @@ async function loadDashboard() {
         <div class="col-12 text-center py-5">
           <i class="bi bi-exclamation-triangle text-danger fs-1"></i>
           <h5 class="mt-3 text-danger">ไม่สามารถโหลดข้อมูล Dashboard ได้</h5>
-          <p class="text-muted">${error.message}</p>
+          <p class="text-muted">${App.escHtml(error.message)}</p>
           <button class="btn btn-outline-primary" onclick="loadDashboard()">
             <i class="bi bi-arrow-clockwise me-1"></i> ลองใหม่อีกครั้ง
           </button>
@@ -75,7 +75,7 @@ function renderBuildingOccupancy(buildingStats) {
     html += `
       <div class="mb-3">
         <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="fw-semibold text-dark">${b.buildingName} (อาคาร ${b.buildingCode})</span>
+          <span class="fw-semibold text-dark">${App.escHtml(b.buildingName)} (อาคาร ${App.escHtml(b.buildingCode)})</span>
           <span class="small text-muted">${b.occupiedBeds} / ${b.totalBeds} เตียง (<strong>${b.occupancyRate}%</strong>)</span>
         </div>
         <div class="progress" style="height: 12px; border-radius: 6px;">
@@ -101,8 +101,8 @@ function renderAlmostFullRooms(almostFullRooms) {
     html += `
       <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
         <div>
-          <span class="fw-bold text-dark">ห้อง ${r.roomNumber}</span>
-          <small class="text-muted ms-2">${r.buildingName}</small>
+          <span class="fw-bold text-dark">ห้อง ${App.escHtml(r.roomNumber)}</span>
+          <small class="text-muted ms-2">${App.escHtml(r.buildingName)}</small>
         </div>
         <span class="badge bg-warning text-dark">เหลือ ${r.available} เตียงสุดท้าย</span>
       </div>
@@ -121,8 +121,8 @@ function renderRecentActivities(data) {
       reqContainer.innerHTML = data.recentRequests.map(r => `
         <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
           <div>
-            <div class="fw-semibold text-dark">รหัสพนักงาน: ${r.EmployeeID}</div>
-            <small class="text-muted">วันที่ขอ: ${App.formatDate(r.RequestDate)} | อาคาร: ${r.PreferredBuilding || 'ไม่ระบุ'}</small>
+            <div class="fw-semibold text-dark">รหัสพนักงาน: ${App.escHtml(r.EmployeeID)}</div>
+            <small class="text-muted">วันที่ขอ: ${App.formatDate(r.RequestDate)} | อาคาร: ${App.escHtml(r.PreferredBuilding || 'ไม่ระบุ')}</small>
           </div>
           ${App.getStatusBadge(r.RequestStatus)}
         </div>
@@ -138,10 +138,10 @@ function renderRecentActivities(data) {
       repairContainer.innerHTML = data.activeRepairs.map(rep => `
         <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
           <div>
-            <div class="fw-semibold text-dark">ห้อง: ${rep.RoomID} (${rep.IssueType})</div>
-            <small class="text-muted text-truncate d-block" style="max-width: 250px;">${rep.Description || '-'}</small>
+            <div class="fw-semibold text-dark">ห้อง: ${App.escHtml(rep.RoomID)} (${App.escHtml(rep.IssueType)})</div>
+            <small class="text-muted text-truncate d-block" style="max-width: 250px;">${App.escHtml(rep.Description || '-')}</small>
           </div>
-          <span class="badge ${rep.Priority === 'Urgent' ? 'bg-danger' : 'bg-warning text-dark'}">${rep.Priority}</span>
+          <span class="badge ${rep.Priority === 'Urgent' ? 'bg-danger' : 'bg-warning text-dark'}">${App.escHtml(rep.Priority)}</span>
         </div>
       `).join('');
     }
@@ -157,8 +157,6 @@ function destroyChart(id) {
 
 function renderCharts(data) {
   const chartConfig = data.charts || {};
-
-  // ---------- Chart 1: สัดส่วนสถานะห้องพัก ----------
   destroyChart('chart-room-status');
   const ctx1 = document.getElementById('chart-room-status')?.getContext('2d');
   if (ctx1 && chartConfig.roomStatus) {
@@ -178,7 +176,6 @@ function renderCharts(data) {
     });
   }
 
-  // ---------- Chart 2: จำนวนผู้พักแยกตามอาคาร ----------
   destroyChart('chart-occupants-building');
   const ctx2 = document.getElementById('chart-occupants-building')?.getContext('2d');
   if (ctx2 && chartConfig.buildingOccupancy) {
@@ -200,7 +197,6 @@ function renderCharts(data) {
     });
   }
 
-  // ---------- Chart 3: Occupancy Rate แยกตามอาคาร ----------
   destroyChart('chart-occupancy-rate');
   const ctx3 = document.getElementById('chart-occupancy-rate')?.getContext('2d');
   if (ctx3 && chartConfig.buildingOccupancy) {
@@ -222,7 +218,6 @@ function renderCharts(data) {
     });
   }
 
-  // ---------- Chart 4: ผู้พักแยกตามแผนก ----------
   destroyChart('chart-dept');
   const ctx4 = document.getElementById('chart-dept')?.getContext('2d');
   if (ctx4 && chartConfig.departmentDistribution) {
@@ -245,10 +240,6 @@ function renderCharts(data) {
     });
   }
 
-  // ---------- Chart 5 & 6: แนวโน้มเข้าพัก / ย้ายออก ----------
-  // แก้ไข: เดิมใช้ข้อมูลตายตัว (hardcode) เสมอ เช่น [2, 4, 3, 5, ...]
-  // ตอนนี้ใช้ข้อมูลจริงจาก Backend (chartConfig.monthlyTrends) ซึ่งคำนวณ
-  // จากตาราง Occupancy (CheckInDate) และ CheckOut (CheckOutDate) ย้อนหลัง 6 เดือน
   destroyChart('chart-monthly-trends');
   const ctx5 = document.getElementById('chart-monthly-trends')?.getContext('2d');
   if (ctx5 && chartConfig.monthlyTrends) {
@@ -283,10 +274,6 @@ function renderCharts(data) {
     });
   }
 
-  // ---------- Chart 7: สถิติงานแจ้งซ่อม ----------
-  // แก้ไข: เดิมใช้ label/ข้อมูลตายตัวเสมอ [3, 1, 2, 1, 1] ไม่เคยอ่านจาก RepairRequests เลย
-  // ตอนนี้ใช้ข้อมูลจริงจาก Backend (chartConfig.repairStats) ที่นับจำนวนงานแจ้งซ่อม
-  // แยกตามประเภท (IssueType) จริงจากตาราง RepairRequests
   destroyChart('chart-repairs');
   const ctx7 = document.getElementById('chart-repairs')?.getContext('2d');
   if (ctx7 && chartConfig.repairStats) {
@@ -308,7 +295,6 @@ function renderCharts(data) {
     });
   }
 
-  // ---------- Chart 8: สัดส่วนประเภทห้องพัก ----------
   destroyChart('chart-room-types');
   const ctx8 = document.getElementById('chart-room-types')?.getContext('2d');
   if (ctx8 && chartConfig.roomTypes) {
