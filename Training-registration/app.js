@@ -7,11 +7,14 @@ const STORAGE_KEYS = {
  
 let applicants = [];
 let isSubmittingForm = false;
+let pendingSubmissionId = '';
  
 document.addEventListener('DOMContentLoaded', async () => {
   await initApplicantsData();
   setupFormDynamicControls();
   setupAddressDropdowns();
+  const birthEl = document.getElementById('birthDate');
+  if (birthEl) birthEl.max = localDateStr(new Date());
 });
  
 function loadLocalApplicants() {
@@ -33,7 +36,11 @@ function loadLocalApplicants() {
 }
 
 async function initApplicantsData() {
-  applicants = loadLocalApplicants();
+  applicants = [];
+  try {
+    localStorage.removeItem(STORAGE_KEYS.APPLICANTS);
+    localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
+  } catch (e) { /* ignore */ }
 }
  
 function readFileAsDataUrl(file) {
@@ -162,7 +169,7 @@ function setupFormDynamicControls() {
           photoLabel.innerHTML = `
             <div class="flex items-center justify-center gap-1.5 mt-1 text-emerald-600 font-semibold">
               <img src="${e.target.result}" class="w-8 h-10 rounded border border-emerald-400 object-cover shadow-sm">
-              <span>✓ ${file.name.substring(0, 12)}...</span>
+              <span>✓ ${escapeHtml(file.name.substring(0, 12))}...</span>
             </div>
           `;
         };
@@ -178,15 +185,24 @@ function setupFormDynamicControls() {
     if (input && label) {
       input.addEventListener('change', () => {
         if (input.files && input.files[0]) {
-          label.innerHTML = `✓ ${input.files[0].name.substring(0, 18)}...`;
+          label.textContent = '✓ ' + input.files[0].name.substring(0, 18) + '...';
           label.classList.add('text-green-600', 'font-semibold');
         }
       });
     }
   });
  
+  function updateJobAssistView() {
+    const v = document.querySelector('input[name="jobAssist"]:checked')?.value || 'not_needed';
+    document.getElementById('job-extra-domestic')?.classList.toggle('hidden', v !== 'domestic');
+    document.getElementById('job-extra-overseas')?.classList.toggle('hidden', v !== 'overseas');
+  }
+  document.querySelectorAll('input[name="jobAssist"]').forEach(r => r.addEventListener('change', updateJobAssistView));
+  updateJobAssistView();
+
   const regForm = document.getElementById('registration-form');
   if (regForm) {
+    regForm.addEventListener('reset', () => setTimeout(resetFormDynamicUi, 0));
     regForm.addEventListener('submit', handleFormSubmit);
   }
 }
@@ -277,10 +293,47 @@ async function handleFormSubmit(e) {
     return;
   }
  
+  const phoneEl = document.getElementById('phone');
+  const phoneDigits = (phoneEl?.value || '').replace(/\D/g, '');
+  if (phoneDigits.length < 9 || phoneDigits.length > 10) {
+    alert('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (9-10 หลัก)');
+    phoneEl?.focus();
+    return;
+  }
+
+  const zipEl = document.getElementById('address-zipcode');
+  if (!/^\d{5}$/.test((zipEl?.value || '').trim())) {
+    alert('กรุณากรอกรหัสไปรษณีย์ให้ถูกต้อง (5 หลัก)');
+    zipEl?.focus();
+    return;
+  }
+
+  const nationalityVal = (document.getElementById('nationality')?.value || '').trim();
+  if ((nationalityVal === '' || nationalityVal === 'ไทย') && !isValidThaiNationalId(idCardDigits)) {
+    alert('เลขประจำตัวประชาชนไม่ถูกต้อง (ตรวจสอบหลักตรวจสอบไม่ผ่าน) กรุณาตรวจสอบตัวเลขอีกครั้ง');
+    idCardEl?.focus();
+    return;
+  }
+
+  const birthVal = document.getElementById('birthDate')?.value || '';
+  if (birthVal && birthVal > localDateStr(new Date())) {
+    alert('วันเกิดต้องไม่เป็นวันในอนาคต');
+    document.getElementById('birthDate')?.focus();
+    return;
+  }
+
+  const startVal = document.getElementById('startDate')?.value || '';
+  const endVal = document.getElementById('endDate')?.value || '';
+  if (startVal && endVal && endVal < startVal) {
+    alert('วันที่สิ้นสุดการฝึกอบรมต้องไม่ก่อนวันที่เริ่มการฝึกอบรม');
+    document.getElementById('endDate')?.focus();
+    return;
+  }
+
   const pdpaCheck = document.getElementById('pdpa-consent');
   if (!pdpaCheck || !pdpaCheck.checked) {
     alert('กรุณาทำเครื่องหมายยินยอมเปิดเผยข้อมูลส่วนบุคคล (PDPA) เพื่อดำเนินการต่อ');
-    pdpaCheck.focus();
+    pdpaCheck?.focus();
     return;
   }
  
@@ -308,6 +361,16 @@ async function handleFormSubmit(e) {
     }
   }
  
+  const MAX_FILE_MB = 10;
+  for (const fid of ['filePhoto', 'fileIdCard', 'fileEdu', 'fileTranscript', 'fileWorkCert']) {
+    const f = document.getElementById(fid)?.files?.[0];
+    if (f && f.size > MAX_FILE_MB * 1024 * 1024) {
+      alert(`ไฟล์ "${f.name}" มีขนาดใหญ่เกิน ${MAX_FILE_MB} MB กรุณาลดขนาดไฟล์แล้วลองใหม่`);
+      document.getElementById(fid)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+  }
+
   isSubmittingForm = true;
   const submitBtn = document.querySelector('#registration-form button[type="submit"]');
   if (submitBtn) submitBtn.disabled = true;
@@ -321,7 +384,7 @@ async function handleFormSubmit(e) {
   const photoInput = document.getElementById('filePhoto');
   if (photoInput && photoInput.files && photoInput.files[0]) {
     try {
-      photoDataUrl = await readFileAsDataUrl(photoInput.files[0]);
+      photoDataUrl = await resizeImageToDataUrl(photoInput.files[0], 900);
     } catch (err) {
       console.warn('Error reading photo:', err);
     }
@@ -333,11 +396,12 @@ async function handleFormSubmit(e) {
   const thaiYear = now.getFullYear() + 543;
   const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${thaiYear}`;
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  const newId = `BW-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getTime()).slice(-6)}`;
+  const newId = pendingSubmissionId || `BW-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getTime()).slice(-6)}${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+  pendingSubmissionId = newId;
  
   const newApplicant = {
     id: newId,
-    submittedAt: `${now.toISOString().split('T')[0]} ${timeStr}`,
+    submittedAt: `${localDateStr(now)} ${timeStr}`,
     submittedAtDate: dateStr,
     agency: document.getElementById('agency')?.value || 'ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์',
     objectives: getChecked('input[name="objectives"]'),
@@ -348,6 +412,7 @@ async function handleFormSubmit(e) {
     level: document.getElementById('level')?.value || '',
     applicantTypes: getChecked('input[name="applicantTypes"]'),
     startDate: document.getElementById('startDate')?.value || '',
+    endDate: document.getElementById('endDate')?.value || '',
     title: document.getElementById('title')?.value || '',
     firstName: document.getElementById('firstName')?.value || '',
     lastName: document.getElementById('lastName')?.value || '',
@@ -394,6 +459,9 @@ async function handleFormSubmit(e) {
     infoSource: document.getElementById('infoSource')?.value || '',
     pdpaConsent: true,
     jobAssist: document.querySelector('input[name="jobAssist"]:checked')?.value || 'not_needed',
+    jobPosition: document.getElementById('jobPosition')?.value || '',
+    jobIndustry: document.getElementById('jobIndustry')?.value || '',
+    jobCountry: document.getElementById('jobCountry')?.value || '',
     photoDataUrl: photoDataUrl,
     photoUrl: '',
     idCardFileUrl: '',
@@ -409,10 +477,10 @@ async function handleFormSubmit(e) {
   };
   if (sheetUrl) {
     try {
-      // [แก้ไข] ใช้ชื่อ-นามสกุลผู้สมัครเป็นชื่อโฟลเดอร์ย่อยแทนรหัสผู้สมัคร
       const subfolder = buildApplicantFolderName(newApplicant);
+      const photoUploadFile = await resizeImageToFile(document.getElementById('filePhoto')?.files?.[0], 1280);
       const [photoUrl, idCardUrl, eduUrl, transcriptUrl, workCertUrl] = await Promise.all([
-        uploadFileToDrive(sheetUrl, document.getElementById('filePhoto')?.files?.[0], `รูปถ่าย_${newApplicant.id}`, subfolder),
+        uploadFileToDrive(sheetUrl, photoUploadFile, `รูปถ่าย_${newApplicant.id}.jpg`, subfolder),
         uploadFileToDrive(sheetUrl, document.getElementById('fileIdCard')?.files?.[0], `บัตรประชาชน_${newApplicant.id}`, subfolder),
         uploadFileToDrive(sheetUrl, document.getElementById('fileEdu')?.files?.[0], `วุฒิการศึกษา_${newApplicant.id}`, subfolder),
         uploadFileToDrive(sheetUrl, document.getElementById('fileTranscript')?.files?.[0], `ทรานสคริปต์_${newApplicant.id}`, subfolder),
@@ -423,37 +491,50 @@ async function handleFormSubmit(e) {
       newApplicant.educationFileUrl = eduUrl;
       newApplicant.transcriptFileUrl = transcriptUrl;
       newApplicant.workCertFileUrl = workCertUrl;
+
+      const uploadChecks = [
+        ['filePhoto', photoUrl, 'ภาพถ่ายหน้าตรง'],
+        ['fileIdCard', idCardUrl, 'บัตรประชาชน'],
+        ['fileEdu', eduUrl, 'วุฒิการศึกษา'],
+        ['fileTranscript', transcriptUrl, 'ทรานสคริปต์'],
+        ['fileWorkCert', workCertUrl, 'ใบรับรองการทำงาน']
+      ];
+      const failedUploads = uploadChecks
+        .filter(([id, url]) => document.getElementById(id)?.files?.[0] && !url)
+        .map(x => x[2]);
+      if (failedUploads.length > 0) {
+        const goOn = confirm('อัปโหลดไฟล์ต่อไปนี้ไม่สำเร็จ: ' + failedUploads.join(', ') +
+          '\n\nกด "ตกลง" เพื่อส่งใบสมัครต่อโดยไม่มีไฟล์เหล่านี้ (ต้องส่งไฟล์ให้เจ้าหน้าที่ภายหลัง)\nกด "ยกเลิก" เพื่อกลับไปตรวจสอบอินเทอร์เน็ตแล้วลองส่งใหม่');
+        if (!goOn) return;
+      }
     } catch (err) {
       console.warn('อัปโหลดไฟล์ขึ้น Google Drive ไม่สำเร็จ (ข้อมูลยังถูกบันทึกในเครื่องได้ตามปกติ):', err);
     }
   }
  
   applicants.unshift(newApplicant);
-  localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
-  let list = [];
-  try { list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]'); } catch (e) { list = []; }
-  list.unshift({
-    id: 'notif-' + Date.now(),
-    title: 'มีผู้สมัครใหม่เข้ามา!',
-    message: `${newApplicant.title} ${newApplicant.firstName} ${newApplicant.lastName} สมัครหลักสูตร ${newApplicant.course}`,
-    time: dateStr + ' ' + timeStr,
-    applicantId: newApplicant.id
-  });
-  if (list.length > 20) list = list.slice(0, 20);
-  localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
-  if (sheetUrl) {
-    try {
-      const payloadForSheet = Object.assign({}, newApplicant);
-      delete payloadForSheet.photoDataUrl;
-      const result = await callGasApi(sheetUrl, { action: 'addApplicant', data: payloadForSheet });
-      if (!result || result.status !== 'success') {
-        console.warn('บันทึกลง Google Sheet ไม่สำเร็จ:', result && result.message);
-      }
-    } catch (err) {
-      console.warn('Google Sheet Sync note:', err);
-    }
+  if (!sheetUrl) {
+    alert('ยังไม่ได้ตั้งค่า Google Apps Script Web App URL จึงส่งใบสมัครไม่ได้ กรุณาแจ้งผู้ดูแลระบบ');
+    return;
   }
- 
+  let sheetOk = false;
+  let sheetMsg = '';
+  try {
+    const payloadForSheet = Object.assign({}, newApplicant);
+    delete payloadForSheet.photoDataUrl;
+    const result = await callGasApi(sheetUrl, { action: 'addApplicant', data: payloadForSheet });
+    sheetOk = Boolean(result && result.status === 'success');
+    sheetMsg = (result && result.message) || '';
+  } catch (err) {
+    sheetMsg = String(err);
+  }
+  if (!sheetOk) {
+    applicants.shift();
+    alert('ส่งใบสมัครไม่สำเร็จ: ' + (sheetMsg || 'ไม่ทราบสาเหตุ') + '\nข้อมูลที่กรอกยังอยู่ครบ กรุณาตรวจสอบอินเทอร์เน็ตแล้วกด "ยืนยันการส่งใบสมัคร" อีกครั้ง');
+    return;
+  }
+
+  pendingSubmissionId = '';
   showLoading(false);
   showSubmitSuccessModal(newApplicant);
  
@@ -545,4 +626,95 @@ function showLoading(show) {
       spinner.classList.remove('flex');
     }
   }
+}
+
+function resizeImageToDataUrl(file, maxSide) {
+  return new Promise(resolve => {
+    if (!file) { resolve(''); return; }
+    const reader = new FileReader();
+    reader.onerror = () => resolve('');
+    reader.onload = (ev) => {
+      const original = ev.target.result;
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.9));
+        } catch (err) {
+          resolve(original);
+        }
+      };
+      img.onerror = () => resolve(original);
+      img.src = original;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function isValidThaiNationalId(digits) {
+  if (!/^\d{13}$/.test(digits)) return false;
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += parseInt(digits[i], 10) * (13 - i);
+  return ((11 - (sum % 11)) % 10) === parseInt(digits[12], 10);
+}
+
+function resizeImageToFile(file, maxSide) {
+  return new Promise(resolve => {
+    if (!file) { resolve(file); return; }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => {
+          URL.revokeObjectURL(url);
+          resolve(blob ? new File([blob], 'photo.jpg', { type: 'image/jpeg' }) : file);
+        }, 'image/jpeg', 0.88);
+      } catch (e) { URL.revokeObjectURL(url); resolve(file); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
+function localDateStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function resetFormDynamicUi() {
+  const $ = id => document.getElementById(id);
+  $('disability-details-container')?.classList.toggle('hidden', !$('body-disability')?.checked);
+  $('unemployedReasonOtherText')?.classList.toggle('hidden', $('unemployedReason')?.value !== 'other');
+  const working = $('emp-working')?.checked !== false;
+  $('section-2-1')?.classList.toggle('hidden', !working);
+  $('section-2-2')?.classList.toggle('hidden', working);
+  const sector = document.querySelector('input[name="workSector"]:checked')?.value;
+  $('govt-sub-container')?.classList.toggle('hidden', sector !== 'government');
+  if ($('govt-sub-select')) $('govt-sub-select').disabled = sector !== 'government';
+  $('freelance-sub-container')?.classList.toggle('hidden', sector !== 'business');
+  if ($('freelance-sub-select')) $('freelance-sub-select').disabled = sector !== 'business';
+  const job = document.querySelector('input[name="jobAssist"]:checked')?.value || 'not_needed';
+  $('job-extra-domestic')?.classList.toggle('hidden', job !== 'domestic');
+  $('job-extra-overseas')?.classList.toggle('hidden', job !== 'overseas');
+  ['filePhoto', 'fileIdCard', 'fileEdu', 'fileTranscript', 'fileWorkCert'].forEach(id => {
+    const l = $(id + 'Label');
+    if (l) { l.textContent = 'ยังไม่ได้เลือกไฟล์'; l.classList.remove('text-green-600', 'font-semibold'); }
+  });
+  if ($('district-options')) $('district-options').innerHTML = '';
+  if ($('subdistrict-options')) $('subdistrict-options').innerHTML = '';
+  pendingSubmissionId = '';
 }

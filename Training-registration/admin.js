@@ -23,10 +23,11 @@ function parseSubmittedAtDate(value) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  applicants = loadLocalApplicants();
-  calendarEvents = loadLocalEvents();
+  applicants = [];
+  try { localStorage.removeItem(STORAGE_KEYS.APPLICANTS); } catch (e) { /* ignore */ }
+  calendarEvents = []; try { localStorage.removeItem(STORAGE_KEYS.CALENDAR_EVENTS); } catch (e) { /* ignore */ }
   if (!localStorage.getItem(STORAGE_KEYS.CALENDAR_EVENTS)) {
-    localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+    void 0;
   }
 
   setupPinLock();
@@ -92,7 +93,6 @@ async function syncFromGoogleSheet(sheetUrl, opts) {
           return a;
         })
         .sort((a, b) => parseSubmittedAtDate(b.submittedAt) - parseSubmittedAtDate(a.submittedAt));
-      localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
       pruneStaleNotificationData(applicants);
     } else {
       ok = false;
@@ -113,7 +113,7 @@ async function syncFromGoogleSheet(sheetUrl, opts) {
     }
     if (eventsResult && eventsResult.status === 'success' && Array.isArray(eventsResult.data)) {
       calendarEvents = eventsResult.data;
-      localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+      void 0;
     } else {
       ok = false;
       if (!options.silent) console.warn('ดึงข้อมูลปฏิทินจาก Google Sheet ไม่สำเร็จ:', eventsResult && eventsResult.message);
@@ -204,6 +204,7 @@ function setupPinLock() {
       isAuthenticated = true;
       currentManagerName = result.name || '';
       adminSessionToken = result.token || '';
+      if (result.weakPin) setTimeout(() => alert('⚠️ ท่านกำลังใช้รหัส PIN เริ่มต้น (123456) ซึ่งไม่ปลอดภัย\nกรุณาเปลี่ยนรหัส PIN ในแผ่นงาน Managers บน Google Sheet ทันที'), 400);
       updateManagerNameDisplay();
       setPinStatus('');
       document.getElementById('pin-lock-screen')?.classList.add('hidden');
@@ -241,7 +242,7 @@ function setupPinLock() {
         };
         tick();
       } else {
-        setPinStatus('รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+        setPinStatus((result && result.message && result.message.indexOf('ล็อก') !== -1) ? result.message : 'รหัส PIN ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
       }
     }
   }
@@ -263,6 +264,7 @@ function setupPinLock() {
   });
 
   document.getElementById('btn-admin-logout')?.addEventListener('click', () => {
+    serverLogout_();
     isAuthenticated = false;
     currentManagerName = '';
     adminSessionToken = '';
@@ -302,9 +304,10 @@ function updateManagerNameDisplay() {
 }
 
 function escJsAttr(str) {
-  return String(str === undefined || str === null ? '' : str)
+  const jsEscaped = String(str === undefined || str === null ? '' : str)
     .replace(/\\/g, '\\\\')
     .replace(/'/g, "\\'");
+  return escapeHtml(jsEscaped);
 }
 function setupAdminNavigation() {
   document.querySelectorAll('.admin-tab-btn').forEach(btn => {
@@ -509,7 +512,7 @@ async function addNewEvent(dateStr) {
   };
 
   calendarEvents.push(newEvt);
-  localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+  void 0;
   closeEventModal();
   renderCalendar();
   showLoading(true);
@@ -517,9 +520,8 @@ async function addNewEvent(dateStr) {
     const result = await callGasApi(GAS_WEB_APP_URL, { action: 'addEvent', event: newEvt, token: adminSessionToken });
     if (!result || result.status !== 'success') {
       calendarEvents = calendarEvents.filter(e => e.id !== newEvt.id);
-      localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+      void 0;
       renderCalendar();
-      // [เพิ่มใหม่] ถ้า session token หมดอายุ/ไม่ถูกต้อง ให้พากลับไปหน้า PIN แทนที่จะแค่ alert เฉยๆ
       if (result && result.status === 'unauthorized') {
         forceAdminLogout(result.message || 'เซสชันผู้ดูแลระบบหมดอายุ กรุณาเข้าสู่ระบบด้วยรหัส PIN อีกครั้ง');
       } else {
@@ -528,7 +530,7 @@ async function addNewEvent(dateStr) {
     }
   } catch (err) {
     calendarEvents = calendarEvents.filter(e => e.id !== newEvt.id);
-    localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+    void 0;
     renderCalendar();
     alert('เกิดข้อผิดพลาดขณะบันทึกกิจกรรมลง Google Sheet กรุณาลองใหม่อีกครั้ง: ' + err);
   } finally {
@@ -558,7 +560,11 @@ function renderApplicantsTable() {
 
   let filtered = applicants.filter(a => {
     const fullName = `${a.title || ''} ${a.firstName || ''} ${a.lastName || ''}`.toLowerCase();
-    const matchSearch = fullName.includes(searchTerm) || (a.idCard || '').includes(searchTerm) || (a.course || '').toLowerCase().includes(searchTerm);
+    const termDigits = searchTerm.replace(/\D/g, '');
+    const matchSearch = fullName.includes(searchTerm)
+      || (a.idCard || '').includes(searchTerm)
+      || (termDigits.length >= 3 && ((a.idCard || '').replace(/\D/g, '').includes(termDigits) || formatPhoneNumber(a.phone).replace(/\D/g, '').includes(termDigits)))
+      || (a.course || '').toLowerCase().includes(searchTerm);
     const matchStatus = statusTerm === 'all' 
       ? true 
       : statusTerm === 'attended' ? a.attended === true : a.attended !== true;
@@ -617,7 +623,6 @@ async function toggleAttendance(applicantId) {
   if (!target) return;
   const previousAttended = target.attended;
   target.attended = !target.attended;
-  localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
   renderApplicantsTable();
   try {
     const result = await callGasApi(GAS_WEB_APP_URL, {
@@ -628,7 +633,6 @@ async function toggleAttendance(applicantId) {
     });
     if (!result || result.status !== 'success') {
       target.attended = previousAttended;
-      localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
       renderApplicantsTable();
       if (result && result.status === 'unauthorized') {
         forceAdminLogout(result.message || 'เซสชันผู้ดูแลระบบหมดอายุ กรุณาเข้าสู่ระบบด้วยรหัส PIN อีกครั้ง');
@@ -638,7 +642,6 @@ async function toggleAttendance(applicantId) {
     }
   } catch (e) {
     target.attended = previousAttended;
-    localStorage.setItem(STORAGE_KEYS.APPLICANTS, JSON.stringify(applicants));
     renderApplicantsTable();
     alert('เกิดข้อผิดพลาดขณะอัปเดตสถานะเข้าเรียนลง Google Sheet กรุณาลองใหม่อีกครั้ง: ' + e);
   }
@@ -662,11 +665,14 @@ async function previewApplicantForm(applicantId) {
     showLoading(false);
   }
 
-  container.innerHTML = `<div class="a4-page-screen-wrapper">${renderOfficialFormHTML(resolvedApp)}</div>`;
+  const photoWarn = resolvedApp.photoLoadError
+    ? `<div class="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs">⚠️ ไม่สามารถแสดงรูปถ่ายได้: ${escapeHtml(resolvedApp.photoLoadError)}<br>ลองปิดแล้วเปิดใหม่ หรือตรวจสอบว่า Deploy Code.gs เวอร์ชันล่าสุดแล้ว</div>`
+    : '';
+  container.innerHTML = `${photoWarn}<div class="a4-page-screen-wrapper">${renderOfficialFormHTML(resolvedApp)}</div>`;
   modal.classList.remove('hidden');
   modal.classList.add('flex');
 
-  const previewFormEl = document.getElementById('official-form-printable');
+  const previewFormEl = container.querySelector('#official-form-printable');
   if (previewFormEl && typeof fitOfficialFormToA4 === 'function') {
     if (typeof waitForElementReady === 'function') {
       await waitForElementReady(previewFormEl);
@@ -796,6 +802,8 @@ function setupNotifDropdownAutoClose() {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      closeEventModal();
+      closePdfPreviewModal();
       const dropdown = document.getElementById('notif-dropdown');
       if (dropdown) dropdown.classList.add('hidden');
     }
@@ -825,4 +833,10 @@ async function refreshFromSheetButton() {
   if (!ok) {
     alert('ไม่สามารถดึงข้อมูลล่าสุดจาก Google Sheet ได้ครบถ้วน กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือค่า GAS_WEB_APP_URL ในไฟล์ gs-api.js');
   }
+}
+
+function serverLogout_() {
+  const t = adminSessionToken;
+  if (!t) return;
+  try { callGasApi(GAS_WEB_APP_URL, { action: 'logout', token: t }, 8000); } catch (e) { /* ignore */ }
 }

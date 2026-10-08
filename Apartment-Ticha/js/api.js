@@ -1,7 +1,19 @@
 const API = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbxNSDmo8XJcWQdsRCAcsycyNC40wClnRJd4ubmh_rzG6z4iEbD34h7LeV5KZ5N0qlUOSw/exec',
-
+  DEFAULT_API_URL: 'https://script.google.com/macros/s/AKfycbzQGeVjUehCPoY-9P2Rg3VRFSCnmOeo_sz9OG1-Y6T096Etw7_L4zYkTrBe1HZ506Ud8g/exec',
+  STORAGE_URL_KEY: 'DORM_API_URL',
   USER_STORAGE_KEY: 'DORM_CURRENT_USER',
+
+  get API_URL() {
+    return localStorage.getItem(this.STORAGE_URL_KEY) || this.DEFAULT_API_URL;
+  },
+
+  setApiUrl(url) {
+    if (url) {
+      localStorage.setItem(this.STORAGE_URL_KEY, url.trim());
+    } else {
+      localStorage.removeItem(this.STORAGE_URL_KEY);
+    }
+  },
 
   getCurrentUser() {
     const saved = localStorage.getItem(this.USER_STORAGE_KEY);
@@ -54,9 +66,12 @@ const API = {
     }
   },
 
+  // ---------- แดชบอร์ด ----------
   getDashboardData() {
     return this.call('getDashboardData');
   },
+
+  // ---------- ห้องพัก ----------
   getRooms() {
     return this.call('getRooms');
   },
@@ -69,6 +84,11 @@ const API = {
   deleteRoom(roomId) {
     return this.call('deleteRoom', { roomId });
   },
+  toggleRoomMaintenance(roomId) {
+    return this.call('toggleRoomMaintenance', { roomId });
+  },
+
+  // ---------- พนักงาน ----------
   getEmployees() {
     return this.call('getEmployees');
   },
@@ -78,6 +98,8 @@ const API = {
   deleteEmployee(employeeId) {
     return this.call('deleteEmployee', { employeeId });
   },
+
+  // ---------- อาคาร / ชั้น ----------
   getBuildings() {
     return this.call('getBuildings');
   },
@@ -87,12 +109,8 @@ const API = {
   getFloors() {
     return this.call('getFloors');
   },
-  getBeds() {
-    return this.call('getBeds');
-  },
-  saveBed(data) {
-    return this.call('saveBed', { data });
-  },
+
+  // ---------- การเข้าพัก (Occupancy) ----------
   getOccupancy() {
     return this.call('getOccupancy');
   },
@@ -105,56 +123,8 @@ const API = {
   transferRoom(data) {
     return this.call('transferRoom', { data });
   },
-  getRoomRequests() {
-    return this.call('getRoomRequests');
-  },
-  createRoomRequest(data) {
-    return this.call('createRoomRequest', { data });
-  },
-  updateRequestStatus(data) {
-    return this.call('updateRequestStatus', { data });
-  },
-  getMaintenance() {
-    return this.call('getMaintenance');
-  },
-  saveMaintenance(data) {
-    return this.call('saveMaintenance', { data });
-  },
-  // เดิมไม่มีเมธอดนี้ใน api.js ทั้งที่ Backend (Code.gs) มี Actions.completeMaintenance
-  // อยู่แล้ว ทำให้ไม่มีทางเรียก "ปิดงานซ่อม/เปิดห้องกลับมาใช้งาน" จากหน้าเว็บได้เลย
-  completeMaintenance(maintenanceId) {
-    return this.call('completeMaintenance', { maintenanceId });
-  },
-  getRepairRequests() {
-    return this.call('getRepairRequests');
-  },
-  saveRepairRequest(data) {
-    return this.call('saveRepairRequest', { data });
-  },
-  updateRepairStatus(data) {
-    return this.call('updateRepairStatus', { data });
-  },
-  getRoomAssets() {
-    return this.call('getRoomAssets');
-  },
-  saveAsset(data) {
-    return this.call('saveAsset', { data });
-  },
-  deleteAsset(assetId) {
-    return this.call('deleteAsset', { assetId });
-  },
-  getKeys() {
-    return this.call('getKeys');
-  },
-  saveKey(data) {
-    return this.call('saveKey', { data });
-  },
-  getAdminUsers() {
-    return this.call('getAdminUsers');
-  },
-  saveAdminUser(data) {
-    return this.call('saveAdminUser', { data });
-  },
+
+  // ---------- การตั้งค่าและ Audit ----------
   getAuditLogs() {
     return this.call('getAuditLogs');
   },
@@ -163,5 +133,25 @@ const API = {
   },
   saveSettings(data) {
     return this.call('saveSettings', { data });
-  }
+  },
+
+  // Backward compatibility placeholders
+  getBeds() { return this.call('getBeds'); },
+  saveBed(data) { return this.call('saveBed', { data }); },
+  getRoomRequests() { return this.call('getRoomRequests'); },
+  createRoomRequest(data) { return this.call('createRoomRequest', { data }); },
+  updateRequestStatus(data) { return this.call('updateRequestStatus', { data }); },
+  getMaintenance() { return this.call('getMaintenance'); },
+  saveMaintenance(data) { return this.call('saveMaintenance', { data }); },
+  completeMaintenance(maintenanceId) { return this.call('completeMaintenance', { maintenanceId }); },
+  getRepairRequests() { return this.call('getRepairRequests'); },
+  saveRepairRequest(data) { return this.call('saveRepairRequest', { data }); },
+  updateRepairStatus(data) { return this.call('updateRepairStatus', { data }); },
+  getRoomAssets() { return this.call('getRoomAssets'); },
+  saveAsset(data) { return this.call('saveAsset', { data }); },
+  deleteAsset(assetId) { return this.call('deleteAsset', { assetId }); },
+  getKeys() { return this.call('getKeys'); },
+  saveKey(data) { return this.call('saveKey', { data }); },
+  getAdminUsers() { return this.call('getAdminUsers'); },
+  saveAdminUser(data) { return this.call('saveAdminUser', { data }); }
 };

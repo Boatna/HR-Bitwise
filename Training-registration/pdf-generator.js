@@ -1,14 +1,30 @@
-﻿function formatThaiDateDisplay(dateStr) {
+﻿const OFFICIAL_FORM_PADDING = '8mm 12mm 7mm 12mm';
+const OFFICIAL_FORM_FONT_MAX_PX = 14;
+const OFFICIAL_FORM_FONT_MIN_PX = 9;
+const OFFICIAL_FORM_LINE_HEIGHT = 1.55;
+
+const PDF_THAI_MONTHS = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+function formatThaiDateDisplay(dateStr) {
   if (!dateStr) return '';
   const str = String(dateStr).trim();
   const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (match) {
     const y = parseInt(match[1], 10) + 543;
-    const m = match[2];
-    const d = match[3];
-    return `${d}/${m}/${y}`;
+    return `${match[3]}/${match[2]}/${y}`;
   }
   return str;
+}
+
+function formatThaiDateLong(dateStr) {
+  if (!dateStr) return '';
+  const str = String(dateStr).trim();
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return str;
+  return `${parseInt(m[3], 10)} ${PDF_THAI_MONTHS[parseInt(m[2], 10) - 1]} ${parseInt(m[1], 10) + 543}`;
 }
 
 function matchIncomeRange(incVal, rangeKey, rangeLabel) {
@@ -28,45 +44,105 @@ function matchIncomeRange(incVal, rangeKey, rangeLabel) {
   return false;
 }
 
-function matchIndustryGroup(selected, target) {
-  if (!selected || !target) return false;
-  const s = selected.replace(/[\s\/-]/g, '').toLowerCase();
-  const t = target.replace(/[\s\/-]/g, '').toLowerCase();
-  if (s === t) return true;
-  if (s.includes('ดิจิ') && t.includes('ดิจิ')) return true;
-  if (s.includes('เกษตร') && t.includes('เกษตร')) return true;
-  if (s.includes('เชื้อเพลิง') && t.includes('เชื้อเพลิง')) return true;
-  if (s.includes('อิเล็กทรอนิกส์') && t.includes('อิเล็กทรอนิกส์')) return true;
-  if (s.includes('ยานยนต์') && t.includes('ยานยนต์')) return true;
-  if (s.includes('อาหาร') && t.includes('อาหาร')) return true;
-  if (s.includes('ท่องเที่ยว') && t.includes('ท่องเที่ยว')) return true;
-  if (s.includes('ขนส่ง') && t.includes('ขนส่ง')) return true;
-  if (s.includes('แพทย์') && t.includes('แพทย์')) return true;
-  if (s.includes('หุ่นยนต์') && t.includes('หุ่นยนต์')) return true;
-  return false;
+const PDF_INDUSTRY_GROUPS = [
+  { label: 'การแปรรูปอาหาร', kw: ['อาหาร'] },
+  { label: 'การเกษตรและเทคโนโลยีชีวภาพ', kw: ['เกษตร'] },
+  { label: 'ท่องเที่ยวกลุ่มรายได้ดีและท่องเที่ยวเชิงสุขภาพ', kw: ['ท่องเที่ยว'] },
+  { label: 'อิเล็กทรอนิกส์อัจฉริยะ', kw: ['อิเล็กทรอนิกส์'] },
+  { label: 'ยานยนต์สมัยใหม่', kw: ['ยานยนต์'] },
+  { label: 'ดิจิตอล', kw: ['ดิจิ'] },
+  { label: 'เชื้อเพลิง/เคมีชีวภาพ', kw: ['เชื้อเพลิง', 'เคมีชีวภาพ'] },
+  { label: 'ขนส่งและการบิน', kw: ['ขนส่ง', 'การบิน'] },
+  { label: 'การแพทย์ครบวงจร', kw: ['แพทย์'] },
+  { label: 'หุ่นยนต์เพื่ออุตสาหกรรม', kw: ['หุ่นยนต์'] }
+];
+
+function matchIndustryGroup(selected, targetLabel) {
+  if (!selected) return false;
+  const sel = String(selected).trim();
+  const entry = PDF_INDUSTRY_GROUPS.find(g => g.label === targetLabel);
+  if (!entry) return false;
+  return sel === entry.label || entry.kw.some(k => sel.includes(k));
 }
 
+function pdfAbsoluteUrl(path) {
+  try { return new URL(path, document.baseURI).href; } catch (e) { return path; }
+}
+
+const OFFICIAL_FORM_CSS = `
+#official-form-printable{font-family:'Sarabun','TH Sarabun PSK','Angsana New',sans-serif;font-size:13px;line-height:1.55;color:#000;background:#fff;display:flex;flex-direction:column;box-sizing:border-box;overflow:hidden;text-align:left;}
+#official-form-printable *{box-sizing:border-box;}
+#official-form-printable .of-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.45em;}
+#official-form-printable .of-side{flex:none;width:27mm;height:31mm;display:flex;align-items:center;}
+#official-form-printable .of-side-r{justify-content:flex-end;}
+#official-form-printable .of-logo{height:25mm;width:auto;max-width:27mm;object-fit:contain;display:block;}
+#official-form-printable .of-title{flex:1 1 auto;text-align:center;font-weight:700;font-size:1.32em;line-height:1.4;padding:0 2mm;}
+#official-form-printable .of-photo{width:25mm;height:31mm;border:1px solid #333;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.72em;line-height:1.3;color:#555;}
+#official-form-printable .of-photo-empty{border:1px dashed #777;}
+#official-form-printable .of-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+#official-form-printable .of-b{font-weight:700;}
+#official-form-printable .of-row{display:flex;align-items:baseline;}
+#official-form-printable .of-l{flex:none;white-space:nowrap;margin-right:.35em;}
+#official-form-printable .of-v{flex:1 1 auto;min-width:2em;border-bottom:1px dotted #222;padding:0 .3em;margin-right:.5em;font-weight:600;line-height:1.2;overflow-wrap:anywhere;}
+#official-form-printable .of-v:last-child{margin-right:0;}
+#official-form-printable .of-b .of-v{font-weight:700;}
+#official-form-printable .of-i{display:inline-block;border-bottom:1px dotted #222;padding:0 .3em;font-weight:600;line-height:1.2;vertical-align:baseline;text-align:left;}
+#official-form-printable .of-hang{display:flex;align-items:flex-start;}
+#official-form-printable .of-opts{flex:1 1 0;min-width:0;}
+#official-form-printable .of-ind{padding-left:5mm;}
+#official-form-printable .of-ind2{padding-left:13mm;}
+#official-form-printable .of-opt{display:inline-block;white-space:nowrap;margin-right:.85em;}
+#official-form-printable .of-opt.w{display:inline;white-space:normal;}
+#official-form-printable .of-cb{display:inline-block;width:.78em;height:.78em;border:.09em solid #000;border-radius:.05em;box-shadow:.07em .07em 0 #000;position:relative;vertical-align:-.05em;margin-right:.4em;}
+#official-form-printable .of-rb{margin-right:.3em;}
+#official-form-printable .of-rbm{display:inline-block;width:.78em;height:.78em;position:relative;vertical-align:-.1em;}
+#official-form-printable .of-cb.on::after,#official-form-printable .of-rbm.on::after{content:'';position:absolute;left:.22em;top:-.14em;width:.3em;height:.6em;border:solid #000;border-width:0 .13em .13em 0;transform:rotate(45deg);}
+#official-form-printable .of-spacer{flex:1 1 auto;min-height:2mm;}
+#official-form-printable .of-sign{display:flex;border:1px solid #000;}
+#official-form-printable .of-sign>div{padding:2.2mm 3mm;}
+#official-form-printable .of-sign>div:first-child{width:48%;border-right:1px solid #000;}
+#official-form-printable .of-sign>div:last-child{width:52%;}
+`;
+
 function renderOfficialFormHTML(data) {
-  const chk = (cond) => cond ? '☑' : '☐';
-  const dot = (val, width) => {
-    const v = (val !== undefined && val !== null && String(val).trim() !== '') ? String(val).trim() : '';
-    const style = `display:inline-block;min-width:${width || 60}px;border-bottom:1px dotted #333;padding:0 3px 1px 3px;`;
-    return v ? `<span style="${style}font-weight:600;">${escapeHtml(v)}</span>` : `<span style="${style}">&nbsp;</span>`;
-  };
   const d = data || {};
-  const objectives = d.objectives || [];
-  const tests = d.tests || [];
-  const applicantTypes = d.applicantTypes || [];
-  const disabilities = d.disabilities || [];
+  const esc = escapeHtml;
+  const txt = v => (v === undefined || v === null) ? '' : String(v).trim();
+  const arr = v => Array.isArray(v) ? v : (v ? String(v).split(',').map(s => s.trim()).filter(Boolean) : []);
+  const L = (t, style) => `<span class="of-l"${style ? ` style="${style}"` : ''}>${t}</span>`;
+  const V = (v, grow, minEm, nowrap) => {
+    const s = txt(v);
+    return `<span class="of-v" style="flex-grow:${grow || 1};min-width:${minEm || 2}em;${nowrap ? 'white-space:nowrap;' : ''}">${s ? esc(s) : '&nbsp;'}</span>`;
+  };
+  const I = (v, em) => {
+    const s = txt(v);
+    return `<span class="of-i" style="min-width:${em || 8}em;">${s ? esc(s) : '&nbsp;'}</span>`;
+  };
+  const ROW = (...p) => `<div class="of-row">${p.join('')}</div>`;
+  const CB = on => `<span class="of-cb${on ? ' on' : ''}"></span>`;
+  const OPT = (on, t, cls) => `<span class="of-opt${cls ? ' ' + cls : ''}">${CB(on)}${t}</span>`;
+  const RB = (on, t) => `<span class="of-opt"><span class="of-rb">(<span class="of-rbm${on ? ' on' : ''}"></span>)</span>${t}</span>`;
+  const objectives = arr(d.objectives);
+  const tests = arr(d.tests);
+  const applicantTypes = arr(d.applicantTypes);
+  const disabilities = arr(d.disabilities);
   const photoSrc = d.photoDataUrl || d.photoUrl || '';
+
   const isEmployed = d.employmentStatus === 'employed';
   const isUnemployed = d.employmentStatus === 'unemployed';
-  const isGovt = d.workSector === 'government';
-  const isBusiness = d.workSector === 'business';
-  const isPrivate = d.workSector === 'private';
-  const isStateEnt = d.workSector === 'state_enterprise';
+  const sector = isEmployed ? d.workSector : '';
+  const isPrivate = sector === 'private';
+  const isStateEnt = sector === 'state_enterprise';
+  const isGovt = sector === 'government';
+  const isBusiness = sector === 'business';
+  const govtType = txt(d.govtType);
+  const freelanceType = txt(d.freelanceType);
 
-  const inc = d.monthlyIncome || '';
+  const fullName = [d.title, d.firstName, d.lastName].map(txt).filter(Boolean).join(' ');
+  const startLong = formatThaiDateLong(d.startDate);
+  const endLong = formatThaiDateLong(d.endDate);
+  const period = (startLong && endLong) ? `${startLong} ถึง ${endLong}` : startLong;
+
   const incRanges = [
     { label: '1 - 5,000', val: '1-5000' },
     { label: '5,001 - 9,000', val: '5001-9000' },
@@ -74,233 +150,167 @@ function renderOfficialFormHTML(data) {
     { label: '15,001 - 20,000', val: '15001-20000' },
     { label: '20,001 - 30,000', val: '20001-30000' },
     { label: '30,001 - 40,000', val: '30001-40000' },
-    { label: '40,001 บาทขึ้นไป', val: '40001+' },
+    { label: '40,001 บาทขึ้นไป', val: '40001+' }
+  ];
+  const incOpt = r => OPT(isEmployed && matchIncomeRange(d.monthlyIncome, r.val, r.label),
+    r.val === '40001+' ? r.label : `${r.label} บาท`);
+
+  const industryOpt = g => OPT(isEmployed && matchIndustryGroup(d.industryGroup, g.label), g.label);
+
+  const disabilityList = [
+    'การเห็น',
+    'การได้ยินหรือสื่อความหมาย',
+    'การเคลื่อนไหวหรือทางร่างกาย',
+    'ทางจิตใจหรือพฤติกรรม',
+    'ทางสติปัญญา',
+    'การเรียนรู้',
+    'ทางออทิสติก'
   ];
 
-  const indGroups = [
-    'การแปรรูปอาหาร', 'การเกษตรและเทคโนโลยีชีวภาพ', 'ท่องเที่ยวกลุ่มรายได้ดีและท่องเที่ยวเชิงสุขภาพ',
-    'อิเล็กทรอนิกส์อัจฉริยะ', 'ยานยนต์สมัยใหม่', 'ดิจิทัล', 'เชื้อเพลิง/เคมีชีวภาพ',
-    'ขนส่งและการบิน', 'การแพทย์ครบวงจร', 'หุ่นยนต์เพื่ออุตสาหกรรม'
-  ];
+  const knownUnemployed = ['อยู่ระหว่างหางาน', 'อยู่ในระหว่างหางาน', 'นักเรียน/นักศึกษา', 'ผู้ประกันตนที่ถูกเลิกจ้าง', 'ผู้ต้องขัง', 'ทหารก่อนปลด'];
+  const unReason = isUnemployed ? txt(d.unemployedReason) : '';
+  const unOther = unReason && !knownUnemployed.includes(unReason) ? unReason : '';
 
-  const selInd = d.industryGroup || '';
-  const infoSrc = d.infoSource || '';
+  const infoSrc = txt(d.infoSource);
+  const srcTv = infoSrc === 'โทรทัศน์';
+  const srcRadio = infoSrc === 'วิทยุ';
+  const srcPaper = infoSrc === 'หนังสือพิมพ์';
+  const srcOnline = infoSrc.includes('ออนไลน์');
+  const srcOther = infoSrc && !(srcTv || srcRadio || srcPaper || srcOnline) ? infoSrc : '';
+
+  const consentYes = d.pdpaConsent === true || d.pdpaConsent === 'ยินยอม' || d.pdpaConsent === 'yes' || d.pdpaConsent === 'true';
+  const consentNo = d.pdpaConsent === false || d.pdpaConsent === 'ไม่ยินยอม' || d.pdpaConsent === 'no';
+
+  let sd = String(d.submittedAtDate || '').split('/');
+  if (sd.length !== 3) {
+    const alt = formatThaiDateDisplay(String(d.submittedAt || '').slice(0, 10));
+    sd = alt && alt.split('/').length === 3 ? alt.split('/') : ['', '', ''];
+  }
+
+  const logoUrl = esc(pdfAbsoluteUrl('assets/dsd-logo.png'));
+  const logoFallback = esc(pdfAbsoluteUrl('assets/BW-HR.png'));
+  const photoBox = photoSrc
+    ? `<div class="of-photo"><img src="${esc(photoSrc)}" alt="" onerror="this.style.display='none'"></div>`
+    : `<div class="of-photo of-photo-empty">รูปถ่าย<br>1-1.5 นิ้ว</div>`;
+
+  const c1 = 'width:36mm;';
+  const c2 = 'width:34mm;';
+
   return `
-  <div id="official-form-printable" style="width:210mm;height:297mm;max-height:297mm;box-sizing:border-box;overflow:hidden;padding:9mm 13mm 6mm 13mm;background:#fff;font-family:'Angsana New','AngsanaUPC','TH Sarabun PSK','Sarabun',sans-serif;font-size:10.4px;line-height:1.7;letter-spacing:0.25px;color:#111;">
+  <div id="official-form-printable" style="width:210mm;height:297mm;padding:${OFFICIAL_FORM_PADDING};">
+    <style>${OFFICIAL_FORM_CSS}</style>
 
-    <!-- ===== HEADER (โลโก้ซ้าย + ชื่อฟอร์มกึ่งกลาง + รูปถ่ายขวา เหมือนแบบฟอร์มต้นฉบับ) ===== -->
-    <!-- [แก้ไข] ขยายขนาดตราหน่วยงาน (โลโก้) และรูปถ่ายผู้สมัครให้ใหญ่ขึ้น ตามที่ขอ -->
-    <table style="width:100%;border-collapse:collapse;margin-bottom:5px;">
-      <tr>
-        <td style="width:76px;vertical-align:top;padding-top:2px;">
-          <img src="assets/dsd-logo.png" alt="DSD" style="height:66px;width:auto;object-fit:contain;" onerror="this.src='assets/BW-HR.png';">
-        </td>
-        <td style="vertical-align:middle;text-align:center;padding:0 6px;">
-          <div style="font-size:16.5px;font-weight:700;line-height:1.35;">ใบสมัครเข้ารับการฝึกอบรมฝีมือแรงงาน/ทดสอบมาตรฐานฝีมือแรงงาน</div>
-        </td>
-        <td style="width:84px;vertical-align:top;text-align:center;">
-          ${photoSrc
-            ? `<div style="width:76px;height:96px;border:1px solid #555;overflow:hidden;margin:0 auto;"><img src="${escapeHtml(photoSrc)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:76px;height:96px;border:1px solid #555;display:flex;align-items:center;justify-content:center;font-size:8.5px;color:#999;\\'>ไม่พบรูป</div>'"></div>`
-            : `<div style="width:76px;height:96px;border:1px dashed #888;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:8.5px;color:#666;margin:0 auto;">📷<br>รูปถ่าย<br>1-1.5 นิ้ว</div>`
-          }
-        </td>
-      </tr>
-    </table>
-    <div style="font-weight:700;font-size:11.5px;border-bottom:1.5px solid #222;padding-bottom:4px;margin-bottom:6px;">
-      กรมพัฒนาฝีมือแรงงาน กระทรวงแรงงาน&nbsp; หน่วยงาน:&nbsp;${dot(d.agency || 'ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์', 250)}
+    <div class="of-head">
+      <div class="of-side"><img class="of-logo" src="${logoUrl}" alt="" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='${logoFallback}';}else{this.style.visibility='hidden';}"></div>
+      <div class="of-title">ใบสมัครเข้ารับการฝึกอบรมฝีมือแรงงาน/ทดสอบมาตรฐานฝีมือแรงงาน</div>
+      <div class="of-side of-side-r">${photoBox}</div>
     </div>
 
-    <!-- ===== ความประสงค์ ===== -->
-    <div style="margin-bottom:2px;">
-      ข้าพเจ้ามีความประสงค์เข้ารับ&nbsp; การฝึกอบรมฝีมือแรงงาน&nbsp;
-      ${chk(objectives.includes('ฝึกเตรียมเข้าทำงาน'))} ฝึกเตรียมเข้าทำงาน&nbsp;&nbsp;
-      ${chk(objectives.includes('ฝึกยกระดับฝีมือแรงงาน'))} ฝึกยกระดับฝีมือแรงงาน&nbsp;&nbsp;
-      ${chk(objectives.includes('ฝึกอาชีพเสริม'))} ฝึกอาชีพเสริม&nbsp;&nbsp;
-      ${chk(objectives.includes('ฝึกคนครัวบนเรือ'))} ฝึกคนครัวบนเรือ
+    <div class="of-row of-b">${L('กรมพัฒนาฝีมือแรงงาน กระทรวงแรงงาน หน่วยงาน:')}${V(d.agency || 'ศูนย์ทดสอบมาตรฐานฝีมือแรงงาน ทาซากิ เทรนนิ่ง เซ็นเตอร์', 1, 6)}</div>
+
+    <div class="of-hang">
+      ${L('ข้าพเจ้ามีความประสงค์เข้ารับ', c1)}${L('การฝึกอบรมฝีมือแรงงาน', c2)}
+      <div class="of-opts">
+        ${OPT(objectives.includes('ฝึกเตรียมเข้าทำงาน'), 'ฝึกเตรียมเข้าทำงาน')}${OPT(objectives.includes('ฝึกยกระดับฝีมือแรงงาน'), 'ฝึกยกระดับฝีมือแรงงาน')}${OPT(objectives.includes('ฝึกอาชีพเสริม'), 'ฝึกอาชีพเสริม')}${OPT(objectives.includes('ฝึกคนครัวบนเรือ'), 'ฝึกคนครัวบนเรือ')}
+      </div>
     </div>
-    <div style="padding-left:96px;margin-bottom:2px;">
-      การทดสอบฝีมือแรงงาน&nbsp;
-      ${chk(tests.includes('ทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ'))} ทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ
-    </div>
-    <div style="margin-bottom:2px;">
-      หลักสูตร (ฝึกอบรม) ${dot(d.course, 200)}&nbsp;&nbsp; จำนวนชั่วโมงฝึก ${dot(d.trainingHours, 40)} ชั่วโมง
-    </div>
-    <div style="margin-bottom:2px;">
-      สาขา (ทดสอบ) ${dot(d.branch, 170)}&nbsp;&nbsp; ระดับ (ทดสอบ) ${dot(d.level, 70)}
-    </div>
-    <div style="margin-bottom:2px;">
-      ประเภทผู้สมัคร (ทดสอบ)&nbsp;
-      ${chk(applicantTypes.includes('ผู้รับการฝึกจาก กพร.'))} ผู้รับการฝึกจาก กพร.&nbsp;
-      ${chk(applicantTypes.includes('จากสถานศึกษา'))} จากสถานศึกษา&nbsp;
-      ${chk(applicantTypes.includes('จากภาครัฐ'))} จากภาครัฐ&nbsp;
-      ${chk(applicantTypes.includes('จากเอกชน'))} จากภาคเอกชน&nbsp;
-      ${chk(applicantTypes.includes('บุคคลทั่วไป'))} บุคคลทั่วไป
-    </div>
-    <div style="margin-bottom:3px;">
-      ระหว่างวันที่ ${dot(formatThaiDateDisplay(d.startDate), 180)}
+    <div class="of-hang">
+      ${L('&nbsp;', c1)}${L('การทดสอบฝีมือแรงงาน', c2)}
+      <div class="of-opts">${OPT(tests.includes('ทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ'), 'ทดสอบมาตรฐานฝีมือแรงงานแห่งชาติ')}</div>
     </div>
 
-    <!-- ===== 1. ข้อมูลส่วนบุคคล ===== -->
-    <!-- [แก้ไข] ขยายขนาดตัวอักษรหัวข้อหลัก (1./2./3./4.) ให้ใหญ่และเด่นขึ้น เหมาะกับหนังสือราชการ -->
-    <div style="font-weight:700;font-size:12.5px;margin:4px 0 2px 0;">1. ข้อมูลส่วนบุคคล</div>
-    <div style="margin-bottom:2px;">
-      ชื่อ-สกุล ภาษาไทย (นาย/นาง/นางสาว) ${dot((d.title||'') + ' ' + (d.firstName||'') + ' ' + (d.lastName||''), 210)}&nbsp;&nbsp; เพศ ${dot(d.gender, 45)}
+    ${ROW(L('หลักสูตร (ฝึกอบรม)'), V(d.course, 6, 8), L('จำนวนชั่วโมงฝึก'), V(d.trainingHours, 1, 3), L('ชั่วโมง'))}
+    ${ROW(L('สาขา (ทดสอบ)'), V(d.branch, 4, 8), L('ระดับ (ทดสอบ)'), V(d.level, 2, 5))}
+    <div class="of-hang">
+      ${L('ประเภทผู้สมัคร (ทดสอบ)')}
+      <div class="of-opts">
+        ${OPT(applicantTypes.includes('ผู้รับการฝึกจาก กพร.'), 'ผู้รับการฝึกจาก กพร.')}${OPT(applicantTypes.includes('จากสถานศึกษา'), 'จากสถานศึกษา')}${OPT(applicantTypes.includes('จากภาครัฐ'), 'จากภาครัฐ')}${OPT(applicantTypes.includes('จากเอกชน') || applicantTypes.includes('จากภาคเอกชน'), 'จากภาคเอกชน')}${OPT(applicantTypes.includes('บุคคลทั่วไป'), 'บุคคลทั่วไป')}
+      </div>
     </div>
-    <div style="margin-bottom:2px;">
-      ชื่อ-สกุล ภาษาอังกฤษ ${dot(d.fullNameEn, 300)}
+    ${ROW(L('ระหว่างวันที่'), `<span class="of-v" style="flex:0 1 60%;min-width:8em;">${period ? esc(period) : '&nbsp;'}</span>`)}
+
+    <div class="of-b" style="margin-top:.2em;">1. ข้อมูลส่วนบุคคล</div>
+    ${ROW(L('ชื่อ-สกุล ภาษาไทย (นาย/นาง/นางสาว)'), V(fullName, 6, 8), L('เพศ'), V(d.gender, 1.2, 3))}
+    ${ROW(L('ชื่อ-สกุล ภาษาอังกฤษ'), V(d.fullNameEn, 1, 8))}
+    ${ROW(L('เลขบัตรประชาชน'), V(d.idCard, 2.2, 9.5, true), L('สัญชาติ'), V(d.nationality || 'ไทย', 0.6, 2.5, true), L('วัน/เดือน/ปีเกิด'), V(formatThaiDateDisplay(d.birthDate), 1.2, 6, true), L('โทรศัพท์'), V(formatPhoneNumber(d.phone), 1.2, 6, true), L('อีเมล (ถ้ามี)'), V(d.email, 2, 5))}
+    ${ROW(L('ที่อยู่ตามทะเบียนบ้าน/ที่อยู่ตามบัตรประชาชน เลขที่'), V(cleanAddressNo(d.addressNo), 1, 3), L('หมู่'), V(d.moo, 0.6, 2), L('ถนน'), V(d.street, 2, 4), L('ซอย'), V(d.soi, 2, 4))}
+    ${ROW(L('แขวง/ตำบล'), V(d.subdistrict, 2, 5), L('เขต/อำเภอ'), V(d.district, 2, 5), L('จังหวัด'), V(d.province, 2, 5), L('รหัสไปรษณีย์'), V(d.zipcode, 1, 3.5))}
+    <div class="of-hang">
+      ${L('วุฒิการศึกษาสูงสุด')}
+      <div class="of-opts">
+        ${['ประถมศึกษา', 'มัธยมต้น', 'มัธยมปลาย', 'อนุปริญญา', 'ปวช.', 'ปวส./ปวท.', 'ปริญญาตรีขึ้นไป', 'ไม่จบการศึกษา'].map(e => OPT(d.education === e, e)).join('')}
+      </div>
     </div>
-    <div style="margin-bottom:2px;">
-      เลขบัตรประชาชน ${dot(d.idCard, 115)}&nbsp;&nbsp; สัญชาติ ${dot(d.nationality||'ไทย', 45)}&nbsp;&nbsp; วัน/เดือน/ปีเกิด ${dot(formatThaiDateDisplay(d.birthDate), 75)}&nbsp;&nbsp; โทรศัพท์ ${dot(formatPhoneNumber(d.phone), 80)}
-    </div>
-    <div style="margin-bottom:2px;">
-      อีเมล (ถ้ามี) ${dot(d.email, 260)}
-    </div>
-    <div style="margin-bottom:2px;">
-      ที่อยู่ตามทะเบียนบ้าน/ที่อยู่ตามบัตรประชาชน เลขที่ ${dot(cleanAddressNo(d.addressNo), 45)}&nbsp; หมู่ ${dot(d.moo, 24)}&nbsp; ถนน ${dot(d.street, 80)}&nbsp; ซอย ${dot(d.soi, 70)}
-    </div>
-    <div style="margin-bottom:2px;">
-      แขวง/ตำบล ${dot(d.subdistrict, 90)}&nbsp; เขต/อำเภอ ${dot(d.district, 90)}&nbsp; จังหวัด ${dot(d.province, 90)}&nbsp; รหัสไปรษณีย์ ${dot(d.zipcode, 55)}
-    </div>
-    <div style="margin-bottom:2px;">
-      วุฒิการศึกษาสูงสุด&nbsp;
-      ${chk(d.education==='ประถมศึกษา')} ประถมศึกษา&nbsp;
-      ${chk(d.education==='มัธยมต้น')} มัธยมต้น&nbsp;
-      ${chk(d.education==='มัธยมปลาย')} มัธยมปลาย&nbsp;
-      ${chk(d.education==='อนุปริญญา')} อนุปริญญา&nbsp;
-      ${chk(d.education==='ปวช.')} ปวช.&nbsp;
-      ${chk(d.education==='ปวส./ปวท.')} ปวส./ปวท.&nbsp;
-      ${chk(d.education==='ปริญญาตรีขึ้นไป')} ปริญญาตรีขึ้นไป&nbsp;
-      ${chk(d.education==='ไม่จบการศึกษา')} ไม่จบการศึกษา
-    </div>
-    <div style="margin-bottom:2px;">
-      สาขา ${dot(d.educationMajor, 220)}
-    </div>
-    <div style="margin-bottom:3px;">
-      สภาพร่างกาย&nbsp;${chk(d.bodyCondition==='ปกติ')} ปกติ&nbsp;&nbsp;
-      ${chk(d.bodyCondition==='พิการ')} พิการ (&nbsp;
-      ${chk(disabilities.includes('การเห็น'))} การเห็น&nbsp;
-      ${chk(disabilities.includes('การได้ยินหรือสื่อความหมาย'))} การได้ยินหรือสื่อความหมาย&nbsp;
-      ${chk(disabilities.includes('การเคลื่อนไหวหรือทางร่างกาย'))} การเคลื่อนไหวหรือทางร่างกาย&nbsp;
-      ${chk(disabilities.includes('ทางจิตใจหรือพฤติกรรม'))} ทางจิตใจหรือพฤติกรรม&nbsp;
-      ${chk(disabilities.includes('ทางสติปัญญา'))} ทางสติปัญญา&nbsp;
-      ${chk(disabilities.includes('การเรียนรู้'))} การเรียนรู้&nbsp;
-      ${chk(disabilities.includes('ทางออทิสติก'))} ทางออทิสติก )
+    ${ROW(L('สาขา'), V(d.educationMajor, 1, 10))}
+    <div class="of-hang">
+      ${L('สภาพร่างกาย', 'width:22mm;')}${OPT(d.bodyCondition === 'ปกติ', 'ปกติ')}${OPT(d.bodyCondition === 'พิการ', 'พิการ (')}
+      <div class="of-opts">
+        ${disabilityList.map((x, i) => OPT(d.bodyCondition === 'พิการ' && disabilities.includes(x), x + (i === disabilityList.length - 1 ? ')' : ''))).join('')}
+      </div>
     </div>
 
-    <!-- ===== 2. สถานภาพแรงงาน ===== -->
-    <div style="margin-bottom:2px;">
-      <span style="font-weight:700;font-size:12.5px;">2. สถานภาพแรงงาน</span>&nbsp;&nbsp;
-      ${chk(isEmployed)} ทำงาน (กรอกข้อ 2.1)&nbsp;&nbsp;&nbsp;&nbsp;
-      ${chk(isUnemployed)} ไม่ทำงานหรือว่างงาน (กรอกข้อ 2.2)
+    <div class="of-hang" style="margin-top:.1em;">
+      ${L('<span class="of-b">2. สถานภาพแรงงาน</span>')}
+      <div class="of-opts">${OPT(isEmployed, 'ทำงาน (กรอกข้อ 2.1)')}<span style="display:inline-block;width:1.2em;"></span>${OPT(isUnemployed, 'ไม่ทำงานหรือว่างงาน (กรอกข้อ 2.2)')}</div>
     </div>
 
-    ${isEmployed || (!isEmployed && !isUnemployed) ? `
-    <!-- 2.1 ผู้มีงานทำ -->
-    <div style="padding-left:10px;margin-bottom:2px;">
-      <span style="font-weight:600;">2.1 ผู้มีงานทำ</span>&nbsp;
-      ${chk(isPrivate)} ภาคเอกชน&nbsp;&nbsp;
-      ${chk(isStateEnt)} รัฐวิสาหกิจ&nbsp;&nbsp;
-      ${chk(isGovt)} ภาครัฐ (&nbsp;${chk(isGovt && d.govtType==='ข้าราชการพลเรือน')} ข้าราชการพลเรือน&nbsp;
-      ${chk(isGovt && d.govtType==='ข้าราชการตำรวจ')} ข้าราชการตำรวจ&nbsp;
-      ${chk(isGovt && d.govtType==='ข้าราชการทหาร')} ข้าราชการทหาร&nbsp;
-      ${chk(isGovt && d.govtType==='ข้าราชการครู')} ข้าราชการครู )
+    <div class="of-hang of-ind">
+      ${L('<span class="of-b">2.1 ผู้มีงานทำ</span>')}
+      <div class="of-opts">
+        <div>${OPT(isPrivate, 'ภาคเอกชน')}${OPT(isStateEnt, 'รัฐวิสาหกิจ')}${OPT(isGovt, 'ภาครัฐ')}${RB(isGovt && govtType === 'ข้าราชการพลเรือน', 'ข้าราชการพลเรือน')}${RB(isGovt && govtType === 'ข้าราชการตำรวจ', 'ข้าราชการตำรวจ')}${RB(isGovt && govtType === 'ข้าราชการทหาร', 'ข้าราชการทหาร')}${RB(isGovt && govtType === 'ข้าราชการครู', 'ข้าราชการครู')}</div>
+        <div>${OPT(isBusiness, 'ประกอบธุรกิจส่วนตัว/ประกอบอาชีพอิสระ')}${RB(isBusiness && freelanceType === 'วิสาหกิจชุมชน', 'วิสาหกิจชุมชน')}${RB(isBusiness && freelanceType === 'เกษตรกร', 'เกษตรกร')}${RB(isBusiness && Boolean(freelanceType) && (freelanceType.includes('Freelance') || freelanceType.includes('ผู้รับจ้าง') || freelanceType.includes('ผู้จ้าง')), 'ผู้รับจ้างทั่วไปโดยไม่มีนายจ้าง (Freelance)')}</div>
+      </div>
     </div>
-    <div style="padding-left:10px;margin-bottom:2px;">
-      ${chk(isBusiness)} ประกอบธุรกิจส่วนตัว/ประกอบอาชีพอิสระ (&nbsp;
-      ${chk(isBusiness && d.freelanceType==='วิสาหกิจชุมชน')} วิสาหกิจชุมชน&nbsp;
-      ${chk(isBusiness && d.freelanceType==='เกษตรกร')} เกษตรกร&nbsp;
-      ${chk(isBusiness && (d.freelanceType==='ผู้รับจ้างทั่วไปโดยไม่มีนายจ้าง'||d.freelanceType==='ผู้รับจ้างทั่วไปโดยการจ้าง (Freelance)'||Boolean(d.freelanceType && d.freelanceType.includes('Freelance'))))} ผู้รับจ้างทั่วไปโดยไม่มีนายจ้าง (Freelance) )
+    <div class="of-hang of-ind">
+      ${L('รายได้เฉลี่ยต่อเดือน')}
+      <div class="of-opts">
+        <div>${incRanges.slice(0, 5).map(incOpt).join('')}</div>
+        <div>${incRanges.slice(5).map(incOpt).join('')}</div>
+      </div>
     </div>
-    <div style="padding-left:10px;margin-bottom:2px;">
-      รายได้เฉลี่ยต่อเดือน&nbsp;
-      ${incRanges.map(r => `${chk(matchIncomeRange(inc, r.val, r.label))} ${r.label} บาท`).join('&nbsp;&nbsp;')}
+    <div class="of-ind">${ROW(L('อาชีพ'), V(isEmployed ? d.occupation : '', 3, 6), L('ตำแหน่ง'), V(isEmployed ? d.position : '', 3, 6), L('อายุงาน'), V(isEmployed ? d.workExperienceYears : '', 1, 3), L('ปี'))}</div>
+    <div class="of-ind">${ROW(L('สถานที่ทำงาน ชื่อหน่วยงาน'), V(isEmployed ? d.workplaceName : '', 3, 8), L('จังหวัด'), V(isEmployed ? d.workplaceProvince : '', 2, 5), L('โทรศัพท์'), V(isEmployed ? formatPhoneNumber(d.workplacePhone) : '', 2, 6))}</div>
+    <div class="of-ind">
+      <div>${L('กลุ่มอุตสาหกรรมที่ทำงาน')}${PDF_INDUSTRY_GROUPS.slice(0, 3).map(industryOpt).join('')}</div>
+      <div>${PDF_INDUSTRY_GROUPS.slice(3).map(industryOpt).join('')}</div>
     </div>
-    <div style="padding-left:10px;margin-bottom:2px;">
-      อาชีพ ${dot(d.occupation, 110)}&nbsp;&nbsp; ตำแหน่ง ${dot(d.position, 110)}&nbsp;&nbsp; อายุงาน ${dot(d.workExperienceYears, 35)} ปี
-    </div>
-    <div style="padding-left:10px;margin-bottom:2px;">
-      สถานที่ทำงาน ชื่อหน่วยงาน ${dot(d.workplaceName, 140)}&nbsp;&nbsp; จังหวัด ${dot(d.workplaceProvince, 85)}&nbsp;&nbsp; โทรศัพท์ ${dot(formatPhoneNumber(d.workplacePhone), 80)}
-    </div>
-    <div style="padding-left:10px;margin-bottom:3px;">
-      กลุ่มอุตสาหกรรมที่ทำงาน&nbsp;
-      ${indGroups.map(g => `${chk(matchIndustryGroup(selInd, g))} ${g}`).join('&nbsp;&nbsp;')}
-    </div>
-    ` : ''}
-
-    ${isUnemployed ? `
-    <!-- 2.2 ผู้ที่ไม่มีงานทำ -->
-    <div style="padding-left:10px;margin-bottom:3px;">
-      <span style="font-weight:600;">2.2 ผู้ที่ไม่มีงานทำ</span>&nbsp;
-      ${chk(d.unemployedReason==='อยู่ระหว่างหางาน'||d.unemployedReason==='อยู่ในระหว่างหางาน')} อยู่ระหว่างหางาน&nbsp;
-      ${chk(d.unemployedReason==='นักเรียน/นักศึกษา')} นักเรียน/นักศึกษา&nbsp;
-      ${chk(d.unemployedReason==='ผู้ประกันตนที่ถูกเลิกจ้าง')} ผู้ประกันตนที่ถูกเลิกจ้าง&nbsp;
-      ${chk(d.unemployedReason==='ผู้ต้องขัง')} ผู้ต้องขัง&nbsp;
-      ${chk(d.unemployedReason==='ทหารก่อนปลด')} ทหารก่อนปลด&nbsp;
-      ${chk(!['อยู่ระหว่างหางาน','อยู่ในระหว่างหางาน','นักเรียน/นักศึกษา','ผู้ประกันตนที่ถูกเลิกจ้าง','ผู้ต้องขัง','ทหารก่อนปลด',''].includes(d.unemployedReason||''))} อื่น ๆ ระบุ ${dot(d.unemployedReason, 90)}
-    </div>
-    ` : ''}
-
-    <!-- ===== 3. แหล่งที่ทราบการฝึก ===== -->
-    <div style="margin-bottom:2px;">
-      <span style="font-weight:700;font-size:12.5px;">3. แหล่งที่ทราบการฝึก</span>&nbsp;
-      ${chk(infoSrc==='โทรทัศน์')} โทรทัศน์&nbsp;
-      ${chk(infoSrc==='วิทยุ')} วิทยุ&nbsp;
-      ${chk(infoSrc==='หนังสือพิมพ์')} หนังสือพิมพ์&nbsp;
-      ${chk(infoSrc.includes('ออนไลน์'))} สื่อออนไลน์ของหนังสือพิมพ์ วิทยุ หรือโทรทัศน์&nbsp;
-      ${chk(infoSrc.includes('เจ้าหน้าที่') || infoSrc.includes('สถาบัน') || (!['โทรทัศน์','วิทยุ','หนังสือพิมพ์'].includes(infoSrc) && !infoSrc.includes('ออนไลน์') && Boolean(infoSrc)))} อื่นๆ ${dot(infoSrc.includes('เจ้าหน้าที่') || infoSrc.includes('สถาบัน') ? infoSrc : (!infoSrc.includes('ออนไลน์') && !['โทรทัศน์','วิทยุ','หนังสือพิมพ์'].includes(infoSrc) ? infoSrc : ''), 110)}
+    <div class="of-hang of-ind">
+      ${L('<span class="of-b">2.2 ผู้ที่ไม่มีงานทำ</span>')}
+      <div class="of-opts">
+        ${OPT(unReason === 'อยู่ระหว่างหางาน' || unReason === 'อยู่ในระหว่างหางาน', 'อยู่ระหว่างหางาน')}${OPT(unReason === 'นักเรียน/นักศึกษา', 'นักเรียน/นักศึกษา')}${OPT(unReason === 'ผู้ประกันตนที่ถูกเลิกจ้าง', 'ผู้ประกันตนที่ถูกเลิกจ้าง')}${OPT(unReason === 'ผู้ต้องขัง', 'ผู้ต้องขัง')}${OPT(unReason === 'ทหารก่อนปลด', 'ทหารก่อนปลด')}${OPT(Boolean(unOther), `อื่น ๆ ระบุ ${I(unOther, 9)}`, 'w')}
+      </div>
     </div>
 
-    <!-- ===== 4. การเปิดเผยข้อมูลส่วนบุคคล ===== -->
-    <div style="margin-bottom:2px;">
-      <span style="font-weight:700;font-size:12.5px;">4. การเปิดเผยข้อมูลส่วนบุคคล</span>&nbsp;
-      ข้าพเจ้าได้อ่านและรับทราบนโยบายการคุ้มครองข้อมูลส่วนบุคคลของกรมพัฒนาฝีมือแรงงานแล้วและ
-    </div>
-    <div style="padding-left:10px;margin-bottom:2px;">
-      ${chk(d.pdpaConsent===true||d.pdpaConsent==='ยินยอม'||d.pdpaConsent==='yes')} ยินยอมเปิดเผยข้อมูลส่วนบุคคลเพื่อใช้ประโยชน์ในการเชื่อมโยงและบูรณาการข้อมูลกับหน่วยงานภาครัฐ&nbsp;&nbsp;
-      ${chk(d.pdpaConsent===false||d.pdpaConsent==='ไม่ยินยอม'||d.pdpaConsent==='no')} ไม่ยินยอมเปิดเผยข้อมูลส่วนบุคคล
-    </div>
-    <div style="margin-bottom:2px;">
-      ท่านมีความประสงค์จะให้กรมฯจัดหางาน หางานให้เมื่อผ่านการฝึกอบรมฝีมือแรงงาน/ทดสอบมาตรฐานหรือไม่
-    </div>
-    <div style="padding-left:10px;margin-bottom:3px;">
-      ${chk(d.jobAssist==='not_needed')} ไม่ต้องการ&nbsp;&nbsp;&nbsp;
-      ${chk(d.jobAssist==='domestic')} ต้องการจัดหางานในประเทศ ตำแหน่ง ${dot('',80)} ของอุตสาหกรรม ${dot('',80)}&nbsp;&nbsp;&nbsp;
-      ${chk(d.jobAssist==='overseas')} ต้องการจัดหางานในต่างประเทศ ประเทศที่จะไปทำงาน ${dot('',90)}
+    <div class="of-hang">
+      ${L('<span class="of-b">3. แหล่งที่ทราบการฝึก</span>')}
+      <div class="of-opts">
+        ${OPT(srcTv, 'โทรทัศน์')}${OPT(srcRadio, 'วิทยุ')}${OPT(srcPaper, 'หนังสือพิมพ์')}${OPT(srcOnline, 'สื่อออนไลน์ของหนังสือพิมพ์ วิทยุ หรือ โทรทัศน์ ทั้งสื่อส่วนกลางและสื่อท้องถิ่น', 'w')}${srcOther ? OPT(true, `อื่น ๆ ระบุ ${I(srcOther, 6)}`, 'w') : ''}
+      </div>
     </div>
 
-    <!-- ===== เอกสารแนบ ===== -->
-    <div style="font-size:9.3px;color:#333;margin-bottom:3px;">
-      <span style="font-weight:600;">เอกสารแนบ:</span>&nbsp;
-      ${chk(d.hasPhoto || Boolean(photoSrc))} ภาพถ่ายหน้าตรง&nbsp;&nbsp;
-      ${chk(d.hasIdCardFile || Boolean(d.idCardFileUrl))} บัตรประชาชน&nbsp;&nbsp;
-      ${chk(d.hasEducationFile || Boolean(d.educationFileUrl))} วุฒิการศึกษา&nbsp;&nbsp;
-      ${chk(d.hasTranscriptFile || Boolean(d.transcriptFileUrl))} ทรานสคริปต์&nbsp;&nbsp;
-      ${chk(d.hasWorkCertFile || Boolean(d.workCertFileUrl))} ใบรับรองงาน
-    </div>
+    <div><span class="of-b">4. การเปิดเผยข้อมูลส่วนบุคคล</span> ข้าพเจ้าได้อ่านและรับทราบนโยบายการคุ้มครองข้อมูลส่วนบุคคลของกรมพัฒนาฝีมือแรงงานแล้วและ</div>
+    <div class="of-ind2">${OPT(consentYes, 'ยินยอมเปิดเผยข้อมูลส่วนบุคคลเพื่อใช้ประโยชน์ในการเชื่อมโยงและบูรณาการข้อมูลกับหน่วยงานภาครัฐ', 'w')}</div>
+    <div class="of-ind2">${OPT(consentNo, 'ไม่ยินยอมเปิดเผยข้อมูลส่วนบุคคล')}</div>
+    <div>ท่านมีความประสงค์จะให้กรมการจัดหางาน หางานให้เมื่อผ่านการฝึกอบรมฝีมือแรงงาน/การทดสอบมาตรฐานฝีมือแรงงาน</div>
+    <div class="of-ind2">${OPT(d.jobAssist === 'not_needed', 'ไม่ต้องการ')}${OPT(d.jobAssist === 'domestic', `ต้องการจัดหางานในประเทศ ตำแหน่ง ${I(d.jobAssist === 'domestic' ? d.jobPosition : '', 11)} ของอุตสาหกรรม ${I(d.jobAssist === 'domestic' ? d.jobIndustry : '', 11)}`, 'w')}</div>
+    <div class="of-ind2">${OPT(d.jobAssist === 'overseas', `ต้องการจัดหางานในต่างประเทศ ประเทศที่จะไปทำงาน ${I(d.jobAssist === 'overseas' ? d.jobCountry : '', 14)}`, 'w')}</div>
 
-    <!-- ===== กรอบลงชื่อด้านล่าง (เหมือนแบบฟอร์มต้นฉบับ) ===== -->
-    <table style="width:100%;border-collapse:collapse;border:1px solid #444;margin-top:2px;font-size:9.6px;">
-      <tr>
-        <td style="width:50%;border-right:1px solid #444;padding:6px 8px;vertical-align:top;">
-          <div style="font-weight:700;">(เฉพาะเจ้าหน้าที่) ตรวจสอบข้อมูลข้างต้นจากฐานข้อมูลในระบบ</div>
-          <div>และหลักฐานตัวจริงเรียบร้อยแล้ว</div>
-          <div style="margin-top:14px;">เจ้าหน้าที่รับสมัคร .............................................</div>
-          <div style="margin-top:8px;">วันที่รับสมัคร .......... / .......... / ....................</div>
-        </td>
-        <td style="width:50%;padding:6px 8px;vertical-align:top;">
-          <div style="font-weight:700;">ข้าพเจ้าขอรับรองว่าข้อความข้างต้นเป็นจริงทุกประการ</div>
-          <div style="margin-top:14px;text-align:center;">
-            ลงชื่อ .................................................. ผู้สมัคร
-          </div>
-          <div style="margin-top:4px;text-align:center;">
-            ( ${escapeHtml(((d.title||'')+' '+(d.firstName||'')+' '+(d.lastName||'')).trim()) || '........................................'} )
-          </div>
-          <div style="margin-top:4px;text-align:center;">
-            วันที่ ${dot(d.submittedAtDate || formatThaiDateDisplay(d.submittedAt ? d.submittedAt.slice(0,10) : ''), 100)}
-          </div>
-        </td>
-      </tr>
-    </table>
+    <div class="of-spacer"></div>
+
+    <div class="of-sign">
+      <div>
+        <div>(เฉพาะเจ้าหน้าที่) ตรวจสอบข้อมูลข้างต้นจากฐานข้อมูลในระบบ</div>
+        <div>และหลักฐานตัวจริงเรียบร้อยแล้ว</div>
+        ${ROW(L('เจ้าหน้าที่รับสมัคร'), V('', 1, 6))}
+        ${ROW(L('วันที่รับสมัคร'), V('', 1, 2), L('/'), V('', 1, 2), L('/'), V('', 1.3, 3))}
+      </div>
+      <div>
+        <div>ข้าพเจ้าขอรับรองว่าข้อความข้างต้นเป็นจริงทุกประการ</div>
+        <div>&nbsp;</div>
+        ${ROW(L('ลงชื่อ'), V('', 1, 8), L('ผู้สมัคร'))}
+        ${ROW(L('วันที่'), V(sd[0], 1, 2), L('/'), V(sd[1], 1, 2), L('/'), V(sd[2], 1.3, 3))}
+      </div>
+    </div>
   </div>
   `;
 }
@@ -312,28 +322,24 @@ function mmToPx(mm) {
 function fitOfficialFormToA4(element, opts) {
   if (!element) return;
   const options = opts || {};
-  const minFontPx = options.minFontPx || 7.8;
-  const maxFontPx = options.maxFontPx || 10.4;
-  const step = options.step || 0.15;
-  const lineHeight = options.lineHeight || 1.7;
-  const letterSpacingPx = (options.letterSpacingPx !== undefined) ? options.letterSpacingPx : 0.25;
-  const targetHeightPx = mmToPx(297);
+  const minFontPx = options.minFontPx || OFFICIAL_FORM_FONT_MIN_PX;
+  const maxFontPx = options.maxFontPx || OFFICIAL_FORM_FONT_MAX_PX;
+  const step = options.step || 0.1;
+  const lineHeight = options.lineHeight || OFFICIAL_FORM_LINE_HEIGHT;
+  const targetHeightPx = mmToPx(297) - 1;
 
-  const prevHeight = element.style.height;
-  const prevMaxHeight = element.style.maxHeight;
-  const prevOverflow = element.style.overflow;
   element.style.height = 'auto';
   element.style.maxHeight = 'none';
   element.style.overflow = 'visible';
-  element.style.letterSpacing = letterSpacingPx + 'px';
 
   let fontPx = maxFontPx;
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 120; i++) {
     element.style.fontSize = fontPx + 'px';
     element.style.lineHeight = String(lineHeight);
-    const actualHeightPx = element.getBoundingClientRect().height;
-    if (actualHeightPx <= targetHeightPx || fontPx <= minFontPx) break;
-    fontPx = Math.max(minFontPx, Math.round((fontPx - step) * 10) / 10);
+    const h = element.getBoundingClientRect().height;
+    const fitsWidth = element.scrollWidth <= element.clientWidth + 1;
+    if ((h <= targetHeightPx && fitsWidth) || fontPx <= minFontPx) break;
+    fontPx = Math.max(minFontPx, Math.round((fontPx - step) * 100) / 100);
   }
 
   element.style.height = '297mm';
@@ -347,17 +353,15 @@ function lockA4Layout(element) {
   element.style.position = 'relative';
   element.style.left = '0';
   element.style.top = '0';
-  element.style.display = 'block';
   element.style.width = '210mm';
   element.style.maxWidth = '210mm';
   element.style.height = '297mm';
   element.style.maxHeight = '297mm';
   element.style.margin = '0';
   element.style.boxShadow = 'none';
-  element.style.padding = '9mm 13mm 6mm 13mm';
-  element.style.fontSize = '10.4px';
-  element.style.lineHeight = '1.7';
-  element.style.letterSpacing = '0.25px';
+  element.style.padding = OFFICIAL_FORM_PADDING;
+  element.style.fontSize = OFFICIAL_FORM_FONT_MAX_PX + 'px';
+  element.style.lineHeight = String(OFFICIAL_FORM_LINE_HEIGHT);
   element.style.boxSizing = 'border-box';
   element.style.overflow = 'hidden';
 }
@@ -369,8 +373,9 @@ function buildHtml2CanvasOptions(element, extra) {
   const widthPx = (rect && Math.ceil(rect.width)) || A4_WIDTH_PX;
   const heightPx = (rect && Math.ceil(rect.height)) || A4_HEIGHT_PX;
   return Object.assign({
-    scale: 2.5,
+    scale: 3,
     useCORS: true,
+    logging: false,
     backgroundColor: '#ffffff',
     width: widthPx,
     height: heightPx,
@@ -393,6 +398,11 @@ async function resolveApplicantPhotoForRender(applicantData) {
 
   const webAppUrl = (typeof getGasWebAppUrl === 'function' ? getGasWebAppUrl() : '') || (typeof GAS_WEB_APP_URL !== 'undefined' ? GAS_WEB_APP_URL : '');
 
+  if (!d.photoUrl) {
+    d.photoLoadError = 'ไม่พบลิงก์รูปถ่ายในข้อมูลผู้สมัคร (การอัปโหลดรูปขึ้น Google Drive ไม่สำเร็จตอนสมัคร)';
+    return d;
+  }
+
   if (d.photoUrl &&
       webAppUrl &&
       typeof extractDriveFileId === 'function' &&
@@ -403,6 +413,8 @@ async function resolveApplicantPhotoForRender(applicantData) {
         const dataUri = await fetchFileAsDataUri(webAppUrl, fileId);
         if (dataUri) {
           d.photoDataUrl = dataUri;
+        } else {
+          d.photoLoadError = (typeof lastFileFetchError !== 'undefined' && lastFileFetchError) || 'ดึงรูปจาก Google Drive ไม่สำเร็จ';
         }
       }
     } catch (err) {
@@ -413,7 +425,10 @@ async function resolveApplicantPhotoForRender(applicantData) {
   return d;
 }
 
-function waitForElementReady(element, timeoutMs = 4000) {
+function waitForElementReady(element, timeoutMs = 5000) {
+  const fontLoads = (document.fonts && document.fonts.load)
+    ? ['400', '600', '700'].map(w => document.fonts.load(`${w} 14px Sarabun`, 'กขค').catch(() => {}))
+    : [];
   const fontsReady = (document.fonts && document.fonts.ready)
     ? document.fonts.ready.catch(() => {})
     : Promise.resolve();
@@ -427,7 +442,7 @@ function waitForElementReady(element, timeoutMs = 4000) {
     });
   });
 
-  const readyPromise = Promise.all([fontsReady, ...imagePromises]);
+  const readyPromise = Promise.all([fontsReady, ...fontLoads, ...imagePromises]);
   const timeoutGuard = new Promise(resolve => setTimeout(resolve, timeoutMs));
 
   return Promise.race([readyPromise, timeoutGuard]);
@@ -435,94 +450,58 @@ function waitForElementReady(element, timeoutMs = 4000) {
 
 function printApplicantForm(applicantData) {
   const printWindow = window.open('', '_blank');
-  const formHtml = renderOfficialFormHTML(applicantData);
+  if (!printWindow) {
+    alert('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาต Pop-up สำหรับเว็บไซต์นี้ แล้วลองใหม่อีกครั้ง');
+    return;
+  }
+  const a = applicantData || {};
+  const formHtml = renderOfficialFormHTML(a);
+  const pageTitle = escapeHtml(('ใบสมัคร - ' + (a.firstName || '') + ' ' + (a.lastName || '')).trim());
+  const printScript = [
+    'function mmToPxLocal(mm){return mm*96/25.4;}',
+    'function fitLocal(el){',
+    '  if(!el)return;',
+    '  var target=mmToPxLocal(297)-1,font=' + OFFICIAL_FORM_FONT_MAX_PX + ',minF=' + OFFICIAL_FORM_FONT_MIN_PX + ',step=0.1;',
+    "  el.style.height='auto';el.style.maxHeight='none';el.style.overflow='visible';",
+    '  for(var i=0;i<120;i++){',
+    "    el.style.fontSize=font+'px';el.style.lineHeight='" + OFFICIAL_FORM_LINE_HEIGHT + "';",
+    '    var h=el.getBoundingClientRect().height;',
+    '    if((h<=target&&el.scrollWidth<=el.clientWidth+1)||font<=minF)break;',
+    '    font=Math.max(minF,Math.round((font-step)*100)/100);',
+    '  }',
+    "  el.style.height='297mm';el.style.maxHeight='297mm';el.style.overflow='hidden';",
+    '}',
+    'window.onload=function(){',
+    "  var el=document.getElementById('official-form-printable');",
+    '  var jobs=[];',
+    "  if(document.fonts&&document.fonts.load){['400','600','700'].forEach(function(w){jobs.push(document.fonts.load(w+' 14px Sarabun','กขค').catch(function(){}));});}",
+    '  Array.prototype.forEach.call(document.images,function(img){if(!img.complete){jobs.push(new Promise(function(r){img.onload=r;img.onerror=r;}));}});',
+    '  Promise.race([Promise.all(jobs),new Promise(function(r){setTimeout(r,5000);})]).then(function(){',
+    '    fitLocal(el);',
+    '    setTimeout(function(){window.print();},300);',
+    '  });',
+    '};'
+  ].join('\n');
 
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html lang="th">
-    <head>
-      <meta charset="UTF-8">
-      <title>พิมพ์ใบสมัคร - ${escapeHtml(applicantData.firstName || '')} ${escapeHtml(applicantData.lastName || '')}</title>
-      <link rel="stylesheet" href="styles.css">
-      <script src="https://cdn.tailwindcss.com"></script>
-      <style>
-        @page { size: A4 portrait; margin: 0; }
-        html, body {
-          width: 210mm;
-          height: 297mm;
-          margin: 0;
-          padding: 0;
-          background: #fff;
-          font-family: 'Angsana New', 'AngsanaUPC', 'TH Sarabun PSK', 'Sarabun', sans-serif;
-          overflow: hidden;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        #official-form-printable {
-          width: 210mm !important;
-          max-width: 210mm !important;
-          height: 297mm !important;
-          max-height: 297mm !important;
-          margin: 0 !important;
-          padding: 9mm 13mm 6mm 13mm !important;
-          box-sizing: border-box !important;
-          overflow: hidden !important;
-          page-break-inside: avoid !important;
-          page-break-after: avoid !important;
-        }
-      </style>
-    </head>
-    <body class="p-0 m-0">
-      ${formHtml}
-      <script>
-        // หน้าต่างพิมพ์นี้เป็นเอกสารแยก (window.open) ไม่ได้แชร์ฟังก์ชันกับหน้าเว็บหลัก
-        // จึงคัดลอกตรรกะ "ย่อฟอนต์ให้พอดี A4" มาไว้ในสคริปต์นี้โดยตรง (เทียบเท่า fitOfficialFormToA4 ในไฟล์ pdf-generator.js)
-        function mmToPxLocal(mm) { return mm * 96 / 25.4; }
-        function fitToA4Local(el) {
-          if (!el) return;
-          var targetHeightPx = mmToPxLocal(297);
-          var minFontPx = 7.8, fontPx = 10.4, step = 0.15;
-          el.style.height = 'auto';
-          el.style.maxHeight = 'none';
-          el.style.overflow = 'visible';
-          el.style.letterSpacing = '0.25px';
-          for (var i = 0; i < 40; i++) {
-            el.style.fontSize = fontPx + 'px';
-            el.style.lineHeight = '1.7';
-            var h = el.getBoundingClientRect().height;
-            if (h <= targetHeightPx || fontPx <= minFontPx) break;
-            fontPx = Math.max(minFontPx, Math.round((fontPx - step) * 10) / 10);
-          }
-          el.style.height = '297mm';
-          el.style.maxHeight = '297mm';
-          el.style.overflow = 'hidden';
-        }
-        window.onload = function() {
-          var el = document.getElementById('official-form-printable');
-          if (el) {
-            el.style.width = '210mm';
-            el.style.maxWidth = '210mm';
-            el.style.height = '297mm';
-            el.style.maxHeight = '297mm';
-            el.style.margin = '0';
-            el.style.padding = '9mm 13mm 6mm 13mm';
-            el.style.letterSpacing = '0.25px';
-            el.style.boxShadow = 'none';
-            el.style.boxSizing = 'border-box';
-            el.style.overflow = 'hidden';
-          }
-          var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-          fontsReady.then(function() {
-            fitToA4Local(el);
-            setTimeout(function() {
-              window.print();
-            }, 300);
-          });
-        };
-      </script>
-    </body>
-    </html>
-  `);
+  printWindow.document.write(`<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>${pageTitle}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: A4 portrait; margin: 0; }
+    html, body { width: 210mm; height: 297mm; margin: 0; padding: 0; background: #fff; overflow: hidden;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  </style>
+</head>
+<body>
+  ${formHtml}
+  <script>${printScript}<\/script>
+</body>
+</html>`);
   printWindow.document.close();
 }
 
@@ -536,41 +515,57 @@ async function renderElementToA4Pdf(element) {
   }
 
   const canvas = await html2canvas(element, buildHtml2CanvasOptions(element));
-  const imgData = canvas.toDataURL('image/jpeg', 0.98);
+  const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
   const pdf = new JsPdfCtor({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
   pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
   return pdf;
 }
 
-async function downloadApplicantPDF(applicantData) {
-  const container = document.getElementById('pdf-render-scratch');
-  if (!container) return;
+async function buildApplicantPdf(applicantData) {
+  const scratch = document.getElementById('pdf-render-scratch');
+  if (!scratch) throw new Error('ไม่พบพื้นที่สร้าง PDF ชั่วคราว (#pdf-render-scratch)');
 
   const dataForRender = await resolveApplicantPhotoForRender(applicantData);
   window.scrollTo(0, 0);
 
-  container.innerHTML = renderOfficialFormHTML(dataForRender);
-  const element = document.getElementById('official-form-printable');
-  lockA4Layout(element);
-
-  await waitForElementReady(element);
-  fitOfficialFormToA4(element);
-  await waitForLayoutSettle();
-
+  scratch.innerHTML = renderOfficialFormHTML(dataForRender);
   try {
-    const pdf = await renderElementToA4Pdf(element);
-    pdf.save(`ใบสมัคร_${applicantData.firstName || 'applicant'}_${applicantData.lastName || ''}.pdf`);
+    const element = scratch.querySelector('#official-form-printable');
+    lockA4Layout(element);
+    await waitForElementReady(element);
+    fitOfficialFormToA4(element);
+    await waitForLayoutSettle();
+    return await renderElementToA4Pdf(element);
+  } finally {
+    scratch.innerHTML = '';
+  }
+}
+
+function safeFileNamePart(s) {
+  return String(s || '').replace(/[\\/:*?"<>|]/g, '').trim();
+}
+
+async function downloadApplicantPDF(applicantData) {
+  const a = applicantData || {};
+  if (typeof showLoading === 'function') showLoading(true);
+  try {
+    const pdf = await buildApplicantPdf(a);
+    const name = `ใบสมัคร_${safeFileNamePart(a.firstName) || 'applicant'}_${safeFileNamePart(a.lastName)}.pdf`;
+    pdf.save(name);
   } catch (err) {
     console.error(err);
     alert('เกิดข้อผิดพลาดขณะสร้างไฟล์ PDF: ' + (err && err.message ? err.message : err));
+  } finally {
+    if (typeof showLoading === 'function') showLoading(false);
   }
 }
 
 async function saveApplicantPdfToDrive(applicantData) {
+  const a = applicantData || {};
   const webAppUrl = (typeof getGasWebAppUrl === 'function' ? getGasWebAppUrl() : '') || (typeof GAS_WEB_APP_URL !== 'undefined' ? GAS_WEB_APP_URL : '');
   if (!webAppUrl) {
-    alert('ไม่พบการตั้งค่า Google Apps Script Web App URL กรุณาตั้งค่าในไฟล์ gs-api.js หรือหน้าแอดมินก่อน');
+    alert('ไม่พบการตั้งค่า Google Apps Script Web App URL กรุณาตั้งค่าในไฟล์ gs-api.js ก่อน');
     return;
   }
   if (typeof callGasApi !== 'function') {
@@ -579,33 +574,20 @@ async function saveApplicantPdfToDrive(applicantData) {
   }
 
   if (typeof showLoading === 'function') showLoading(true);
-  const scratch = document.getElementById('pdf-render-scratch');
   try {
-    if (!scratch) throw new Error('ไม่พบพื้นที่สร้าง PDF ชั่วคราว (#pdf-render-scratch)');
-    const dataForRender = await resolveApplicantPhotoForRender(applicantData);
-    window.scrollTo(0, 0);
-
-    scratch.innerHTML = renderOfficialFormHTML(dataForRender);
-    const element = document.getElementById('official-form-printable');
-    lockA4Layout(element);
-    await waitForElementReady(element);
-    fitOfficialFormToA4(element);
-    await waitForLayoutSettle();
-
-    const pdf = await renderElementToA4Pdf(element);
+    const pdf = await buildApplicantPdf(a);
     const pdfDataUri = pdf.output('datauristring');
-
-    const fileName = `ใบสมัคร_${applicantData.firstName || 'applicant'}_${applicantData.lastName || ''}_${applicantData.id || Date.now()}.pdf`;
+    const fileName = `ใบสมัคร_${safeFileNamePart(a.firstName) || 'applicant'}_${safeFileNamePart(a.lastName)}_${a.id || Date.now()}.pdf`;
 
     const result = await callGasApi(webAppUrl, {
       action: 'savePdfToDrive',
       fileName,
       base64Data: pdfDataUri,
-      subfolder: (typeof buildApplicantFolderName === 'function') ? buildApplicantFolderName(applicantData) : (applicantData.id || '')
-    });
+      subfolder: (typeof buildApplicantFolderName === 'function') ? buildApplicantFolderName(a) : (a.id || '')
+    }, 60000);
 
     if (result && result.status === 'success') {
-      alert('บันทึก PDF ลง Google Drive สำเร็จ!\nลิงก์ไฟล์: ' + result.url);
+      alert('บันทึก PDF ลง Google Drive สำเร็จ!' + (result.url ? '\nลิงก์ไฟล์ (เปิดได้เฉพาะผู้ดูแลที่มีสิทธิ์): ' + result.url : ''));
     } else {
       alert('ไม่สามารถบันทึกลง Google Drive ได้: ' + (result && result.message ? result.message : 'ไม่ทราบสาเหตุ'));
     }

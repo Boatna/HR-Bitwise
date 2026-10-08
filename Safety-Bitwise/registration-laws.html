@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ทะเบียนกฎหมายความปลอดภัย · Bitwise Safety</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/registration-laws.css" />
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <div class="header-left">
+      <div class="logo-icon">📜</div>
+      <div class="header-title-group">
+        <div class="header-title"><span>Bitwise</span> ทะเบียนกฎหมายความปลอดภัย</div>
+        <div class="header-subtitle">Registration Laws and Safety · Bitwise Group</div>
+      </div>
+    </div>
+    
+    <div class="header-right">
+      <a href="safety-DB.html" class="btn btn-ghost">← กลับสู่ Dashboard</a>
+      <button class="btn btn-icon btn-ghost" id="refreshBtn" title="รีเฟรช">🔄</button>
+    </div>
+  </div>
+</header>
+
+<!-- Values Bar -->
+<div class="values-bar">
+  <div class="values-inner">
+    <div class="value-item"><span class="value-dot"></span>🎯 VISION: Zero Accident</div>
+    <div class="value-item"><span class="value-dot"></span>🛡️ COMPLIANCE: To Standards</div>
+    <div class="value-item"><span class="value-dot"></span>📈 CONTINUOUS: Improvement</div>
+  </div>
+</div>
+
+<!-- Main Container -->
+<main class="main-container">
+
+  <!-- Section Header -->
+  <div class="section-header">
+    <div class="section-number">📜</div>
+    <div>
+      <h2>ทะเบียนกฎหมายความปลอดภัย (Registration Laws and Safety)</h2>
+      <div class="section-subtitle">ขึ้นทะเบียนกฎหมาย ข้อกำหนด และผลการประเมินความสอดคล้อง — เพิ่ม/แก้ไข/ลบได้โดยตรง</div>
+    </div>
+  </div>
+
+  <!-- KPI Summary -->
+  <section class="kpi-grid" id="regKpiGrid">
+    <div class="skeleton-row">⏳ กำลังโหลดข้อมูล...</div>
+  </section>
+
+  <!-- Summary Charts -->
+  <div class="grid-2">
+    <div class="panel">
+      <h3>⚖️ สรุปผลการประเมิน <span class="badge-count" id="regDonutTotal">—</span></h3>
+      <div id="regDonut"></div>
+    </div>
+    <div class="panel">
+      <h3>🏛️ จำนวนรายการตามกระทรวง</h3>
+      <div id="regMinistryChart" class="bar-chart"></div>
+    </div>
+  </div>
+
+  <!-- Ministry Filter Chips -->
+  <div id="regMinistryFilterContainer"></div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-field">
+      <label for="regFilterMinistry">กระทรวง</label>
+      <select id="regFilterMinistry"><option value="">ทุกกระทรวง</option></select>
+    </div>
+    <div class="filter-field">
+      <label for="regFilterResult">ผลการประเมิน</label>
+      <select id="regFilterResult">
+        <option value="">ทุกผล</option>
+        <option value="Yes">สอดคล้อง (Yes)</option>
+        <option value="No">ไม่สอดคล้อง (No)</option>
+        <option value="NA">NA (ไม่ระบุ)</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="regFilterOwner">ผู้รับผิดชอบ</label>
+      <select id="regFilterOwner"><option value="">ทุกผู้รับผิดชอบ</option></select>
+    </div>
+    <div class="filter-field">
+      <label for="regFilterSeq">ลำดับ</label>
+      <select id="regFilterSeq"><option value="">ทุกลำดับ</option></select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-outline btn-sm" id="regClearFilterBtn">↩️ ล้างตัวกรอง</button>
+    </div>
+  </div>
+
+  <!-- Add/Edit Form -->
+  <div class="form-card">
+    <h3 id="regFormTitle">➕ เพิ่มรายการกฎหมายใหม่</h3>
+    <div class="field-grid" id="regFieldGrid"></div>
+    <div class="form-actions">
+      <button class="btn btn-primary" id="regSaveBtn">💾 บันทึก</button>
+      <button class="btn btn-outline" id="regCancelEditBtn" style="display:none">↩️ ยกเลิก</button>
+    </div>
+  </div>
+
+  <!-- Group Edit Panel -->
+  <div class="form-card" id="regGroupEditPanel" style="display:none;">
+    <h3>✏️ แก้ไขทั้งฉบับ <span class="badge-count" id="regGroupEditLabel">—</span></h3>
+    <p style="margin:-4px 0 14px 0;color:var(--text-muted);font-size:12px;">แก้ไข เพิ่ม หรือลบข้อกำหนดของฉบับนี้ได้ทุกข้อ แล้วกด "บันทึกทั้งฉบับ" ครั้งเดียวแบบรวดเร็ว</p>
+    <div class="field-grid">
+      <div class="field">
+        <label for="gf_กระทรวง">กระทรวง</label>
+        <select id="gf_กระทรวง">
+          <option value="">-- เลือกกระทรวง --</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="gf_ลำดับ">ลำดับ (รหัส) <span style="color:var(--red)">*</span></label>
+        <input id="gf_ลำดับ" type="text">
+      </div>
+      <div class="field wide">
+        <label for="gf_ชื่อกฎหมาย">ชื่อกฎหมาย <span style="color:var(--red)">*</span></label>
+        <input id="gf_ชื่อกฎหมาย" type="text">
+      </div>
+      <div class="field">
+        <label for="gf_วันที่ประกาศ">วันที่ประกาศ</label>
+        <input id="gf_วันที่ประกาศ" type="date">
+      </div>
+      <div class="field">
+        <label for="gf_วันที่มีผลบังคับใช้">วันที่มีผลบังคับใช้</label>
+        <input id="gf_วันที่มีผลบังคับใช้" type="date">
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 10px 0;flex-wrap:wrap;gap:8px;">
+      <h3 style="margin:0;">📋 ข้อกำหนดในฉบับนี้</h3>
+      <button type="button" class="btn btn-outline btn-sm" id="regAddGroupItemBtn">➕ เพิ่มข้อกำหนดใหม่</button>
+    </div>
+    <div id="regGroupItemsContainer"></div>
+
+    <div class="form-actions" style="margin-top:14px;">
+      <button class="btn btn-primary" id="regGroupSaveBtn">💾 บันทึกทั้งฉบับ</button>
+      <button class="btn btn-outline" id="regGroupCancelBtn">↩️ ยกเลิก</button>
+    </div>
+  </div>
+
+  <!-- Search & Table Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+    <div id="regTableCount">
+      <div class="row-count"><span class="count-badge">—</span></div>
+    </div>
+    <div class="search-bar">
+      <input
+        type="text"
+        id="regQuickSearch"
+        class="search-input"
+        placeholder="🔍 ค้นหาด่วน (ชื่อกฎหมาย, กระทรวง, ผู้รับผิดชอบ...)"
+        autocomplete="off"
+      />
+      <button class="btn btn-outline btn-sm" id="regClearSearchBtn">✕ ล้าง</button>
+    </div>
+  </div>
+
+  <!-- Table View (Desktop) -->
+  <div class="reg-table-wrap">
+    <table class="reg-table">
+      <thead>
+        <tr>
+          <th style="width:60px">ลำดับ</th>
+          <th style="width:90px">กระทรวง</th>
+          <th style="min-width:160px">ชื่อกฎหมาย</th>
+          <th style="width:85px">วันที่ประกาศ</th>
+          <th style="width:85px">วันที่มีผลบังคับใช้</th>
+          <th style="min-width:200px">รายละเอียดข้อกำหนดกฎหมาย</th>
+          <th style="width:70px">ความถี่</th>
+          <th style="width:70px">กำหนดการ</th>
+          <th style="width:80px">ผลการประเมิน</th>
+          <th style="width:80px">วันที่ประเมินล่าสุด</th>
+          <th style="width:90px">ผู้รับผิดชอบ</th>
+          <th style="min-width:100px">หมายเหตุ</th>
+          <th style="width:70px">ไฟล์แนบ</th>
+          <th style="width:70px">จัดการ</th>
+        </tr>
+      </thead>
+      <tbody id="regList">
+        <tr><td colspan="14" class="skeleton-row">⏳ กำลังโหลดข้อมูล...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Card View (Mobile) -->
+  <div class="reg-cards" id="regCards">
+    <div class="skeleton-row">⏳ กำลังโหลดข้อมูล...</div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="reg-pagination" id="regPagination"></div>
+
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-quote">"ร่วมกันสร้างวัฒนธรรมความปลอดภัย อย่างยั่งยืน"</div>
+  <div class="footer-tags">
+    <span>📜 LEGAL REGISTRY</span>
+    <span>⚖️ COMPLIANCE TRACKING</span>
+    <span>🎯 ZERO VIOLATION</span>
+  </div>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Scripts -->
+<script src="js/registration-laws.js"></script>
+</body>
+</html>

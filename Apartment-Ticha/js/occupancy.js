@@ -29,7 +29,7 @@ const OccupancyWorkflow = {
       const availableRooms = this.activeRooms.filter(r => r.availableBedsCount > 0 && r.computedStatus !== 'Maintenance');
       availableRooms.forEach(r => {
         const isSelected = preselectedRoomId && r.roomId === preselectedRoomId ? 'selected' : '';
-        roomSelect.innerHTML += `<option value="${App.escHtml(r.roomId)}" ${isSelected}>${App.escHtml(r.roomNumber)} - ${App.escHtml(r.buildingName)} (ว่าง ${r.availableBedsCount} เตียง)</option>`;
+        roomSelect.innerHTML += `<option value="${App.escHtml(r.roomId)}" ${isSelected}>${App.escHtml(r.roomNumber)} - ${App.escHtml(r.buildingName)} (ว่าง ${r.availableBedsCount} ที่)</option>`;
       });
     }
 
@@ -78,6 +78,7 @@ const OccupancyWorkflow = {
       return;
     }
 
+    // กรองพนักงาน (แสดงเฉพาะคนที่ยังไม่มีห้องพัก active อยู่ เพื่อความสะดวก)
     const results = this.activeEmployees.filter(e => {
       const id = String(e.EmployeeID || '').toLowerCase();
       const firstName = String(e.FirstName || '').toLowerCase();
@@ -88,7 +89,7 @@ const OccupancyWorkflow = {
              firstName.includes(keyword) ||
              lastName.includes(keyword) ||
              fullName.includes(keyword);
-    }).slice(0, 20);
+    }).slice(0, 15);
 
     if (results.length === 0) {
       suggestBox.innerHTML = '<div class="list-group-item text-muted small py-2">ไม่พบพนักงานที่ตรงกับคำค้นหา</div>';
@@ -96,18 +97,18 @@ const OccupancyWorkflow = {
       return;
     }
 
-    // หมายเหตุการแก้ไข: เดิมจุดนี้แทรก e.EmployeeID / fullName / Department / Position
-    // ลงใน innerHTML แบบดิบโดยไม่ escape เลย (ไม่เหมือนไฟล์อื่นที่ใช้ App.escHtml/escAttr
-    // ทั่วทั้งระบบ) ถ้าชื่อพนักงานหรือแผนกมีอักขระ HTML พิเศษปนอยู่จะทำให้หน้าเว็บแสดงผล
-    // เพี้ยนหรือเสี่ยงต่อการแทรกโค้ดได้ จึงแก้ให้ escape ให้ครบเหมือนไฟล์อื่น ๆ
     suggestBox.innerHTML = results.map(e => {
       const fullName = e.FullName || `${e.FirstName || ''} ${e.LastName || ''}`;
+      const stayBadge = e.isAccommodated ? `<span class="badge bg-warning text-dark ms-1">พักห้อง ${App.escHtml(e.currentRoomNumber)}</span>` : '<span class="badge bg-success-subtle text-success ms-1">ยังไม่มีห้องพัก</span>';
       return `
         <button type="button" class="list-group-item list-group-item-action py-2"
           onmousedown="event.preventDefault()"
           onclick="OccupancyWorkflow.selectCheckInEmployee('${App.escAttr(e.EmployeeID)}')">
-          <div class="fw-semibold text-dark">${App.escHtml(e.EmployeeID)} - ${App.escHtml(fullName)}</div>
-          <small class="text-muted">${App.escHtml(e.Department || '-')} ${e.Position ? '| ' + App.escHtml(e.Position) : ''}</small>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-semibold text-dark">${App.escHtml(e.EmployeeID)} - ${App.escHtml(fullName)}</span>
+            ${stayBadge}
+          </div>
+          <small class="text-muted">${App.escHtml(e.Department || '-')} | โทร: ${App.escHtml(e.Phone || '-')}</small>
         </button>
       `;
     }).join('');
@@ -117,6 +118,10 @@ const OccupancyWorkflow = {
   selectCheckInEmployee(employeeId) {
     const emp = this.activeEmployees.find(e => String(e.EmployeeID) === String(employeeId));
     if (!emp) return;
+
+    if (emp.isAccommodated) {
+      App.showToast(`พนักงานคนนี้พักอยู่ที่ห้อง ${emp.currentRoomNumber} อยู่แล้ว (หากต้องการเปลี่ยนห้องให้ใช้เมนู "ย้ายห้อง")`, 'warning');
+    }
 
     const searchInput = document.getElementById('checkin-employee-search');
     const hiddenInput = document.getElementById('checkin-employee');
@@ -137,38 +142,41 @@ const OccupancyWorkflow = {
     const bedSelect = document.getElementById('checkin-bed');
     if (!bedSelect) return;
 
-    bedSelect.innerHTML = '<option value="">-- เลือกเตียงว่าง --</option>';
+    bedSelect.innerHTML = '<option value="">-- เลือกที่พัก/เตียง --</option>';
     const room = this.activeRooms.find(r => r.roomId === roomId);
     if (!room || !room.beds) return;
 
     const vacantBeds = room.beds.filter(b => !b.isOccupied && b.status === 'Active');
     if (vacantBeds.length === 0) {
-      bedSelect.innerHTML = '<option value="">ไม่มีเตียงว่างในห้องนี้</option>';
+      bedSelect.innerHTML = '<option value="">ไม่มีที่ว่างในห้องนี้</option>';
       return;
     }
 
     vacantBeds.forEach(b => {
-      bedSelect.innerHTML += `<option value="${App.escHtml(b.bedId)}">เตียง ${App.escHtml(b.bedNumber)} (${App.escHtml(b.bedType)})</option>`;
+      bedSelect.innerHTML += `<option value="${App.escHtml(b.bedNumber)}">ที่พัก / เตียง ${App.escHtml(b.bedNumber)} (ว่าง)</option>`;
     });
+
+    if (vacantBeds.length > 0) {
+      bedSelect.value = vacantBeds[0].bedNumber;
+    }
   },
 
   async submitCheckIn() {
     const employeeId = document.getElementById('checkin-employee')?.value;
     const roomId = document.getElementById('checkin-room')?.value;
-    const bedId = document.getElementById('checkin-bed')?.value;
+    const bedNumber = document.getElementById('checkin-bed')?.value;
     const checkInDate = document.getElementById('checkin-date')?.value;
     const expectedCheckOutDate = document.getElementById('checkin-expected-date')?.value;
-    const reason = document.getElementById('checkin-reason')?.value;
     const remark = document.getElementById('checkin-remark')?.value;
 
     if (!employeeId) {
-      App.showError('กรุณาเลือกพนักงานผู้เข้าพัก', 'พิมพ์รหัสพนักงานหรือชื่อ-นามสกุลในช่องค้นหา แล้วคลิกเลือกชื่อจากรายการที่แสดงขึ้นมาให้เรียบร้อยก่อนบันทึก');
+      App.showError('กรุณาเลือกพนักงานผู้เข้าพัก', 'พิมพ์รหัสพนักงานหรือชื่อ-นามสกุลในช่องค้นหา แล้วคลิกเลือกชื่อพนักงาน');
       document.getElementById('checkin-employee-search')?.focus();
       return;
     }
 
-    if (!roomId || !bedId || !checkInDate) {
-      App.showError('กรุณากรอกข้อมูลสำคัญให้ครบถ้วน (ห้อง, เตียง, วันที่)');
+    if (!roomId || !checkInDate) {
+      App.showError('กรุณาเลือกห้องพักและวันที่เข้าพัก');
       return;
     }
 
@@ -177,10 +185,10 @@ const OccupancyWorkflow = {
       await API.checkIn({
         employeeId,
         roomId,
-        bedId,
+        bedNumber: Number(bedNumber) || 1,
+        bedId: 'BED-' + roomId + '-' + (bedNumber || 1),
         checkInDate,
         expectedCheckOutDate,
-        reason,
         remark
       });
 
@@ -197,10 +205,10 @@ const OccupancyWorkflow = {
   openCheckOutModal(occupancyId, occupantName, roomNumber, bedNumber) {
     document.getElementById('checkout-occupancy-id').value = occupancyId;
     document.getElementById('checkout-occupant-name').textContent = occupantName;
-    document.getElementById('checkout-room-info').textContent = `ห้อง ${roomNumber} (เตียง ${bedNumber})`;
+    document.getElementById('checkout-room-info').textContent = `ห้อง ${roomNumber} (ที่พัก ${bedNumber || 1})`;
     document.getElementById('checkout-date').value = new Date().toISOString().split('T')[0];
-    document.getElementById('checkout-damage').value = '0';
-    document.getElementById('checkout-reason').value = '';
+    document.getElementById('checkout-reason').value = 'หมดสัญญา / ย้ายออก';
+    if (document.getElementById('checkout-remark')) document.getElementById('checkout-remark').value = '';
 
     const modal = new bootstrap.Modal(document.getElementById('checkOutModal'));
     modal.show();
@@ -210,18 +218,14 @@ const OccupancyWorkflow = {
     const occupancyId = document.getElementById('checkout-occupancy-id')?.value;
     const checkOutDate = document.getElementById('checkout-date')?.value;
     const reason = document.getElementById('checkout-reason')?.value;
-    const keyReturned = document.getElementById('checkout-key-returned')?.checked;
-    const propertyReturned = document.getElementById('checkout-prop-returned')?.checked;
-    const roomCondition = document.getElementById('checkout-condition')?.value;
-    const damageAmount = document.getElementById('checkout-damage')?.value;
     const remark = document.getElementById('checkout-remark')?.value;
 
     if (!occupancyId || !checkOutDate) {
-      App.showError('กรุณาระบุข้อมูลวันที่เช็คเอาท์');
+      App.showError('กรุณาระบุวันที่เช็คเอาท์');
       return;
     }
 
-    const confirmed = await App.confirm('ยืนยันการเช็คเอาท์', 'เมื่อเช็คเอาท์แล้ว เตียงพักจะกลับมาอยู่ในสถานะ "ว่าง" พร้อมใช้งาน');
+    const confirmed = await App.confirm('ยืนยันการเช็คเอาท์', 'เมื่อเช็คเอาท์แล้ว ห้องพักจะคืนสถานะ "ว่าง" ให้พนักงานคนอื่นเข้าพักได้');
     if (!confirmed) return;
 
     try {
@@ -230,16 +234,12 @@ const OccupancyWorkflow = {
         occupancyId,
         checkOutDate,
         reason,
-        keyReturned,
-        propertyReturned,
-        roomCondition,
-        damageAmount,
-        remark
+        remark: remark || reason
       });
 
       App.closeLoading();
       bootstrap.Modal.getInstance(document.getElementById('checkOutModal'))?.hide();
-      await App.showSuccess('Check-out สำเร็จ!', 'คืนสถานะเตียงว่างเรียบร้อยแล้ว');
+      await App.showSuccess('Check-out สำเร็จ!', 'คืนสถานะห้องว่างเรียบร้อยแล้ว');
       if (typeof Admin !== 'undefined') Admin.loadOccupancy();
     } catch (error) {
       App.closeLoading();
@@ -247,14 +247,14 @@ const OccupancyWorkflow = {
     }
   },
 
-  async openTransferModal(occupancyId, occupantName, currentRoomId, currentBedId, currentRoomNumber) {
+  async openTransferModal(occupancyId, occupantName, currentRoomId, currentRoomNumber, currentBedNumber) {
     App.showLoading('กำลังเตรียมข้อมูลห้องว่าง...');
     await this.initModalData();
     App.closeLoading();
 
     document.getElementById('transfer-occupancy-id').value = occupancyId;
     document.getElementById('transfer-occupant-name').textContent = occupantName;
-    document.getElementById('transfer-current-room').textContent = `ห้อง ${currentRoomNumber}`;
+    document.getElementById('transfer-current-room').textContent = `ห้อง ${currentRoomNumber} (ที่พัก ${currentBedNumber || 1})`;
     document.getElementById('transfer-date').value = new Date().toISOString().split('T')[0];
 
     const newRoomSelect = document.getElementById('transfer-new-room');
@@ -262,7 +262,7 @@ const OccupancyWorkflow = {
       newRoomSelect.innerHTML = '<option value="">-- เลือกห้องพักใหม่ --</option>';
       const availableRooms = this.activeRooms.filter(r => r.availableBedsCount > 0 && r.roomId !== currentRoomId && r.computedStatus !== 'Maintenance');
       availableRooms.forEach(r => {
-        newRoomSelect.innerHTML += `<option value="${App.escHtml(r.roomId)}">${App.escHtml(r.roomNumber)} - ${App.escHtml(r.buildingName)} (ว่าง ${r.availableBedsCount} เตียง)</option>`;
+        newRoomSelect.innerHTML += `<option value="${App.escHtml(r.roomId)}">${App.escHtml(r.roomNumber)} - ${App.escHtml(r.buildingName)} (ว่าง ${r.availableBedsCount} ที่)</option>`;
       });
     }
 
@@ -276,30 +276,34 @@ const OccupancyWorkflow = {
     const bedSelect = document.getElementById('transfer-new-bed');
     if (!bedSelect) return;
 
-    bedSelect.innerHTML = '<option value="">-- เลือกเตียงใหม่ --</option>';
+    bedSelect.innerHTML = '<option value="">-- เลือกที่พัก/เตียงใหม่ --</option>';
     const room = this.activeRooms.find(r => r.roomId === newRoomId);
     if (!room || !room.beds) return;
 
     const vacantBeds = room.beds.filter(b => !b.isOccupied && b.status === 'Active');
     vacantBeds.forEach(b => {
-      bedSelect.innerHTML += `<option value="${App.escHtml(b.bedId)}">เตียง ${App.escHtml(b.bedNumber)} (${App.escHtml(b.bedType)})</option>`;
+      bedSelect.innerHTML += `<option value="${App.escHtml(b.bedNumber)}">ที่พัก / เตียง ${App.escHtml(b.bedNumber)} (ว่าง)</option>`;
     });
+
+    if (vacantBeds.length > 0) {
+      bedSelect.value = vacantBeds[0].bedNumber;
+    }
   },
 
   async submitTransfer() {
     const occupancyId = document.getElementById('transfer-occupancy-id')?.value;
     const newRoomId = document.getElementById('transfer-new-room')?.value;
-    const newBedId = document.getElementById('transfer-new-bed')?.value;
+    const newBedNumber = document.getElementById('transfer-new-bed')?.value;
     const transferDate = document.getElementById('transfer-date')?.value;
     const reason = document.getElementById('transfer-reason')?.value;
     const remark = document.getElementById('transfer-remark')?.value;
 
-    if (!occupancyId || !newRoomId || !newBedId || !transferDate) {
-      App.showError('กรุณาเลือกห้องใหม่ เตียงใหม่ และวันที่ย้ายห้อง');
+    if (!occupancyId || !newRoomId || !transferDate) {
+      App.showError('กรุณาเลือกห้องใหม่และวันที่ย้ายห้อง');
       return;
     }
 
-    const confirmed = await App.confirm('ยืนยันการย้ายห้อง', 'ระบบจะทำการปิดประวัติเดิมและสร้างรายการเข้าพักใหม่ พร้อมบันทึก Audit Log');
+    const confirmed = await App.confirm('ยืนยันการย้ายห้อง', 'ระบบจะทำการย้ายพนักงานไปยังห้องพักใหม่และอัปเดตสถานะห้องอัตโนมัติ');
     if (!confirmed) return;
 
     try {
@@ -307,7 +311,8 @@ const OccupancyWorkflow = {
       await API.transferRoom({
         occupancyId,
         newRoomId,
-        newBedId,
+        newBedNumber: Number(newBedNumber) || 1,
+        newBedId: 'BED-' + newRoomId + '-' + (newBedNumber || 1),
         transferDate,
         reason,
         remark
@@ -315,7 +320,7 @@ const OccupancyWorkflow = {
 
       App.closeLoading();
       bootstrap.Modal.getInstance(document.getElementById('transferModal'))?.hide();
-      await App.showSuccess('ย้ายห้องสำเร็จ!', 'ย้ายข้อมูลพนักงานเข้าสู่ห้องและเตียงใหม่เรียบร้อยแล้ว');
+      await App.showSuccess('ย้ายห้องสำเร็จ!', 'ย้ายข้อมูลพนักงานเข้าสู่ห้องใหม่เรียบร้อยแล้ว');
       if (typeof Admin !== 'undefined') Admin.loadOccupancy();
     } catch (error) {
       App.closeLoading();
@@ -337,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         const suggestBox = document.getElementById('checkin-employee-suggestions');
         if (suggestBox) suggestBox.style.display = 'none';
-      }, 150);
+      }, 200);
     });
   }
 });

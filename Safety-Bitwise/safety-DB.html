@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Safety · Bitwise Group</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/safety-DB.css" />
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <div class="header-left">
+      <div class="logo-icon">🛡️</div>
+      <div class="header-title-group">
+        <div class="header-title"><span>Bitwise</span> DASHBOARD SAFETY</div>
+        <div class="header-subtitle">ความปลอดภัย อาชีวอนามัย และสภาพแวดล้อมในการทำงาน</div>
+      </div>
+    </div>
+    
+    <div class="header-right">
+      <span id="dataDate" class="data-date-badge">📅 ข้อมูล ณ วันที่ —</span>
+      <a href="../index.html" class="btn btn-ghost" id="homeLink">🏠 หน้าหลัก</a>
+      <a href="registration-laws.html" class="btn btn-ghost">📜 ทะเบียนกฎหมาย</a>
+      <button class="btn btn-secondary" id="toEditBtn">✏️ แก้ไขข้อมูล</button>
+      <button class="btn btn-secondary" id="toDashboardBtn" style="display:none">← กลับ</button>
+      <button class="btn btn-icon btn-ghost" id="refreshBtn" title="รีเฟรช">🔄</button>
+    </div>
+  </div>
+</header>
+
+<div class="values-bar">
+  <div class="values-inner">
+    <div class="value-item"><span class="value-dot"></span>🎯 VISION: Zero Accident</div>
+    <div class="value-item"><span class="value-dot"></span>❤️ CARE: For People</div>
+    <div class="value-item"><span class="value-dot"></span>🛡️ COMPLIANCE: To Standards</div>
+    <div class="value-item"><span class="value-dot"></span>📈 CONTINUOUS: Improvement</div>
+  </div>
+</div>
+
+<main class="main-container">
+
+  <div class="view active" id="dashboardView">
+
+    <div class="filter-bar">
+      <div class="filter-field">
+        <label for="filterYear">ปี</label>
+        <select id="filterYear"><option value="">ทุกปี</option></select>
+      </div>
+      <div class="filter-field">
+        <label for="filterMonth">เดือน</label>
+        <select id="filterMonth"><option value="">ทุกเดือน</option></select>
+      </div>
+      <div class="filter-field">
+        <label for="filterPlant">Plant</label>
+        <select id="filterPlant"><option value="">ทุก Plant</option></select>
+      </div>
+      <div class="filter-actions">
+        <button class="btn btn-outline btn-sm" id="clearFilterBtn">↩️ ล้างตัวกรอง</button>
+      </div>
+    </div>
+    <div class="filter-summary" id="filterSummary"></div>
+
+    <!-- KPI Section -->
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <div>
+        <h2>KPI ด้านอุบัติเหตุ (SAFETY PERFORMANCE)</h2>
+        <div class="section-subtitle">ติดตามผลการดำเนินงานด้านความปลอดภัยประจำเดือน</div>
+      </div>
+    </div>
+
+    <section class="kpi-grid" id="kpiGrid">
+      <div class="skeleton-row">⏳ กำลังโหลดข้อมูล...</div>
+    </section>
+
+    <!-- Accident Insights Section -->
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <div>
+        <h2>DASHBOARD รายงานอุบัติเหตุ (ACCIDENT INSIGHTS)</h2>
+        <div class="section-subtitle">จุดบาดเจ็บและลักษณะการเกิดอุบัติเหตุ จากรายงานอุบัติเหตุ (AccidentReport)</div>
+      </div>
+    </div>
+
+    <div class="grid-2-wide">
+      <div class="panel">
+        <h3>🧍 จุดบาดเจ็บบนร่างกาย (Body Injury Map) <span class="badge-count" id="bodyMapTotal">—</span></h3>
+        <div id="bodyMapChart"></div>
+      </div>
+      <div class="panel">
+        <h3>🔄 ลักษณะการเกิดอุบัติเหตุ <span class="badge-count" id="causeDonutTotal">—</span></h3>
+        <div id="causeDonutChart"></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:18px;">
+      <h3>🔍 สาเหตุที่ทำให้เกิดอุบัติเหตุ (กราฟแท่งแนวนอน)</h3>
+      <div id="causeBarChart" class="bar-chart"></div>
+    </div>
+
+    <!-- Trends & Additional Stats Section -->
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <div>
+        <h2>แนวโน้มและสถิติเสริม (TRENDS &amp; ADDITIONAL STATS)</h2>
+        <div class="section-subtitle">แนวโน้ม IFR/ISR การตรวจความปลอดภัย สถานะ CAR และรายงานส่งราชการ</div>
+      </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="grid-2">
+      <div class="panel">
+        <h3>📈 แนวโน้มอุบัติเหตุ หยุดงาน / ไม่หยุดงาน <span class="badge-count" id="trendScopeLabel">—</span></h3>
+        <div class="trend-legend">
+          <div class="trend-legend-item"><span class="sw" style="background:#EF4444;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>หยุดงาน (LTI)</div>
+          <div class="trend-legend-item"><span class="sw" style="background:#F59E0B;width:12px;height:12px;border-radius:3px;display:inline-block;"></span>ไม่หยุดงาน</div>
+        </div>
+        <div class="trend-wrap" id="trendChart"></div>
+      </div>
+      
+      <div class="panel">
+        <h3>🎯 อัตราความถี่ / ความรุนแรง (IFR / ISR)</h3>
+        <div class="section-subtitle" id="gaugeSourceNote" style="text-align:center;margin-bottom:8px;"></div>
+        <div class="gauge-row" id="gaugeRow"></div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="grid-2">
+      <div class="panel">
+        <h3>📋 สถิติการตรวจความปลอดภัย <span class="badge-count">ประจำเดือน</span></h3>
+        <div id="inspectionChart" class="bar-chart"></div>
+        <h3 style="margin-top:16px;">📊 แนวโน้มรายเดือน <span class="badge-count" id="inspectionTrendLabel">—</span></h3>
+        <div id="inspectionMiniTrend" class="minibar-chart"></div>
+      </div>
+      
+      <div class="panel">
+        <h3>📌 สถานะ CAR <span class="badge-count" id="carScopeLabel">—</span></h3>
+        <div id="carChart" class="bar-chart"></div>
+        <h3 style="margin-top:16px;">📊 แนวโน้มรายเดือน <span class="badge-count" id="carTrendLabel">—</span></h3>
+        <div id="carMiniTrend" class="minibar-chart"></div>
+      </div>
+    </div>
+
+    <!-- Charts Row 3 -->
+    <div class="panel" style="margin-bottom:18px;">
+      <h3>📮 รายงานส่งราชการ</h3>
+      <div id="legalDonut"></div>
+      <div style="overflow-x:auto;margin-top:12px;">
+        <table class="data-table" id="legalTable">
+          <thead>
+            <tr><th>ชื่อรายงาน</th><th>หน่วยงานราชการ</th><th>กำหนดส่ง</th><th>วันที่ส่ง</th><th>สถานะ</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Historical & Demographic Accident Analytics Section -->
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <div>
+        <h2>สถิติเชิงลึกอุบัติเหตุ (HISTORICAL &amp; DEMOGRAPHIC ANALYTICS)</h2>
+        <div class="section-subtitle">ภาพรวมย้อนหลังหลายปี และสถิติจำแนกตามปัจจัยต่างๆ ของอุบัติเหตุ</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:18px;">
+      <h3>📈 สถิติการเกิดอุบัติเหตุย้อนหลัง <span class="badge-count" id="yearlyAccidentTotal">—</span></h3>
+      <div id="yearlyAccidentChart" class="bar-chart"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>🗓️ จำนวนวันทำงานที่สูญเสียรายเดือน <span class="badge-count" id="demoYearLabel1">ปี —</span></h3>
+        <div id="lostDaysChart" class="bar-chart"></div>
+      </div>
+      <div class="panel">
+        <h3>🏢 อุบัติเหตุจำแนกตามหน่วยงาน <span class="badge-count" id="demoYearLabel2">ปี —</span></h3>
+        <div id="deptAccidentChart" class="bar-chart"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>🎂 อุบัติเหตุจำแนกตามช่วงอายุ <span class="badge-count" id="demoYearLabel3">ปี —</span></h3>
+        <div id="ageRangeChart" class="bar-chart"></div>
+      </div>
+      <div class="panel">
+        <h3>🧑‍💼 อุบัติเหตุจำแนกตามช่วงอายุงาน <span class="badge-count" id="demoYearLabel4">ปี —</span></h3>
+        <div id="tenureRangeChart" class="bar-chart"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>🕐 อุบัติเหตุจำแนกตามช่วงเวลาที่เกิดเหตุ <span class="badge-count" id="demoYearLabel5">ปี —</span></h3>
+        <div id="timeRangeChart" class="bar-chart"></div>
+      </div>
+      <div class="panel">
+        <h3>🌏 อุบัติเหตุจำแนกตามสัญชาติ <span class="badge-count" id="demoYearLabel6">ปี —</span></h3>
+        <div id="nationalityChart" class="bar-chart"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Edit View -->
+  <div class="view" id="editView">
+    <div class="section-header">
+      <div class="section-number">✏️</div>
+      <div>
+        <h2>แก้ไขข้อมูล</h2>
+        <div class="section-subtitle">เพิ่ม / แก้ไข / ลบข้อมูลในแต่ละหมวด (กรอกข้อมูลแยกตามเดือนและ Plant)</div>
+      </div>
+    </div>
+
+    <div class="sheet-tabs" id="sheetTabs"></div>
+
+    <div class="form-card">
+      <h3 id="formTitle">➕ เพิ่มข้อมูลใหม่</h3>
+      <div class="field-grid" id="fieldGrid"></div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="saveBtn">💾 บันทึก</button>
+        <button class="btn btn-outline" id="cancelEditBtn" style="display:none">↩️ ยกเลิก</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>📋 ข้อมูลที่มีอยู่</h3>
+      <div class="filter-bar" style="margin-bottom:14px;box-shadow:none;border:1px solid var(--border-light);">
+        <div class="filter-field">
+          <label for="editFilterYear">ปี</label>
+          <select id="editFilterYear"><option value="">ทุกปี</option></select>
+        </div>
+        <div class="filter-field">
+          <label for="editFilterMonth">เดือน</label>
+          <select id="editFilterMonth"><option value="">ทุกเดือน</option></select>
+        </div>
+        <div class="filter-field">
+          <label for="editFilterPlant">Plant</label>
+          <select id="editFilterPlant"><option value="">ทุก Plant</option></select>
+        </div>
+      </div>
+      <div class="data-table-wrap">
+        <table class="data-table" id="dataTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-quote">"ร่วมกันสร้างวัฒนธรรมความปลอดภัย อย่างยั่งยืน"</div>
+  <div class="footer-tags">
+    <span>🦺 SAFETY FIRST</span>
+    <span>❤️ CARE PEOPLE</span>
+    <span>🎯 ZERO ACCIDENT</span>
+  </div>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Scripts -->
+<script src="js/safety-DB.js"></script>
+</body>
+</html>

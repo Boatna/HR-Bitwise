@@ -56,19 +56,20 @@ function withAuthToken(url) {
   return url + sep + 'token=' + encodeURIComponent(adminSessionToken);
 }
 
-const DEFAULT_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwKO9EpYh8n-siSSvCJcJ1IRz7ucCkdrakl91YlzvHL4sx9XExVeITpQ430-bBa9Z36/exec';
+const GAS_URL_PATTERN = /^https:\/\/script\.google(usercontent)?\.com\//;
+const DEFAULT_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyG73tEXB4tLV1C0SKISz3M6d-VlWcENVaPNHxIhoOO7IvzqBAe7aJE75TwPtNH3BU7/exec';
 
 function getGasWebAppUrl() {
   try {
     const custom = localStorage.getItem('bw_gas_web_app_url');
-    if (custom && custom.trim()) return custom.trim();
+    if (custom && GAS_URL_PATTERN.test(custom.trim())) return custom.trim();
   } catch (e) { }
   return DEFAULT_GAS_WEB_APP_URL;
 }
 
 function setGasWebAppUrl(url) {
   try {
-    if (url && url.trim()) {
+    if (url && GAS_URL_PATTERN.test(url.trim())) {
       localStorage.setItem('bw_gas_web_app_url', url.trim());
       GAS_WEB_APP_URL = url.trim();
     } else {
@@ -183,18 +184,23 @@ function extractDriveFileId(url) {
   return '';
 }
 
-async function fetchFileAsDataUri(sheetUrl, fileId, timeoutMs = 45000) {
-  if (!fileId || !sheetUrl) return '';
-  try {
-    const url = withAuthToken(sheetUrl + '?action=getFileBase64&fileId=' + encodeURIComponent(fileId));
-    const result = await fetchGasApi(url, timeoutMs);
-    if (result && result.status === 'success' && result.dataUri) {
-      return result.dataUri;
+let lastFileFetchError = '';
+async function fetchFileAsDataUri(sheetUrl, fileId, timeoutMs = 90000) {
+  lastFileFetchError = '';
+  if (!fileId || !sheetUrl) { lastFileFetchError = 'ไม่พบรหัสไฟล์หรือ Web App URL'; return ''; }
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const url = withAuthToken(sheetUrl + '?action=getFileBase64&fileId=' + encodeURIComponent(fileId));
+      const result = await fetchGasApi(url, timeoutMs);
+      if (result && result.status === 'success' && result.dataUri) {
+        return result.dataUri;
+      }
+      lastFileFetchError = (result && result.message) || 'ไม่ทราบสาเหตุ';
+      if (result && result.status === 'unauthorized') break;
+    } catch (err) {
+      lastFileFetchError = (err && err.message) || String(err);
     }
-    console.warn('ไม่สามารถดึงไฟล์ภาพจาก Google Drive เป็น Base64 ได้:', result && result.message);
-    return '';
-  } catch (err) {
-    console.warn('เกิดข้อผิดพลาดขณะดึงไฟล์ภาพจาก Google Drive:', err);
-    return '';
   }
+  console.warn('ไม่สามารถดึงไฟล์ภาพจาก Google Drive เป็น Base64 ได้:', lastFileFetchError);
+  return '';
 }

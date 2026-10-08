@@ -49,13 +49,14 @@ const App = {
             <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
               <span class="badge bg-white bg-opacity-25 text-white px-3 py-2 rounded-pill d-flex align-items-center gap-2">
                 <i class="bi bi-shield-check text-warning fs-6"></i>
-                <span class="fw-semibold">Admin (ผู้ดูแลระบบ)</span>
+                <span class="fw-semibold" id="current-user-display">Admin (ผู้ดูแลระบบ)</span>
               </span>
             </div>
           </div>
         </div>
       </nav>
     `;
+    this.updateUserBadge();
   },
 
   updateUserBadge() {

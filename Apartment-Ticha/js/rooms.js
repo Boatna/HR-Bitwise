@@ -64,7 +64,7 @@ function renderSummaryBar() {
   if (summaryEl) {
     summaryEl.innerHTML = `
       <div class="d-flex flex-wrap gap-2 align-items-center">
-        <span class="badge bg-secondary px-3 py-2 rounded-pill fs-7">ทั้งหมด: <strong>${total}</strong> ห้อง</span>
+        <span class="badge bg-secondary px-3 py-2 rounded-pill fs-7">ห้องทั้งหมด: <strong>${total}</strong> ห้อง</span>
         <span class="badge bg-success px-3 py-2 rounded-pill fs-7">🟢 ว่าง: <strong>${avail}</strong></span>
         <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fs-7">🟡 ว่างบางส่วน: <strong>${partial}</strong></span>
         <span class="badge bg-danger px-3 py-2 rounded-pill fs-7">🔴 เต็ม: <strong>${full}</strong></span>
@@ -92,7 +92,8 @@ function applyFilterAndRender() {
       const matchId = (room.roomId || '').toLowerCase().includes(searchVal);
       const matchOccupant = room.occupants?.some(o =>
         (o.fullName || '').toLowerCase().includes(searchVal) ||
-        (o.employeeId || '').toLowerCase().includes(searchVal)
+        (o.employeeId || '').toLowerCase().includes(searchVal) ||
+        (o.department || '').toLowerCase().includes(searchVal)
       );
       if (!matchRoom && !matchId && !matchOccupant) return false;
     }
@@ -118,21 +119,22 @@ function renderRooms(rooms) {
   }
 
   const groupedByBuilding = {};
+
   rooms.forEach(r => {
     const bId = r.buildingId || 'OTHER';
     if (!groupedByBuilding[bId]) {
       groupedByBuilding[bId] = {
-        name: r.buildingName || 'อาคารอื่น',
+        name: r.buildingName || 'อาคารหอพัก',
         code: r.buildingCode || '',
         floors: {}
       };
     }
 
-    const fId = r.floorId || 'F_DEF';
+    const fId = r.floorId || '1';
     if (!groupedByBuilding[bId].floors[fId]) {
-      const flr = allFloors.find(f => f.FloorID === fId);
+      const flr = allFloors.find(f => String(f.FloorID) === String(fId));
       groupedByBuilding[bId].floors[fId] = {
-        name: flr ? flr.FloorName : `ชั้น ${r.floorId || '1'}`,
+        name: flr ? flr.FloorName : `ชั้น ${fId}`,
         rooms: []
       };
     }
@@ -149,7 +151,7 @@ function renderRooms(rooms) {
           <h4 class="mb-0 fw-bold text-primary">
             <i class="bi bi-building me-2"></i>${App.escHtml(bld.name)}
           </h4>
-          <span class="badge bg-primary-subtle text-primary">อาคาร ${App.escHtml(bld.code)}</span>
+          ${bld.code ? `<span class="badge bg-primary-subtle text-primary">อาคาร ${App.escHtml(bld.code)}</span>` : ''}
         </div>
     `;
 
@@ -169,15 +171,12 @@ function renderRooms(rooms) {
         const genderBadge = room.gender === 'Male' ? '<span class="badge bg-info-subtle text-info"><i class="bi bi-gender-male"></i> ชาย</span>' :
                             (room.gender === 'Female' ? '<span class="badge bg-danger-subtle text-danger"><i class="bi bi-gender-female"></i> หญิง</span>' : '');
 
-        // Render Bed Indicators
-        // หมายเหตุการแก้ไข: เดิมวนลูปแสดงเตียงทุกใบใน room.beds รวมถึงเตียงที่ถูกปิด
-        // ใช้งาน (Status = 'Inactive') จากการลดความจุห้องด้วย ทำให้ผังห้องโชว์เตียง
-        // "ว่าง" หลอน ๆ ที่จริงแล้วไม่มีอยู่แล้ว จึงแก้ให้กรองเฉพาะเตียงที่ยัง Active
+        // แสดงสัญลักษณ์ที่พัก/เตียง
         let bedIndicatorsHtml = '';
         const visibleBeds = (room.beds || []).filter(b => b.status === 'Active');
         if (visibleBeds.length > 0) {
           bedIndicatorsHtml = visibleBeds.map(b => `
-            <span class="bed-indicator ${b.isOccupied ? 'occupied' : 'vacant'}" title="เตียง ${App.escHtml(b.bedNumber)}: ${b.isOccupied ? App.escHtml(b.occupantName) : 'ว่าง'}">
+            <span class="bed-indicator ${b.isOccupied ? 'occupied' : 'vacant'}" title="ที่พัก ${App.escHtml(b.bedNumber)}: ${b.isOccupied ? App.escHtml(b.occupantName) : 'ว่าง'}">
               ${App.escHtml(b.bedNumber)}
             </span>
           `).join('');
@@ -187,7 +186,7 @@ function renderRooms(rooms) {
           <div class="col">
             <div class="card room-card status-${statusClass} h-100" onclick="showRoomDetails('${App.escAttr(room.roomId)}')">
               <div class="room-header p-3 pb-2 d-flex justify-content-between align-items-center">
-                <span class="fs-5 fw-bold text-dark">${App.escHtml(room.roomNumber)}</span>
+                <span class="fs-5 fw-bold text-dark">ห้อง ${App.escHtml(room.roomNumber)}</span>
                 ${App.getStatusBadge(room.computedStatus)}
               </div>
               <div class="card-body p-3 pt-2">
@@ -198,15 +197,15 @@ function renderRooms(rooms) {
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
                   <div class="text-muted small">
-                    <i class="bi bi-people me-1"></i>ผู้พัก: <strong>${room.occupiedBedsCount}/${room.activeBedsCount}</strong> คน
+                    <i class="bi bi-people me-1"></i>ผู้พัก: <strong>${room.occupiedBedsCount}/${room.capacity}</strong> คน
                   </div>
-                  <div class="text-success small fw-semibold">
-                    ว่าง: ${room.availableBedsCount} เตียง
+                  <div class="${room.availableBedsCount > 0 ? 'text-success' : 'text-danger'} small fw-semibold">
+                    ${room.availableBedsCount > 0 ? `ว่าง ${room.availableBedsCount} ที่` : 'ห้องเต็ม'}
                   </div>
                 </div>
 
                 <div class="d-flex align-items-center gap-1">
-                  <small class="text-muted me-1" style="font-size: 0.75rem;">เตียง:</small>
+                  <small class="text-muted me-1" style="font-size: 0.75rem;">ที่พัก:</small>
                   ${bedIndicatorsHtml}
                 </div>
               </div>
@@ -235,31 +234,35 @@ function showRoomDetails(roomId) {
   if (!modalEl) return;
 
   document.getElementById('modal-room-number').textContent = room.roomNumber;
-  document.getElementById('modal-building-name').textContent = `${room.buildingName} (อาคาร ${room.buildingCode})`;
+  document.getElementById('modal-building-name').textContent = `${room.buildingName} (อาคาร ${room.buildingCode || '-'})`;
   document.getElementById('modal-room-status-badge').innerHTML = App.getStatusBadge(room.computedStatus);
   document.getElementById('modal-room-type').textContent = room.roomType || 'Standard';
   document.getElementById('modal-gender').textContent = room.gender === 'Male' ? 'ชาย' : (room.gender === 'Female' ? 'หญิง' : 'ทั่วไป');
-  document.getElementById('modal-capacity').textContent = `${room.occupiedBedsCount} / ${room.activeBedsCount} คน (ว่าง ${room.availableBedsCount} เตียง)`;
+  document.getElementById('modal-capacity').textContent = `${room.occupiedBedsCount} / ${room.capacity} คน (ว่าง ${room.availableBedsCount} ที่)`;
   document.getElementById('modal-rate').textContent = room.monthlyRate ? `${Number(room.monthlyRate).toLocaleString()} บาท/เดือน` : 'ฟรี/สวัสดิการ';
+  
+  // ทุกห้องมีเฟอร์นิเจอร์มาตรฐานครบชุดเหมือนกันหมด
   document.getElementById('modal-facilities').innerHTML = `
-    ${room.hasAirConditioner ? '<span class="badge bg-success-subtle text-success me-1"><i class="bi bi-snow"></i> เครื่องปรับอากาศ</span>' : '<span class="badge bg-light text-muted me-1">พัดลม</span>'}
-    ${room.hasFurniture ? '<span class="badge bg-primary-subtle text-primary me-1"><i class="bi bi-box-seam"></i> เฟอร์นิเจอร์ครบ</span>' : ''}
+    <span class="badge bg-primary-subtle text-primary me-1 py-1 px-2 mb-1"><i class="bi bi-box-seam me-1"></i>เฟอร์นิเจอร์มาตรฐานครบชุด (เตียงนอน, ที่นอน, ตู้เสื้อผ้า, โต๊ะทำงาน, เก้าอี้)</span>
+    <span class="badge bg-success-subtle text-success me-1 py-1 px-2 mb-1"><i class="bi bi-snow me-1"></i>เครื่องปรับอากาศ</span>
+    <span class="badge bg-light text-muted py-1 px-2 mb-1"><i class="bi bi-shield-check me-1"></i>มาตรฐานเดียวกันทุกห้อง</span>
   `;
 
+  // รายชื่อผู้พักปัจจุบัน
   const occContainer = document.getElementById('modal-occupants-list');
   if (room.occupants && room.occupants.length > 0) {
     occContainer.innerHTML = room.occupants.map(o => `
       <li class="list-group-item d-flex justify-content-between align-items-center py-2">
         <div>
-          <div class="fw-bold text-dark"><i class="bi bi-person-fill me-1"></i>${App.escHtml(o.fullName)} (${App.escHtml(o.employeeId)})</div>
+          <div class="fw-bold text-dark"><i class="bi bi-person-fill me-1 text-primary"></i>${App.escHtml(o.fullName)} (${App.escHtml(o.employeeId)})</div>
           <small class="text-muted">แผนก: ${App.escHtml(o.department || '-')} | โทร: ${App.escHtml(o.phone || '-')}</small>
           <div class="text-muted" style="font-size: 0.75rem;">
             เข้าพัก: ${App.formatDate(o.checkInDate)} ${o.expectedCheckOutDate ? ' | สิ้นสุด: ' + App.formatDate(o.expectedCheckOutDate) : ''}
           </div>
         </div>
         <div class="d-flex align-items-center gap-1">
-          <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1">เตียง ${App.escHtml(o.bedNumber)}</span>
-          <a href="admin.html?action=transfer&occId=${encodeURIComponent(o.occupancyId)}&empName=${encodeURIComponent(o.fullName)}&roomId=${encodeURIComponent(room.roomId)}&bedId=${encodeURIComponent(o.bedId)}&roomNum=${encodeURIComponent(room.roomNumber)}" class="btn btn-sm btn-outline-primary py-1 px-2" title="ย้ายห้อง">
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1">ที่พัก ${App.escHtml(o.bedNumber)}</span>
+          <a href="admin.html?action=transfer&occId=${encodeURIComponent(o.occupancyId)}&empName=${encodeURIComponent(o.fullName)}&roomId=${encodeURIComponent(room.roomId)}&roomNum=${encodeURIComponent(room.roomNumber)}&bedNum=${encodeURIComponent(o.bedNumber)}" class="btn btn-sm btn-outline-primary py-1 px-2" title="ย้ายห้อง">
             <i class="bi bi-arrow-left-right me-1"></i>ย้าย
           </a>
           <a href="admin.html?action=checkout&occId=${encodeURIComponent(o.occupancyId)}&empName=${encodeURIComponent(o.fullName)}&roomNum=${encodeURIComponent(room.roomNumber)}&bedNum=${encodeURIComponent(o.bedNumber)}" class="btn btn-sm btn-outline-danger py-1 px-2" title="เช็คเอาท์">
@@ -269,31 +272,31 @@ function showRoomDetails(roomId) {
       </li>
     `).join('');
   } else {
-    occContainer.innerHTML = '<li class="list-group-item text-muted text-center py-3">ยังไม่มีผู้เข้าพักในห้องนี้</li>';
+    occContainer.innerHTML = '<li class="list-group-item text-muted text-center py-3">ยังไม่มีผู้เข้าพักในห้องนี้ (ห้องว่าง)</li>';
   }
 
-  // หมายเหตุการแก้ไข: กรองเฉพาะเตียงที่ยัง Active เช่นเดียวกับผังห้อง เพื่อไม่ให้แสดง
-  // เตียงที่ถูกปิดใช้งานไปแล้วจากการลดความจุห้อง
+  // ผังที่พัก/เตียงในห้อง
   const bedsContainer = document.getElementById('modal-beds-list');
-  const visibleBedsForModal = (room.beds || []).filter(b => b.status === 'Active');
-  if (visibleBedsForModal.length > 0) {
-    bedsContainer.innerHTML = visibleBedsForModal.map(b => `
+  const visibleBeds = (room.beds || []).filter(b => b.status === 'Active');
+  if (visibleBeds.length > 0) {
+    bedsContainer.innerHTML = visibleBeds.map(b => `
       <div class="col-6 col-md-4 mb-2">
         <div class="p-2 border rounded ${b.isOccupied ? 'bg-danger-subtle border-danger' : 'bg-success-subtle border-success'}">
           <div class="d-flex justify-content-between align-items-center">
-            <span class="fw-bold">เตียง ${App.escHtml(b.bedNumber)}</span>
+            <span class="fw-bold">ที่พัก ${App.escHtml(b.bedNumber)}</span>
             <span class="badge ${b.isOccupied ? 'bg-danger' : 'bg-success'}">${b.isOccupied ? 'มีผู้พัก' : 'ว่าง'}</span>
           </div>
           <div class="small text-truncate mt-1 text-muted" title="${b.isOccupied ? App.escHtml(b.occupantName) : 'พร้อมเข้าพัก'}">
-            ${b.isOccupied ? `<i class="bi bi-person-fill"></i> ${App.escHtml(b.occupantName)}` : '<i class="bi bi-check2"></i> เตียงว่าง'}
+            ${b.isOccupied ? `<i class="bi bi-person-fill"></i> ${App.escHtml(b.occupantName)}` : '<i class="bi bi-check2"></i> พร้อมเข้าพัก'}
           </div>
         </div>
       </div>
     `).join('');
   } else {
-    bedsContainer.innerHTML = '<div class="col-12 text-muted text-center py-2">ไม่มีเตียงที่เปิดใช้งานในห้องนี้</div>';
+    bedsContainer.innerHTML = '<div class="col-12 text-muted text-center py-2">ไม่มีที่พักที่เปิดใช้งาน</div>';
   }
 
+  // ปุ่มดำเนินการด่วน
   const actionContainer = document.getElementById('modal-quick-actions');
   if (actionContainer) {
     let buttons = '';
@@ -304,12 +307,14 @@ function showRoomDetails(roomId) {
         </a>
       `;
     }
+    const isMaint = room.computedStatus === 'Maintenance';
     buttons += `
-      <a href="admin.html?action=repair&roomId=${encodeURIComponent(room.roomId)}" class="btn btn-sm btn-outline-warning me-2">
-        <i class="bi bi-wrench me-1"></i> แจ้งซ่อม
-      </a>
+      <button class="btn btn-sm ${isMaint ? 'btn-outline-success' : 'btn-outline-warning'} me-2" onclick="toggleRoomMaintenanceFromModal('${App.escAttr(room.roomId)}')">
+        <i class="bi ${isMaint ? 'bi-check-circle' : 'bi-cone-striped'} me-1"></i>
+        ${isMaint ? 'เปิดห้องใช้งาน' : 'ปิดปรับปรุงห้อง'}
+      </button>
       <a href="admin.html?tab=rooms" class="btn btn-sm btn-outline-secondary me-2">
-        <i class="bi bi-pencil me-1"></i> แก้ไขห้อง
+        <i class="bi bi-gear me-1"></i> จัดการห้องพัก
       </a>
     `;
     actionContainer.innerHTML = buttons;
@@ -317,6 +322,20 @@ function showRoomDetails(roomId) {
 
   const modal = new bootstrap.Modal(modalEl);
   modal.show();
+}
+
+async function toggleRoomMaintenanceFromModal(roomId) {
+  try {
+    App.showLoading('กำลังเปลี่ยนสถานะห้องพัก...');
+    await API.toggleRoomMaintenance(roomId);
+    App.closeLoading();
+    App.showToast('เปลี่ยนสถานะห้องพักสำเร็จ', 'success');
+    bootstrap.Modal.getInstance(document.getElementById('roomDetailModal'))?.hide();
+    loadRoomsData();
+  } catch (e) {
+    App.closeLoading();
+    App.showError('ไม่สามารถเปลี่ยนสถานะได้', e.message);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

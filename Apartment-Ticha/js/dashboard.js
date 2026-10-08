@@ -13,7 +13,6 @@ async function loadDashboard() {
     renderCharts(data);
     renderBuildingOccupancy(data.buildingStats);
     renderAlmostFullRooms(data.almostFullRooms);
-    renderRecentActivities(data);
 
     if (contentEl) contentEl.classList.remove('d-none');
   } catch (error) {
@@ -54,7 +53,6 @@ function renderKPIs(kpi) {
   setText('kpi-rate', `${kpi.overallOccupancyRate || 0}%`);
   setText('kpi-new-this-month', kpi.newThisMonth || 0);
   setText('kpi-checkout-this-month', kpi.checkOutThisMonth || 0);
-  setText('kpi-pending-requests', kpi.pendingRequestsCount || 0);
 }
 
 function renderBuildingOccupancy(buildingStats) {
@@ -75,8 +73,8 @@ function renderBuildingOccupancy(buildingStats) {
     html += `
       <div class="mb-3">
         <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="fw-semibold text-dark">${App.escHtml(b.buildingName)} (อาคาร ${App.escHtml(b.buildingCode)})</span>
-          <span class="small text-muted">${b.occupiedBeds} / ${b.totalBeds} เตียง (<strong>${b.occupancyRate}%</strong>)</span>
+          <span class="fw-semibold text-dark">${App.escHtml(b.buildingName)}</span>
+          <span class="small text-muted">${b.occupiedBeds} / ${b.totalBeds} ที่ (<strong>${b.occupancyRate}%</strong>)</span>
         </div>
         <div class="progress" style="height: 12px; border-radius: 6px;">
           <div class="progress-bar ${colorClass}" role="progressbar" style="width: ${b.occupancyRate}%;" aria-valuenow="${b.occupancyRate}" aria-valuemin="0" aria-valuemax="100"></div>
@@ -92,7 +90,7 @@ function renderAlmostFullRooms(almostFullRooms) {
   if (!container) return;
 
   if (!almostFullRooms || almostFullRooms.length === 0) {
-    container.innerHTML = '<div class="text-muted text-center py-3"><i class="bi bi-check2-circle text-success me-1"></i>ไม่มีห้องที่เหลือ 1 เตียง</div>';
+    container.innerHTML = '<div class="text-muted text-center py-3"><i class="bi bi-check2-circle text-success me-1"></i>ไม่มีห้องที่เหลือ 1 ที่สุดท้าย</div>';
     return;
   }
 
@@ -104,48 +102,12 @@ function renderAlmostFullRooms(almostFullRooms) {
           <span class="fw-bold text-dark">ห้อง ${App.escHtml(r.roomNumber)}</span>
           <small class="text-muted ms-2">${App.escHtml(r.buildingName)}</small>
         </div>
-        <span class="badge bg-warning text-dark">เหลือ ${r.available} เตียงสุดท้าย</span>
+        <span class="badge bg-warning text-dark">เหลือ ${r.available} ที่สุดท้าย</span>
       </div>
     `;
   });
   html += '</div>';
   container.innerHTML = html;
-}
-
-function renderRecentActivities(data) {
-  const reqContainer = document.getElementById('recent-requests-list');
-  if (reqContainer && data.recentRequests) {
-    if (data.recentRequests.length === 0) {
-      reqContainer.innerHTML = '<p class="text-muted text-center py-3 mb-0">ไม่มีคำขอเข้าพักใหม่</p>';
-    } else {
-      reqContainer.innerHTML = data.recentRequests.map(r => `
-        <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
-          <div>
-            <div class="fw-semibold text-dark">รหัสพนักงาน: ${App.escHtml(r.EmployeeID)}</div>
-            <small class="text-muted">วันที่ขอ: ${App.formatDate(r.RequestDate)} | อาคาร: ${App.escHtml(r.PreferredBuilding || 'ไม่ระบุ')}</small>
-          </div>
-          ${App.getStatusBadge(r.RequestStatus)}
-        </div>
-      `).join('');
-    }
-  }
-
-  const repairContainer = document.getElementById('active-repairs-list');
-  if (repairContainer && data.activeRepairs) {
-    if (data.activeRepairs.length === 0) {
-      repairContainer.innerHTML = '<p class="text-muted text-center py-3 mb-0">ไม่มีงานแจ้งซ่อมค้างอยู่</p>';
-    } else {
-      repairContainer.innerHTML = data.activeRepairs.map(rep => `
-        <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
-          <div>
-            <div class="fw-semibold text-dark">ห้อง: ${App.escHtml(rep.RoomID)} (${App.escHtml(rep.IssueType)})</div>
-            <small class="text-muted text-truncate d-block" style="max-width: 250px;">${App.escHtml(rep.Description || '-')}</small>
-          </div>
-          <span class="badge ${rep.Priority === 'Urgent' ? 'bg-danger' : 'bg-warning text-dark'}">${App.escHtml(rep.Priority)}</span>
-        </div>
-      `).join('');
-    }
-  }
 }
 
 function destroyChart(id) {
@@ -157,6 +119,8 @@ function destroyChart(id) {
 
 function renderCharts(data) {
   const chartConfig = data.charts || {};
+
+  // 1. สัดส่วนสถานะห้องพัก
   destroyChart('chart-room-status');
   const ctx1 = document.getElementById('chart-room-status')?.getContext('2d');
   if (ctx1 && chartConfig.roomStatus) {
@@ -166,7 +130,7 @@ function renderCharts(data) {
         labels: chartConfig.roomStatus.labels,
         datasets: [{
           data: chartConfig.roomStatus.counts,
-          backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#f97316', '#64748b']
+          backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#f97316']
         }]
       },
       options: {
@@ -176,6 +140,7 @@ function renderCharts(data) {
     });
   }
 
+  // 2. ผู้พักแยกตามอาคาร
   destroyChart('chart-occupants-building');
   const ctx2 = document.getElementById('chart-occupants-building')?.getContext('2d');
   if (ctx2 && chartConfig.buildingOccupancy) {
@@ -197,6 +162,7 @@ function renderCharts(data) {
     });
   }
 
+  // 3. Occupancy Rate แยกตามอาคาร
   destroyChart('chart-occupancy-rate');
   const ctx3 = document.getElementById('chart-occupancy-rate')?.getContext('2d');
   if (ctx3 && chartConfig.buildingOccupancy) {
@@ -218,6 +184,7 @@ function renderCharts(data) {
     });
   }
 
+  // 4. ผู้พักแยกตามแผนก
   destroyChart('chart-dept');
   const ctx4 = document.getElementById('chart-dept')?.getContext('2d');
   if (ctx4 && chartConfig.departmentDistribution) {
@@ -240,6 +207,7 @@ function renderCharts(data) {
     });
   }
 
+  // 5. แนวโน้ม 6 เดือนย้อนหลัง
   destroyChart('chart-monthly-trends');
   const ctx5 = document.getElementById('chart-monthly-trends')?.getContext('2d');
   if (ctx5 && chartConfig.monthlyTrends) {
@@ -270,46 +238,6 @@ function renderCharts(data) {
         responsive: true,
         plugins: { legend: { position: 'bottom' } },
         scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-      }
-    });
-  }
-
-  destroyChart('chart-repairs');
-  const ctx7 = document.getElementById('chart-repairs')?.getContext('2d');
-  if (ctx7 && chartConfig.repairStats) {
-    charts['chart-repairs'] = new Chart(ctx7, {
-      type: 'bar',
-      data: {
-        labels: chartConfig.repairStats.labels,
-        datasets: [{
-          label: 'จำนวนงานแจ้งซ่อม',
-          data: chartConfig.repairStats.counts,
-          backgroundColor: '#f59e0b'
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-      }
-    });
-  }
-
-  destroyChart('chart-room-types');
-  const ctx8 = document.getElementById('chart-room-types')?.getContext('2d');
-  if (ctx8 && chartConfig.roomTypes) {
-    charts['chart-room-types'] = new Chart(ctx8, {
-      type: 'pie',
-      data: {
-        labels: chartConfig.roomTypes.labels,
-        datasets: [{
-          data: chartConfig.roomTypes.counts,
-          backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6']
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'bottom' } }
       }
     });
   }

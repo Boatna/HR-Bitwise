@@ -1,6 +1,15 @@
 const SPREADSHEET_ID = '1_Ig-84KfaUxpAnnGgfkTJTXOJA2-d2oJKbu_cdTbtY0';
 const DRIVE_FOLDER_ID = '1Ejzpmpc6A1A-sVpSaJpPPaSz4JMv1f5B';
 
+// ความปลอดภัยของไฟล์ (บัตรประชาชน/รูปถ่าย/PDF ของผู้สมัครเป็นข้อมูลส่วนบุคคล)
+// false = ไฟล์เป็นส่วนตัว (แนะนำ) ผู้ดูแลระบบยังดึงรูปมาทำ PDF ผ่าน getFileBase64 ได้ตามปกติ
+// true  = ใครมีลิงก์ก็เปิดดูได้ (ไม่แนะนำ)
+const PUBLIC_LINK_SHARING = false;
+const MAX_UPLOAD_BASE64_CHARS = 20 * 1024 * 1024; // ~15MB ต่อไฟล์
+const PIN_FAIL_CACHE_KEY = 'pin_fail_count';
+const PIN_MAX_FAILS = 10;      // กรอกผิดรวมเกินนี้จะล็อกชั่วคราว
+const PIN_LOCK_SECONDS = 300;  // 5 นาที
+
 function assertConfigured_(value, label) {
   if (!value || value.indexOf('ใส่_') === 0) {
     throw new Error('ยังไม่ได้ตั้งค่า ' + label + ' กรุณาแก้ไขค่านี้ในไฟล์ Code.gs ให้เป็นของคุณเองก่อนใช้งานจริง');
@@ -93,25 +102,25 @@ const APPLICANT_FIELDS = [
   { header: 'ชื่อ-สกุล ภาษาอังกฤษ', key: 'fullNameEn' },
   {
     header: 'เลขประจำตัวประชาชน', key: 'idCard',
-    format: v => (v ? "'" + String(v).trim() : ''),
+    format: v => (v ? String(v).trim() : ''),
     parse: v => (v ? String(v).trim() : '')
   },
   { header: 'สัญชาติ', key: 'nationality', default: 'ไทย' },
   { header: 'วัน/เดือน/ปีเกิด', key: 'birthDate', parse: (v, tz) => normalizeMaybeDate_(v, tz) },
   {
     header: 'เบอร์โทรศัพท์', key: 'phone',
-    format: v => (v ? "'" + formatPhoneNumber(v) : ''),
+    format: v => (v ? formatPhoneNumber(v) : ''),
     parse: v => formatPhoneNumber(v)
   },
   { header: 'อีเมล', key: 'email' },
   {
     header: 'ที่อยู่ เลขที่', key: 'addressNo',
-    format: v => (v ? "'" + String(v).trim() : ''),
+    format: v => (v ? String(v).trim() : ''),
     parse: v => normalizeAddressNo(v)
   },
   {
     header: 'หมู่', key: 'moo',
-    format: v => (v ? "'" + String(v).trim() : ''),
+    format: v => (v ? String(v).trim() : ''),
     parse: v => (v ? String(v).trim() : '')
   },
   { header: 'ถนน', key: 'street' },
@@ -121,7 +130,7 @@ const APPLICANT_FIELDS = [
   { header: 'จังหวัด', key: 'province' },
   {
     header: 'รหัสไปรษณีย์', key: 'zipcode',
-    format: v => (v ? "'" + String(v).trim() : ''),
+    format: v => (v ? String(v).trim() : ''),
     parse: v => (v ? String(v).trim() : '')
   },
   { header: 'วุฒิการศึกษาสูงสุด', key: 'education' },
@@ -169,7 +178,7 @@ const APPLICANT_FIELDS = [
   { header: 'จังหวัดที่ทำงาน', key: 'workplaceProvince' },
   {
     header: 'โทรศัพท์ที่ทำงาน', key: 'workplacePhone',
-    format: v => (v ? "'" + formatPhoneNumber(v) : ''),
+    format: v => (v ? formatPhoneNumber(v) : ''),
     parse: v => formatPhoneNumber(v)
   },
   { header: 'กลุ่มอุตสาหกรรม', key: 'industryGroup' },
@@ -187,7 +196,9 @@ const APPLICANT_FIELDS = [
   { header: 'ลิงก์วุฒิการศึกษา (Google Drive)', key: 'educationFileUrl' },
   { header: 'ลิงก์ทรานสคริปต์ (Google Drive)', key: 'transcriptFileUrl' },
   { header: 'ลิงก์ใบรับรองการทำงาน (Google Drive)', key: 'workCertFileUrl' },
-  { header: 'ข้อมูลดิบ JSON (Raw Data)', key: '__raw' }
+  { header: 'ข้อมูลดิบ JSON (Raw Data)', key: '__raw' },
+  // เพิ่มท้ายตาราง เพื่อไม่ให้คอลัมน์เดิมในชีตที่ใช้งานอยู่เลื่อนตำแหน่ง
+  { header: 'วันที่สิ้นสุดการฝึกอบรม', key: 'endDate', parse: (v, tz) => normalizeMaybeDate_(v, tz) }
 ];
 
 const HEADERS_CALENDAR = [
@@ -221,9 +232,10 @@ function setupSheets() {
   sheetApp.getRange(1, 1, 1, headers.length)
     .setFontWeight('bold').setBackground('#0284c7').setFontColor('#ffffff');
   sheetApp.setFrozenRows(1);
+  ensureRows_(sheetApp, 5001);
   const PLAIN_TEXT_APPLICANT_KEYS = [
     'submittedAt', 'id', 'idCard', 'birthDate', 'phone', 'addressNo', 'moo', 'zipcode',
-    'startDate', 'workplacePhone'
+    'startDate', 'endDate', 'workplacePhone'
   ];
   PLAIN_TEXT_APPLICANT_KEYS.forEach(key => {
     const colIdx = APPLICANT_FIELDS.findIndex(f => f.key === key);
@@ -238,6 +250,7 @@ function setupSheets() {
   sheetCal.getRange(1, 1, 1, HEADERS_CALENDAR.length)
     .setFontWeight('bold').setBackground('#0f172a').setFontColor('#ffffff');
   sheetCal.setFrozenRows(1);
+  ensureRows_(sheetCal, 5001);
   sheetCal.getRange(2, 2, 5000, 1).setNumberFormat('@');
 
   let sheetMgr = ss.getSheetByName('Managers');
@@ -255,6 +268,16 @@ function setupSheets() {
   }
 }
 
+// ตรวจว่ามีชีตครบและหัวตารางครบหรือยัง — เรียก setupSheets() เฉพาะเมื่อจำเป็น (เดิมรันทุกคำขอ ทำให้ช้า/หมดเวลา)
+function ensureSheets_() {
+  const ss = getSS_();
+  const sApp = ss.getSheetByName('Applicants');
+  if (!sApp || !ss.getSheetByName('CalendarEvents') || !ss.getSheetByName('Managers') ||
+      sApp.getLastColumn() < APPLICANT_FIELDS.length) {
+    setupSheets();
+  }
+}
+
 function repairExistingPlainTextColumns() {
   const ss = getSS_();
   const tz = ss.getSpreadsheetTimeZone();
@@ -265,7 +288,7 @@ function repairExistingPlainTextColumns() {
     if (lastRow > 1) {
       const PLAIN_TEXT_KEYS = [
         'submittedAt', 'id', 'idCard', 'birthDate', 'phone', 'addressNo', 'moo', 'zipcode',
-        'startDate', 'workplacePhone'
+        'startDate', 'endDate', 'workplacePhone'
       ];
       PLAIN_TEXT_KEYS.forEach(key => {
         const colIdx = APPLICANT_FIELDS.findIndex(f => f.key === key);
@@ -403,7 +426,8 @@ function getOrCreateFolder(name, parent) {
 function getUploadFolder(subfolder) {
   assertConfigured_(DRIVE_FOLDER_ID, 'DRIVE_FOLDER_ID');
   const root = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-  if (subfolder) return getOrCreateFolder(String(subfolder), root);
+  const safeName_ = sanitizeFolderName_(subfolder);
+  if (safeName_) return getOrCreateFolder(safeName_, root);
   return root;
 }
 
@@ -419,10 +443,17 @@ function handleUploadFile(postData) {
     if (!postData.base64Data) {
       return createJsonResponse({ status: 'error', message: 'ไม่พบข้อมูลไฟล์ (base64Data)' });
     }
+    const mt = String(postData.mimeType || '').toLowerCase();
+    if (!(mt.indexOf('image/') === 0 || mt === 'application/pdf')) {
+      return createJsonResponse({ status: 'error', message: 'รองรับเฉพาะไฟล์รูปภาพหรือ PDF เท่านั้น' });
+    }
+    if (String(postData.base64Data).length > MAX_UPLOAD_BASE64_CHARS) {
+      return createJsonResponse({ status: 'error', message: 'ไฟล์มีขนาดใหญ่เกินไป (สูงสุดประมาณ 15MB)' });
+    }
     const folder = getUploadFolder(postData.subfolder);
     const blob = base64ToBlob(postData.base64Data, postData.mimeType, postData.fileName);
     const file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    if (PUBLIC_LINK_SHARING) file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     const directUrl = 'https://drive.google.com/uc?export=view&id=' + file.getId();
     return createJsonResponse({
       status: 'success',
@@ -442,9 +473,12 @@ function handleSavePdfToDrive(postData) {
     }
     const folder = getUploadFolder(postData.subfolder || 'ใบสมัคร (PDF)');
     const fileName = postData.fileName || ('ใบสมัคร_' + Date.now() + '.pdf');
+    if (String(postData.base64Data).length > MAX_UPLOAD_BASE64_CHARS) {
+      return createJsonResponse({ status: 'error', message: 'ไฟล์ PDF มีขนาดใหญ่เกินไป' });
+    }
     const blob = base64ToBlob(postData.base64Data, 'application/pdf', fileName);
     const file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    if (PUBLIC_LINK_SHARING) file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     return createJsonResponse({
       status: 'success',
       fileId: file.getId(),
@@ -455,12 +489,29 @@ function handleSavePdfToDrive(postData) {
   }
 }
 
+// อนุญาตเฉพาะไฟล์ในโฟลเดอร์ DRIVE_FOLDER_ID (รวมโฟลเดอร์ย่อยรายผู้สมัคร) กันการดึงไฟล์อื่นในไดรฟ์
+function isInsideUploadFolder_(file) {
+  const parents = file.getParents();
+  while (parents.hasNext()) {
+    const p = parents.next();
+    if (p.getId() === DRIVE_FOLDER_ID) return true;
+    const grand = p.getParents();
+    while (grand.hasNext()) {
+      if (grand.next().getId() === DRIVE_FOLDER_ID) return true;
+    }
+  }
+  return false;
+}
+
 function handleGetFileBase64(fileId) {
   try {
     if (!fileId) {
       return createJsonResponse({ status: 'error', message: 'ไม่พบ fileId ที่ต้องการดึงข้อมูล' });
     }
     const file = DriveApp.getFileById(fileId);
+    if (!isInsideUploadFolder_(file)) {
+      return createJsonResponse({ status: 'error', message: 'ไฟล์นี้ไม่ได้อยู่ในโฟลเดอร์ใบสมัคร จึงไม่อนุญาตให้ดึงข้อมูล' });
+    }
     const blob = file.getBlob();
     const base64 = Utilities.base64Encode(blob.getBytes());
     const mimeType = blob.getContentType() || 'application/octet-stream';
@@ -478,6 +529,11 @@ function handleGetFileBase64(fileId) {
 
 function handleVerifyManagerPin(postData) {
   try {
+    const cache = CacheService.getScriptCache();
+    const failCount = parseInt(cache.get(PIN_FAIL_CACHE_KEY) || '0', 10);
+    if (failCount >= PIN_MAX_FAILS) {
+      return createJsonResponse({ status: 'error', message: 'มีการกรอกรหัส PIN ผิดหลายครั้ง ระบบล็อกชั่วคราว กรุณารอสักครู่แล้วลองใหม่' });
+    }
     const pin = String(postData.pin || '').trim();
     if (!/^[0-9]{6}$/.test(pin)) {
       return createJsonResponse({ status: 'error', message: 'รูปแบบรหัส PIN ไม่ถูกต้อง' });
@@ -494,10 +550,12 @@ function handleVerifyManagerPin(postData) {
       const status = String(data[i][2] || '').trim();
       if (!name) continue;
       if (rowPin === pin && status === 'ใช้งาน') {
+        cache.remove(PIN_FAIL_CACHE_KEY);
         const token = createSession_(name);
-        return createJsonResponse({ status: 'success', name: name, token: token });
+        return createJsonResponse({ status: 'success', name: name, token: token, weakPin: pin === '123456' });
       }
     }
+    cache.put(PIN_FAIL_CACHE_KEY, String(failCount + 1), PIN_LOCK_SECONDS);
     return createJsonResponse({ status: 'error', message: 'รหัส PIN ไม่ถูกต้องหรือไม่มีสิทธิ์เข้าใช้งาน' });
   } catch (err) {
     return createJsonResponse({ status: 'error', message: 'ตรวจสอบรหัส PIN ไม่สำเร็จ: ' + err.toString() });
@@ -522,7 +580,7 @@ function doGet(e) {
   }
 
   if (action === 'getApplicants') {
-    setupSheets();
+    ensureSheets_();
     const sheet = ss.getSheetByName('Applicants');
     const data = sheet.getDataRange().getValues();
     if (data.length <= 1) return createJsonResponse({ status: 'success', data: [] });
@@ -534,7 +592,7 @@ function doGet(e) {
   }
 
   if (action === 'getCalendarEvents') {
-    setupSheets();
+    ensureSheets_();
     const sheet = ss.getSheetByName('CalendarEvents');
     const data = sheet.getDataRange().getValues();
     if (data.length <= 1) return createJsonResponse({ status: 'success', data: [] });
@@ -559,7 +617,7 @@ const AUTH_REQUIRED_POST_ACTIONS = ['updateAttendance', 'addEvent'];
 
 function doPost(e) {
   const ss = getSS_();
-  setupSheets();
+  ensureSheets_();
 
   let action = '';
   try {
@@ -587,9 +645,33 @@ function doPost(e) {
 
     try {
       if (action === 'addApplicant') {
-        const d = postData.data || {};
+        const d = sanitizeApplicant_(postData.data || {});
+        if (d.id && !/^BW-\d{6}-[A-Z0-9]{6,10}$/.test(String(d.id))) {
+          return createJsonResponse({ status: 'error', message: 'รูปแบบรหัสผู้สมัครไม่ถูกต้อง' });
+        }
+        if (!/^\d{13}$/.test(String(d.idCard || '').replace(/\D/g, '')) || !d.firstName || !d.lastName) {
+          return createJsonResponse({ status: 'error', message: 'ข้อมูลผู้สมัครไม่ครบถ้วน (ชื่อ/นามสกุล/เลขบัตรประชาชน)' });
+        }
         const sheet = ss.getSheetByName('Applicants');
-        sheet.appendRow(buildApplicantRow(d));
+        if (!d.id) {
+          return createJsonResponse({ status: 'error', message: 'ไม่พบรหัสผู้สมัคร (id)' });
+        }
+        const idCol = APPLICANT_FIELDS.findIndex(f => f.key === 'id') + 1;
+        const lastRow = sheet.getLastRow();
+        if (lastRow > 1) {
+          // กันแถวซ้ำ กรณีผู้สมัครกดส่งซ้ำเพราะตอบกลับไม่ถึง
+          const ids = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
+          for (let i = 0; i < ids.length; i++) {
+            if (String(ids[i][0]) === String(d.id)) {
+              return createJsonResponse({ status: 'success', message: 'ใบสมัครนี้ถูกบันทึกไว้แล้ว' });
+            }
+          }
+        }
+        const rowValues = buildApplicantRow(d);
+        ensureRows_(sheet, lastRow + 1);
+        const targetRange = sheet.getRange(lastRow + 1, 1, 1, rowValues.length);
+        targetRange.setNumberFormat('@'); // บังคับเป็นข้อความ (เบอร์โทร/เลขบัตร/รหัสไปรษณีย์ไม่ถูกตัดเลข 0)
+        targetRange.setValues([rowValues]);
         return createJsonResponse({ status: 'success', message: 'บันทึกผู้สมัครสำเร็จ' });
       }
 
@@ -601,7 +683,7 @@ function doPost(e) {
         const attColIdx = APPLICANT_FIELDS.findIndex(f => f.key === 'attended');
         const data = sheet.getDataRange().getValues();
         for (let i = 1; i < data.length; i++) {
-          if (data[i][idColIdx] === applicantId) {
+          if (String(data[i][idColIdx]) === String(applicantId)) {
             sheet.getRange(i + 1, attColIdx + 1).setValue(attended ? 'ได้เข้ามาเรียนแล้ว' : 'ยังไม่มา');
             return createJsonResponse({ status: 'success', message: 'อัปเดตสถานะสำเร็จ' });
           }
@@ -621,6 +703,11 @@ function doPost(e) {
           evt.details || ''
         ]);
         return createJsonResponse({ status: 'success', message: 'บันทึกกิจกรรมสำเร็จ' });
+      }
+
+      if (action === 'logout') {
+        if (postData.token) CacheService.getScriptCache().remove(SESSION_CACHE_PREFIX + postData.token);
+        return createJsonResponse({ status: 'success', message: 'ออกจากระบบแล้ว' });
       }
 
       if (action === 'uploadFile') {
@@ -647,4 +734,39 @@ function doPost(e) {
 function createJsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ---------- ฟังก์ชันช่วยเพิ่มเติม (ความปลอดภัย/ความเสถียร) ----------
+
+// ชีตใหม่มี 1,000 แถว แต่ setupSheets ตั้งฟอร์แมต 5,000 แถว และ addApplicant เขียนต่อท้าย — ขยายแถวให้พอก่อนเสมอ
+function ensureRows_(sheet, minRows) {
+  const max = sheet.getMaxRows();
+  if (max < minRows) sheet.insertRowsAfter(max, Math.max(minRows - max, 1000));
+}
+
+// ชื่อโฟลเดอร์ย่อยมาจากฝั่งผู้ใช้ จึงล้างอักขระต้องห้ามและจำกัดความยาวที่ฝั่งเซิร์ฟเวอร์ด้วย
+function sanitizeFolderName_(name) {
+  let s = String(name || '').replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, ' ').trim();
+  if (s.length > 100) s = s.substring(0, 100).trim();
+  return s;
+}
+
+// รับเฉพาะ key ที่ระบบรู้จัก, จำกัดความยาว (กัน JSON ดิบเกินขีดจำกัดเซลล์ 50,000 ตัวอักษร)
+// และบังคับ attended=false เสมอ (ผู้สมัครทั่วไปห้ามตั้งสถานะ "เข้าเรียนแล้ว" เอง)
+function sanitizeApplicant_(d) {
+  const allowed = {};
+  APPLICANT_FIELDS.forEach(f => { if (f.key !== '__raw') allowed[f.key] = true; });
+  ['submittedAtDate', 'hasPhoto', 'hasIdCardFile', 'hasEducationFile', 'hasTranscriptFile', 'hasWorkCertFile']
+    .forEach(k => { allowed[k] = true; });
+  const out = {};
+  Object.keys(d || {}).forEach(k => {
+    if (!allowed[k]) return;
+    let v = d[k];
+    if (Array.isArray(v)) v = v.slice(0, 20).map(x => String(x).substring(0, 200));
+    else if (typeof v === 'string') v = v.substring(0, 500);
+    else if (typeof v !== 'boolean' && typeof v !== 'number') v = '';
+    out[k] = v;
+  });
+  out.attended = false;
+  return out;
 }

@@ -7,80 +7,66 @@ const Reports = {
     const tableBody = document.getElementById('report-table-body');
     const titleEl = document.getElementById('report-title-display');
 
-    if (tableBody) tableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังดึงข้อมูลรายงาน...</td></tr>';
+    if (tableBody) tableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังประมวลผลรายงาน...</td></tr>';
 
     try {
       if (type === 'rooms') {
-        if (titleEl) titleEl.textContent = 'รายงานสถานะห้องพักและความจุทั้งหมด';
+        if (titleEl) titleEl.textContent = 'รายงานสถานะห้องพักและความจุ (ห้องว่าง / ห้องเต็ม)';
         const rooms = await API.getRooms();
-        this.currentReportData = rooms.map(r => ({
-          'รหัสห้อง': r.roomId,
+        this.currentReportData = (rooms || []).map(r => ({
           'อาคาร': r.buildingName,
           'เลขห้อง': r.roomNumber,
-          'ประเภท': r.roomType,
+          'ชั้น': r.floorId || '1',
+          'ประเภท': r.roomType || 'Standard',
           'ความจุ (คน)': r.capacity,
-          'ผู้พักปัจจุบัน': r.occupiedBedsCount,
-          'เตียงว่าง': r.availableBedsCount,
-          'สถานะ': r.computedStatus
+          'ผู้พักจริง (คน)': r.occupiedBedsCount,
+          'ที่ว่าง (ที่)': r.availableBedsCount,
+          'สถานะห้อง': r.computedStatus === 'Available' ? 'ว่าง' : (r.computedStatus === 'Partially Occupied' ? 'ว่างบางส่วน' : (r.computedStatus === 'Full' ? 'เต็ม' : 'ปิดปรับปรุง')),
+          'เฟอร์นิเจอร์': 'มาตรฐานครบชุด'
         }));
 
         this.renderTable([
-          'รหัสห้อง', 'อาคาร', 'เลขห้อง', 'ประเภท', 'ความจุ (คน)', 'ผู้พักปัจจุบัน', 'เตียงว่าง', 'สถานะ'
+          'อาคาร', 'เลขห้อง', 'ชั้น', 'ประเภท', 'ความจุ (คน)', 'ผู้พักจริง (คน)', 'ที่ว่าง (ที่)', 'สถานะห้อง', 'เฟอร์นิเจอร์'
         ], this.currentReportData);
 
       } else if (type === 'occupants') {
-        if (titleEl) titleEl.textContent = 'รายงานผู้พักอาศัยปัจจุบัน';
+        if (titleEl) titleEl.textContent = 'รายงานผู้พักอาศัยปัจจุบัน (พนักงานคนไหน พักห้องไหน)';
         const rooms = await API.getRooms();
         const rows = [];
-        rooms.forEach(r => {
-          r.occupants.forEach(o => {
+        (rooms || []).forEach(r => {
+          (r.occupants || []).forEach(o => {
             rows.push({
               'รหัสพนักงาน': o.employeeId,
               'ชื่อ-นามสกุล': o.fullName,
-              'แผนก': o.department,
-              'เบอร์โทร': o.phone,
+              'แผนก': o.department || '-',
+              'เบอร์โทร': o.phone || '-',
               'อาคาร': r.buildingName,
               'เลขห้อง': r.roomNumber,
-              'เตียง': o.bedNumber,
+              'ที่พัก / เตียง': o.bedNumber || 1,
               'วันที่เข้าพัก': App.formatDate(o.checkInDate)
             });
           });
         });
         this.currentReportData = rows;
         this.renderTable([
-          'รหัสพนักงาน', 'ชื่อ-นามสกุล', 'แผนก', 'เบอร์โทร', 'อาคาร', 'เลขห้อง', 'เตียง', 'วันที่เข้าพัก'
+          'รหัสพนักงาน', 'ชื่อ-นามสกุล', 'แผนก', 'เบอร์โทร', 'อาคาร', 'เลขห้อง', 'ที่พัก / เตียง', 'วันที่เข้าพัก'
         ], this.currentReportData);
 
-      } else if (type === 'repairs') {
-        if (titleEl) titleEl.textContent = 'รายงานการแจ้งซ่อมและซ่อมบำรุง';
-        const repairs = await API.getRepairRequests();
-        this.currentReportData = (repairs || []).map(r => ({
-          'รหัสแจ้งซ่อม': r.RepairID,
-          'ห้อง': r.RoomID,
-          'ประเภทปัญหา': r.IssueType,
-          'รายละเอียด': r.Description,
-          'ระดับความสำคัญ': r.Priority,
-          'ผู้รับผิดชอบ': r.AssignedTo || '-',
-          'สถานะ': r.Status,
-          'วันที่แจ้ง': App.formatDate(r.RequestDate)
+      } else if (type === 'history') {
+        if (titleEl) titleEl.textContent = 'รายงานประวัติการเข้าพักและย้ายออก';
+        const occupancy = await API.getOccupancy();
+        this.currentReportData = (occupancy || []).map(o => ({
+          'รหัสพนักงาน': o.EmployeeID,
+          'ชื่อ-นามสกุล': o.EmployeeName || '-',
+          'แผนก': o.Department || '-',
+          'ห้องพัก': o.RoomNumber || o.RoomID,
+          'วันที่เข้าพัก': App.formatDate(o.CheckInDate),
+          'วันที่ย้ายออก': o.ActualCheckOutDate ? App.formatDate(o.ActualCheckOutDate) : '-',
+          'สถานะ': o.Status === 'Active' ? 'พักอยู่' : (o.Status === 'CheckedOut' ? 'ย้ายออกแล้ว' : 'ย้ายห้อง'),
+          'หมายเหตุ': o.Remark || '-'
         }));
         this.renderTable([
-          'รหัสแจ้งซ่อม', 'ห้อง', 'ประเภทปัญหา', 'รายละเอียด', 'ระดับความสำคัญ', 'ผู้รับผิดชอบ', 'สถานะ', 'วันที่แจ้ง'
-        ], this.currentReportData);
-
-      } else if (type === 'audit') {
-        if (titleEl) titleEl.textContent = 'รายงานประวัติการเปลี่ยนแปลงข้อมูล (Audit Log)';
-        const logs = await API.getAuditLogs();
-        this.currentReportData = (logs || []).map(l => ({
-          'เวลา': l.Timestamp,
-          'ผู้ทำรายการ': l.UserEmail,
-          'การกระทำ': l.Action,
-          'โมดูล': l.Module,
-          'รหัสข้อมูล': l.RecordID,
-          'หมายเหตุ': l.Remark
-        }));
-        this.renderTable([
-          'เวลา', 'ผู้ทำรายการ', 'การกระทำ', 'โมดูล', 'รหัสข้อมูล', 'หมายเหตุ'
+          'รหัสพนักงาน', 'ชื่อ-นามสกุล', 'แผนก', 'ห้องพัก', 'วันที่เข้าพัก', 'วันที่ย้ายออก', 'สถานะ', 'หมายเหตุ'
         ], this.currentReportData);
       }
     } catch (e) {
@@ -98,48 +84,48 @@ const Reports = {
 
     if (tableBody) {
       if (rows.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="${headers.length}" class="text-muted text-center py-4">ไม่พบข้อมูลในรายงานนี้</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="${headers.length}" class="text-center text-muted py-4">ไม่มีข้อมูลในรายงานนี้</td></tr>`;
         return;
       }
 
-      // หมายเหตุ: หน้าจอแสดงผลถูก escape เพื่อป้องกัน HTML แทรก
-      // ส่วนข้อมูลที่ export เป็น CSV ยังคงเป็นข้อมูลดิบตามจริง (ดู exportToCSV)
-      tableBody.innerHTML = rows.map(row => {
-        return `<tr>${headers.map(h => `<td>${App.escHtml(row[h] !== undefined && row[h] !== null ? row[h] : '-')}</td>`).join('')}</tr>`;
-      }).join('');
+      tableBody.innerHTML = rows.map(r => `
+        <tr>
+          ${headers.map(h => `<td>${App.escHtml(r[h] !== undefined ? r[h] : '-')}</td>`).join('')}
+        </tr>
+      `).join('');
     }
   },
 
   exportToCSV() {
     if (!this.currentReportData || this.currentReportData.length === 0) {
-      App.showError('ไม่มีข้อมูลสำหรับส่งออก CSV');
+      App.showToast('ไม่มีข้อมูลสำหรับส่งออก', 'warning');
       return;
     }
 
     const headers = Object.keys(this.currentReportData[0]);
-    const csvRows = [];
-    csvRows.push(headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','));
+    let csvContent = '\uFEFF'; // UTF-8 BOM สำหรับเปิดใน Microsoft Excel ได้อย่างถูกต้อง
+
+    csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\r\n';
 
     this.currentReportData.forEach(row => {
-      const values = headers.map(header => {
-        const val = row[header] === null || row[header] === undefined ? '' : String(row[header]);
-        return `"${val.replace(/"/g, '""')}"`;
-      });
-      csvRows.push(values.join(','));
+      const line = headers.map(h => {
+        let val = row[h];
+        if (val === null || val === undefined) val = '';
+        return `"${String(val).replace(/"/g, '""')}"`;
+      }).join(',');
+      csvContent += line + '\r\n';
     });
 
-    const csvContent = '\uFEFF' + csvRows.join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const dateStr = new Date().toISOString().split('T')[0];
     link.setAttribute('href', url);
-    link.setAttribute('download', `Dormitory_Report_${this.currentReportType}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `Dormitory_Report_${this.currentReportType}_${dateStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    App.showToast('ส่งออกไฟล์ CSV สำเร็จ', 'success');
+    App.showToast('ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว', 'success');
   },
 
   printReport() {
