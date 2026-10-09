@@ -55,6 +55,7 @@ function populateFilterOptions() {
 
 function renderSummaryBar() {
   const total = allRooms.length;
+  const inactive = allRooms.filter(r => r.computedStatus === 'Inactive').length;
   const avail = allRooms.filter(r => r.computedStatus === 'Available').length;
   const partial = allRooms.filter(r => r.computedStatus === 'Partially Occupied').length;
   const full = allRooms.filter(r => r.computedStatus === 'Full').length;
@@ -69,6 +70,7 @@ function renderSummaryBar() {
         <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fs-7">🟡 ว่างบางส่วน: <strong>${partial}</strong></span>
         <span class="badge bg-danger px-3 py-2 rounded-pill fs-7">🔴 เต็ม: <strong>${full}</strong></span>
         <span class="badge bg-orange text-white px-3 py-2 rounded-pill fs-7" style="background-color: #ea580c;">🟠 ปิดปรับปรุง: <strong>${maint}</strong></span>
+        ${inactive ? `<span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill fs-7">⚪ ไม่เปิดใช้งาน: <strong>${inactive}</strong></span>` : ''}
       </div>
     `;
   }
@@ -77,25 +79,27 @@ function renderSummaryBar() {
 function applyFilterAndRender() {
   const bldVal = document.getElementById('filter-building')?.value || '';
   const statusVal = document.getElementById('filter-status')?.value || '';
-  const genderVal = document.getElementById('filter-gender')?.value || '';
   const typeVal = document.getElementById('filter-type')?.value || '';
   const searchVal = (document.getElementById('search-room')?.value || '').trim().toLowerCase();
 
   const filtered = allRooms.filter(room => {
-    if (bldVal && room.buildingId !== bldVal) return false;
+    if (bldVal && String(room.buildingId) !== bldVal) return false;
     if (statusVal && room.computedStatus !== statusVal) return false;
-    if (genderVal && room.gender !== genderVal) return false;
     if (typeVal && room.roomType !== typeVal) return false;
 
     if (searchVal) {
-      const matchRoom = (room.roomNumber || '').toLowerCase().includes(searchVal);
-      const matchId = (room.roomId || '').toLowerCase().includes(searchVal);
-      const matchOccupant = room.occupants?.some(o =>
-        (o.fullName || '').toLowerCase().includes(searchVal) ||
-        (o.employeeId || '').toLowerCase().includes(searchVal) ||
-        (o.department || '').toLowerCase().includes(searchVal)
+      const matchRoom = App.lc(room.roomNumber).includes(searchVal);
+      const matchId = App.lc(room.roomId).includes(searchVal);
+      const matchOccupant = (room.occupants || []).some(o =>
+        App.lc(o.fullName).includes(searchVal) ||
+        App.lc(o.employeeId).includes(searchVal) ||
+        App.lc(o.department).includes(searchVal)
       );
-      if (!matchRoom && !matchId && !matchOccupant) return false;
+      const matchParking = (room.parkingSlots || []).some(p =>
+        App.lc(p.licensePlate).includes(searchVal) ||
+        App.lc(p.slotNumber).includes(searchVal)
+      );
+      if (!matchRoom && !matchId && !matchOccupant && !matchParking) return false;
     }
 
     return true;
@@ -118,6 +122,7 @@ function renderRooms(rooms) {
     return;
   }
 
+  rooms = rooms.slice().sort((a, b) => String(a.roomNumber).localeCompare(String(b.roomNumber), 'th', { numeric: true }));
   const groupedByBuilding = {};
 
   rooms.forEach(r => {
@@ -168,9 +173,6 @@ function renderRooms(rooms) {
 
       floor.rooms.forEach(room => {
         const statusClass = (room.computedStatus || '').replace(/\s+/g, '-');
-        const genderBadge = room.gender === 'Male' ? '<span class="badge bg-info-subtle text-info"><i class="bi bi-gender-male"></i> ชาย</span>' :
-                            (room.gender === 'Female' ? '<span class="badge bg-danger-subtle text-danger"><i class="bi bi-gender-female"></i> หญิง</span>' : '');
-
         // แสดงสัญลักษณ์ที่พัก/เตียง
         let bedIndicatorsHtml = '';
         const visibleBeds = (room.beds || []).filter(b => b.status === 'Active');
@@ -192,15 +194,14 @@ function renderRooms(rooms) {
               <div class="card-body p-3 pt-2">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <small class="text-muted">${App.escHtml(room.roomType || 'Standard')}</small>
-                  ${genderBadge}
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
                   <div class="text-muted small">
                     <i class="bi bi-people me-1"></i>ผู้พัก: <strong>${room.occupiedBedsCount}/${room.capacity}</strong> คน
                   </div>
-                  <div class="${room.availableBedsCount > 0 ? 'text-success' : 'text-danger'} small fw-semibold">
-                    ${room.availableBedsCount > 0 ? `ว่าง ${room.availableBedsCount} ที่` : 'ห้องเต็ม'}
+                  <div class="${room.canCheckIn ? (room.availableBedsCount > 0 ? 'text-success' : 'text-danger') : 'text-secondary'} small fw-semibold">
+                    ${!room.canCheckIn && room.computedStatus !== 'Full' ? 'ไม่พร้อมใช้งาน' : (room.availableBedsCount > 0 ? `ว่าง ${room.availableBedsCount} ที่` : 'ห้องเต็ม')}
                   </div>
                 </div>
 
@@ -208,6 +209,10 @@ function renderRooms(rooms) {
                   <small class="text-muted me-1" style="font-size: 0.75rem;">ที่พัก:</small>
                   ${bedIndicatorsHtml}
                 </div>
+                ${(room.parkingSlots || []).length ? `
+                <div class="d-flex flex-wrap gap-1 mt-2">
+                  ${room.parkingSlots.map(p => App.parkingChip(p.slotNumber, p.vehicleType, p.licensePlate)).join('')}
+                </div>` : ''}
               </div>
             </div>
           </div>
@@ -227,7 +232,7 @@ function renderRooms(rooms) {
 }
 
 function showRoomDetails(roomId) {
-  const room = allRooms.find(r => r.roomId === roomId);
+  const room = allRooms.find(r => String(r.roomId) === String(roomId));
   if (!room) return;
 
   const modalEl = document.getElementById('roomDetailModal');
@@ -237,7 +242,6 @@ function showRoomDetails(roomId) {
   document.getElementById('modal-building-name').textContent = `${room.buildingName} (อาคาร ${room.buildingCode || '-'})`;
   document.getElementById('modal-room-status-badge').innerHTML = App.getStatusBadge(room.computedStatus);
   document.getElementById('modal-room-type').textContent = room.roomType || 'Standard';
-  document.getElementById('modal-gender').textContent = room.gender === 'Male' ? 'ชาย' : (room.gender === 'Female' ? 'หญิง' : 'ทั่วไป');
   document.getElementById('modal-capacity').textContent = `${room.occupiedBedsCount} / ${room.capacity} คน (ว่าง ${room.availableBedsCount} ที่)`;
   document.getElementById('modal-rate').textContent = room.monthlyRate ? `${Number(room.monthlyRate).toLocaleString()} บาท/เดือน` : 'ฟรี/สวัสดิการ';
   
@@ -275,6 +279,24 @@ function showRoomDetails(roomId) {
     occContainer.innerHTML = '<li class="list-group-item text-muted text-center py-3">ยังไม่มีผู้เข้าพักในห้องนี้ (ห้องว่าง)</li>';
   }
 
+  // ที่จอดรถของห้องนี้ (ช่องไหน / ของใคร / ทะเบียนอะไร)
+  const parkContainer = document.getElementById('modal-parking-list');
+  if (parkContainer) {
+    const slots = room.parkingSlots || [];
+    parkContainer.innerHTML = slots.length ? slots.map(p => `
+      <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+        <div>
+          ${App.parkingChip(p.slotNumber, p.vehicleType, '')}
+          <span class="fw-semibold text-dark ms-1">${App.escHtml(p.licensePlate || '-')}</span>
+          <div class="small text-muted">${App.escHtml(App.vehicleLabel(p.vehicleType))}${p.vehicleModel ? ' · ' + App.escHtml(p.vehicleModel) : ''} · ${App.escHtml(p.zone || '-')}</div>
+        </div>
+        <div class="text-end small">
+          <i class="bi bi-person-fill text-primary"></i> ${App.escHtml(p.ownerName)}
+          <div class="text-muted">${App.escHtml(p.ownerEmployeeId)}</div>
+        </div>
+      </li>`).join('') : '<li class="list-group-item text-muted text-center py-3">ห้องนี้ยังไม่มีการจองที่จอดรถ</li>';
+  }
+
   // ผังที่พัก/เตียงในห้อง
   const bedsContainer = document.getElementById('modal-beds-list');
   const visibleBeds = (room.beds || []).filter(b => b.status === 'Active');
@@ -300,7 +322,7 @@ function showRoomDetails(roomId) {
   const actionContainer = document.getElementById('modal-quick-actions');
   if (actionContainer) {
     let buttons = '';
-    if (room.availableBedsCount > 0 && room.computedStatus !== 'Maintenance') {
+    if (room.canCheckIn && room.availableBedsCount > 0) {
       buttons += `
         <a href="admin.html?action=checkin&roomId=${encodeURIComponent(room.roomId)}" class="btn btn-sm btn-success me-2">
           <i class="bi bi-box-arrow-in-right me-1"></i> เช็คอินเข้าห้องนี้
@@ -313,6 +335,9 @@ function showRoomDetails(roomId) {
         <i class="bi ${isMaint ? 'bi-check-circle' : 'bi-cone-striped'} me-1"></i>
         ${isMaint ? 'เปิดห้องใช้งาน' : 'ปิดปรับปรุงห้อง'}
       </button>
+      <a href="admin.html?tab=parking" class="btn btn-sm btn-outline-primary me-2">
+        <i class="bi bi-car-front me-1"></i> ที่จอดรถ
+      </a>
       <a href="admin.html?tab=rooms" class="btn btn-sm btn-outline-secondary me-2">
         <i class="bi bi-gear me-1"></i> จัดการห้องพัก
       </a>
@@ -320,11 +345,17 @@ function showRoomDetails(roomId) {
     actionContainer.innerHTML = buttons;
   }
 
-  const modal = new bootstrap.Modal(modalEl);
-  modal.show();
+  bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
 
 async function toggleRoomMaintenanceFromModal(roomId) {
+  const target = allRooms.find(r => String(r.roomId) === String(roomId));
+  const wasMaint = !!target && target.computedStatus === 'Maintenance';
+  const ok = await App.confirm(
+    wasMaint ? 'ยืนยันการเปิดห้องใช้งาน' : 'ยืนยันการปิดปรับปรุงห้อง',
+    `ห้อง ${target ? target.roomNumber : ''}`
+  );
+  if (!ok) return;
   try {
     App.showLoading('กำลังเปลี่ยนสถานะห้องพัก...');
     await API.toggleRoomMaintenance(roomId);
@@ -340,7 +371,7 @@ async function toggleRoomMaintenanceFromModal(roomId) {
 
 document.addEventListener('DOMContentLoaded', () => {
   loadRoomsData();
-  ['filter-building', 'filter-status', 'filter-gender', 'filter-type'].forEach(id => {
+  ['filter-building', 'filter-status', 'filter-type'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', applyFilterAndRender);
   });
   document.getElementById('search-room')?.addEventListener('input', applyFilterAndRender);

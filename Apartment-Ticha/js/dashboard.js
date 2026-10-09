@@ -3,9 +3,11 @@ let charts = {};
 async function loadDashboard() {
   const loadingEl = document.getElementById('loading-indicator');
   const contentEl = document.getElementById('dashboard-content');
+  const errorEl = document.getElementById('dashboard-error');
 
   if (loadingEl) loadingEl.classList.remove('d-none');
   if (contentEl) contentEl.classList.add('d-none');
+  if (errorEl) errorEl.classList.add('d-none');
 
   try {
     const data = await API.getDashboardData();
@@ -13,14 +15,16 @@ async function loadDashboard() {
     renderCharts(data);
     renderBuildingOccupancy(data.buildingStats);
     renderAlmostFullRooms(data.almostFullRooms);
+    renderParking(data.parkingStats);
 
     if (contentEl) contentEl.classList.remove('d-none');
   } catch (error) {
     console.error('Error loading dashboard:', error);
-    if (contentEl) {
-      contentEl.classList.remove('d-none');
-      contentEl.innerHTML = `
-        <div class="col-12 text-center py-5">
+    // แสดงข้อผิดพลาดในกล่องแยก (ไม่เขียนทับ dashboard-content ไม่งั้นกราฟ/KPI จะหายถาวรจนกว่าจะรีเฟรชหน้า)
+    if (errorEl) {
+      errorEl.classList.remove('d-none');
+      errorEl.innerHTML = `
+        <div class="text-center py-5">
           <i class="bi bi-exclamation-triangle text-danger fs-1"></i>
           <h5 class="mt-3 text-danger">ไม่สามารถโหลดข้อมูล Dashboard ได้</h5>
           <p class="text-muted">${App.escHtml(error.message)}</p>
@@ -53,6 +57,35 @@ function renderKPIs(kpi) {
   setText('kpi-rate', `${kpi.overallOccupancyRate || 0}%`);
   setText('kpi-new-this-month', kpi.newThisMonth || 0);
   setText('kpi-checkout-this-month', kpi.checkOutThisMonth || 0);
+}
+
+function renderParking(ps) {
+  if (!ps) return;
+  setText('pk-total', ps.total || 0);
+  setText('pk-occupied', ps.occupied || 0);
+  setText('pk-available', ps.available || 0);
+  setText('pk-rate', `${ps.rate || 0}%`);
+  setText('pk-maint', ps.maintenance ? `ปิดปรับปรุง ${ps.maintenance} ช่อง` : '');
+
+  const container = document.getElementById('parking-type-bars');
+  if (!container) return;
+  const row = (icon, label, t) => {
+    const total = t?.total || 0;
+    const occ = t?.occupied || 0;
+    const pct = total > 0 ? Math.round((occ / total) * 100) : 0;
+    const color = pct >= 90 ? 'bg-danger' : (pct >= 70 ? 'bg-warning' : 'bg-primary');
+    return `
+      <div class="col-12 col-md-6">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="fw-semibold"><i class="bi ${icon} me-1"></i>${label}</span>
+          <span class="small text-muted">${occ} / ${total} ช่อง (ว่าง ${t?.available || 0})</span>
+        </div>
+        <div class="progress" style="height: 10px; border-radius: 6px;">
+          <div class="progress-bar ${color}" style="width: ${pct}%"></div>
+        </div>
+      </div>`;
+  };
+  container.innerHTML = row('bi-car-front-fill', 'รถยนต์', ps.car) + row('bi-bicycle', 'มอเตอร์ไซค์', ps.motorcycle);
 }
 
 function renderBuildingOccupancy(buildingStats) {
@@ -130,7 +163,7 @@ function renderCharts(data) {
         labels: chartConfig.roomStatus.labels,
         datasets: [{
           data: chartConfig.roomStatus.counts,
-          backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#f97316']
+          backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#f97316', '#64748b']
         }]
       },
       options: {

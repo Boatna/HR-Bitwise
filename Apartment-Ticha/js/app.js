@@ -19,7 +19,7 @@ const App = {
             <img src="assets/mascot.png" alt="ทาคุจัง" class="rounded-circle bg-white shadow-sm flex-shrink-0" style="width: 40px; height: 40px; object-fit: contain; padding: 2px;">
             <div class="brand-text">
               <div class="fw-bold brand-title leading-tight">ระบบบริหารหอพักพนักงาน</div>
-              <small class="text-white-50 brand-subtitle">Employee Dormitory Management v1.0</small>
+              <small class="text-white-50 brand-subtitle">Employee Dormitory Management v2.2</small>
             </div>
           </a>
 
@@ -37,6 +37,11 @@ const App = {
               <li class="nav-item">
                 <a class="nav-link ${isDashboard ? 'active' : ''}" href="dashboard.html">
                   <i class="bi bi-speedometer2 me-1"></i> แดชบอร์ด (Dashboard)
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="admin.html?tab=parking">
+                  <i class="bi bi-car-front-fill me-1"></i> ที่จอดรถ
                 </a>
               </li>
               <li class="nav-item">
@@ -97,8 +102,30 @@ const App = {
     return String(str)
       .replace(/\\/g, '\\\\')
       .replace(/'/g, "\\'")
+      .replace(/\r?\n/g, ' ')
       .replace(/&/g, '&amp;')
       .replace(/"/g, '&quot;');
+  },
+
+  /** วันที่วันนี้ตามเวลาท้องถิ่นของเครื่อง รูปแบบ yyyy-MM-dd (toISOString เป็น UTC ทำให้เช้ามืดได้วันเมื่อวาน) */
+  todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  },
+
+  /** แปลงค่าใด ๆ เป็นข้อความตัวพิมพ์เล็ก (ปลอดภัยแม้ค่าเป็นตัวเลข/null/undefined) ใช้ในการค้นหา */
+  lc(v) {
+    return String(v === null || v === undefined ? '' : v).toLowerCase();
+  },
+
+  vehicleLabel(type) {
+    return type === 'Motorcycle' ? 'มอเตอร์ไซค์' : 'รถยนต์';
+  },
+
+  /** ป้ายช่องจอดรถ เช่น "P-01 · 1กข-5678" */
+  parkingChip(slotNumber, vehicleType, plate) {
+    const moto = vehicleType === 'Motorcycle';
+    return `<span class="parking-chip ${moto ? 'moto' : ''}"><i class="bi ${moto ? 'bi-bicycle' : 'bi-car-front-fill'}"></i>${this.escHtml(slotNumber)}${plate ? ' · ' + this.escHtml(plate) : ''}</span>`;
   },
 
   getStatusBadge(status) {
@@ -144,6 +171,18 @@ const App = {
         label = 'ปฏิเสธ';
         icon = 'bi-x-octagon-fill text-danger';
         break;
+      case 'Occupied':
+        label = 'มีผู้จอง';
+        icon = 'bi-car-front-fill text-primary';
+        break;
+      case 'CheckedOut':
+        label = 'ย้ายออกแล้ว';
+        icon = 'bi-box-arrow-right text-secondary';
+        break;
+      case 'Transferred':
+        label = 'ย้ายห้อง';
+        icon = 'bi-arrow-left-right text-secondary';
+        break;
       case 'Completed':
         label = 'เสร็จสมบูรณ์';
         icon = 'bi-check2-circle text-success';
@@ -158,6 +197,9 @@ const App = {
    */
   formatDate(dateVal) {
     if (!dateVal) return '-';
+    // yyyy-MM-dd ล้วน ๆ ให้แปลงจากข้อความตรง ๆ (กันวันเพี้ยนจาก timezone ของเบราว์เซอร์)
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dateVal));
+    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
     try {
       const d = new Date(dateVal);
       if (isNaN(d.getTime())) return String(dateVal);

@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-
 :root {
   --font-base: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --color-primary: #1e3a8a;
@@ -27,6 +25,13 @@ body {
   flex-direction: column;
   overflow-x: hidden;
 }
+
+/* Utilities (Bootstrap ไม่มีให้) */
+.text-orange { color: #ea580c !important; }
+.bg-orange { background-color: #ea580c !important; }
+.border-orange { border-color: #ea580c !important; }
+.fs-7 { font-size: 0.85rem !important; }
+.leading-tight { line-height: 1.25; }
 
 /* Navbar */
 .navbar-dorm {
@@ -185,6 +190,49 @@ body {
 .badge-status.Inactive {
   background-color: #f1f5f9;
   color: #475569;
+}
+
+.badge-status.Active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+.badge-status.Occupied {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+.badge-status.CheckedOut,
+.badge-status.Transferred {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+/* Parking */
+.parking-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  white-space: nowrap;
+}
+.parking-chip.moto {
+  background: #fdf4ff;
+  color: #a21caf;
+  border-color: #f5d0fe;
+}
+.parking-row-warning {
+  background-color: #fffbeb !important;
+}
+.parking-kpi {
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  padding: 0.75rem 1rem;
 }
 
 /* Bed Dots */
@@ -372,8 +420,6 @@ body {
   }
 }
 
-/* Header rows with a title + action button(s): stack on narrow screens
-   instead of squeezing/overflowing horizontally */
 .page-header-actions,
 .d-flex.justify-content-between.align-items-center.mb-4 {
   flex-wrap: wrap;

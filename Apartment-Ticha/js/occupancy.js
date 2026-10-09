@@ -14,6 +14,7 @@ const OccupancyWorkflow = {
       this.activeEmployees = emps || [];
     } catch (e) {
       console.error('Cannot load modal dependencies', e);
+      App.showToast('โหลดข้อมูลห้อง/พนักงานไม่สำเร็จ: ' + e.message, 'error');
     }
   },
 
@@ -22,20 +23,25 @@ const OccupancyWorkflow = {
     await this.initModalData();
     App.closeLoading();
     this.resetEmployeeSearch();
+    // ล้างช่องที่ค้างค่าจากการเปิดครั้งก่อน
+    ['checkin-expected-date', 'checkin-remark'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
 
     const roomSelect = document.getElementById('checkin-room');
     if (roomSelect) {
       roomSelect.innerHTML = '<option value="">-- เลือกห้องพัก --</option>';
-      const availableRooms = this.activeRooms.filter(r => r.availableBedsCount > 0 && r.computedStatus !== 'Maintenance');
+      const availableRooms = this.activeRooms.filter(r => r.canCheckIn && r.availableBedsCount > 0);
       availableRooms.forEach(r => {
-        const isSelected = preselectedRoomId && r.roomId === preselectedRoomId ? 'selected' : '';
+        const isSelected = preselectedRoomId && String(r.roomId) === String(preselectedRoomId) ? 'selected' : '';
         roomSelect.innerHTML += `<option value="${App.escHtml(r.roomId)}" ${isSelected}>${App.escHtml(r.roomNumber)} - ${App.escHtml(r.buildingName)} (ว่าง ${r.availableBedsCount} ที่)</option>`;
       });
     }
 
     const checkinDateInput = document.getElementById('checkin-date');
     if (checkinDateInput) {
-      checkinDateInput.value = new Date().toISOString().split('T')[0];
+      checkinDateInput.value = App.todayStr();
     }
 
     if (preselectedRoomId) {
@@ -44,7 +50,7 @@ const OccupancyWorkflow = {
       document.getElementById('checkin-bed').innerHTML = '<option value="">-- กรุณาเลือกห้องก่อน --</option>';
     }
 
-    const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('checkInModal'));
     modal.show();
     setTimeout(() => {
       document.getElementById('checkin-employee-search')?.focus();
@@ -121,6 +127,7 @@ const OccupancyWorkflow = {
 
     if (emp.isAccommodated) {
       App.showToast(`พนักงานคนนี้พักอยู่ที่ห้อง ${emp.currentRoomNumber} อยู่แล้ว (หากต้องการเปลี่ยนห้องให้ใช้เมนู "ย้ายห้อง")`, 'warning');
+      return;
     }
 
     const searchInput = document.getElementById('checkin-employee-search');
@@ -143,7 +150,7 @@ const OccupancyWorkflow = {
     if (!bedSelect) return;
 
     bedSelect.innerHTML = '<option value="">-- เลือกที่พัก/เตียง --</option>';
-    const room = this.activeRooms.find(r => r.roomId === roomId);
+    const room = this.activeRooms.find(r => String(r.roomId) === String(roomId));
     if (!room || !room.beds) return;
 
     const vacantBeds = room.beds.filter(b => !b.isOccupied && b.status === 'Active');
@@ -194,7 +201,7 @@ const OccupancyWorkflow = {
 
       App.closeLoading();
       bootstrap.Modal.getInstance(document.getElementById('checkInModal'))?.hide();
-      await App.showSuccess('Check-in สำเร็จ!', 'บันทึกข้อมูลการเข้าพักเรียบร้อยแล้ว');
+      await App.showSuccess('Check-in สำเร็จ!', 'บันทึกข้อมูลการเข้าพักเรียบร้อยแล้ว หากพนักงานมีรถ สามารถจองช่องจอดได้ที่เมนู "ที่จอดรถ"');
       if (typeof Admin !== 'undefined') Admin.loadOccupancy();
     } catch (error) {
       App.closeLoading();
@@ -206,11 +213,11 @@ const OccupancyWorkflow = {
     document.getElementById('checkout-occupancy-id').value = occupancyId;
     document.getElementById('checkout-occupant-name').textContent = occupantName;
     document.getElementById('checkout-room-info').textContent = `ห้อง ${roomNumber} (ที่พัก ${bedNumber || 1})`;
-    document.getElementById('checkout-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('checkout-date').value = App.todayStr();
     document.getElementById('checkout-reason').value = 'หมดสัญญา / ย้ายออก';
     if (document.getElementById('checkout-remark')) document.getElementById('checkout-remark').value = '';
 
-    const modal = new bootstrap.Modal(document.getElementById('checkOutModal'));
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('checkOutModal'));
     modal.show();
   },
 
@@ -225,12 +232,12 @@ const OccupancyWorkflow = {
       return;
     }
 
-    const confirmed = await App.confirm('ยืนยันการเช็คเอาท์', 'เมื่อเช็คเอาท์แล้ว ห้องพักจะคืนสถานะ "ว่าง" ให้พนักงานคนอื่นเข้าพักได้');
+    const confirmed = await App.confirm('ยืนยันการเช็คเอาท์', 'เมื่อเช็คเอาท์แล้ว ห้องพักจะคืนสถานะ "ว่าง" และช่องจอดรถของพนักงานคนนี้ (ถ้ามี) จะถูกคืนให้อัตโนมัติ');
     if (!confirmed) return;
 
     try {
       App.showLoading('กำลังบันทึกการเช็คเอาท์...');
-      await API.checkOut({
+      const outResult = await API.checkOut({
         occupancyId,
         checkOutDate,
         reason,
@@ -239,7 +246,8 @@ const OccupancyWorkflow = {
 
       App.closeLoading();
       bootstrap.Modal.getInstance(document.getElementById('checkOutModal'))?.hide();
-      await App.showSuccess('Check-out สำเร็จ!', 'คืนสถานะห้องว่างเรียบร้อยแล้ว');
+      const parkMsg = outResult && outResult.releasedParking ? ` และคืนช่องจอดรถ ${outResult.releasedParking} ช่องแล้ว` : '';
+      await App.showSuccess('Check-out สำเร็จ!', 'คืนสถานะห้องว่างเรียบร้อยแล้ว' + parkMsg);
       if (typeof Admin !== 'undefined') Admin.loadOccupancy();
     } catch (error) {
       App.closeLoading();
@@ -255,12 +263,14 @@ const OccupancyWorkflow = {
     document.getElementById('transfer-occupancy-id').value = occupancyId;
     document.getElementById('transfer-occupant-name').textContent = occupantName;
     document.getElementById('transfer-current-room').textContent = `ห้อง ${currentRoomNumber} (ที่พัก ${currentBedNumber || 1})`;
-    document.getElementById('transfer-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('transfer-date').value = App.todayStr();
+    document.getElementById('transfer-reason').value = 'ขอย้ายห้อง';
+    document.getElementById('transfer-remark').value = '';
 
     const newRoomSelect = document.getElementById('transfer-new-room');
     if (newRoomSelect) {
       newRoomSelect.innerHTML = '<option value="">-- เลือกห้องพักใหม่ --</option>';
-      const availableRooms = this.activeRooms.filter(r => r.availableBedsCount > 0 && r.roomId !== currentRoomId && r.computedStatus !== 'Maintenance');
+      const availableRooms = this.activeRooms.filter(r => r.canCheckIn && r.availableBedsCount > 0 && String(r.roomId) !== String(currentRoomId));
       availableRooms.forEach(r => {
         newRoomSelect.innerHTML += `<option value="${App.escHtml(r.roomId)}">${App.escHtml(r.roomNumber)} - ${App.escHtml(r.buildingName)} (ว่าง ${r.availableBedsCount} ที่)</option>`;
       });
@@ -268,7 +278,7 @@ const OccupancyWorkflow = {
 
     document.getElementById('transfer-new-bed').innerHTML = '<option value="">-- กรุณาเลือกห้องใหม่ก่อน --</option>';
 
-    const modal = new bootstrap.Modal(document.getElementById('transferModal'));
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('transferModal'));
     modal.show();
   },
 
@@ -277,7 +287,7 @@ const OccupancyWorkflow = {
     if (!bedSelect) return;
 
     bedSelect.innerHTML = '<option value="">-- เลือกที่พัก/เตียงใหม่ --</option>';
-    const room = this.activeRooms.find(r => r.roomId === newRoomId);
+    const room = this.activeRooms.find(r => String(r.roomId) === String(newRoomId));
     if (!room || !room.beds) return;
 
     const vacantBeds = room.beds.filter(b => !b.isOccupied && b.status === 'Active');
@@ -320,7 +330,7 @@ const OccupancyWorkflow = {
 
       App.closeLoading();
       bootstrap.Modal.getInstance(document.getElementById('transferModal'))?.hide();
-      await App.showSuccess('ย้ายห้องสำเร็จ!', 'ย้ายข้อมูลพนักงานเข้าสู่ห้องใหม่เรียบร้อยแล้ว');
+      await App.showSuccess('ย้ายห้องสำเร็จ!', 'ย้ายข้อมูลพนักงานเข้าสู่ห้องใหม่เรียบร้อยแล้ว (ห้องของที่จอดรถอัปเดตให้อัตโนมัติ)');
       if (typeof Admin !== 'undefined') Admin.loadOccupancy();
     } catch (error) {
       App.closeLoading();

@@ -1,7 +1,9 @@
 const API = {
-  DEFAULT_API_URL: 'https://script.google.com/macros/s/AKfycbzQGeVjUehCPoY-9P2Rg3VRFSCnmOeo_sz9OG1-Y6T096Etw7_L4zYkTrBe1HZ506Ud8g/exec',
+  DEFAULT_API_URL: 'https://script.google.com/macros/s/AKfycbz4vZdRlsjjnpYUJ--u2VmxVxx8c0LTdlIdBr7ifKtnKQVxMXBIP7_mAWldY7DiWu1TLA/exec',
   STORAGE_URL_KEY: 'DORM_API_URL',
   USER_STORAGE_KEY: 'DORM_CURRENT_USER',
+  STORAGE_TOKEN_KEY: 'DORM_API_TOKEN',
+  TIMEOUT_MS: 60000,
 
   get API_URL() {
     return localStorage.getItem(this.STORAGE_URL_KEY) || this.DEFAULT_API_URL;
@@ -12,6 +14,19 @@ const API = {
       localStorage.setItem(this.STORAGE_URL_KEY, url.trim());
     } else {
       localStorage.removeItem(this.STORAGE_URL_KEY);
+    }
+  },
+
+  getToken() {
+    return localStorage.getItem(this.STORAGE_TOKEN_KEY) || '';
+  },
+
+  setToken(token) {
+    const t = (token || '').trim();
+    if (t) {
+      localStorage.setItem(this.STORAGE_TOKEN_KEY, t);
+    } else {
+      localStorage.removeItem(this.STORAGE_TOKEN_KEY);
     }
   },
 
@@ -38,8 +53,12 @@ const API = {
     const body = {
       action: action,
       userEmail: currentUser.email,
+      token: this.getToken(),
       ...payload
     };
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.TIMEOUT_MS);
 
     try {
       const response = await fetch(this.API_URL, {
@@ -47,14 +66,22 @@ const API = {
         headers: {
           'Content-Type': 'text/plain;charset=utf-8'
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        signal: controller.signal
       });
 
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseErr) {
+        // มักเกิดเมื่อ Web App ไม่ได้ตั้ง "Anyone" หรือ URL ผิด → Google ส่งหน้า HTML (หน้าล็อกอิน) กลับมาแทน JSON
+        throw new Error('Web App ตอบกลับไม่ใช่ JSON กรุณาตรวจสอบ URL (ต้องลงท้าย /exec), สิทธิ์ "Anyone" และว่า Deploy เวอร์ชันล่าสุดแล้ว');
+      }
+
       if (!result.success) {
         throw new Error(result.message || 'เกิดข้อผิดพลาดในการประมวลผลที่ Backend');
       }
@@ -62,7 +89,15 @@ const API = {
       return result.data !== undefined ? result.data : result;
     } catch (error) {
       console.error(`API Call failed [${action}]:`, error);
+      if (error && error.name === 'AbortError') {
+        throw new Error('หมดเวลาการเชื่อมต่อ (เกิน ' + (this.TIMEOUT_MS / 1000) + ' วินาที) กรุณาลองใหม่อีกครั้ง');
+      }
+      if (error instanceof TypeError) {
+        throw new Error('เชื่อมต่อ Web App ไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต หรือ URL ในหน้าตั้งค่า');
+      }
       throw error;
+    } finally {
+      clearTimeout(timer);
     }
   },
 
@@ -122,6 +157,23 @@ const API = {
   },
   transferRoom(data) {
     return this.call('transferRoom', { data });
+  },
+
+  // ---------- ที่จอดรถ (Parking) ----------
+  getParking() {
+    return this.call('getParking');
+  },
+  saveParkingSlot(data) {
+    return this.call('saveParkingSlot', { data });
+  },
+  assignParking(data) {
+    return this.call('assignParking', { data });
+  },
+  releaseParking(data) {
+    return this.call('releaseParking', { data });
+  },
+  deleteParkingSlot(slotId) {
+    return this.call('deleteParkingSlot', { slotId });
   },
 
   // ---------- การตั้งค่าและ Audit ----------

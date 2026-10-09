@@ -36,6 +36,9 @@
         <a class="nav-link" href="#" data-tab="employees">
           <i class="bi bi-person-badge text-info"></i> ข้อมูลพนักงาน (Employees)
         </a>
+        <a class="nav-link" href="#" data-tab="parking">
+          <i class="bi bi-car-front-fill text-warning"></i> ที่จอดรถ (Parking)
+        </a>
       </nav>
 
       <div class="sidebar-heading mt-3">ข้อมูลพื้นฐาน & รายงาน</div>
@@ -139,7 +142,6 @@
                   <th>ประเภท</th>
                   <th>ความจุ</th>
                   <th>ผู้พักจริง / ว่าง</th>
-                  <th>เพศผู้พัก</th>
                   <th>สถานะห้อง</th>
                   <th>จัดการ</th>
                 </tr>
@@ -200,6 +202,76 @@
         </div>
       </section>
 
+      <!-- Tab: ที่จอดรถ (Parking) -->
+      <section id="tab-parking" class="tab-content-section d-none">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark">
+              <i class="bi bi-car-front-fill text-primary me-2"></i>จองที่จอดรถ (ช่องนี้ของใคร / พักห้องไหน)
+            </h3>
+            <p class="text-muted mb-0">จองช่องจอดให้พนักงานที่พักอยู่ในหอ ระบบดึงห้องพักให้อัตโนมัติ และคืนช่องให้เองเมื่อเช็คเอาท์</p>
+          </div>
+          <button class="btn btn-primary shadow-sm px-3" onclick="Admin.openParkingSlotModal()">
+            <i class="bi bi-plus-lg me-1"></i> เพิ่มช่องจอดใหม่
+          </button>
+        </div>
+
+        <div class="row g-2 mb-3" id="parking-summary"></div>
+
+        <div class="card border-0 shadow-sm rounded-4 mb-3">
+          <div class="card-body p-3">
+            <div class="row g-2 align-items-center">
+              <div class="col-12 col-md-5">
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                  <input type="text" id="search-parking" class="form-control border-start-0" placeholder="ค้นหาช่องจอด, ทะเบียน, ชื่อผู้จอง หรือเลขห้อง..." oninput="Admin.filterParking()">
+                </div>
+              </div>
+              <div class="col-6 col-md-2">
+                <select id="filter-parking-type" class="form-select" onchange="Admin.filterParking()">
+                  <option value="">ทุกประเภท</option>
+                  <option value="Car">รถยนต์</option>
+                  <option value="Motorcycle">มอเตอร์ไซค์</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-2">
+                <select id="filter-parking-status" class="form-select" onchange="Admin.filterParking()">
+                  <option value="">ทุกสถานะ</option>
+                  <option value="Available">ว่าง</option>
+                  <option value="Occupied">มีผู้จอง</option>
+                  <option value="Maintenance">ปิดปรับปรุง</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-auto ms-auto">
+                <button class="btn btn-outline-secondary btn-sm" onclick="Admin.loadParking()">
+                  <i class="bi bi-arrow-clockwise me-1"></i> รีเฟรช
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>ช่องจอด</th>
+                  <th>ประเภท</th>
+                  <th>สถานะ</th>
+                  <th>ผู้จอง (ของใคร)</th>
+                  <th>พักห้อง</th>
+                  <th>ทะเบียน / รุ่นรถ</th>
+                  <th>เริ่มจอง</th>
+                  <th>จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="parking-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- Tab 4: ข้อมูลอาคาร (Buildings) -->
       <section id="tab-buildings" class="tab-content-section d-none">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
@@ -248,6 +320,9 @@
               <button class="btn btn-outline-primary" onclick="Reports.generateReport('history')">
                 <i class="bi bi-clock-history me-1"></i> ประวัติการเข้าพักและย้ายออก
               </button>
+              <button class="btn btn-outline-primary" onclick="Reports.generateReport('parking')">
+                <i class="bi bi-car-front me-1"></i> รายงานที่จอดรถ
+              </button>
             </div>
           </div>
         </div>
@@ -283,6 +358,11 @@
                   <label class="form-label fw-semibold">Web App URL (exec)</label>
                   <input type="text" id="setting-api-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
                   <small class="text-muted d-block mt-1">URL ที่ได้จากการ Deploy เป็น Web App ใน Google Apps Script (Who has access: Anyone)</small>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">รหัสเชื่อมต่อ API (Token) <span class="text-muted fw-normal">- ไม่บังคับ</span></label>
+                  <input type="password" id="setting-api-token" class="form-control" placeholder="เว้นว่างถ้าไม่ได้ตั้ง API_TOKEN ใน Script Properties" autocomplete="off">
+                  <small class="text-muted d-block mt-1">ต้องตรงกับ Script Property ชื่อ <code>API_TOKEN</code> ใน Apps Script (ถ้าตั้งไว้) ช่วยกันคนนอกที่รู้ URL เรียกใช้ API
                 </div>
                 <div class="d-flex gap-2">
                   <button class="btn btn-primary" onclick="Admin.saveApiUrl()">
@@ -333,6 +413,8 @@
                   <li><strong>ตรวจสอบห้องว่าง:</strong> ไปที่แท็บ "ข้อมูลห้องพัก" หรือหน้า "สถานะห้องพัก"</li>
                   <li><strong>ย้ายห้อง:</strong> คลิกปุ่ม "ย้ายห้อง" ที่แถวพนักงาน ระบบจะเปลี่ยนห้องให้ทันที</li>
                   <li><strong>ปิดปรับปรุงห้อง:</strong> คลิกปุ่ม "ปิดปรับปรุง" ในหน้ารายการห้องพัก เมื่อซ่อมเสร็จคลิก "เปิดใช้งาน" ได้ทันที</li>
+                  <li><strong>จองที่จอดรถ:</strong> ไปที่แท็บ "ที่จอดรถ" กดปุ่ม "จอง" ที่ช่องว่าง เลือกพนักงาน (ระบบดึงห้องพักให้เอง) แล้วกรอกทะเบียนรถ</li>
+                  <li><strong>ที่จอดรถเมื่อย้าย/ออก:</strong> ย้ายห้อง = ห้องในรายการจอดอัปเดตเอง, เช็คเอาท์ = คืนช่องจอดให้อัตโนมัติ</li>
                   <li><strong>ส่งออกข้อมูล:</strong> ไปที่แท็บ "รายงานและส่งออก" แล้วกด "ดาวน์โหลด CSV (Excel)"</li>
                 </ul>
               </div>
@@ -563,19 +645,11 @@
             </div>
           </div>
           <div class="row g-2 mb-3">
-            <div class="col-4">
+            <div class="col-6">
               <label class="form-label fw-semibold">ความจุ (คน) <span class="text-danger">*</span></label>
-              <input type="number" id="room-capacity" class="form-control" value="2" min="1" max="10">
+              <input type="number" id="room-capacity" class="form-control" value="2" min="1" max="20" oninput="Admin.syncRoomType()">
             </div>
-            <div class="col-4">
-              <label class="form-label fw-semibold">เพศที่กำหนด</label>
-              <select id="room-gender" class="form-select">
-                <option value="Male">ชาย</option>
-                <option value="Female">หญิง</option>
-                <option value="Any">ไม่จำกัด</option>
-              </select>
-            </div>
-            <div class="col-4">
+            <div class="col-6">
               <label class="form-label fw-semibold">ประเภทห้อง</label>
               <select id="room-type" class="form-select">
                 <option value="Double">Double (2 คน)</option>
@@ -645,9 +719,113 @@
     </div>
   </div>
 
+  <!-- Modal: ช่องจอดรถ (เพิ่ม/แก้ไข) -->
+  <div class="modal fade" id="parkingSlotModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-p-square-fill text-primary me-2"></i>ข้อมูลช่องจอดรถ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="ps-id">
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">เลขช่องจอด <span class="text-danger">*</span></label>
+              <input type="text" id="ps-number" class="form-control" placeholder="เช่น P-01, M-01">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">ประเภท</label>
+              <select id="ps-type" class="form-select">
+                <option value="Car">รถยนต์ (Car)</option>
+                <option value="Motorcycle">มอเตอร์ไซค์ (Motorcycle)</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">โซน</label>
+              <input type="text" id="ps-zone" class="form-control" placeholder="เช่น โซนอาคาร A">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">สถานะ</label>
+              <select id="ps-status" class="form-select">
+                <option value="Available">ว่าง (พร้อมให้จอง)</option>
+                <option value="Maintenance">ปิดปรับปรุง</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold">หมายเหตุ</label>
+            <input type="text" id="ps-remark" class="form-control">
+          </div>
+          <div class="form-text mt-2" id="ps-locked-note"></div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-primary px-4" onclick="Admin.saveParkingSlot()">บันทึกช่องจอด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: จองที่จอดรถให้พนักงาน -->
+  <div class="modal fade" id="assignParkingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-car-front-fill text-primary me-2"></i>จองช่องจอดรถ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="ap-slot-id">
+          <input type="hidden" id="ap-employee-id">
+          <div class="alert alert-secondary py-2 mb-3">
+            ช่องจอด: <strong id="ap-slot-info" class="text-primary">-</strong>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">พนักงานผู้จอง <span class="text-danger">*</span></label>
+            <input type="text" id="ap-employee-input" class="form-control" list="ap-employee-list" autocomplete="off"
+                   placeholder="พิมพ์รหัสหรือชื่อ แล้วเลือกจากรายการ..." oninput="Admin.onAssignEmployeeInput()">
+            <datalist id="ap-employee-list"></datalist>
+            <div class="form-text">แสดงเฉพาะพนักงานที่พักอยู่ในหอพัก (ต้องเช็คอินก่อนจึงจะจองที่จอดได้)</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">ห้องพักของผู้จอง</label>
+            <input type="text" id="ap-room-info" class="form-control bg-light" readonly placeholder="ระบบดึงให้อัตโนมัติเมื่อเลือกพนักงาน">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">ทะเบียนรถ <span class="text-danger">*</span></label>
+              <input type="text" id="ap-plate" class="form-control" placeholder="เช่น 1กข-5678 กทม.">
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">รุ่น / ยี่ห้อ / สี</label>
+              <input type="text" id="ap-model" class="form-control" placeholder="เช่น Honda City (ดำ)">
+            </div>
+          </div>
+          <div class="row g-2">
+            <div class="col-5">
+              <label class="form-label fw-semibold">วันที่เริ่มจอง</label>
+              <input type="date" id="ap-date" class="form-control">
+            </div>
+            <div class="col-7">
+              <label class="form-label fw-semibold">หมายเหตุ</label>
+              <input type="text" id="ap-remark" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-primary px-4" onclick="Admin.submitAssignParking()">บันทึกการจอง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="bg-white border-top py-3 text-center text-muted small mt-auto">
     <div class="container">
-      &copy; 2026 ระบบบริหารหอพักพนักงาน (Employee Dormitory Management System) | v2.0
+      &copy; 2026 ระบบบริหารหอพักพนักงาน (Employee Dormitory Management System) | v2.2
     </div>
   </footer>
 

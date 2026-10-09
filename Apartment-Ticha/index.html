@@ -35,7 +35,7 @@
           <div class="col-12 col-md-3">
             <div class="input-group">
               <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-              <input type="text" id="search-room" class="form-control border-start-0" placeholder="ค้นหาเลขห้อง หรือชื่อผู้พัก...">
+              <input type="text" id="search-room" class="form-control border-start-0" placeholder="ค้นหาเลขห้อง ชื่อผู้พัก หรือทะเบียนรถ...">
             </div>
           </div>
           <div class="col-6 col-md-2">
@@ -51,14 +51,6 @@
               <option value="Full">🔴 เต็ม</option>
               <option value="Maintenance">🟠 ปิดปรับปรุง</option>
               <option value="Inactive">⚪ ไม่เปิดใช้งาน</option>
-            </select>
-          </div>
-          <div class="col-6 col-md-2">
-            <select id="filter-gender" class="form-select">
-              <option value="">เพศผู้พัก (ทั้งหมด)</option>
-              <option value="Male">ชาย</option>
-              <option value="Female">หญิง</option>
-              <option value="Any">ไม่จำกัด</option>
             </select>
           </div>
           <div class="col-6 col-md-2">
@@ -111,10 +103,6 @@
               <strong id="modal-room-type" class="text-dark">-</strong>
             </div>
             <div class="col-6 col-md-3">
-              <small class="text-muted d-block">เพศที่กำหนด</small>
-              <strong id="modal-gender" class="text-dark">-</strong>
-            </div>
-            <div class="col-6 col-md-3">
               <small class="text-muted d-block">ความจุ / ผู้พัก</small>
               <strong id="modal-capacity" class="text-dark">-</strong>
             </div>
@@ -132,7 +120,9 @@
           <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-layout-split me-1 text-primary"></i>สถานะเตียงภายในห้อง</h6>
           <div id="modal-beds-list" class="row g-2 mb-4"></div>
           <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-people-fill me-1 text-primary"></i>ผู้พักอาศัยปัจจุบัน</h6>
-          <ul id="modal-occupants-list" class="list-group rounded-3 mb-3"></ul>
+          <ul id="modal-occupants-list" class="list-group rounded-3 mb-4"></ul>
+          <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-car-front-fill me-1 text-primary"></i>ที่จอดรถของห้องนี้</h6>
+          <ul id="modal-parking-list" class="list-group rounded-3 mb-3"></ul>
         </div>
         <div class="modal-footer border-0 bg-light py-3 d-flex justify-content-between">
           <div id="modal-quick-actions"></div>
@@ -144,7 +134,7 @@
 
   <footer class="bg-white border-top py-3 text-center text-muted small mt-auto">
     <div class="container">
-      &copy; 2026 ระบบบริหารหอพักพนักงาน (Employee Dormitory Management System) | v1.0
+      &copy; 2026 ระบบบริหารหอพักพนักงาน (Employee Dormitory Management System) | v2.2
     </div>
   </footer>
 
