@@ -23,11 +23,9 @@ const SHEET_HEADERS = {
 
 // คอลัมน์ที่ต้องเก็บเป็นข้อความเสมอ (กันเบอร์โทร/รหัสที่ขึ้นต้นด้วย 0 ถูกแปลงเป็นตัวเลข)
 const TEXT_COLUMNS_ = ['EmployeeID', 'Phone', 'LicensePlate', 'RoomNumber', 'SlotNumber', 'BuildingCode',
-  // คอลัมน์วันที่เก็บเป็นข้อความ yyyy-MM-dd เสมอ (กัน Sheets แปลงเป็น Date แล้ววันเพี้ยนตาม timezone)
   'CheckInDate', 'ExpectedCheckOutDate', 'ActualCheckOutDate', 'AssignedDate', 'CreatedAt', 'UpdatedAt', 'Timestamp'];
 
 // คอลัมน์ที่ต้องแปลงเป็น String เสมอตอนอ่านจาก Sheets
-// (ข้อมูลเก่า/ข้อมูลตัวอย่างอาจเป็นตัวเลข ทำให้ฝั่งหน้าเว็บเรียก .toLowerCase() แล้วพัง)
 const STRING_ON_READ_ = ['EmployeeID', 'Phone', 'LicensePlate', 'RoomNumber', 'SlotNumber', 'BuildingCode',
   'RoomID', 'BuildingID', 'SlotID', 'OccupancyID', 'BedID', 'Floor', 'FloorID'];
 
@@ -40,14 +38,17 @@ function ensureAllSheets() {
       const h = SHEET_HEADERS[name];
       sh.getRange(1, 1, 1, h.length).setValues([h]).setFontWeight('bold').setBackground('#1e3a8a').setFontColor('#ffffff');
       sh.setFrozenRows(1);
+      h.forEach(function (colName, colIdx) {
+        if (TEXT_COLUMNS_.indexOf(colName) !== -1) {
+          sh.getRange(2, colIdx + 1, Math.max(sh.getMaxRows() - 1, 1), 1).setNumberFormat('@');
+        }
+      });
     }
   });
 }
 
 // ===================== ENTRY POINTS =====================
 
-// action ที่อ่านข้อมูลอย่างเดียว ไม่ต้องใช้ Lock
-// (ไม่งั้นหน้าเว็บที่เรียกหลาย API พร้อมกันจะต้องต่อคิวรอกัน และอาจ timeout 15 วินาที)
 const READ_ACTIONS_ = ['getDashboardData', 'getRooms', 'getRoomById', 'getEmployees', 'getBuildings', 'getFloors',
   'getOccupancy', 'getParking', 'getSettings', 'getAuditLogs', 'getBeds', 'getRoomRequests', 'getRepairRequests',
   'getMaintenance', 'getRoomAssets', 'getKeys'];
@@ -55,6 +56,9 @@ const READ_ACTIONS_ = ['getDashboardData', 'getRooms', 'getRoomById', 'getEmploy
 function doPost(e) {
   let body = {};
   try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return jsonResponse_({ success: false, message: 'ไม่พบข้อมูล payload ที่ส่งมา (Empty Request)' });
+    }
     body = JSON.parse(e.postData.contents);
   } catch (err) {
     return jsonResponse_({ success: false, message: 'รูปแบบข้อมูลที่ส่งมาไม่ถูกต้อง (Invalid JSON)' });
@@ -63,13 +67,11 @@ function doPost(e) {
   const action = body.action;
   const userEmail = body.userEmail || 'admin@dormitory.com';
 
-  // (ไม่บังคับ) ถ้าตั้ง Script Property ชื่อ API_TOKEN ไว้ ทุกคำขอต้องส่ง token ให้ตรงกัน
   const requiredToken = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
   if (requiredToken && String(body.token || '') !== requiredToken) {
     return jsonResponse_({ success: false, message: 'รหัสเชื่อมต่อ (API Token) ไม่ถูกต้อง กรุณาตั้งค่าที่หน้า Admin > การตั้งค่า' });
   }
 
-  // hasOwnProperty กัน action แปลก ๆ เช่น "constructor" / "toString" ที่ไปชี้ฟังก์ชันของ Object
   if (!action || !Object.prototype.hasOwnProperty.call(Actions, action) || typeof Actions[action] !== 'function') {
     return jsonResponse_({ success: false, message: 'ไม่พบคำสั่ง action "' + action + '" ในระบบ' });
   }
@@ -163,7 +165,13 @@ function textFormats_(headers) {
 function appendRow_(name, obj) {
   const sheet = getSheet_(name, true);
   const headers = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
-  const row = headers.map(function (h) { return obj[h] !== undefined ? obj[h] : ''; });
+  const row = headers.map(function (h) {
+    let val = obj[h] !== undefined ? obj[h] : '';
+    if (val !== null && val !== undefined && val !== '' && TEXT_COLUMNS_.indexOf(h) !== -1) {
+      val = String(val);
+    }
+    return val;
+  });
   const range = sheet.getRange(sheet.getLastRow() + 1, 1, 1, headers.length);
   range.setNumberFormats(textFormats_(headers));
   range.setValues([row]);
@@ -184,12 +192,16 @@ function updateRowById_(name, idField, idValue, patch) {
 
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][idCol]).trim() === String(idValue).trim()) {
-      // แปลง Date เดิมเป็นข้อความก่อนเขียนกลับ (กันค่าวันที่ในเซลล์รูปแบบ Text เพี้ยน)
       const newRow = values[i].map(function (c) { return normalizeCell_(c); });
       headers.forEach(function (h, idx) {
-        if (patch[h] !== undefined) newRow[idx] = patch[h];
+        if (patch[h] !== undefined) {
+          let val = patch[h];
+          if (val !== null && val !== undefined && val !== '' && TEXT_COLUMNS_.indexOf(h) !== -1) {
+            val = String(val);
+          }
+          newRow[idx] = val;
+        }
       });
-      // เขียนทั้งแถวในครั้งเดียว (เร็วกว่าเขียนทีละเซลล์มาก)
       const range = sheet.getRange(i + 1, 1, 1, headers.length);
       range.setNumberFormats(textFormats_(headers));
       range.setValues([newRow]);
@@ -234,7 +246,7 @@ function logAudit_(userEmail, action, module, recordId, remark) {
   }
 }
 
-// ===================== HELPERS: กติกาธุรกิจ =====================
+// ===================== HELPERS =====================
 
 function assertRoomUsable_(room) {
   if (!room || room.Status === 'Deleted') throw new Error('ไม่พบห้องพักที่เลือก');
@@ -242,7 +254,6 @@ function assertRoomUsable_(room) {
   if (room.Status === 'Inactive') throw new Error('ห้อง ' + room.RoomNumber + ' ไม่เปิดใช้งาน');
 }
 
-/** คืนช่องจอดทั้งหมดของพนักงาน (ใช้ตอนเช็คเอาท์/ลบพนักงาน) คืนค่าจำนวนช่องที่คืน */
 function releaseParkingForEmployee_(employeeId, userEmail, reason) {
   const slots = sheetToObjects_(SHEETS.PARKING).filter(function (p) {
     return p.Status === 'Occupied' && String(p.EmployeeID) === String(employeeId);
@@ -258,14 +269,6 @@ function releaseParkingForEmployee_(employeeId, userEmail, reason) {
 }
 
 // ===================== CORE LOGIC: คำนวณสถานะห้องพัก =====================
-/**
- * คำนวณสถานะห้องพักแบบ Real-time:
- * 1. ว่าง (Available): 0 คนเข้าพัก
- * 2. ว่างบางส่วน (Partially Occupied): มีคนพักแต่ยังไม่เต็มความจุ
- * 3. เต็ม (Full): มีคนพักครบตามความจุห้อง
- * 4. ปิดปรับปรุง (Maintenance): ห้องถูกตั้งสถานะปิดซ่อมบำรุง
- * พร้อมเชื่อมโยงข้อมูลที่จอดรถ (Parking) ที่ผูกกับห้องพัก
- */
 function computeRoomsData_() {
   const rooms = sheetToObjects_(SHEETS.ROOMS).filter(function (r) { return r.Status !== 'Deleted'; });
   const buildings = sheetToObjects_(SHEETS.BUILDINGS).filter(function (b) { return b.Status !== 'Deleted'; });
@@ -279,7 +282,6 @@ function computeRoomsData_() {
   const empMap = {};
   employees.forEach(function (e) { empMap[String(e.EmployeeID)] = e; });
 
-  // ห้องปัจจุบันของผู้พักแต่ละคน (ใช้จับคู่ช่องจอดรถกับห้อง)
   const activeRoomByEmp = {};
   occupancyActive.forEach(function (o) { activeRoomByEmp[String(o.EmployeeID)] = String(o.RoomID); });
 
@@ -305,7 +307,6 @@ function computeRoomsData_() {
 
     const bld = buildingMap[String(r.BuildingID)] || {};
 
-    // แปลงข้อมูลผู้พักอาศัยในห้อง
     const occupantsOut = roomOccupants.map(function (o) {
       const emp = empMap[String(o.EmployeeID)] || {};
       const fullName = emp.FullName || ((emp.FirstName || '') + ' ' + (emp.LastName || '')).trim() || o.EmployeeID;
@@ -329,7 +330,6 @@ function computeRoomsData_() {
       };
     });
 
-    // สร้างข้อมูลเตียง/ที่พัก 1..capacity
     const bedsOut = [];
     for (let bedNum = 1; bedNum <= capacity; bedNum++) {
       const occ = occupantsOut.find(function (occ) { return occ.bedNumber === bedNum; });
@@ -344,12 +344,9 @@ function computeRoomsData_() {
       });
     }
 
-    // ข้อมูลที่จอดรถที่ผูกกับห้องนี้
     const roomParking = parkingList
       .filter(function (p) {
         if (p.Status !== 'Occupied') return false;
-        // ใช้ห้องปัจจุบันของผู้จองเป็นหลัก ถ้าผู้จองไม่ได้พักอยู่แล้วค่อยใช้ RoomID ที่บันทึกไว้
-        // (ของเดิมเทียบ "เลขห้อง" ด้วย ทำให้ห้องเลขเดียวกันคนละอาคารเห็นที่จอดรถของกันและกัน)
         const ownerRoom = activeRoomByEmp[String(p.EmployeeID)];
         return (ownerRoom !== undefined ? ownerRoom : String(p.RoomID)) === roomId;
       })
@@ -379,10 +376,10 @@ function computeRoomsData_() {
       floorName: 'ชั้น ' + floorVal,
       roomType: r.RoomType || (capacity === 1 ? 'Single' : (capacity === 2 ? 'Double' : 'Standard')),
       capacity: capacity,
-      gender: 'Any', // หอพักไม่แบ่งแยกชาย-หญิง (คงคอลัมน์ Gender ไว้เพื่อความเข้ากันได้กับ Sheets เดิม)
+      gender: 'Any',
       monthlyRate: Number(r.MonthlyRate) || 0,
-      hasAirConditioner: true, // ทุกห้องมีเครื่องปรับอากาศเป็นมาตรฐาน
-      hasFurniture: true,      // ทุกห้องมีเฟอร์นิเจอร์มาตรฐานเหมือนกันหมด
+      hasAirConditioner: true,
+      hasFurniture: true,
       remark: r.Remark || 'เฟอร์นิเจอร์มาตรฐานครบชุด',
       computedStatus: computedStatus,
       canCheckIn: (computedStatus === 'Available' || computedStatus === 'Partially Occupied'),
@@ -401,7 +398,6 @@ function computeRoomsData_() {
 
 const Actions = {
 
-  // ---------- 1. แดชบอร์ดภาพรวม ----------
   getDashboardData: function () {
     const rooms = computeRoomsData_();
     const buildings = sheetToObjects_(SHEETS.BUILDINGS).filter(function (b) { return b.Status !== 'Deleted'; });
@@ -421,13 +417,20 @@ const Actions = {
     const totalOccupants = rooms.reduce(function (s, r) { return s + r.occupiedBedsCount; }, 0);
     const overallOccupancyRate = totalBeds > 0 ? Math.round((totalOccupants / totalBeds) * 1000) / 10 : 0;
 
-    // ใช้เดือน/ปีตามเขตเวลา TZ (Asia/Bangkok) ที่กำหนดในโค้ดนี้เอง ไม่พึ่งค่า timeZone ใน appsscript.json
     const todayBkk = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
     const curYear = Number(todayBkk.substring(0, 4));
     const curMonth = Number(todayBkk.substring(5, 7)) - 1;
-    // เทียบเดือนจากข้อความ yyyy-MM (ไม่ผูกกับ timezone) และไม่นับรายการ "ย้ายห้อง" เป็นผู้เข้าพักใหม่
+
     function isSameMonth(dateVal, m, y) {
-      return String(dateVal || '').substring(0, 7) === (y + '-' + ('0' + (m + 1)).slice(-2));
+      if (!dateVal) return false;
+      const s = String(dateVal).trim();
+      const targetYearMonth = y + '-' + ('0' + (m + 1)).slice(-2);
+      if (s.indexOf(targetYearMonth) === 0) return true;
+      const mDmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s);
+      if (mDmy) {
+        return Number(mDmy[3]) === y && (Number(mDmy[2]) - 1) === m;
+      }
+      return false;
     }
     function isRealCheckIn(o) { return String(o.Remark || '').indexOf('ย้ายมาจากห้องเดิม') !== 0; }
 
@@ -452,7 +455,6 @@ const Actions = {
       .filter(function (r) { return r.computedStatus === 'Partially Occupied' && r.availableBedsCount === 1; })
       .map(function (r) { return { roomNumber: r.roomNumber, buildingName: r.buildingName, available: r.availableBedsCount }; });
 
-    // สถิติผู้พักตามแผนก
     const activeOccEmps = {};
     occupancyAll.filter(function (o) { return o.Status === 'Active'; }).forEach(function (o) {
       activeOccEmps[String(o.EmployeeID)] = true;
@@ -465,7 +467,6 @@ const Actions = {
       }
     });
 
-    // แนวโน้ม 6 เดือนย้อนหลัง
     const monthLabels = [], checkInsByMonth = [], checkOutsByMonth = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(curYear, curMonth - i, 1);
@@ -480,7 +481,6 @@ const Actions = {
       roomTypeCounts[t] = (roomTypeCounts[t] || 0) + 1;
     });
 
-    // สถิติที่จอดรถ (Parking Stats)
     const totalParking = parkingList.length;
     const occupiedParking = parkingList.filter(function (p) { return p.Status === 'Occupied'; }).length;
     const availableParking = parkingList.filter(function (p) { return p.Status === 'Available'; }).length;
@@ -551,7 +551,6 @@ const Actions = {
     };
   },
 
-  // ---------- 2. ข้อมูลห้องพัก (Rooms) ----------
   getRooms: function () {
     return computeRoomsData_();
   },
@@ -572,7 +571,7 @@ const Actions = {
     if (d.roomId && !findRowObject_(SHEETS.ROOMS, 'RoomID', d.roomId)) throw new Error('ไม่พบห้องพักที่ต้องการแก้ไข');
 
     const dupRoom = sheetToObjects_(SHEETS.ROOMS).find(function (r) {
-      return r.Status !== 'Deleted' && String(r.BuildingID) === String(d.buildingId) &&
+      return r.Status !== 'Deleted' && String(r.BuildingID).trim() === String(d.buildingId).trim() &&
         String(r.RoomNumber).trim().toLowerCase() === d.roomNumber.toLowerCase() &&
         String(r.RoomID) !== String(d.roomId || '');
     });
@@ -592,7 +591,6 @@ const Actions = {
       updateRowById_(SHEETS.ROOMS, 'RoomID', d.roomId, {
         BuildingID: d.buildingId,
         Floor: d.floor || d.floorId || '1',
-        FloorID: d.floor || d.floorId || '1',
         RoomNumber: d.roomNumber,
         RoomType: d.roomType || 'Double',
         Capacity: Math.max(Number(d.capacity) || 1, 1),
@@ -609,7 +607,6 @@ const Actions = {
         RoomID: roomId,
         BuildingID: d.buildingId,
         Floor: d.floor || d.floorId || '1',
-        FloorID: d.floor || d.floorId || '1',
         RoomNumber: d.roomNumber,
         RoomType: d.roomType || 'Double',
         Capacity: Math.max(Number(d.capacity) || 1, 1),
@@ -645,7 +642,6 @@ const Actions = {
 
     if (room.Status === 'Deleted') throw new Error('ห้องนี้ถูกลบแล้ว');
     if (room.Status !== 'Maintenance') {
-      // ห้ามปิดปรับปรุงห้องที่ยังมีผู้พักอยู่ (ไม่งั้นสถานะห้อง/KPI จะบอกว่าปิดซ่อม ทั้งที่มีคนอาศัยอยู่)
       const stillIn = sheetToObjects_(SHEETS.OCCUPANCY).filter(function (o) {
         return o.Status === 'Active' && String(o.RoomID) === String(roomId);
       }).length;
@@ -659,7 +655,6 @@ const Actions = {
     return { roomId: roomId, status: newStatus };
   },
 
-  // ---------- 3. ข้อมูลพนักงาน (Employees) ----------
   getEmployees: function () {
     const employees = sheetToObjects_(SHEETS.EMPLOYEES).filter(function (e) { return e.Status !== 'Deleted'; });
     const activeOcc = sheetToObjects_(SHEETS.OCCUPANCY).filter(function (o) { return o.Status === 'Active'; });
@@ -732,8 +727,6 @@ const Actions = {
         throw new Error('รหัสพนักงาน ' + employeeId + ' มีอยู่ในระบบแล้ว');
       }
       if (existingEmp) {
-        // รหัสนี้เคยถูกลบ (Status = Deleted) → กู้คืนแถวเดิม
-        // ของเดิม: ใช้รหัสซ้ำไม่ได้ และถ้าเพิ่มแถวใหม่จะมี EmployeeID ซ้ำ 2 แถว ทำให้ระบบหาเจอแต่แถวที่ถูกลบ
         updateRowById_(SHEETS.EMPLOYEES, 'EmployeeID', employeeId, {
           Prefix: d.prefix || 'นาย',
           FirstName: d.firstName,
@@ -784,7 +777,6 @@ const Actions = {
     return { employeeId: employeeId };
   },
 
-  // ---------- 4. ข้อมูลอาคาร (Buildings) ----------
   getBuildings: function () {
     const buildings = sheetToObjects_(SHEETS.BUILDINGS).filter(function (b) { return b.Status !== 'Deleted'; });
     const rooms = sheetToObjects_(SHEETS.ROOMS).filter(function (r) { return r.Status !== 'Deleted'; });
@@ -850,7 +842,6 @@ const Actions = {
     });
   },
 
-  // ---------- 5. การเข้าพัก (Occupancy - ใครพักห้องไหน) ----------
   getOccupancy: function () {
     const occ = sheetToObjects_(SHEETS.OCCUPANCY);
     const emps = sheetToObjects_(SHEETS.EMPLOYEES);
@@ -886,13 +877,11 @@ const Actions = {
 
     const activeOcc = sheetToObjects_(SHEETS.OCCUPANCY).filter(function (o) { return o.Status === 'Active'; });
 
-    // 1. ตรวจสอบว่าพนักงานคนนี้มีห้องพักอยู่แล้วหรือไม่
     const existing = activeOcc.find(function (o) { return String(o.EmployeeID) === String(d.employeeId); });
     if (existing) {
       throw new Error('พนักงานคนนี้มีห้องพักที่กำลังเข้าพักอยู่แล้ว หากต้องการเปลี่ยนห้องกรุณาใช้เมนู "ย้ายห้อง"');
     }
 
-    // 2. ตรวจสอบความจุห้องพัก
     const room = findRowObject_(SHEETS.ROOMS, 'RoomID', d.roomId);
     assertRoomUsable_(room);
 
@@ -910,7 +899,6 @@ const Actions = {
       throw new Error('ห้องพักนี้เต็มแล้ว (ความจุ ' + capacity + ' คน) ไม่สามารถเข้าพักเพิ่มได้');
     }
 
-    // 3. กำหนดหมายเลขเตียง/ที่พัก (1..capacity) ที่ยังว่างอยู่
     let bedNumber = Number(d.bedNumber) || 0;
     const occupiedBedNums = currentOccupants.map(function (o) { return Number(o.BedNumber) || 0; });
     if (!bedNumber || occupiedBedNums.indexOf(bedNumber) !== -1) {
@@ -961,7 +949,6 @@ const Actions = {
     });
 
     logAudit_(userEmail, 'CHECK-OUT', 'Occupancy', d.occupancyId, 'เช็คเอาท์พนักงาน ' + occ.EmployeeID + ' ออกจากห้อง ' + occ.RoomID);
-    // พนักงานย้ายออกจากหอพัก = คืนช่องจอดรถให้อัตโนมัติ
     const releasedParking = releaseParkingForEmployee_(occ.EmployeeID, userEmail, 'คืนช่องจอดอัตโนมัติเมื่อเช็คเอาท์');
     return { occupancyId: d.occupancyId, releasedParking: releasedParking };
   },
@@ -990,7 +977,6 @@ const Actions = {
       throw new Error('ห้องใหม่ที่เลือกเต็มแล้ว (ความจุ ' + capacity + ' คน)');
     }
 
-    // กำหนดเตียงว่างในห้องใหม่
     let bedNumber = Number(d.newBedNumber) || 0;
     const occupiedBedNums = newRoomOccupants.map(function (o) { return Number(o.BedNumber) || 0; });
     if (!bedNumber || occupiedBedNums.indexOf(bedNumber) !== -1) {
@@ -1007,7 +993,6 @@ const Actions = {
       throw new Error('วันที่ย้ายห้องต้องไม่ก่อนวันที่เข้าพักเดิม (' + String(oldOcc.CheckInDate).substring(0, 10) + ')');
     }
 
-    // ปิดสถานะรายการเดิม
     updateRowById_(SHEETS.OCCUPANCY, 'OccupancyID', d.occupancyId, {
       Status: 'Transferred',
       ActualCheckOutDate: transferDate,
@@ -1015,7 +1000,6 @@ const Actions = {
       UpdatedAt: nowStr_()
     });
 
-    // สร้างรายการเข้าพักใหม่
     const newOccupancyId = generateId_('OCC');
     appendRow_(SHEETS.OCCUPANCY, {
       OccupancyID: newOccupancyId,
@@ -1032,7 +1016,6 @@ const Actions = {
       UpdatedAt: nowStr_()
     });
 
-    // อัปเดตข้อมูลที่จอดรถของพนักงานให้ชี้ไปยังห้องใหม่โดยอัตโนมัติ
     try {
       const parkings = sheetToObjects_(SHEETS.PARKING).filter(function (p) {
         return p.Status === 'Occupied' && String(p.EmployeeID) === String(oldOcc.EmployeeID);
@@ -1051,12 +1034,14 @@ const Actions = {
     return { newOccupancyId: newOccupancyId };
   },
 
-  // ---------- 6. ระบบการจองที่จอดรถ (Parking System): ช่องนี้ของใคร / พักห้องไหน ----------
   getParking: function () {
     const slots = sheetToObjects_(SHEETS.PARKING).filter(function (s) { return s.Status !== 'Deleted'; });
-    const empMap = {}, roomMap = {}, bldMap = {}, occByEmp = {};
+    const empMap = {}, roomMap = {}, roomNumMap = {}, bldMap = {}, occByEmp = {};
     sheetToObjects_(SHEETS.EMPLOYEES).forEach(function (e) { empMap[String(e.EmployeeID)] = e; });
-    sheetToObjects_(SHEETS.ROOMS).forEach(function (r) { roomMap[String(r.RoomID)] = r; });
+    sheetToObjects_(SHEETS.ROOMS).forEach(function (r) {
+      roomMap[String(r.RoomID)] = r;
+      if (r.RoomNumber) roomNumMap[String(r.RoomNumber).trim()] = r;
+    });
     sheetToObjects_(SHEETS.BUILDINGS).forEach(function (b) { bldMap[String(b.BuildingID)] = b; });
     sheetToObjects_(SHEETS.OCCUPANCY).filter(function (o) { return o.Status === 'Active'; })
       .forEach(function (o) { occByEmp[String(o.EmployeeID)] = o; });
@@ -1065,8 +1050,8 @@ const Actions = {
       const isOcc = s.Status === 'Occupied';
       const emp = empMap[String(s.EmployeeID)] || {};
       const curOcc = isOcc ? occByEmp[String(s.EmployeeID)] : null;
-      // ใช้ห้องปัจจุบันของผู้จองเป็นหลัก (ถ้าไม่มีให้ใช้ค่าที่บันทึกไว้)
-      const room = roomMap[String(curOcc ? curOcc.RoomID : s.RoomID)] || {};
+      const targetRoomKey = String(curOcc ? curOcc.RoomID : s.RoomID).trim();
+      const room = roomMap[targetRoomKey] || roomNumMap[targetRoomKey] || {};
       const bld = bldMap[String(room.BuildingID)] || {};
       const fullName = emp.FullName || ((emp.FirstName || '') + ' ' + (emp.LastName || '')).trim() || (s.EmployeeID ? s.EmployeeID : '');
       return Object.assign({}, s, {
@@ -1075,7 +1060,7 @@ const Actions = {
         ownerPhone: emp.Phone || '',
         roomNumber: isOcc ? (room.RoomNumber || s.RoomID || '') : '',
         buildingName: isOcc ? (bld.BuildingName || '') : '',
-        needsReview: isOcc && !curOcc   // ผู้จองไม่ได้พักอยู่แล้ว ควรตรวจสอบ/คืนช่อง
+        needsReview: isOcc && !curOcc
       });
     });
   },
@@ -1103,7 +1088,6 @@ const Actions = {
         UpdatedAt: nowStr_()
       };
       if (cur.Status === 'Occupied') {
-        // ช่องที่มีผู้จองอยู่ ห้ามเปลี่ยนสถานะ/ประเภทรถ (ต้องคืนช่องก่อน)
         if (d.vehicleType && d.vehicleType !== cur.VehicleType) throw new Error('ไม่สามารถเปลี่ยนประเภทช่องที่มีผู้จองอยู่ได้ กรุณาคืนช่องก่อน');
       } else {
         patch.VehicleType = d.vehicleType || 'Car';
@@ -1149,7 +1133,6 @@ const Actions = {
     const emp = findRowObject_(SHEETS.EMPLOYEES, 'EmployeeID', d.employeeId);
     if (!emp || emp.Status === 'Deleted') throw new Error('ไม่พบพนักงานรหัส ' + d.employeeId);
 
-    // ที่จอดรถสำหรับผู้พักอาศัยเท่านั้น: ห้องพักดึงจากการเข้าพักจริงของพนักงานเสมอ
     const activeOcc = sheetToObjects_(SHEETS.OCCUPANCY).find(function (o) {
       return o.Status === 'Active' && String(o.EmployeeID) === String(d.employeeId);
     });
@@ -1213,7 +1196,6 @@ const Actions = {
     return { slotId: slotId };
   },
 
-  // ---------- 7. การตั้งค่าและ Audit Log ----------
   getSettings: function () {
     const rows = sheetToObjects_(SHEETS.SETTINGS);
     const out = {};
@@ -1239,7 +1221,6 @@ const Actions = {
     return sheetToObjects_(SHEETS.AUDIT_LOG);
   },
 
-  // Backward compatibility placeholders
   getBeds: function () {
     const rooms = computeRoomsData_();
     const allBeds = [];

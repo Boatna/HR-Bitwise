@@ -109,7 +109,7 @@ const Reports = {
       }
     } catch (e) {
       if (seq !== this._seq) return;
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">เกิดข้อผิดพลาดในการโหลดรายงาน: ${App.escHtml(e.message)}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="100%" class="text-danger text-center py-4">เกิดข้อผิดพลาดในการโหลดรายงาน: ${App.escHtml(e.message)}</td></tr>`;
     }
   },
 

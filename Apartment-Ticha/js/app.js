@@ -40,11 +40,6 @@ const App = {
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="admin.html?tab=parking">
-                  <i class="bi bi-car-front-fill me-1"></i> ที่จอดรถ
-                </a>
-              </li>
-              <li class="nav-item">
                 <a class="nav-link ${isAdmin ? 'active' : ''}" href="admin.html">
                   <i class="bi bi-gear-wide-connected me-1"></i> จัดการระบบ (Admin)
                 </a>
@@ -197,18 +192,22 @@ const App = {
    */
   formatDate(dateVal) {
     if (!dateVal) return '-';
-    // yyyy-MM-dd ล้วน ๆ ให้แปลงจากข้อความตรง ๆ (กันวันเพี้ยนจาก timezone ของเบราว์เซอร์)
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dateVal));
+    const s = String(dateVal).trim();
+    // yyyy-MM-dd ให้แปลงจากข้อความตรง ๆ (กันวันเพี้ยนจาก timezone)
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
     if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+    // ถ้าเป็น dd/MM/yyyy อยู่แล้วให้จัดรูปแบบ 2 หลัก
+    const m2 = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s);
+    if (m2) return `${m2[1].padStart(2, '0')}/${m2[2].padStart(2, '0')}/${m2[3]}`;
     try {
       const d = new Date(dateVal);
-      if (isNaN(d.getTime())) return String(dateVal);
+      if (isNaN(d.getTime())) return s;
       const day = String(d.getDate()).padStart(2, '0');
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const year = d.getFullYear();
       return `${day}/${month}/${year}`;
     } catch (e) {
-      return String(dateVal);
+      return s;
     }
   },
 

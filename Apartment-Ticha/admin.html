@@ -362,7 +362,7 @@
                 <div class="mb-3">
                   <label class="form-label fw-semibold">รหัสเชื่อมต่อ API (Token) <span class="text-muted fw-normal">- ไม่บังคับ</span></label>
                   <input type="password" id="setting-api-token" class="form-control" placeholder="เว้นว่างถ้าไม่ได้ตั้ง API_TOKEN ใน Script Properties" autocomplete="off">
-                  <small class="text-muted d-block mt-1">ต้องตรงกับ Script Property ชื่อ <code>API_TOKEN</code> ใน Apps Script (ถ้าตั้งไว้) ช่วยกันคนนอกที่รู้ URL เรียกใช้ API
+                  <small class="text-muted d-block mt-1">ต้องตรงกับ Script Property ชื่อ <code>API_TOKEN</code> ใน Apps Script (ถ้าตั้งไว้) ช่วยกันคนนอกที่รู้ URL เรียกใช้ API</small>
                 </div>
                 <div class="d-flex gap-2">
                   <button class="btn btn-primary" onclick="Admin.saveApiUrl()">
@@ -786,7 +786,7 @@
           <div class="mb-3">
             <label class="form-label fw-semibold">พนักงานผู้จอง <span class="text-danger">*</span></label>
             <input type="text" id="ap-employee-input" class="form-control" list="ap-employee-list" autocomplete="off"
-                   placeholder="พิมพ์รหัสหรือชื่อ แล้วเลือกจากรายการ..." oninput="Admin.onAssignEmployeeInput()">
+                   placeholder="พิมพ์รหัสหรือชื่อ แล้วเลือกจากรายการ..." oninput="Admin.onAssignEmployeeInput()" onchange="Admin.onAssignEmployeeInput()">
             <datalist id="ap-employee-list"></datalist>
             <div class="form-text">แสดงเฉพาะพนักงานที่พักอยู่ในหอพัก (ต้องเช็คอินก่อนจึงจะจองที่จอดได้)</div>
           </div>

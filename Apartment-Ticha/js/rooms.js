@@ -90,6 +90,7 @@ function applyFilterAndRender() {
     if (searchVal) {
       const matchRoom = App.lc(room.roomNumber).includes(searchVal);
       const matchId = App.lc(room.roomId).includes(searchVal);
+      const matchBuilding = App.lc(room.buildingName).includes(searchVal) || App.lc(room.buildingCode).includes(searchVal);
       const matchOccupant = (room.occupants || []).some(o =>
         App.lc(o.fullName).includes(searchVal) ||
         App.lc(o.employeeId).includes(searchVal) ||
@@ -99,7 +100,7 @@ function applyFilterAndRender() {
         App.lc(p.licensePlate).includes(searchVal) ||
         App.lc(p.slotNumber).includes(searchVal)
       );
-      if (!matchRoom && !matchId && !matchOccupant && !matchParking) return false;
+      if (!matchRoom && !matchId && !matchBuilding && !matchOccupant && !matchParking) return false;
     }
 
     return true;

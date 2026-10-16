@@ -273,11 +273,11 @@ const Admin = {
 
     const bldSelect = document.getElementById('room-building');
     if (bldSelect) {
-      bldSelect.innerHTML = '<option value="">-- เลือกอาคาร --</option>';
-      (this.cachedBuildings || []).forEach(b => {
-        const isSel = room && this._idEquals(room.buildingId, b.BuildingID) ? 'selected' : '';
-        bldSelect.innerHTML += `<option value="${App.escHtml(b.BuildingID)}" ${isSel}>${App.escHtml(b.BuildingName)}</option>`;
-      });
+      bldSelect.innerHTML = '<option value="">-- เลือกอาคาร --</option>' +
+        (this.cachedBuildings || []).map(b => `<option value="${App.escHtml(b.BuildingID)}">${App.escHtml(b.BuildingName)}</option>`).join('');
+      if (room && room.buildingId) {
+        bldSelect.value = String(room.buildingId);
+      }
     }
 
     document.getElementById('room-id').value = room ? room.roomId : '';
@@ -760,6 +760,7 @@ const Admin = {
       document.getElementById('ap-employee-list').innerHTML = resident.map(e => {
         const label = `${e.EmployeeID} - ${e.FullName} (ห้อง ${e.currentRoomNumber})`;
         this._assignEmployeeMap[label] = e;
+        this._assignEmployeeMap[String(e.EmployeeID).trim()] = e;
         return `<option value="${App.escHtml(label)}"></option>`;
       }).join('');
 
@@ -780,15 +781,30 @@ const Admin = {
   },
 
   onAssignEmployeeInput() {
-    const emp = this._assignEmployeeMap[document.getElementById('ap-employee-input').value];
-    document.getElementById('ap-employee-id').value = emp ? emp.EmployeeID : '';
-    document.getElementById('ap-room-info').value = emp ? `ห้อง ${emp.currentRoomNumber}` : '';
+    const val = (document.getElementById('ap-employee-input')?.value || '').trim();
+    let emp = this._assignEmployeeMap[val];
+    if (!emp && val) {
+      const valLower = val.toLowerCase();
+      emp = Object.values(this._assignEmployeeMap).find(x =>
+        String(x.EmployeeID || '').toLowerCase() === valLower ||
+        String(x.FullName || '').toLowerCase() === valLower ||
+        String(x.FullName || '').toLowerCase().includes(valLower)
+      );
+    }
+    const empIdEl = document.getElementById('ap-employee-id');
+    const roomInfoEl = document.getElementById('ap-room-info');
+    if (empIdEl) empIdEl.value = emp ? emp.EmployeeID : '';
+    if (roomInfoEl) roomInfoEl.value = emp ? `ห้อง ${emp.currentRoomNumber}` : '';
   },
 
   async submitAssignParking() {
-    const slotId = document.getElementById('ap-slot-id').value;
-    const employeeId = document.getElementById('ap-employee-id').value;
-    const licensePlate = document.getElementById('ap-plate').value.trim();
+    const slotId = document.getElementById('ap-slot-id')?.value;
+    let employeeId = document.getElementById('ap-employee-id')?.value;
+    if (!employeeId) {
+      this.onAssignEmployeeInput();
+      employeeId = document.getElementById('ap-employee-id')?.value;
+    }
+    const licensePlate = document.getElementById('ap-plate')?.value?.trim();
     if (!employeeId) {
       App.showError('กรุณาเลือกพนักงานผู้จอง', 'พิมพ์รหัสหรือชื่อ แล้วเลือกจากรายการที่แสดง');
       return;
@@ -846,6 +862,7 @@ const Admin = {
       if (s) {
         if (document.getElementById('setting-system-name')) document.getElementById('setting-system-name').value = s.SYSTEM_NAME || 'ระบบบริหารหอพักพนักงาน';
         if (document.getElementById('setting-company-name')) document.getElementById('setting-company-name').value = s.COMPANY_NAME || 'Bitwise Group';
+        if (s.STANDARD_FURNITURE && document.getElementById('setting-furniture')) document.getElementById('setting-furniture').value = s.STANDARD_FURNITURE;
       }
     } catch (e) {
       console.warn('Could not load remote settings', e);

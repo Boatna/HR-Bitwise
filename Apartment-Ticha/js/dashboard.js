@@ -145,8 +145,14 @@ function renderAlmostFullRooms(almostFullRooms) {
 
 function destroyChart(id) {
   if (charts[id]) {
-    charts[id].destroy();
+    try { charts[id].destroy(); } catch (e) {}
     delete charts[id];
+  }
+  if (typeof Chart !== 'undefined' && Chart.getChart) {
+    const existing = Chart.getChart(id);
+    if (existing) {
+      try { existing.destroy(); } catch (e) {}
+    }
   }
 }
 

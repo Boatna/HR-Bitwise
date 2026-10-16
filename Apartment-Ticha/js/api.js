@@ -1,5 +1,5 @@
 const API = {
-  DEFAULT_API_URL: 'https://script.google.com/macros/s/AKfycbz4vZdRlsjjnpYUJ--u2VmxVxx8c0LTdlIdBr7ifKtnKQVxMXBIP7_mAWldY7DiWu1TLA/exec',
+  DEFAULT_API_URL: 'https://script.google.com/macros/s/AKfycbx09smCCZvRZsDNWzK8VoEVc4Bq2YH5FESudF-b0rKiD8nWLReSznGISmpSAb27Jpv5vw/exec',
   STORAGE_URL_KEY: 'DORM_API_URL',
   USER_STORAGE_KEY: 'DORM_CURRENT_USER',
   STORAGE_TOKEN_KEY: 'DORM_API_TOKEN',

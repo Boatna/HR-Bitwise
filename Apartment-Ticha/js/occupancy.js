@@ -45,6 +45,7 @@ const OccupancyWorkflow = {
     }
 
     if (preselectedRoomId) {
+      if (roomSelect) roomSelect.value = String(preselectedRoomId);
       this.onCheckInRoomSelected(preselectedRoomId);
     } else {
       document.getElementById('checkin-bed').innerHTML = '<option value="">-- กรุณาเลือกห้องก่อน --</option>';
@@ -169,12 +170,27 @@ const OccupancyWorkflow = {
   },
 
   async submitCheckIn() {
-    const employeeId = document.getElementById('checkin-employee')?.value;
+    let employeeId = document.getElementById('checkin-employee')?.value;
     const roomId = document.getElementById('checkin-room')?.value;
     const bedNumber = document.getElementById('checkin-bed')?.value;
     const checkInDate = document.getElementById('checkin-date')?.value;
     const expectedCheckOutDate = document.getElementById('checkin-expected-date')?.value;
     const remark = document.getElementById('checkin-remark')?.value;
+
+    if (!employeeId) {
+      const searchVal = (document.getElementById('checkin-employee-search')?.value || '').trim().toLowerCase();
+      if (searchVal) {
+        const found = this.activeEmployees.find(e =>
+          String(e.EmployeeID || '').toLowerCase() === searchVal ||
+          String(e.FullName || '').toLowerCase() === searchVal
+        );
+        if (found && !found.isAccommodated) {
+          employeeId = found.EmployeeID;
+          const hiddenInput = document.getElementById('checkin-employee');
+          if (hiddenInput) hiddenInput.value = employeeId;
+        }
+      }
+    }
 
     if (!employeeId) {
       App.showError('กรุณาเลือกพนักงานผู้เข้าพัก', 'พิมพ์รหัสพนักงานหรือชื่อ-นามสกุลในช่องค้นหา แล้วคลิกเลือกชื่อพนักงาน');
@@ -291,6 +307,11 @@ const OccupancyWorkflow = {
     if (!room || !room.beds) return;
 
     const vacantBeds = room.beds.filter(b => !b.isOccupied && b.status === 'Active');
+    if (vacantBeds.length === 0) {
+      bedSelect.innerHTML = '<option value="">ไม่มีที่ว่างในห้องนี้</option>';
+      return;
+    }
+
     vacantBeds.forEach(b => {
       bedSelect.innerHTML += `<option value="${App.escHtml(b.bedNumber)}">ที่พัก / เตียง ${App.escHtml(b.bedNumber)} (ว่าง)</option>`;
     });
