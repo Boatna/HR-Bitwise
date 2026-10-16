@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kaizen Executive Dashboard | บริษัท บิทไว้ส์ (ประเทศไทย) จำกัด</title>
+
+  <!-- Google Fonts: Kanit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    :root {
+      --brand-50: #eef8f3;
+      --brand-100: #d6f0e2;
+      --brand-200: #afe2c7;
+      --brand-500: #248a60;
+      --brand-600: #1B6E4C;
+      --brand-700: #15573c;
+      --surface: #ffffff;
+      --surface-sunken: #f8fafc;
+      --line: #e2e8f0;
+      --ink: #0f172a;
+      --ink-soft: #334155;
+      --ink-faint: #64748b;
+      --good: #16a34a;
+      --warn: #d97706;
+      --bad: #dc2626;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+    }
+
+    body {
+      font-family: 'Kanit', sans-serif;
+      background-color: #f1f5f9;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .num {
+      font-feature-settings: "tnum" 1, "cv01" 1;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border-radius: 1rem;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      padding: 1.25rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+
+    .rail-brand::before { background: linear-gradient(90deg, #1B6E4C, #34d399); }
+    .rail-blue::before { background: linear-gradient(90deg, #0284c7, #38bdf8); }
+    .rail-good::before { background: linear-gradient(90deg, #16a34a, #4ade80); }
+    .rail-warn::before { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .rail-purple::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+
+    .chart-card {
+      background: var(--surface);
+      border-radius: 1rem;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      padding: 1.25rem;
+    }
+
+    .progress-bar-bg {
+      background: #e2e8f0;
+      border-radius: 9999px;
+      overflow: hidden;
+      height: 8px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .badge-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.625rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-chip.achieved { background: #dcfce7; color: #15803d; }
+    .badge-chip.pending { background: #fef3c7; color: #b45309; }
+    .badge-chip.rejected { background: #fee2e2; color: #b91c1c; }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .kpi-card, .chart-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Navbar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between flex-wrap gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1B6E4C] to-[#2ecc71] flex items-center justify-center text-white font-bold text-lg shadow-sm">
+          KZ
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-slate-800">Kaizen Dashboard</h1>
+            <span class="px-2 py-0.5 text-xs font-semibold rounded-md bg-emerald-100 text-emerald-800 hidden sm:inline-block">Live</span>
+          </div>
+          <p class="text-xs text-slate-500">ระบบติดตามและสรุปผลการส่ง Kaizen — HR บิทไว้ส์ (ประเทศไทย)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5 sm:gap-3 flex-wrap no-print">
+        <!-- Year Selector -->
+        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
+          <label for="dashYear" class="text-xs font-semibold text-slate-600">ปี พ.ศ.</label>
+          <select id="dashYear" class="bg-transparent text-sm font-bold text-emerald-800 focus:outline-none cursor-pointer">
+            <option value="">กำลังโหลด...</option>
+          </select>
+        </div>
+
+        <!-- Auto Refresh Toggle -->
+        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
+          <span class="text-xs text-slate-600 font-medium">รีเฟรช:</span>
+          <select id="autoRefreshInterval" class="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer">
+            <option value="0">ปิด</option>
+            <option value="60">1 นาที</option>
+            <option value="300" selected>5 นาที</option>
+            <option value="600">10 นาที</option>
+          </select>
+          <span id="countdownBadge" class="text-[11px] text-emerald-700 font-mono hidden">5:00</span>
+        </div>
+
+        <!-- Manual Refresh Button -->
+        <button id="btnRefresh" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-emerald-700 transition">
+          <svg id="refreshSpinner" class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          รีเฟรช
+        </button>
+
+        <!-- Export Excel -->
+        <button id="btnExport" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-700 rounded-lg hover:bg-emerald-800 shadow-sm transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          ส่งออก Excel
+        </button>
+
+        <!-- Print -->
+        <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition" title="พิมพ์รายงาน">
+          🖨️ พิมพ์
+        </button>
+
+        <!-- Back to Main System Link -->
+        <a href="Index.html" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition">
+          ↩️ ระบบบันทึก Kaizen
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter & Sub-Header Bar -->
+  <div class="bg-white border-b border-slate-200 py-3 shadow-xs no-print">
+    <div class="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center gap-3 flex-wrap flex-1 min-w-[280px]">
+        <!-- Department Filter -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold text-slate-500">กรองแผนก:</span>
+          <select id="filterDept" class="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+            <option value="">🏢 ทุกแผนก</option>
+          </select>
+        </div>
+
+        <!-- Quick Status Filter for Table -->
+        <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-medium text-slate-600">
+          <button class="status-tab-btn active px-2.5 py-1 rounded-md bg-white shadow-xs font-semibold text-emerald-800" data-filter="all">พนักงานทั้งหมด</button>
+          <button class="status-tab-btn px-2.5 py-1 rounded-md hover:text-slate-800" data-filter="achieved">✅ ถึงเป้าแล้ว</button>
+          <button class="status-tab-btn px-2.5 py-1 rounded-md hover:text-slate-800" data-filter="not_achieved">⏳ ยังไม่ถึงเป้า</button>
+        </div>
+
+        <!-- Search Box -->
+        <div class="relative flex-1 max-w-xs">
+          <input type="text" id="searchInput" placeholder="ค้นหาชื่อ, รหัส, แผนก..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-1 focus:ring-emerald-500 transition">
+          <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+      </div>
+
+      <div class="text-xs text-slate-500 flex items-center gap-2">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        อัปเดตล่าสุด: <span id="lastUpdatedTime" class="font-semibold text-slate-700">-</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Body -->
+  <main class="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1 w-full">
+
+    <!-- Loading Skeleton Indicator -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-slate-900/20 backdrop-blur-xs z-50 flex items-center justify-center">
+      <div class="bg-white px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100">
+        <div class="w-6 h-6 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+        <span class="text-sm font-semibold text-slate-700">กำลังดึงข้อมูล Dashboard...</span>
+      </div>
+    </div>
+
+    <!-- Top KPI Cards Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+      
+      <!-- 1. Total Employees -->
+      <div class="kpi-card rail-blue">
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">พนักงานทั้งหมด</p>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiTotalEmp" class="text-2xl sm:text-3xl font-bold num text-slate-800">0</span>
+          <span class="text-xs text-slate-400">คน</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">ในฐานข้อมูล HR</p>
+      </div>
+
+      <!-- 2. Target Kaizen Total -->
+      <div class="kpi-card rail-blue">
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">เป้าหมายรวม</p>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiTargetSum" class="text-2xl sm:text-3xl font-bold num text-sky-700">0</span>
+          <span class="text-xs text-slate-400">เรื่อง</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">เป้าตามตำแหน่งงาน</p>
+      </div>
+
+      <!-- 3. Approved Kaizen Total -->
+      <div class="kpi-card rail-good">
+        <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Kaizen อนุมัติผ่าน</p>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiApprovedCount" class="text-2xl sm:text-3xl font-bold num text-emerald-700">0</span>
+          <span class="text-xs text-emerald-600">เรื่อง</span>
+        </div>
+        <p class="text-[11px] text-emerald-600 mt-1">ผ่านการตรวจครบ 100%</p>
+      </div>
+
+      <!-- 4. Overall Achievement % -->
+      <div class="kpi-card rail-brand">
+        <p class="text-xs font-semibold text-emerald-800 uppercase tracking-wider">% สำเร็จรวม (ผลงาน)</p>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiAchievedPct" class="text-2xl sm:text-3xl font-bold num text-emerald-800">0%</span>
+          <span id="kpiTargetRatio" class="text-xs text-slate-400">0/0</span>
+        </div>
+        <div class="progress-bar-bg mt-2">
+          <div id="kpiAchievedPctBar" class="progress-bar-fill bg-emerald-600" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- 5. Employees Achieved Target -->
+      <div class="kpi-card rail-good">
+        <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">คนถึงเป้าหมาย</p>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiEmpAchieved" class="text-2xl sm:text-3xl font-bold num text-emerald-700">0</span>
+          <span id="kpiEmpAchievedPct" class="text-xs text-emerald-700 font-semibold">(0%)</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">ทำได้ครบตามเป้าหมาย</p>
+      </div>
+
+      <!-- 6. Employees Not Yet Achieved -->
+      <div class="kpi-card rail-warn">
+        <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider">คนยังไม่ถึงเป้า</p>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiEmpNotAchieved" class="text-2xl sm:text-3xl font-bold num text-amber-700">0</span>
+          <span class="text-xs text-slate-400">คน</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">ต้องติดตามความคืบหน้า</p>
+      </div>
+
+      <!-- 7. Pending Review -->
+      <div class="kpi-card rail-purple">
+        <p class="text-xs font-semibold text-purple-700 uppercase tracking-wider">รอตรวจในระบบ</p>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiPendingTotal" class="text-2xl sm:text-3xl font-bold num text-purple-700">0</span>
+          <span class="text-xs text-slate-400">เรื่อง</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">รอหัวหน้า / ผู้จัดการ</p>
+      </div>
+
+    </div>
+
+    <!-- Charts Row: Monthly Trend & Categorization -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Chart 1: Monthly Trend Bar/Line -->
+      <div class="chart-card flex flex-col">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800">แนวโน้มการส่ง Kaizen รายเดือน</h2>
+            <p class="text-xs text-slate-400">จำนวนที่ผ่านอนุมัติและทั้งหมด (ม.ค. - ธ.ค.)</p>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] font-medium">
+            <span class="inline-flex items-center gap-1 text-emerald-700">
+              <span class="w-2.5 h-2.5 rounded-xs bg-emerald-600 inline-block"></span> อนุมัติ
+            </span>
+            <span class="inline-flex items-center gap-1 text-slate-500">
+              <span class="w-2.5 h-2.5 rounded-xs bg-slate-300 inline-block"></span> ทั้งหมด
+            </span>
+          </div>
+        </div>
+        <div class="relative flex-1" style="min-height: 280px; height: 280px; width: 100%;">
+          <canvas id="monthlyTrendChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Category Breakdown -->
+      <div class="chart-card flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800">สัดส่วนหมวดหมู่ Kaizen</h2>
+            <p class="text-xs text-slate-400">การปรับปรุงในด้านต่างๆ (P, D, E, S, Q, E2, C, M)</p>
+          </div>
+        </div>
+        <div class="relative flex-1 flex items-center justify-center" style="min-height: 280px; height: 280px; width: 100%;">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 3: Kaizen Types -->
+      <div class="chart-card flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800">ประเภทของ Kaizen</h2>
+            <p class="text-xs text-slate-400">Automation, Karakuri, Genco, Service ฯลฯ</p>
+          </div>
+        </div>
+        <div class="relative flex-1 flex items-center justify-center" style="min-height: 280px; height: 280px; width: 100%;">
+          <canvas id="kaizenTypeChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Full Employee Roster Table -->
+    <div class="chart-card">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div>
+          <h2 class="text-sm font-bold text-slate-800">รายชื่อและผลงานพนักงานรายบุคคล</h2>
+          <p class="text-xs text-slate-400">คลิกที่ "ดูผลงาน" เพื่อตรวจสอบประวัติ Kaizen ของพนักงานแต่ละท่าน</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-500 font-medium">แสดง: <span id="filteredEmpCount" class="font-bold text-slate-800">0</span> คน</span>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto custom-scrollbar max-h-[500px] border border-slate-200 rounded-xl">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-slate-100/80 text-slate-700 font-semibold sticky top-0 z-10 border-b border-slate-200 backdrop-blur-xs">
+            <tr>
+              <th class="py-3 px-3">รหัสพนักงาน</th>
+              <th class="py-3 px-3">ชื่อ-นามสกุล</th>
+              <th class="py-3 px-3">แผนก</th>
+              <th class="py-3 px-3">ตำแหน่ง</th>
+              <th class="py-3 px-2 text-center">เป้าหมาย</th>
+              <th class="py-3 px-2 text-center">ทำได้แล้ว</th>
+              <th class="py-3 px-4 min-w-[150px]">ความคืบหน้า</th>
+              <th class="py-3 px-3 text-center">สถานะ</th>
+              <th class="py-3 px-3 text-center no-print">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="employeeTableBody" class="divide-y divide-slate-200/70 text-slate-700">
+            <tr><td colspan="9" class="text-center py-12 text-slate-400">กำลังโหลดรายชื่อพนักงาน...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+    <div class="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between flex-wrap gap-2 text-xs text-slate-500">
+      <div>
+        บริษัท บิทไว้ส์ (ประเทศไทย) จำกัด &copy; <span id="footerYear">2026</span> — ระบบบริหารจัดการ Kaizen
+      </div>
+      <div>
+        <a href="Index.html" class="hover:text-emerald-700 font-medium transition">เข้าสู่ระบบหลัก (Login)</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Employee Kaizen History Modal -->
+  <div id="empHistoryModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-sm">📋</div>
+          <div>
+            <h3 id="modalEmpName" class="font-bold text-slate-800 text-sm sm:text-base">ประวัติ Kaizen ของพนักงาน</h3>
+            <p id="modalEmpSub" class="text-xs text-slate-500">-</p>
+          </div>
+        </div>
+        <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 text-lg transition">&times;</button>
+      </div>
+
+      <div class="p-5 overflow-y-auto custom-scrollbar space-y-4 flex-1">
+        <div class="grid grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+          <div><p class="text-[11px] text-slate-500">ส่งทั้งหมด</p><p id="modalTotal" class="text-base font-bold num text-slate-800">0</p></div>
+          <div><p class="text-[11px] text-emerald-700">ผ่านแล้ว</p><p id="modalApproved" class="text-base font-bold num text-emerald-700">0</p></div>
+          <div><p class="text-[11px] text-amber-700">รอตรวจ</p><p id="modalPending" class="text-base font-bold num text-amber-700">0</p></div>
+          <div><p class="text-[11px] text-red-700">ตีกลับ</p><p id="modalRejected" class="text-base font-bold num text-red-700">0</p></div>
+        </div>
+
+        <div id="modalHistoryList" class="space-y-3">
+          <!-- Item Cards will be rendered here -->
+        </div>
+        <div id="modalEmptyState" class="text-center py-10 text-slate-400 hidden">
+          ยังไม่มีข้อมูล Kaizen ในปีที่เลือก
+        </div>
+      </div>
+
+      <div class="px-5 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
+        <button onclick="document.getElementById('empHistoryModal').classList.add('hidden')" class="px-4 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgZFSU9i6V9fq7q8U6_DBn-XggZ58-Hzdm47TRbFmUvb1o0CvsO9PjrhiILoOwPyDepw/exec';
+
+    const CATEGORY_MAP = {
+      'P': { name: 'P: ผลผลิต', color: '#1B6E4C' },
+      'D': { name: 'D: การส่งมอบ', color: '#0284c7' },
+      'E': { name: 'E: สิ่งแวดล้อม', color: '#16a34a' },
+      'S': { name: 'S: ความปลอดภัย', color: '#d97706' },
+      'Q': { name: 'Q: คุณภาพ', color: '#7c3aed' },
+      'E2': { name: 'E2: พลังงาน', color: '#059669' },
+      'C': { name: 'C: ลดต้นทุน', color: '#dc2626' },
+      'M': { name: 'M: ขวัญกำลังใจ', color: '#ea580c' }
+    };
+
+    const KAIZEN_TYPE_MAP = {
+      'automation': 'Automation Kaizen',
+      'karakuri': 'Karakuri Kaizen',
+      'genco': 'Genba/Genco Kaizen',
+      'project': 'Project Kaizen',
+      'service': 'Service Kaizen',
+      'innovation': 'Innovation Kaizen',
+      'suggestion': 'Suggestion Kaizen',
+      'other': 'อื่นๆ'
+    };
+
+    let DASHBOARD_RAW = null;
+    let currentYear = null;
+    let selectedDepartment = '';
+    let currentStatusFilter = 'all'; // all | achieved | not_achieved
+    let searchQuery = '';
+    let autoRefreshTimer = null;
+    let countdownInterval = null;
+    let secondsLeft = 300;
+
+    // Charts instances
+    let monthlyChart = null;
+    let categoryChartInstance = null;
+    let typeChartInstance = null;
+
+    // Helper: Escape HTML
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Helper: Call Google Apps Script API with robust text handling
+    function fetchApi(action, payload, silent) {
+      if (!silent) {
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+        document.getElementById('refreshSpinner').classList.add('animate-spin');
+      }
+
+      return fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: action, payload: payload || {} })
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error('การเชื่อมต่อล้มเหลว (HTTP ' + res.status + ')');
+        return res.text();
+      })
+      .then(function(text) {
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          if (text && (text.includes('<!DOCTYPE') || text.startsWith('<'))) {
+            throw new Error('ไม่สามารถเข้าถึง Google Apps Script ได้ (โปรดตรวจสอบสิทธิ์การแชร์ Web App เป็น Anyone)');
+          }
+          throw new Error('รูปแบบข้อมูลที่ส่งกลับมาไม่ถูกต้อง');
+        }
+      })
+      .finally(function() {
+        if (!silent) {
+          document.getElementById('loadingOverlay').classList.add('hidden');
+          document.getElementById('refreshSpinner').classList.remove('animate-spin');
+        }
+      });
+    }
+
+    // Initialize Dashboard
+    function initDashboard() {
+      loadDashboardData();
+      setupEvents();
+      setupAutoRefresh();
+      document.getElementById('footerYear').textContent = new Date().getFullYear();
+    }
+
+    // Load Data with Two-Way Fallback (getDashboardData + advancedSearch)
+    function loadDashboardData(beYear, silent) {
+      const yearToLoad = beYear ? Number(beYear) : currentYear;
+      if (!silent) {
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+        document.getElementById('refreshSpinner').classList.add('animate-spin');
+      }
+
+      // getDashboardData ส่งสถิติรายเดือน/หมวดหมู่/ประเภทมาครบแล้ว ไม่ต้องดึงรายการทั้งหมดซ้ำ
+      fetchApi('getDashboardData', { beYear: yearToLoad, department: selectedDepartment || null }, true)
+      .then(function(res) {
+        if (!res || !res.success) {
+          Swal.fire({ icon: 'error', title: 'ไม่สามารถโหลดข้อมูลได้', text: (res && res.message) || 'เชื่อมต่อล้มเหลว' });
+          return;
+        }
+
+        DASHBOARD_RAW = res;
+        currentYear = res.beYear;
+
+        const chartData = computeChartData([], currentYear, selectedDepartment, res);
+
+        populateYears(res.availableYears, res.beYear);
+        populateDepartments(res.byDepartment);
+
+        renderKPIs(chartData.summary);
+        renderMonthlyChart(chartData.monthlyStats);
+        renderCategoryChart(chartData.categoryCounts);
+        renderKaizenTypeChart(chartData.typeCounts);
+        renderEmployeeTable();
+
+        const now = new Date();
+        document.getElementById('lastUpdatedTime').textContent =
+          now.toLocaleDateString('th-TH') + ' ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      })
+      .catch(function(err) {
+        if (!silent) Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message });
+        else console.warn('auto refresh failed:', err);
+      })
+      .finally(function() {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('refreshSpinner').classList.remove('animate-spin');
+      });
+    }
+
+    // Compute chart data and pending totals client-side
+    function computeChartData(records, targetYear, deptFilter, resDash) {
+      const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+      
+      // Check if backend already provided complete stats
+      if (resDash && resDash.monthlyStats && resDash.categoryCounts && resDash.typeCounts) {
+        return {
+          monthlyStats: resDash.monthlyStats,
+          categoryCounts: resDash.categoryCounts,
+          typeCounts: resDash.typeCounts,
+          summary: resDash.summary
+        };
+      }
+
+      // Initialize structures
+      const monthlyStats = monthNames.map(function(m) {
+        return { monthName: m, approved: 0, total: 0 };
+      });
+      const categoryCounts = { 'P': 0, 'D': 0, 'E': 0, 'S': 0, 'Q': 0, 'E2': 0, 'C': 0, 'M': 0 };
+      const typeCounts = { 'automation': 0, 'karakuri': 0, 'genco': 0, 'project': 0, 'service': 0, 'innovation': 0, 'suggestion': 0, 'other': 0 };
+
+      let pendingTotal = 0;
+      let approvedTotal = 0;
+
+      (records || []).forEach(function(r) {
+        // Filter by department if selected
+        if (deptFilter && r.department && String(r.department).trim() !== String(deptFilter).trim()) {
+          return;
+        }
+
+        // Determine record year and month
+        let recYear = r.beYear ? Number(r.beYear) : null;
+        let recMonth = null;
+
+        if (r.date) {
+          const d = new Date(r.date);
+          if (!isNaN(d.getTime())) {
+            if (!recYear) recYear = d.getFullYear() + 543;
+            recMonth = d.getMonth(); // 0-11
+          }
+        }
+
+        const isMatchingYear = (!targetYear || !recYear || recYear === targetYear);
+        if (!isMatchingYear) return;
+
+        const isApproved = (r.status === 'ผ่าน' || r.status === 'อนุมัติ');
+        const isPending = (r.status === 'รอตรวจ' || r.status === 'รอตรวจสอบ' || r.status === 'ส่งแล้ว' || !r.status);
+
+        if (isPending) pendingTotal++;
+        if (isApproved) approvedTotal++;
+
+        // Monthly stats
+        if (recMonth !== null && recMonth >= 0 && recMonth < 12) {
+          monthlyStats[recMonth].total++;
+          if (isApproved) {
+            monthlyStats[recMonth].approved++;
+          }
+        }
+
+        // Category counts
+        if (r.categories) {
+          if (typeof r.categories === 'object') {
+            Object.keys(categoryCounts).forEach(function(k) {
+              if (r.categories[k]) categoryCounts[k]++;
+            });
+          } else if (typeof r.categories === 'string') {
+            const parts = r.categories.split(/[,/ ]+/);
+            parts.forEach(function(p) {
+              const cleaned = p.trim().toUpperCase();
+              if (categoryCounts.hasOwnProperty(cleaned)) categoryCounts[cleaned]++;
+            });
+          }
+        }
+
+        // Type counts
+        const t = (r.kaizenType || '').toLowerCase().trim();
+        if (typeCounts.hasOwnProperty(t)) {
+          typeCounts[t]++;
+        } else if (t) {
+          typeCounts['other']++;
+        }
+      });
+
+      // Merge summary with pending count
+      const summary = Object.assign({}, resDash.summary || {});
+      if (!summary.pendingTotal) {
+        summary.pendingTotal = pendingTotal;
+      }
+      if (!summary.submittedApprovedCount && approvedTotal > 0) {
+        summary.submittedApprovedCount = approvedTotal;
+      }
+
+      return {
+        monthlyStats: monthlyStats,
+        categoryCounts: categoryCounts,
+        typeCounts: typeCounts,
+        summary: summary
+      };
+    }
+
+    // Populate Year Dropdown
+    function populateYears(years, selected) {
+      const sel = document.getElementById('dashYear');
+      const cur = sel.value;
+      sel.innerHTML = '';
+      (years || []).forEach(function(y) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        sel.appendChild(opt);
+      });
+      sel.value = selected || cur || (new Date().getFullYear() + 543);
+    }
+
+    // Populate Department Filter Dropdown
+    let ALL_DEPARTMENTS = [];
+    function populateDepartments(deptList) {
+      const sel = document.getElementById('filterDept');
+      // เมื่อกรองแผนกอยู่ ผลลัพธ์จะมีแผนกเดียว จึงใช้รายการแผนกทั้งหมดที่จำไว้ตอนยังไม่กรอง
+      if (!selectedDepartment && deptList && deptList.length) ALL_DEPARTMENTS = deptList;
+      const list = ALL_DEPARTMENTS.length ? ALL_DEPARTMENTS : (deptList || []);
+      sel.innerHTML = '<option value="">🏢 ทุกแผนก</option>';
+      list.forEach(function(d) {
+        if (!d.department) return;
+        const opt = document.createElement('option');
+        opt.value = d.department;
+        opt.textContent = d.department + ' (' + d.totalEmployees + ' คน)';
+        sel.appendChild(opt);
+      });
+      sel.value = selectedDepartment || '';
+    }
+
+    // Render KPI Cards
+    function renderKPIs(summary) {
+      if (!summary) return;
+      document.getElementById('kpiTotalEmp').textContent = summary.totalEmployees || 0;
+      document.getElementById('kpiTargetSum').textContent = summary.totalTargetSum || 0;
+      document.getElementById('kpiApprovedCount').textContent = summary.submittedApprovedCount || summary.totalDoneSum || 0;
+      
+      const achPct = summary.achievedPercent || 0;
+      document.getElementById('kpiAchievedPct').textContent = achPct + '%';
+      document.getElementById('kpiTargetRatio').textContent = (summary.totalDoneSum || 0) + ' / ' + (summary.totalTargetSum || 0);
+      document.getElementById('kpiAchievedPctBar').style.width = Math.min(100, achPct) + '%';
+
+      document.getElementById('kpiEmpAchieved').textContent = summary.achievedCount || 0;
+      document.getElementById('kpiEmpAchievedPct').textContent = '(' + (summary.empAchievedPercent || 0) + '%)';
+      document.getElementById('kpiEmpNotAchieved').textContent = summary.notAchievedCount || 0;
+      document.getElementById('kpiPendingTotal').textContent = summary.pendingTotal || 0;
+    }
+
+    // Render Monthly Trend Chart (Chart.js)
+    function renderMonthlyChart(monthlyStats) {
+      const canvas = document.getElementById('monthlyTrendChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const stats = monthlyStats || [
+        { monthName: 'ม.ค.', approved: 0, total: 0 }, { monthName: 'ก.พ.', approved: 0, total: 0 },
+        { monthName: 'มี.ค.', approved: 0, total: 0 }, { monthName: 'เม.ย.', approved: 0, total: 0 },
+        { monthName: 'พ.ค.', approved: 0, total: 0 }, { monthName: 'มิ.ย.', approved: 0, total: 0 },
+        { monthName: 'ก.ค.', approved: 0, total: 0 }, { monthName: 'ส.ค.', approved: 0, total: 0 },
+        { monthName: 'ก.ย.', approved: 0, total: 0 }, { monthName: 'ต.ค.', approved: 0, total: 0 },
+        { monthName: 'พ.ย.', approved: 0, total: 0 }, { monthName: 'ธ.ค.', approved: 0, total: 0 }
+      ];
+
+      const labels = stats.map(m => m.monthName);
+      const approvedData = stats.map(m => m.approved);
+      const totalData = stats.map(m => m.total);
+
+      if (monthlyChart) monthlyChart.destroy();
+
+      monthlyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'ผ่านการอนุมัติ',
+              data: approvedData,
+              backgroundColor: '#1B6E4C',
+              borderRadius: 6,
+              barPercentage: 0.6
+            },
+            {
+              label: 'ส่งทั้งหมด (รวมรอตรวจ/ตีกลับ)',
+              data: totalData,
+              backgroundColor: '#cbd5e1',
+              borderRadius: 6,
+              barPercentage: 0.6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              padding: 10,
+              titleFont: { family: 'Kanit', size: 13 },
+              bodyFont: { family: 'Kanit', size: 12 }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0, font: { family: 'Kanit' } },
+              grid: { color: '#f1f5f9' }
+            },
+            x: {
+              ticks: { font: { family: 'Kanit' } },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    // Render Category Doughnut Chart
+    function renderCategoryChart(categoryCounts) {
+      const canvas = document.getElementById('categoryChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const counts = categoryCounts || {};
+      const labels = Object.keys(CATEGORY_MAP).map(k => CATEGORY_MAP[k].name);
+      const data = Object.keys(CATEGORY_MAP).map(k => counts[k] || 0);
+      const colors = Object.keys(CATEGORY_MAP).map(k => CATEGORY_MAP[k].color);
+
+      if (categoryChartInstance) categoryChartInstance.destroy();
+
+      categoryChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors,
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { font: { family: 'Kanit', size: 11 }, boxWidth: 12, padding: 8 }
+            },
+            tooltip: {
+              titleFont: { family: 'Kanit' },
+              bodyFont: { family: 'Kanit' }
+            }
+          },
+          cutout: '65%'
+        }
+      });
+    }
+
+    // Render Kaizen Type Chart
+    function renderKaizenTypeChart(typeCounts) {
+      const canvas = document.getElementById('kaizenTypeChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const counts = typeCounts || {};
+      const labels = Object.keys(KAIZEN_TYPE_MAP).map(k => KAIZEN_TYPE_MAP[k]);
+      const data = Object.keys(KAIZEN_TYPE_MAP).map(k => counts[k] || 0);
+      const colors = [
+        '#0284c7', '#0d9488', '#16a34a', '#d97706', '#7c3aed', '#db2777', '#475569', '#94a3b8'
+      ];
+
+      if (typeChartInstance) typeChartInstance.destroy();
+
+      typeChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors,
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { font: { family: 'Kanit', size: 11 }, boxWidth: 12, padding: 8 }
+            }
+          },
+          cutout: '65%'
+        }
+      });
+    }
+
+    // Render Employee Table with Filter & Search
+    function renderEmployeeTable() {
+      if (!DASHBOARD_RAW || !DASHBOARD_RAW.employees) return;
+
+      const q = searchQuery.toLowerCase().trim();
+      const filtered = DASHBOARD_RAW.employees.filter(function(e) {
+        const matchSearch = !q ||
+          (e.empId && e.empId.toLowerCase().includes(q)) ||
+          (e.name && e.name.toLowerCase().includes(q)) ||
+          (e.department && e.department.toLowerCase().includes(q)) ||
+          (e.position && e.position.toLowerCase().includes(q));
+
+        let matchStatus = true;
+        if (currentStatusFilter === 'achieved') matchStatus = e.achieved;
+        if (currentStatusFilter === 'not_achieved') matchStatus = !e.achieved;
+
+        return matchSearch && matchStatus;
+      });
+
+      document.getElementById('filteredEmpCount').textContent = filtered.length;
+      const tbody = document.getElementById('employeeTableBody');
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-12 text-slate-400">ไม่พบรายชื่อที่ตรงกับเงื่อนไขการค้นหา</td></tr>';
+        return;
+      }
+
+      filtered.forEach(function(e) {
+        const pct = e.percent || 0;
+        const barColor = e.achieved ? 'bg-emerald-600' : (pct >= 50 ? 'bg-amber-500' : 'bg-red-500');
+        const badge = e.achieved
+          ? '<span class="badge-chip achieved">✅ ถึงเป้าหมาย</span>'
+          : '<span class="badge-chip pending">⏳ ยังไม่ถึง (' + Math.max(0, e.target - e.count) + ')</span>';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition';
+        tr.innerHTML =
+          '<td class="py-2.5 px-3 font-semibold text-slate-800 num">' + escapeHtml(e.empId) + '</td>' +
+          '<td class="py-2.5 px-3 font-semibold text-slate-800">' + escapeHtml(e.name) + '</td>' +
+          '<td class="py-2.5 px-3 text-slate-600">' + escapeHtml(e.department || '-') + '</td>' +
+          '<td class="py-2.5 px-3 text-slate-500">' + escapeHtml(e.position || '-') + '</td>' +
+          '<td class="py-2.5 px-2 text-center font-bold num text-slate-600">' + e.target + '</td>' +
+          '<td class="py-2.5 px-2 text-center font-bold num text-emerald-700">' + e.count + '</td>' +
+          '<td class="py-2.5 px-4">' +
+            '<div class="flex items-center gap-2">' +
+              '<div class="progress-bar-bg flex-1">' +
+                '<div class="progress-bar-fill ' + barColor + '" style="width:' + Math.min(100, pct) + '%"></div>' +
+              '</div>' +
+              '<span class="num font-semibold text-xs min-w-[2.5rem]">' + pct + '%</span>' +
+            '</div>' +
+          '</td>' +
+          '<td class="py-2.5 px-3 text-center">' + badge + '</td>' +
+          '<td class="py-2.5 px-3 text-center no-print">' +
+            '<button class="btnViewHist inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 rounded-md hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition text-xs font-semibold text-slate-600" data-empid="' + escapeHtml(e.empId) + '" data-name="' + escapeHtml(e.name) + '">' +
+              '📋 ดูผลงาน' +
+            '</button>' +
+          '</td>';
+        tbody.appendChild(tr);
+      });
+
+      // Bind detail history buttons
+      tbody.querySelectorAll('.btnViewHist').forEach(function(btn) {
+        btn.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          openEmployeeHistory(this.dataset.empid, this.dataset.name);
+        });
+      });
+    }
+
+    // Open Employee Kaizen History Modal
+    function openEmployeeHistory(empId, empName) {
+      document.getElementById('modalEmpName').textContent = empName + ' (' + empId + ')';
+      document.getElementById('modalEmpSub').textContent = 'ประวัติผลงาน Kaizen ประจำปี พ.ศ. ' + currentYear;
+      document.getElementById('empHistoryModal').classList.remove('hidden');
+
+      const listContainer = document.getElementById('modalHistoryList');
+      listContainer.innerHTML = '<div class="text-center py-8 text-slate-400">⏳ กำลังโหลดประวัติ Kaizen...</div>';
+      document.getElementById('modalEmptyState').classList.add('hidden');
+
+      fetchApi('getEmployeeKaizenHistory', { empId: empId, beYear: currentYear })
+        .then(function(res) {
+          if (!res.success) throw new Error(res.message);
+
+          const summary = res.summary || {};
+          document.getElementById('modalTotal').textContent = summary.total || 0;
+          document.getElementById('modalApproved').textContent = summary.approved || 0;
+          document.getElementById('modalPending').textContent = summary.pending || 0;
+          document.getElementById('modalRejected').textContent = summary.rejected || 0;
+
+          const records = res.records || [];
+          if (records.length === 0) {
+            listContainer.innerHTML = '';
+            document.getElementById('modalEmptyState').classList.remove('hidden');
+            return;
+          }
+
+          listContainer.innerHTML = records.map(function(r) {
+            let statusBadge = '<span class="badge-chip pending">⏳ รอตรวจสอบ</span>';
+            if (r.status === 'ผ่าน') statusBadge = '<span class="badge-chip achieved">✅ อนุมัติผ่าน</span>';
+            else if (r.status === 'ตีกลับ') statusBadge = '<span class="badge-chip rejected">❌ ตีกลับ</span>';
+
+            const cats = Object.keys(r.categories || {})
+              .filter(k => r.categories[k])
+              .map(k => '<span class="px-1.5 py-0.5 rounded bg-slate-100 text-[10px] text-slate-600 font-semibold">' + k + '</span>')
+              .join(' ');
+
+            return '<div class="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition space-y-2">' +
+              '<div class="flex items-center justify-between flex-wrap gap-2">' +
+                '<div class="flex items-center gap-2">' +
+                  '<span class="font-bold text-xs text-emerald-800">' + escapeHtml(r.id) + '</span>' +
+                  '<span class="text-xs text-slate-400">(' + escapeHtml(r.dateDisplay || r.date) + ')</span>' +
+                '</div>' +
+                statusBadge +
+              '</div>' +
+              '<h4 class="font-bold text-sm text-slate-800">' + escapeHtml(r.title) + '</h4>' +
+              (r.detail ? '<p class="text-xs text-slate-600 leading-relaxed"><span class="font-semibold text-slate-700">ผลลัพธ์:</span> ' + escapeHtml(r.detail) + '</p>' : '') +
+              '<div class="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-2">' +
+                '<div class="flex items-center gap-1.5">' + cats + '</div>' +
+                (r.formPdfUrl ? '<a href="' + encodeURI(r.formPdfUrl) + '" target="_blank" class="text-xs font-semibold text-emerald-700 hover:underline">📄 ดูแบบฟอร์ม PDF</a>' : '') +
+              '</div>' +
+            '</div>';
+          }).join('');
+        })
+        .catch(function(err) {
+          listContainer.innerHTML = '<div class="text-center py-6 text-red-500">เกิดข้อผิดพลาด: ' + escapeHtml(err.message) + '</div>';
+        });
+    }
+
+    // Export Employee Data to Excel
+    function exportToExcel() {
+      if (!DASHBOARD_RAW || !DASHBOARD_RAW.employees) return;
+      const dataToExport = DASHBOARD_RAW.employees.map(function(e) {
+        return {
+          'รหัสพนักงาน': e.empId,
+          'ชื่อ-นามสกุล': e.name,
+          'แผนก': e.department,
+          'ตำแหน่ง': e.position,
+          'เป้าหมาย': e.target,
+          'ทำได้แล้ว': e.count,
+          'ร้อยละความสำเร็จ': e.percent + '%',
+          'สถานะ': e.achieved ? 'ถึงเป้าหมาย' : 'ยังไม่ถึงเป้าหมาย'
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Kaizen_' + currentYear);
+      XLSX.writeFile(wb, 'Kaizen_Summary_' + currentYear + '.xlsx');
+    }
+
+    // Setup Event Listeners
+    function setupEvents() {
+      document.getElementById('dashYear').addEventListener('change', function() {
+        loadDashboardData(this.value);
+      });
+
+      document.getElementById('filterDept').addEventListener('change', function() {
+        selectedDepartment = this.value;
+        loadDashboardData(currentYear);
+      });
+
+      document.getElementById('btnRefresh').addEventListener('click', function() {
+        loadDashboardData(currentYear);
+      });
+
+      document.getElementById('btnExport').addEventListener('click', exportToExcel);
+
+      document.getElementById('searchInput').addEventListener('input', function() {
+        searchQuery = this.value;
+        renderEmployeeTable();
+      });
+
+      document.querySelectorAll('.status-tab-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.status-tab-btn').forEach(b => {
+            b.classList.remove('active', 'bg-white', 'shadow-xs', 'font-semibold', 'text-emerald-800');
+          });
+          this.classList.add('active', 'bg-white', 'shadow-xs', 'font-semibold', 'text-emerald-800');
+          currentStatusFilter = this.dataset.filter;
+          renderEmployeeTable();
+        });
+      });
+
+      document.getElementById('btnCloseModal').addEventListener('click', function() {
+        document.getElementById('empHistoryModal').classList.add('hidden');
+      });
+
+      document.getElementById('empHistoryModal').addEventListener('click', function(ev) {
+        if (ev.target === this) this.classList.add('hidden');
+      });
+
+      document.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Escape') {
+          document.getElementById('empHistoryModal').classList.add('hidden');
+        }
+      });
+    }
+
+    // Auto Refresh Countdown
+    function setupAutoRefresh() {
+      const select = document.getElementById('autoRefreshInterval');
+      const badge = document.getElementById('countdownBadge');
+
+      function restartCountdown() {
+        const intervalSec = parseInt(select.value, 10);
+        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        if (intervalSec <= 0) {
+          badge.classList.add('hidden');
+          return;
+        }
+
+        secondsLeft = intervalSec;
+        badge.classList.remove('hidden');
+
+        function updateBadge() {
+          const m = Math.floor(secondsLeft / 60);
+          const s = secondsLeft % 60;
+          badge.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+        }
+        updateBadge();
+
+        countdownInterval = setInterval(function() {
+          secondsLeft--;
+          if (secondsLeft <= 0) {
+            secondsLeft = intervalSec;
+            loadDashboardData(currentYear, true);
+          }
+          updateBadge();
+        }, 1000);
+      }
+
+      select.addEventListener('change', restartCountdown);
+      restartCountdown();
+    }
+
+    document.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+</body>
+</html>

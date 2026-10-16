@@ -1,4 +1,4 @@
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4f7M0ZrL9k1qKUzlRr5wLj_TWtvXPFwrjD7JM_FSQJDdnwEWZvxpq_nJFsQn3v411YA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQjgWIuki4ooEjE7D8we-PYbEV4DMiFAfZ3wc5Y4biS7MgQj0tsBDx0rPgdid0a4Rx/exec';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
 const CONFIG_MAX_FILES_PER_KAIZEN = 10;
@@ -35,14 +35,6 @@ const CATEGORIES = {
   'M': 'ขวัญกำลังใจ'
 };
 
-// ==========================================
-// PROCESSING MODAL (แสดงขั้นตอนก่อนบันทึกข้อมูล)
-// ==========================================
-// หมายเหตุ: Google Apps Script ทำงานแบบ request/response เดียวจบ (synchronous)
-// เซิร์ฟเวอร์จึงไม่สามารถส่งสถานะความคืบหน้าจริงกลับมาได้ระหว่างทำงาน
-// ขั้นตอน "save/pdf/email" ด้านล่างจึงเป็นการจำลองลำดับที่กำลังเกิดขึ้นจริงบนเซิร์ฟเวอร์
-// (บันทึกชีต -> สร้าง PDF -> ส่งอีเมล ตามลำดับที่ Code.gs ทำจริง) เพื่อให้ผู้ใช้เห็นความคืบหน้า
-// ระหว่างรอผลลัพธ์ที่แท้จริงจาก callAppsScript()
 const PROCESS_STEPS_SUBMIT = [
   { id: 'validate', label: 'ตรวจสอบข้อมูลฟอร์ม' },
   { id: 'files', label: 'ประมวลผลไฟล์แนบเพิ่มเติม' },
@@ -188,7 +180,6 @@ function hideLoading() {
 }
 
 function showError(err, title) {
-  hideLoading();
   const msg = typeof err === 'string' ? err : (err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
   console.error('Error:', err);
   Swal.fire({
@@ -200,7 +191,6 @@ function showError(err, title) {
 }
 
 function showSuccess(msg) {
-  hideLoading();
   Swal.fire({
     icon: 'success',
     title: msg,
@@ -210,15 +200,12 @@ function showSuccess(msg) {
 }
 
 function debounce(func, wait) {
-  const key = func.name || 'anonymous';
+  let timer = null;
   return function() {
     const context = this;
     const args = arguments;
-    clearTimeout(debounceTimers[key]);
-    debounceTimers[key] = setTimeout(function() {
-      func.apply(context, args);
-      delete debounceTimers[key];
-    }, wait);
+    clearTimeout(timer);
+    timer = setTimeout(function() { func.apply(context, args); }, wait);
   };
 }
 
@@ -231,7 +218,17 @@ function callAppsScript(action, payload) {
     })
     .then(function(r) {
       if (!r.ok) throw new Error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ (HTTP ' + r.status + ')');
-      return r.json();
+      return r.text();
+    })
+    .then(function(text) {
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        if (text && (text.trim().startsWith('<') || text.includes('<!DOCTYPE'))) {
+          throw new Error('เซิร์ฟเวอร์ส่งการตอบกลับที่ไม่ใช่ JSON (โปรดตรวจสอบการ Deploy Web App ใน Google Apps Script ว่าตั้งค่า Who has access เป็น Anyone หรือไม่)');
+        }
+        throw new Error('รูปแบบข้อมูลจากเซิร์ฟเวอร์ไม่ถูกต้อง: ' + (text ? text.substring(0, 120) : 'ว่างเปล่า'));
+      }
     })
     .catch(function(err) {
       if (err.message && err.message.includes('Failed to fetch')) {
@@ -853,6 +850,7 @@ function loadMyRecords() {
       hideLoading();
       if (!res.success) { showError(res.message); return; }
       MY_RECORDS = res.records || [];
+      window.MY_META = { beYear: res.beYear, doneCount: res.doneCount, target: res.target };
       renderEmpKPI();
       renderEmpTable();
     })
@@ -860,10 +858,15 @@ function loadMyRecords() {
 }
 
 function renderEmpKPI() {
-  const target = (typeof CURRENT_USER.target === 'number') ? CURRENT_USER.target : 0;
-  const approved = MY_RECORDS.filter(function(r) { return r.status === STATUS_APPROVED; }).length;
-  const pending = MY_RECORDS.filter(function(r) { return r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR; }).length;
-  const rejected = MY_RECORDS.filter(function(r) { return r.status === STATUS_REJECTED; }).length;
+  const meta = window.MY_META || {};
+  const nowBE = meta.beYear || (new Date().getFullYear() + 543);
+  // เป้าหมายเป็นรายปี จึงนับเฉพาะรายการของปีปัจจุบัน
+  const yearRecords = MY_RECORDS.filter(function(r) { return !r.beYear || r.beYear === nowBE; });
+  const target = (typeof meta.target === 'number') ? meta.target : ((typeof CURRENT_USER.target === 'number') ? CURRENT_USER.target : 0);
+  const approvedRecs = yearRecords.filter(function(r) { return r.status === STATUS_APPROVED; }).length;
+  const approved = (typeof meta.doneCount === 'number') ? Math.max(meta.doneCount, approvedRecs) : approvedRecs;
+  const pending = yearRecords.filter(function(r) { return r.status === STATUS_PENDING_HEAD || r.status === STATUS_PENDING_DIRECTOR; }).length;
+  const rejected = yearRecords.filter(function(r) { return r.status === STATUS_REJECTED; }).length;
 
   document.getElementById('empTarget').textContent = target;
   document.getElementById('empApproved').textContent = approved;
@@ -872,7 +875,7 @@ function renderEmpKPI() {
 
   const pct = target > 0 ? Math.min(100, Math.round((approved / target) * 100)) : 100;
   document.getElementById('empProgressBar').style.width = pct + '%';
-  document.getElementById('empProgressLabel').textContent = approved + ' / ' + target + ' (' + pct + '%)';
+  document.getElementById('empProgressLabel').textContent = approved + ' / ' + target + ' (' + pct + '%) · ปี ' + nowBE;
 }
 
 function renderEmpTable() {
@@ -1261,35 +1264,39 @@ function renderMgrKPI() {
 
 function openImageViewer(imageUrl, label) {
   if (!imageUrl) return;
-  
+  const isData = String(imageUrl).indexOf('data:') === 0;
   let displayUrl = imageUrl;
-  const fileId = imageUrl.match(/[-\w]{25,}/);
-  if (fileId) {
-    displayUrl = 'https://drive.google.com/thumbnail?id=' + fileId[0] + '&sz=w1200';
+  if (!isData) {
+    const fileId = String(imageUrl).match(/[-\w]{25,}/);
+    if (fileId) displayUrl = 'https://drive.google.com/thumbnail?id=' + fileId[0] + '&sz=w1200';
   }
-
-  const modalHtml = 
-    '<div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.85); backdrop-filter:blur(8px);" onclick="closeImageViewer(event)">' +
-    '<div class="relative max-w-4xl max-h-[90vh] w-full" onclick="event.stopPropagation();">' +
-    '<button onclick="closeImageViewer(event)" class="absolute -top-12 right-0 text-white text-2xl hover:text-gray-300 transition" style="background:none;border:none;cursor:pointer;">✕</button>' +
-    '<div class="bg-white rounded-xl p-2 shadow-2xl">' +
-    '<div class="text-xs font-semibold p-2" style="color:var(--ink-faint);">' + (label || 'รูปภาพ') + '</div>' +
-    '<img src="' + displayUrl + '" alt="' + (label || 'รูปภาพ') + '" class="w-full max-h-[70vh] object-contain rounded" onerror="this.parentElement.innerHTML=\'<div class=\\\'p-8 text-center text-slate-500\\\'>ไม่สามารถโหลดรูปภาพได้</div>\'">' +
-    '<div class="flex justify-between items-center p-2 text-xs" style="color:var(--ink-faint);">' +
-    '<span>คลิกนอกภาพเพื่อปิด</span>' +
-    '<a href="' + imageUrl + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">เปิดใน Drive</a>' +
-    '</div>' +
-    '</div>' +
-    '</div>' +
-    '</div>';
+  const safeLabel = escapeHtml(label || 'รูปภาพ');
 
   const existingModal = document.getElementById('imageViewerModal');
   if (existingModal) existingModal.remove();
 
   const div = document.createElement('div');
   div.id = 'imageViewerModal';
-  div.innerHTML = modalHtml;
+  div.innerHTML =
+    '<div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.85); backdrop-filter:blur(8px);" onclick="closeImageViewer(event)">' +
+    '<div class="relative max-w-4xl max-h-[90vh] w-full" onclick="event.stopPropagation();">' +
+    '<button onclick="closeImageViewer(event)" class="absolute -top-12 right-0 text-white text-2xl hover:text-gray-300 transition" style="background:none;border:none;cursor:pointer;" aria-label="ปิด">✕</button>' +
+    '<div class="bg-white rounded-xl p-2 shadow-2xl">' +
+    '<div class="text-xs font-semibold p-2" style="color:var(--ink-faint);">' + safeLabel + '</div>' +
+    '<img id="imageViewerImg" src="' + escapeHtml(displayUrl) + '" alt="' + safeLabel + '" class="w-full max-h-[70vh] object-contain rounded">' +
+    '<div class="flex justify-between items-center p-2 text-xs" style="color:var(--ink-faint);">' +
+    '<span>คลิกนอกภาพเพื่อปิด</span>' +
+    (isData ? '' : '<a href="' + escapeHtml(imageUrl) + '" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">เปิดใน Drive</a>') +
+    '</div></div></div></div>';
   document.body.appendChild(div);
+
+  const img = document.getElementById('imageViewerImg');
+  if (img) {
+    img.onerror = function() {
+      this.parentElement.insertBefore(Object.assign(document.createElement('div'), { className: 'p-8 text-center', textContent: 'ไม่สามารถโหลดรูปภาพได้' }), this);
+      this.remove();
+    };
+  }
 }
 
 function closeImageViewer(event) {
@@ -1785,7 +1792,7 @@ function showAdvancedSearch() {
     statuses.map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('') +
     '</select></div>' +
     '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">แผนก</label><select id="advDepartment" class="input-field text-sm"><option value="">ทั้งหมด</option>' +
-    depts.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('') +
+    depts.map(function(d) { return '<option value="' + escapeHtml(d) + '">' + escapeHtml(d) + '</option>'; }).join('') +
     '</select></div>' +
     '<div><label class="text-xs font-semibold block mb-1" style="color:var(--ink-soft);">หมวดหมู่</label><select id="advCategory" class="input-field text-sm"><option value="">ทั้งหมด</option>' +
     categories.map(function(c) { return '<option value="' + c + '">' + CATEGORIES[c] + '</option>'; }).join('') +
@@ -1827,7 +1834,7 @@ function showAdvancedSearch() {
 
 function performAdvancedSearch(params) {
   showLoading();
-  callAppsScript('advancedSearch', params)
+  callAppsScript('advancedSearch', Object.assign({ reviewerId: CURRENT_USER.id }, params))
     .then(function(res) {
       hideLoading();
       if (!res.success) { showError(res.message); return; }
@@ -2457,7 +2464,7 @@ function confirmDeleteEmployeeRow(btn) {
   }).then(function(result) {
     if (result.isConfirmed) {
       showLoading();
-      callAppsScript('deleteEmployeeRecord', { reviewerId: CURRENT_USER.id, rowIndex: tr.dataset.rowIndex })
+      callAppsScript('deleteEmployeeRecord', { reviewerId: CURRENT_USER.id, rowIndex: tr.dataset.rowIndex, empId: empId })
         .then(function(res) {
           hideLoading();
           if (res.success) {
@@ -3057,6 +3064,11 @@ document.addEventListener('DOMContentLoaded', function() {
   initDatePickers();
   bindEvents();
   initAutoLogoutListeners();
+  (function() {
+    var lg = document.querySelector('#loginScreen img[alt="Bitwise Group"]');
+    var hl = document.getElementById('headerLogo');
+    if (lg && hl) hl.src = lg.src;
+  })();
 
   const saved = loadSession();
   if (saved && saved.id && saved.role) {

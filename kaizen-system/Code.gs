@@ -80,16 +80,12 @@ const DATA_COL = {
 };
 
 function doGet() {
-  return HtmlService.createTemplateFromFile('Index')
-    .evaluate()
-    .setTitle('ระบบบันทึก Kaizen')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  // ระบบหน้าเว็บโฮสต์บน GitHub Pages และเรียก API ผ่าน doPost เท่านั้น
+  return ContentService
+    .createTextOutput(JSON.stringify({ success: true, service: 'Kaizen API', message: 'Web App พร้อมใช้งาน (ใช้งานผ่านหน้าเว็บ GitHub Pages)' }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
-}
 
 function doPost(e) {
   let result;
@@ -345,8 +341,9 @@ function toBEDateString_(dateVal) {
   if (isNaN(d.getTime())) return String(dateVal);
   const day = d.getDate();
   const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-  const beYear = d.getFullYear() + 543;
-  return day + ' ' + monthNames[d.getMonth()] + ' ' + beYear;
+  let y = d.getFullYear();
+  if (y < 2400) y += 543;
+  return day + ' ' + monthNames[d.getMonth()] + ' ' + y;
 }
 
 function getTargetForPosition_(position) {
@@ -758,7 +755,17 @@ function getKaizenRecords() {
       id: String(row[0] || '').trim(),
       date: dateObj ? Utilities.formatDate(dateObj, Session.getScriptTimeZone(), 'yyyy-MM-dd') : '',
       dateDisplay: toBEDateString_(row[1]),
-      beYear: dateObj ? (dateObj.getFullYear() + 543) : null,
+      beYear: (function() {
+        if (dateObj && !isNaN(dateObj.getTime())) {
+          const yr = dateObj.getFullYear();
+          return yr > 2400 ? yr : yr + 543;
+        }
+        if (row[0]) {
+          const match = String(row[0]).match(/^KZ-(\d{4})-/i);
+          if (match) return parseInt(match[1], 10);
+        }
+        return null;
+      })(),
       empId: normalizeEmpId_(row[2]),
       name: row[3] || '',
       department: normalizeDept_(row[4] || ''),
@@ -1200,7 +1207,7 @@ function addKaizenRecordWithMultipleFiles(payload) {
     try {
       formPdfUrl = generateAndSaveKaizenPdf_(recordForPdf);
       if (formPdfUrl) {
-        sh.getRange(newRowIndex, 27).setValue(formPdfUrl);
+        writeFormPdfUrl_(sh, newRowIndex, newId, formPdfUrl);
         recordForPdf.formPdfUrl = formPdfUrl;
         clearKaizenCache_();
       }
@@ -1334,29 +1341,39 @@ function renderKaizenFormPdfBlob_(record) {
     footer.setFontSize(8).editAsText().setForegroundColor('#94a3b8');
 
     doc.saveAndClose();
+    Utilities.sleep(400);
     const pdfBlob = DriveApp.getFileById(docId).getAs(MimeType.PDF).setName('Kaizen_' + record.id + '.pdf');
-    
-    try {
-      DriveApp.getFileById(docId).setTrashed(true);
-    } catch (e) {}
-    
     return pdfBlob;
   } catch (err) {
     console.error('renderKaizenFormPdfBlob_ error:', err);
-    try {
-      if (docId) DriveApp.getFileById(docId).setTrashed(true);
-    } catch (e2) {}
     return null;
+  } finally {
+    if (docId) {
+      try { DriveApp.getFileById(docId).setTrashed(true); } catch (e2) {}
+    }
   }
 }
 
 function appendImageToCell_(cell, imageUrl, label) {
-  while (cell.getNumChildren() > 0) {
-    cell.removeChild(cell.getChild(0));
-  }
+  try {
+    if (cell.getNumChildren() > 0) {
+      cell.getChild(0).asParagraph().setText('');
+      while (cell.getNumChildren() > 1) {
+        cell.removeChild(cell.getChild(1));
+      }
+    }
+  } catch (cleanErr) {}
 
   if (!imageUrl) {
-    cell.editAsText().setText('(ไม่มีรูปภาพแนบ)');
+    try {
+      if (cell.getNumChildren() > 0) {
+        cell.getChild(0).asParagraph().setText('(ไม่มีรูปภาพแนบ)');
+      } else {
+        cell.editAsText().setText('(ไม่มีรูปภาพแนบ)');
+      }
+    } catch (e) {
+      cell.editAsText().setText('(ไม่มีรูปภาพแนบ)');
+    }
     return;
   }
 
@@ -1463,8 +1480,14 @@ function ensureEmailLogSheet_() {
   if (!sh) {
     sh = ss.insertSheet('EmailLog');
   }
+  const headers = ['Timestamp', 'Type', 'KaizenID', 'Recipients', 'Status', 'ErrorMessage'];
   if (sh.getLastRow() === 0) {
-    sh.appendRow(['Timestamp', 'Type', 'KaizenID', 'Recipients', 'Status', 'ErrorMessage']);
+    sh.appendRow(headers);
+  } else {
+    const firstRowVal = String(sh.getRange(1, 1).getValue() || '').trim();
+    if (firstRowVal === 'คอลัมน์ 1' || firstRowVal === '' || firstRowVal !== 'Timestamp') {
+      sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+    }
   }
   return sh;
 }
@@ -1515,6 +1538,7 @@ function sendKaizenEmail_(type, record) {
   let noRecipientReason = '';
 
   if (type === 'submitted' || type === 'resubmitted') {
+    // ตามความต้องการของผู้ใช้: ไม่ต้องส่งตรงแผนก ให้ส่งหา "หัวหน้าแผนก" ทุกคนในชีต Managers เพื่อให้เข้ามากดตรวจสอบเป็นคนแรก
     const managerResult = getManagers();
     const managers = managerResult.success ? managerResult.managers : [];
 
@@ -1524,7 +1548,7 @@ function sendKaizenEmail_(type, record) {
     });
     
     toList = headManagers.map(m => m.email).filter(isValidEmail_).filter((e, idx, arr) => arr.indexOf(e) === idx);
-    subject = (type === 'submitted' ? '[Kaizen ใหม่] ' : '[Kaizen ส่งใหม่] ') + record.id + ' - ' + record.title;
+    subject = (type === 'submitted' ? '[Kaizen ใหม่ - รอหัวหน้าแผนกตรวจ] ' : '[Kaizen ส่งใหม่ - รอหัวหน้าแผนกตรวจ] ') + record.id + ' - ' + record.title;
     htmlBody = buildKaizenEmailHtml_(type, record);
     noRecipientReason = 'ไม่พบอีเมลของ "หัวหน้าแผนก" ในชีต Managers';
     
@@ -1761,7 +1785,7 @@ function deleteComment(payload) {
 
     for (let i = 1; i < data.length; i++) {
       if (data[i][0] === commentId) {
-        if (userId && data[i][3] !== userId) {
+        if (!userId || String(data[i][3]) !== String(userId)) {
           throw new Error('ไม่มีสิทธิ์ลบความคิดเห็นนี้');
         }
         rowToDelete = i + 1;
@@ -1797,10 +1821,12 @@ function identifyUser(role, id) {
     } else {
       const managerResult = getManagers();
       const managers = managerResult.success ? managerResult.managers : [];
+      const normInput = normalizeEmpId_(idStr);
       
       profile = managers.find(m =>
+        normalizeEmpId_(m.id) === normInput ||
         String(m.id || '').trim() === idStr || 
-        String(m.email || '').trim() === idStr
+        String(m.email || '').trim().toLowerCase() === idStr.toLowerCase()
       );
       
       if (!profile) {
@@ -1821,7 +1847,12 @@ function getMyRecords(empId) {
     if (!id) throw new Error('ไม่พบรหัสพนักงาน');
     const allRecords = getKaizenRecords();
     const records = allRecords.filter(r => r.empId === id);
-    return { success: true, records: records };
+    const nowBE = new Date().getFullYear() + 543;
+    const emp = getEmployees().find(e => e.empId === id);
+    const approvedThisYear = records.filter(r => r.beYear === nowBE && r.status === CONFIG.STATUS_APPROVED).length;
+    const prog = getProgressMap_(nowBE)[id];
+    const doneCount = resolveDoneCount_(emp ? emp.doneCount : null, Math.max(approvedThisYear, prog ? prog.total : 0));
+    return { success: true, records: records, beYear: nowBE, doneCount: doneCount, target: emp ? emp.target : null };
   } catch (err) {
     return { success: false, message: err.message };
   }
@@ -1856,7 +1887,7 @@ function getReviewQueue(reviewerId, options) {
 
     let scope = String(options.scope || '').trim().toLowerCase();
     if (scope !== 'mine' && scope !== 'all') {
-      scope = isDirector ? 'all' : 'mine';
+      scope = 'all'; // ค่าเริ่มต้นแสดงทุกแผนก เพื่อให้หัวหน้าแผนกทุกคนตรวจสอบรายการแรกได้ทันที
     }
 
     let records = allRecords.slice();
@@ -1929,8 +1960,11 @@ function resubmitKaizenRecord(payload) {
       }
 
       idCell = sh.getRange(rowIndex, 1).getValue();
+      const curStatus = String(sh.getRange(rowIndex, 15).getValue() || '').trim();
+      if (curStatus !== CONFIG.STATUS_REJECTED) throw new Error('แก้ไขและส่งใหม่ได้เฉพาะรายการที่ถูกตีกลับเท่านั้น');
       const oldData = getKaizenRecordById_(idCell);
 
+      if (payload.date) { const nd = parseDatePayload_(payload.date); if (nd) sh.getRange(rowIndex, 2).setValue(nd); }
       sh.getRange(rowIndex, 6).setValue(payload.title || '');
       sh.getRange(rowIndex, 7).setValue(payload.detail || '');
       sh.getRange(rowIndex, 30, 1, 2).setValues([[payload.beforeProblem || '', payload.afterSolution || '']]);
@@ -2024,7 +2058,7 @@ function resubmitKaizenRecord(payload) {
     try {
       formPdfUrl = generateAndSaveKaizenPdf_(recordForPdf);
       if (formPdfUrl) {
-        sh.getRange(rowIndex, 27).setValue(formPdfUrl);
+        writeFormPdfUrl_(sh, rowIndex, recordForPdf.id, formPdfUrl);
         recordForPdf.formPdfUrl = formPdfUrl;
         clearKaizenCache_();
       }
@@ -2093,6 +2127,9 @@ function reviewKaizenRecord(payload) {
 
       rowVals = sh.getRange(rowIndex, 1, 1, 35).getValues()[0];
       currentStatus = String(rowVals[14] || '').trim();
+      if (normalizeEmpId_(rowVals[2]) === normalizeEmpId_(reviewer.id)) {
+        throw new Error('ไม่สามารถตรวจ/อนุมัติ Kaizen ของตัวเองได้ กรุณาให้ผู้ตรวจท่านอื่นดำเนินการ');
+      }
 
       const canActAsHead = isHead && currentStatus === CONFIG.STATUS_PENDING_HEAD;
       const canActAsDirector = isDirector && currentStatus === CONFIG.STATUS_PENDING_DIRECTOR;
@@ -2200,7 +2237,7 @@ function reviewKaizenRecord(payload) {
     try {
       formPdfUrl = generateAndSaveKaizenPdf_(recordForPdf);
       if (formPdfUrl) {
-        sh.getRange(rowIndex, 27).setValue(formPdfUrl);
+        writeFormPdfUrl_(sh, rowIndex, recordForPdf.id, formPdfUrl);
         recordForPdf.formPdfUrl = formPdfUrl;
         clearKaizenCache_();
       }
@@ -2373,7 +2410,7 @@ function addKaizenRecordByManager(payload) {
     try {
       formPdfUrl = generateAndSaveKaizenPdf_(recordForPdf);
       if (formPdfUrl) {
-        sh.getRange(newRowIndex, 27).setValue(formPdfUrl);
+        writeFormPdfUrl_(sh, newRowIndex, newId, formPdfUrl);
         recordForPdf.formPdfUrl = formPdfUrl;
         clearKaizenCache_();
       }
@@ -2550,6 +2587,10 @@ function getMonthlyProgressForManager(reviewerId, beYear) {
     const isDirector = (reviewer.approverType || []).indexOf('ผู้จัดการ') > -1;
     // ดึงรายชื่อพนักงานจาก HR_Employees ตามที่ระบุ
     let employees = getEmployees();
+    if (!isDirector) {
+      const dept = normalizeDept_(reviewer.department);
+      employees = employees.filter(e => normalizeDept_(e.department) === dept);
+    }
 
     const nowBEYear = new Date().getFullYear() + 543;
     const targetYear = beYear ? Number(beYear) : nowBEYear;
@@ -2666,6 +2707,10 @@ function saveMonthlyProgressCount(payload) {
     const allEmployees = getEmployees();
     const targetEmp = allEmployees.find(e => e.empId === empId);
     if (!targetEmp) throw new Error('ไม่พบข้อมูลพนักงานรหัส ' + empId + ' ในชีต ' + CONFIG.EMPLOYEE_SHEET);
+    const reviewerIsDirector = (reviewer.approverType || []).indexOf('ผู้จัดการ') > -1;
+    if (!reviewerIsDirector && normalizeDept_(targetEmp.department) !== normalizeDept_(reviewer.department)) {
+      throw new Error('ไม่มีสิทธิ์บันทึกข้อมูลของพนักงานแผนกอื่น');
+    }
 
     const sh = getOrCreateProgressSheet_();
     const lastRow = sh.getLastRow();
@@ -2719,15 +2764,68 @@ function getDashboardData(beYear, department) {
 
     const targetYear = beYear ? Number(beYear) : nowBEYear;
 
+    // รวบรวมสถิติสถานะ, หมวดหมู่, และประเภท
+    let statusCounts = { approved: 0, pendingHead: 0, pendingDirector: 0, rejected: 0, total: 0 };
+    let categoryCounts = { P: 0, D: 0, E: 0, S: 0, Q: 0, E2: 0, C: 0, M: 0 };
+    let typeCounts = { automation: 0, karakuri: 0, genco: 0, project: 0, service: 0, innovation: 0, suggestion: 0, other: 0 };
+    let monthlyStats = [];
+    const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    for (let m = 1; m <= 12; m++) {
+      monthlyStats.push({ month: m, monthName: monthNames[m - 1], approved: 0, pending: 0, rejected: 0, total: 0 });
+    }
+
     const countByEmp = {};
     allRecords.forEach(function (r) {
       if (r.beYear !== targetYear) return;
-      if (r.status !== CONFIG.STATUS_APPROVED) return;
-      countByEmp[r.empId] = (countByEmp[r.empId] || 0) + 1;
+      if (department && normalizeDept_(r.department) !== normalizeDept_(department)) return;
+
+      statusCounts.total++;
+      if (r.status === CONFIG.STATUS_APPROVED) {
+        statusCounts.approved++;
+        countByEmp[r.empId] = (countByEmp[r.empId] || 0) + 1;
+      } else if (r.status === CONFIG.STATUS_PENDING_HEAD) {
+        statusCounts.pendingHead++;
+      } else if (r.status === CONFIG.STATUS_PENDING_DIRECTOR) {
+        statusCounts.pendingDirector++;
+      } else if (r.status === CONFIG.STATUS_REJECTED) {
+        statusCounts.rejected++;
+      }
+
+      // นับหมวดหมู่
+      if (r.categories) {
+        Object.keys(categoryCounts).forEach(cat => {
+          if (r.categories[cat]) categoryCounts[cat]++;
+        });
+      }
+
+      // นับประเภท Kaizen
+      if (r.kaizenType) {
+        const kType = String(r.kaizenType).toLowerCase().trim();
+        if (typeCounts[kType] !== undefined) {
+          typeCounts[kType]++;
+        } else {
+          typeCounts.other++;
+        }
+      }
+
+      // สถิติรายเดือน
+      if (r.date) {
+        const parts = String(r.date).split('-');
+        if (parts.length >= 2) {
+          const mIdx = parseInt(parts[1], 10) - 1;
+          if (mIdx >= 0 && mIdx < 12) {
+            monthlyStats[mIdx].total++;
+            if (r.status === CONFIG.STATUS_APPROVED) monthlyStats[mIdx].approved++;
+            else if (r.status === CONFIG.STATUS_REJECTED) monthlyStats[mIdx].rejected++;
+            else monthlyStats[mIdx].pending++;
+          }
+        }
+      }
     });
 
     let achievedCount = 0;
     let submittedApprovedCount = 0;
+    const progressMap = getProgressMap_(targetYear);
     let totalKaizenThisYear = 0;
     let totalTargetSum = 0;
     let totalDoneSum = 0;
@@ -2735,7 +2833,8 @@ function getDashboardData(beYear, department) {
 
     const employeeRows = employees.map(function (emp) {
       const computedCount = countByEmp[emp.empId] || 0;
-      const count = resolveDoneCount_(emp.doneCount, computedCount);
+      const progTotal = (progressMap[emp.empId] || { total: 0 }).total;
+      const count = resolveDoneCount_(emp.doneCount, Math.max(computedCount, progTotal));
       const target = (typeof emp.target === 'number') ? emp.target : getTargetForPosition_(emp.position);
       const achieved = count >= target;
       const percent = target > 0 ? Math.min(100, Math.round((count / target) * 100)) : 100;
@@ -2773,11 +2872,18 @@ function getDashboardData(beYear, department) {
     });
 
     const totalEmployees = employees.length;
-    const notAchievedSum = Math.max(0, totalTargetSum - totalDoneSum);
+    const notAchievedCount = Math.max(0, totalEmployees - achievedCount);
     const achievedPercent = totalTargetSum > 0 ? Math.round((totalDoneSum / totalTargetSum) * 100) : 0;
+    const empAchievedPercent = totalEmployees > 0 ? Math.round((achievedCount / totalEmployees) * 100) : 0;
     const avgPerEmployee = totalEmployees > 0 ? Math.round((totalKaizenThisYear / totalEmployees) * 10) / 10 : 0;
 
-    const byDepartment = Object.keys(deptMap).sort().map(k => deptMap[k]);
+    const byDepartment = Object.keys(deptMap).sort().map(k => {
+      const d = deptMap[k];
+      d.achievedPercent = d.totalTarget > 0 ? Math.round((d.totalKaizen / d.totalTarget) * 100) : 0;
+      d.empAchievedPercent = d.totalEmployees > 0 ? Math.round((d.achievedCount / d.totalEmployees) * 100) : 0;
+      d.notAchievedCount = Math.max(0, d.totalEmployees - d.achievedCount);
+      return d;
+    });
 
     return {
       success: true,
@@ -2786,14 +2892,21 @@ function getDashboardData(beYear, department) {
       summary: {
         totalEmployees: totalEmployees,
         achievedCount: achievedCount,
-        notAchievedCount: notAchievedSum,
+        notAchievedCount: notAchievedCount,
+        empAchievedPercent: empAchievedPercent,
         totalTargetSum: totalTargetSum,
         totalDoneSum: totalDoneSum,
         achievedPercent: achievedPercent,
         totalKaizen: totalKaizenThisYear,
         avgPerEmployee: avgPerEmployee,
-        submittedApprovedCount: submittedApprovedCount
+        submittedApprovedCount: submittedApprovedCount,
+        pendingTotal: statusCounts.pendingHead + statusCounts.pendingDirector,
+        rejectedTotal: statusCounts.rejected
       },
+      statusCounts: statusCounts,
+      categoryCounts: categoryCounts,
+      typeCounts: typeCounts,
+      monthlyStats: monthlyStats,
       byDepartment: byDepartment,
       employees: employeeRows
     };
@@ -2805,6 +2918,7 @@ function getDashboardData(beYear, department) {
 function advancedSearch(payload) {
   try {
     const allRecords = getKaizenRecords();
+    if (!isAuthorizedManager_(payload && payload.reviewerId)) throw new Error('ไม่มีสิทธิ์ค้นหาข้อมูลนี้');
     let filtered = allRecords;
 
     if (payload.keyword) {
@@ -2918,7 +3032,7 @@ function setupDatabase() {
     if (lastCol < targetCols) {
       dataSheet.insertColumns(lastCol + 1, targetCols - lastCol);
     } else if (lastCol > targetCols) {
-      dataSheet.deleteColumns(targetCols + 1, lastCol - targetCols);
+      // ไม่ลบคอลัมน์ส่วนเกิน เพื่อป้องกันข้อมูลสูญหาย
     }
 
     const headers = [
@@ -2969,13 +3083,10 @@ function autoRepairAllSheets() {
     try {
       const dataSheet = ss.getSheetByName(CONFIG.DATA_SHEET);
       if (dataSheet) {
-        const headers = dataSheet.getRange(1, 1, 1, dataSheet.getLastColumn()).getValues()[0];
-        const hasStatus = headers.some(h => String(h).trim() === 'Status');
-        
-        if (!hasStatus) {
-          dataSheet.insertColumnAfter(14);
-          dataSheet.getRange(1, 15).setValue('Status');
-          messages.push('✅ เพิ่มคอลัมน์ Status ในชีต Data');
+        const lastCol = dataSheet.getLastColumn();
+        const targetCols = 35;
+        if (lastCol < targetCols) {
+          dataSheet.insertColumns(lastCol + 1, targetCols - lastCol);
         }
 
         const newHeaders = [
@@ -2987,7 +3098,7 @@ function autoRepairAllSheets() {
           'MultipleFiles', 'KaizenType', 'HeadApprover', 'HeadApprovedDate'
         ];
         dataSheet.getRange(1, 1, 1, newHeaders.length).setValues([newHeaders]);
-        messages.push('✅ ตั้งหัวตาราง Data เรียบร้อย');
+        messages.push('✅ ซิงค์หัวตาราง Data ครบ 35 คอลัมน์เรียบร้อย');
       }
     } catch (e) {
       messages.push('❌ Error Data: ' + e.message);
@@ -3062,21 +3173,18 @@ function repairDepartmentNames() {
     const sh = getSheet_(CONFIG.DATA_SHEET);
     const lastRow = sh.getLastRow();
     if (lastRow < 2) return { success: true, message: 'ไม่มีข้อมูลใน Data sheet' };
-    
+
+    const range = sh.getRange(2, 5, lastRow - 1, 1);
+    const values = range.getValues();
     let fixedCount = 0;
-    const deptColumn = 5;
-    
-    for (let i = 2; i <= lastRow; i++) {
-      const oldValue = sh.getRange(i, deptColumn).getValue();
-      if (oldValue) {
-        const newValue = normalizeDept_(oldValue);
-        if (newValue !== String(oldValue).trim()) {
-          sh.getRange(i, deptColumn).setValue(newValue);
-          fixedCount++;
-        }
+    values.forEach(function (row) {
+      if (row[0]) {
+        const nv = normalizeDept_(row[0]);
+        if (nv !== String(row[0]).trim()) { row[0] = nv; fixedCount++; }
       }
-    }
-    
+    });
+    if (fixedCount > 0) range.setValues(values);
+
     clearKaizenCache_();
     return { success: true, message: 'แก้ไขชื่อแผนก ' + fixedCount + ' รายการ' };
   } catch (e) {
@@ -3154,37 +3262,26 @@ function syncManagerDepartments() {
   try {
     const ss = getSS_();
     const mgrSheet = ss.getSheetByName(CONFIG.MANAGERS_SHEET);
-    if (!mgrSheet) {
-      return { success: false, message: 'ไม่พบชีต Managers' };
-    }
-    
-    const employees = getEmployees();
+    if (!mgrSheet) return { success: false, message: 'ไม่พบชีต Managers' };
+
     const empMap = {};
-    employees.forEach(e => {
-      if (e.empId) empMap[normalizeEmpId_(e.empId)] = e;
-    });
-    
+    getEmployees().forEach(e => { if (e.empId) empMap[normalizeEmpId_(e.empId)] = e; });
+
     const lastRow = mgrSheet.getLastRow();
-    if (lastRow < 2) {
-      return { success: false, message: 'ไม่มีข้อมูลในชีต Managers' };
-    }
-    
+    if (lastRow < 2) return { success: false, message: 'ไม่มีข้อมูลในชีต Managers' };
+
+    const values = mgrSheet.getRange(2, 1, lastRow - 1, 4).getValues();
     let updatedCount = 0;
-    const deptColumn = 4;
-    
-    for (let i = 2; i <= lastRow; i++) {
-      const empId = normalizeEmpId_(mgrSheet.getRange(i, 1).getValue());
-      const currentDept = normalizeDept_(mgrSheet.getRange(i, deptColumn).getValue());
-      
-      if (empId && empMap[empId]) {
-        const correctDept = normalizeDept_(empMap[empId].department || '');
-        if (correctDept && currentDept !== correctDept) {
-          mgrSheet.getRange(i, deptColumn).setValue(correctDept);
-          updatedCount++;
-        }
-      }
+    values.forEach(function (row) {
+      const emp = empMap[normalizeEmpId_(row[0])];
+      if (!emp) return;
+      const correct = normalizeDept_(emp.department || '');
+      if (correct && normalizeDept_(row[3]) !== correct) { row[3] = correct; updatedCount++; }
+    });
+    if (updatedCount > 0) {
+      mgrSheet.getRange(2, 4, values.length, 1).setValues(values.map(r => [r[3]]));
     }
-    
+
     clearKaizenCache_();
     return { success: true, message: 'ซิงค์แผนก ' + updatedCount + ' รายการ' };
   } catch (e) {
@@ -3343,7 +3440,8 @@ function updateEmployeeRecord(payload) {
     if (rowIndex > sh.getLastRow()) throw new Error('ไม่พบแถวข้อมูลพนักงานนี้');
 
     const existingEmpId = normalizeEmpId_(sh.getRange(rowIndex, HR_EMP_COL.EMPID).getValue());
-    if (!existingEmpId) throw new Error('ไม่พบรหัสพนักงานเดิมของแถวนี้');
+    if (!existingEmpId || existingEmpId.toLowerCase() === 'empid') throw new Error('ไม่พบรหัสพนักงานเดิมของแถวนี้');
+    if (normalizeEmpId_(payload.empId) !== existingEmpId) throw new Error('ข้อมูลแถวเปลี่ยนไป กรุณากดโหลดใหม่แล้วลองอีกครั้ง');
 
     const prefix = String(payload.prefix || '').trim();
     const firstName = String(payload.firstName || '').trim();
@@ -3360,16 +3458,9 @@ function updateEmployeeRecord(payload) {
     const doneVal = (payload.done === '' || payload.done === null || payload.done === undefined || isNaN(Number(payload.done)))
       ? '' : Number(payload.done);
 
-    sh.getRange(rowIndex, HR_EMP_COL.NAME).setValue(fullName);
-    sh.getRange(rowIndex, HR_EMP_COL.DEPARTMENT).setValue(department);
-    sh.getRange(rowIndex, HR_EMP_COL.POSITION).setValue(position);
-    sh.getRange(rowIndex, HR_EMP_COL.PLANT).setValue(plant);
-    sh.getRange(rowIndex, HR_EMP_COL.PREFIX).setValue(prefix);
-    sh.getRange(rowIndex, HR_EMP_COL.FIRSTNAME).setValue(firstName);
-    sh.getRange(rowIndex, HR_EMP_COL.LASTNAME).setValue(lastName);
-    sh.getRange(rowIndex, HR_EMP_COL.EMAIL).setValue(email);
-    sh.getRange(rowIndex, HR_EMP_COL.TASKS).setValue(tasksVal);
-    sh.getRange(rowIndex, HR_EMP_COL.DONE).setValue(doneVal);
+    sh.getRange(rowIndex, HR_EMP_COL.NAME, 1, 10).setValues([[
+      fullName, department, position, plant, prefix, firstName, lastName, email, tasksVal, doneVal
+    ]]);
 
     clearKaizenCache_();
     return { success: true, message: 'บันทึกข้อมูลพนักงาน ' + existingEmpId + ' เรียบร้อยแล้ว' };
@@ -3455,6 +3546,7 @@ function deleteEmployeeRecord(payload) {
     if (rowIndex > sh.getLastRow()) throw new Error('ไม่พบแถวข้อมูลพนักงานนี้');
 
     const empId = normalizeEmpId_(sh.getRange(rowIndex, HR_EMP_COL.EMPID).getValue());
+    if (empId.toLowerCase() === 'empid' || empId !== normalizeEmpId_(payload.empId)) throw new Error('ข้อมูลแถวเปลี่ยนไป กรุณากดโหลดใหม่แล้วลองอีกครั้ง');
     sh.deleteRow(rowIndex);
     clearKaizenCache_();
 
@@ -3464,4 +3556,30 @@ function deleteEmployeeRecord(payload) {
   } finally {
     lock.releaseLock();
   }
+}
+
+// ---------- Helpers เพิ่มเติม ----------
+function parseDatePayload_(s) {
+  if (!s) return null;
+  const parts = String(s).split('-');
+  const d = (parts.length === 3)
+    ? new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10))
+    : new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function trashDriveFileByUrl_(url) {
+  try {
+    const id = extractDriveFileIdFromUrl_(url);
+    if (id) DriveApp.getFileById(id).setTrashed(true);
+  } catch (e) {}
+}
+
+// บันทึก URL ฟอร์ม PDF โดยหาแถวจากรหัส Kaizen (กันแถวเลื่อน) และลบไฟล์ PDF เก่าทิ้งเพื่อไม่ให้ Drive รก
+function writeFormPdfUrl_(sh, fallbackRow, kaizenId, newUrl) {
+  const row = findRowByKaizenId_(sh, kaizenId, fallbackRow);
+  if (!row || row < 2) return;
+  const old = String(sh.getRange(row, DATA_COL.FORM_PDF_URL).getValue() || '').trim();
+  sh.getRange(row, DATA_COL.FORM_PDF_URL).setValue(newUrl);
+  if (old && old !== newUrl) trashDriveFileByUrl_(old);
 }
