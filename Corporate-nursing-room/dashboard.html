@@ -10,7 +10,7 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div id="loader" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,.78);z-index:9999;align-items:center;justify-content:center;flex-direction:column;">
@@ -33,9 +33,6 @@
       <span class="brand-icon"><img src="images/macod.png" onerror="this.onerror=null; this.src='macod.png';" alt="พยาบาลเพนกวิน"/></span> Executive Dashboard
     </a>
     <div class="d-flex align-items-center gap-2">
-      <button class="btn btn-sm btn-light border fw-bold text-secondary" onclick="openApiSettingsModal()" title="ตั้งค่าการเชื่อมต่อ API">
-        <i class="fas fa-cog me-1"></i>ตั้งค่า API
-      </button>
       <a class="btn btn-sm btn-light border fw-bold" href="index.html">
         <i class="fas fa-arrow-left me-1"></i>กลับหน้าห้องพยาบาล
       </a>
@@ -44,13 +41,6 @@
 </nav>
 
 <div class="container py-4 main-content">
-  <div id="api-status-banner" class="api-banner" style="display:none;">
-    <div>
-      <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-      <strong>เชื่อมต่อ Google Sheets API ไม่สำเร็จ:</strong> กรุณาตรวจสอบ URL ใน api.js หรือคลิกปุ่มตั้งค่า API ด้านบน
-    </div>
-  </div>
-
   <div id="dashboard-error" class="alert alert-danger" style="display:none"></div>
 
   <div class="page-section" id="executive-page">
@@ -328,44 +318,6 @@
       </div>
     </div>
   </div>
-</div>
-
-<!-- API Settings Modal -->
-<div class="modal fade" id="apiSettingsModal" tabindex="-1">
-<div class="modal-dialog modal-dialog-centered">
-<div class="modal-content">
-<div class="modal-header bg-dark text-white">
-<h5 class="modal-title"><i class="fas fa-plug me-2 text-warning"></i>ตั้งค่า Google Apps Script Web App URL</h5>
-<button class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
-</div>
-<div class="modal-body p-4">
-<p class="small text-muted mb-3">
-สามารถเปลี่ยน URL เมื่อ Deploy Google Apps Script เวอร์ชันใหม่ โดยไม่ต้องแก้ไขไฟล์ต้นฉบับ
-</p>
-<div class="mb-3">
-<label class="form-label fw-bold small">Web App Exec URL <span class="text-danger">*</span></label>
-<input class="form-control" id="settings-api-url" placeholder="https://script.google.com/macros/s/.../exec" type="url"/>
-</div>
-<div class="d-flex gap-2">
-<button class="btn btn-outline-info btn-sm" onclick="testApiConnection()" type="button">
-<i class="fas fa-bolt me-1"></i>ทดสอบการเชื่อมต่อ (Ping)
-</button>
-<button class="btn btn-outline-secondary btn-sm" onclick="resetApiUrlToDefault()" type="button">
-<i class="fas fa-rotate-left me-1"></i>รีเซ็ตเป็นค่าเริ่มต้น
-</button>
-</div>
-<div class="mt-2 small text-muted">
-<i class="fas fa-info-circle me-1"></i>ค่าเริ่มต้น: <code id="settings-default-url-hint" class="text-break" style="font-size:0.75rem;"></code>
-</div>
-</div>
-<div class="modal-footer">
-<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">ยกเลิก</button>
-<button class="btn btn-primary fw-bold px-4" onclick="saveApiSettings()" type="button">
-<i class="fas fa-save me-1"></i>บันทึก URL
-</button>
-</div>
-</div>
-</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

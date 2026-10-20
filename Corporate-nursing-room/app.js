@@ -1,5 +1,5 @@
 let allNurses = [], allDrugs = [], allEmployees = [];
-let exportModal, historyModal, newEmployeeModal, apiSettingsModal;
+let exportModal, historyModal, newEmployeeModal;
 let currentExportType = '';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -7,11 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
   historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
   newEmployeeModal = new bootstrap.Modal(document.getElementById('newEmployeeModal'));
   
-  const settingsModalEl = document.getElementById('apiSettingsModal');
-  if (settingsModalEl) {
-    apiSettingsModal = new bootstrap.Modal(settingsModalEl);
-  }
-
   updateTimestampBadge();
 
   const yearSelect = document.getElementById('export-year');
@@ -50,11 +45,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const drugEl = document.getElementById(`outbound-drug-${i}`);
     if (drugEl) drugEl.addEventListener('change', () => updateDrugInfo(i));
+    const priceEl = document.getElementById(`outbound-price-${i}`);
+    if (priceEl) {
+      priceEl.addEventListener('input', () => calculateOutboundTotal(i));
+      priceEl.addEventListener('change', () => calculateOutboundTotal(i));
+    }
   });
 
   const inbQtyEl = document.getElementById('inbound-qty');
   if (inbQtyEl) {
     inbQtyEl.addEventListener('input', calculateInboundTotal);
+  }
+  const inbPriceEl = document.getElementById('inbound-price');
+  if (inbPriceEl) {
+    inbPriceEl.addEventListener('input', calculateInboundTotal);
+    inbPriceEl.addEventListener('change', calculateInboundTotal);
   }
 
   const attendNurseSelect = document.getElementById('attend-nurse-select');
@@ -84,22 +89,7 @@ function updateTimestampBadge() {
 }
 
 function checkApiSetup() {
-  const banner = document.getElementById('api-status-banner');
-
-  if (!AppApi.isConfigured()) {
-    if (banner) {
-      banner.style.display = 'flex';
-      banner.innerHTML = `
-        <div>
-          <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-          <strong>ยังไม่ได้กำหนด Google Sheets Web App URL:</strong> กรุณาคลิกปุ่ม <strong>"ตั้งค่า API"</strong> ด้านบนเพื่อระบุ URL
-        </div>
-      `;
-    }
-  } else {
-    if (banner) banner.style.display = 'none';
-    initSystem();
-  }
+  initSystem();
 }
 
 function showPage(id) {
@@ -149,7 +139,7 @@ function toggleLoader(show) {
           html: 'ระบบหยุดรอโดยอัตโนมัติ<br><small class="text-muted">หากกดบันทึกไปแล้ว กรุณาตรวจสอบข้อมูลใน Google Sheet ก่อนบันทึกซ้ำ หรือลองรีเฟรชหน้าใหม่</small>'
         });
       }
-    }, 50000);
+    }, 70000);
   } else {
     loader.style.display = 'none';
     if (hint) hint.style.display = 'none';
@@ -457,13 +447,11 @@ function calculateOutboundTotal(suffix) {
   const qtyEl = document.getElementById(`outbound-qty-${suffix}`);
   const priceEl = document.getElementById(`outbound-price-${suffix}`);
   const totalEl = document.getElementById(`outbound-total-${suffix}`);
-  const displayEl = document.getElementById(`outbound-price-display-${suffix}`);
   if (!qtyEl || !priceEl || !totalEl) return 0;
 
   const qty = Math.max(0, parseMoney(qtyEl.value));
   const price = Math.max(0, parseMoney(priceEl.value));
   const total = qty * price;
-  if (displayEl) displayEl.value = price > 0 ? formatBaht(price) : '';
   totalEl.value = total > 0 ? total.toFixed(2) : '';
   calculateGrandTotal();
   return total;
@@ -518,14 +506,12 @@ function updateDrugInfo(suffix) {
   const unitEl = document.getElementById(`outbound-unit-${suffix}`);
   const nameEl = document.getElementById(`outbound-drugName-${suffix}`);
   const priceEl = document.getElementById(`outbound-price-${suffix}`);
-  const priceDisplayEl = document.getElementById(`outbound-price-display-${suffix}`);
   if (drug) {
     unitEl.value = drug.unit || '';
     nameEl.value = drug.name || '';
-    priceEl.value = parseMoney(drug.price).toFixed(2);
-    priceDisplayEl.value = formatBaht(drug.price);
+    priceEl.value = parseMoney(drug.price).toFixed(2); // ราคาตั้งต้นจากทะเบียนยา พยาบาลแก้ไขได้
   } else {
-    unitEl.value = ''; nameEl.value = ''; priceEl.value = ''; priceDisplayEl.value = '';
+    unitEl.value = ''; nameEl.value = ''; priceEl.value = '';
   }
   calculateOutboundTotal(suffix);
   preventDuplicateDrugSelection();
@@ -574,6 +560,11 @@ async function submitOutbound() {
     }
 
     if (d && q > 0) {
+      const pRaw = document.getElementById(`outbound-price-${i}`).value;
+      const p = parseFloat(pRaw);
+      if (pRaw === '' || isNaN(p) || p < 0) {
+        return Swal.fire('ราคายาไม่ถูกต้อง', `กรุณากรอกราคาต่อหน่วยของยาตัวที่ ${i} (ใส่ 0 ได้ถ้าไม่คิดราคา)`, 'warning');
+      }
       items.push({
         drugId: d,
         drugName: document.getElementById(`outbound-drugName-${i}`).value,
@@ -592,9 +583,10 @@ async function submitOutbound() {
     return Swal.fire('เลือกยาซ้ำ', 'กรุณาเลือกรายการยาตัวที่ 1 และตัวที่ 2 ให้แตกต่างกัน', 'warning');
   }
 
+  // ใช้ราคาที่พยาบาลกรอก/แก้ไข (ไม่ดึงทับจากทะเบียนยา)
   items = items.map(item => {
     const master = allDrugs.find(d => String(d.id) === String(item.drugId));
-    const price = master ? parseMoney(master.price) : parseMoney(item.price);
+    const price = parseMoney(item.price);
     return { ...item, drugName: master?.name || item.drugName, unit: master?.unit || item.unit, price: price.toFixed(2), total: Number(item.quantity) * price };
   });
 
@@ -651,7 +643,6 @@ async function submitOutbound() {
       ['1', '2'].forEach(i => {
         document.getElementById(`outbound-qty-${i}`).value = '';
         document.getElementById(`outbound-total-${i}`).value = '';
-        document.getElementById(`outbound-price-display-${i}`).value = '';
         document.getElementById(`outbound-price-${i}`).value = '';
         document.getElementById(`outbound-unit-${i}`).value = '';
         document.getElementById(`outbound-drugName-${i}`).value = '';
@@ -681,6 +672,11 @@ async function submitInbound() {
 
   if (!dId || !(qty > 0) || !nurseId) {
     return Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุ ยา, จำนวนที่มากกว่า 0 และพยาบาลผู้รับเข้า', 'warning');
+  }
+
+  const inbPrice = parseFloat(document.getElementById('inbound-price').value);
+  if (isNaN(inbPrice) || inbPrice < 0) {
+    return Swal.fire('ราคายาไม่ถูกต้อง', 'กรุณากรอกราคาต่อหน่วย (ใส่ 0 ได้ถ้าไม่คิดราคา)', 'warning');
   }
 
   if (submitBtn) {
@@ -752,7 +748,11 @@ async function submitAttendance(status) {
   try {
     const res = await AppApi.saveTimeAttendance(n ? n.id : id, n ? n.name : '', status);
     toggleLoader(false);
-    const msg = res.message || res;
+    if (res && res.success === false) {
+      Swal.fire('บันทึกเวลาไม่สำเร็จ', res.message || 'เกิดข้อผิดพลาด', 'error');
+      return;
+    }
+    const msg = (res && res.message) || res;
     Swal.fire({
       icon: 'success',
       title: 'สำเร็จ',
@@ -990,80 +990,6 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-/* =========================================================================
-   API Settings Modal Handlers
-   ========================================================================= */
-function openApiSettingsModal() {
-  const input = document.getElementById('settings-api-url');
-  const defaultHint = document.getElementById('settings-default-url-hint');
-  if (input) input.value = ApiConfig.getUrl();
-  if (defaultHint) defaultHint.innerText = ApiConfig.DEFAULT_URL;
-  if (apiSettingsModal) apiSettingsModal.show();
-}
-
-async function testApiConnection() {
-  const input = document.getElementById('settings-api-url');
-  const testUrl = input ? input.value.trim() : '';
-
-  if (!testUrl || !testUrl.startsWith('https://script.google.com/macros/s/')) {
-    return Swal.fire('URL ไม่ถูกต้อง', 'URL ต้องขึ้นต้นด้วย https://script.google.com/macros/s/', 'warning');
-  }
-
-  toggleLoader(true);
-  try {
-    const res = await fetch(`${testUrl}?action=ping`, { method: 'GET', redirect: 'follow' });
-    const json = await res.json();
-    toggleLoader(false);
-    if (json && json.success) {
-      Swal.fire({
-        icon: 'success',
-        title: 'เชื่อมต่อสำเร็จ!',
-        html: `<p class="mb-1 text-success"><strong>${json.message}</strong></p><small class="text-muted">เวลาเซิร์ฟเวอร์: ${json.timestamp || '-'}</small>`
-      });
-    } else {
-      Swal.fire('เชื่อมต่อไม่สำเร็จ', json?.message || 'ไม่ได้รับข้อความตอบรับที่ถูกต้อง', 'error');
-    }
-  } catch (err) {
-    toggleLoader(false);
-    Swal.fire('การเชื่อมต่อล้มเหลว', `ไม่สามารถเรียก API ได้: ${err.message}`, 'error');
-  }
-}
-
-function resetApiUrlToDefault() {
-  const input = document.getElementById('settings-api-url');
-  if (input) input.value = ApiConfig.DEFAULT_URL;
-  ApiConfig.resetUrl();
-  Swal.fire({
-    icon: 'info',
-    title: 'รีเซ็ตค่าแล้ว',
-    text: 'รีเซ็ต URL กลับเป็นค่าเริ่มต้นเรียบร้อยแล้ว กด "บันทึก URL" เพื่อนำไปใช้',
-    timer: 2000,
-    showConfirmButton: false
-  });
-}
-
-function saveApiSettings() {
-  const input = document.getElementById('settings-api-url');
-  const url = input ? input.value.trim() : '';
-
-  if (!url || !url.startsWith('https://script.google.com/macros/s/')) {
-    return Swal.fire('URL ไม่ถูกต้อง', 'กรุณาระบุ Google Apps Script Web App URL ที่ถูกต้อง', 'warning');
-  }
-
-  ApiConfig.setUrl(url);
-  if (apiSettingsModal) apiSettingsModal.hide();
-
-  Swal.fire({
-    icon: 'success',
-    title: 'บันทึก URL เรียบร้อย',
-    text: 'ระบบจะเริ่มโหลดข้อมูลจาก Google Sheets ใหม่ทันที',
-    timer: 1500,
-    showConfirmButton: false
-  }).then(() => {
-    location.reload();
-  });
-}
-
 window.showPage = showPage;
 window.submitOutbound = submitOutbound;
 window.submitInbound = submitInbound;
@@ -1077,7 +1003,3 @@ window.filterInventory = filterInventory;
 window.viewHistory = viewHistory;
 window.showExportModal = showExportModal;
 window.executeExport = executeExport;
-window.openApiSettingsModal = openApiSettingsModal;
-window.testApiConnection = testApiConnection;
-window.resetApiUrlToDefault = resetApiUrlToDefault;
-window.saveApiSettings = saveApiSettings;

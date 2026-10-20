@@ -1,24 +1,12 @@
 const ApiConfig = {
-  STORAGE_KEY: 'nursing_station_api_url',
-  DEFAULT_URL: 'https://script.google.com/macros/s/AKfycbxonHMBnoG00VzAy3XVeNxGIB6gNhfuRPuXEBNO4EfBVBgnaJ4Zop13FbEWpcKyYBE/exec',
+  WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbyu5GdupqHwgK5wzBvlTmoBzkbLfKt0T4RDh3ny_dV7G73I7t641daZpJc3H6h--H5J/exec',
 
   getUrl() {
-    const saved = localStorage.getItem(this.STORAGE_KEY);
-    return (saved && saved.trim()) ? saved.trim() : this.DEFAULT_URL;
-  },
-
-  setUrl(url) {
-    if (url && url.trim()) {
-      localStorage.setItem(this.STORAGE_KEY, url.trim());
-    } else {
-      localStorage.removeItem(this.STORAGE_KEY);
-    }
-  },
-
-  resetUrl() {
-    localStorage.removeItem(this.STORAGE_KEY);
+    return this.WEB_APP_URL;
   }
 };
+
+try { localStorage.removeItem('nursing_station_api_url'); } catch (e) {}
 
 const AppApi = {
   REQUEST_TIMEOUT_MS: 60000,
@@ -49,12 +37,18 @@ const AppApi = {
       );
 
       const text = await response.text();
+      let json;
       try {
-        return JSON.parse(text);
+        json = JSON.parse(text);
       } catch (e) {
         console.error("API Non-JSON Response:", text);
         throw new Error("ระบบตอบกลับข้อมูลที่ไม่ถูกต้อง กรุณาตรวจสอบสิทธิ์ของ Apps Script ว่าตั้งค่า 'Who has access' เป็น 'Anyone' หรือยัง");
       }
+
+      if (json && !Array.isArray(json) && json.success === false && !String(action).startsWith('export')) {
+        throw new Error(json.message || 'เซิร์ฟเวอร์ตอบกลับผิดพลาด');
+      }
+      return json;
     } catch (err) {
       console.error(`API GET [${action}] Error:`, err);
       if (err && err.message === 'CLAUDE_FETCH_TIMEOUT') {

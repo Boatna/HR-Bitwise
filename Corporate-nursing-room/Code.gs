@@ -1,19 +1,9 @@
-/**
- * =========================================================================
- * Corporate Nursing Room & EHS Management System
- * Backend Script: Google Apps Script (Code.gs)
- * =========================================================================
- */
-
 const APP_CONFIG = {
   TIMEZONE: 'Asia/Bangkok',
   SERVICE_FEE: 0,
   LOW_STOCK_THRESHOLD: 10
 };
 
-/**
- * จัดการคำขอแบบ GET จาก Frontend (Web App)
- */
 function doGet(e) {
   try {
     const params = (e && e.parameter) ? e.parameter : {};
@@ -65,9 +55,6 @@ function doGet(e) {
   }
 }
 
-/**
- * จัดการคำขอแบบ POST จาก Frontend (Web App)
- */
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) {
@@ -102,17 +89,11 @@ function doPost(e) {
   }
 }
 
-/**
- * ส่งออกผลลัพธ์เป็น JSON สำหรับ REST API
- */
 function createJsonResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-/**
- * Helper ค้นหาแผ่นงานโดยรองรับชื่อหลายรูปแบบ (ป้องกันพิมพ์ผิด เช่น Employe / Employee)
- */
 function getSheetSafe_(ss, names) {
   for (let i = 0; i < names.length; i++) {
     const sheet = ss.getSheetByName(names[i]);
@@ -121,9 +102,6 @@ function getSheetSafe_(ss, names) {
   return null;
 }
 
-/**
- * โหลดข้อมูลเริ่มต้นสำหรับหน้าแรกและฟอร์มต่างๆ
- */
 function getInitialData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -205,10 +183,6 @@ function getInitialData() {
   return { nurses, drugs, employees, symptomList, dashboard };
 }
 
-/**
- * ฟังก์ชันแปลงและตรวจสอบวันที่อย่างครอบคลุม
- * รองรับ: Date object (พ.ศ./ค.ศ.), DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY
- */
 function parseDateRobust(val) {
   if (!val) return null;
   
@@ -224,7 +198,6 @@ function parseDateRobust(val) {
   const str = String(val).trim();
   if (!str) return null;
 
-  // 1) DD/MM/YYYY หรือ DD-MM-YYYY (พร้อมเวลาตัวเลือก)
   const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
   if (dmyMatch) {
     const day = parseInt(dmyMatch[1], 10);
@@ -239,7 +212,6 @@ function parseDateRobust(val) {
     return isNaN(d.getTime()) ? null : d;
   }
 
-  // 2) YYYY-MM-DD หรือ YYYY/MM/DD (ISO Format จาก date picker)
   const ymdMatch = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
   if (ymdMatch) {
     let year = parseInt(ymdMatch[1], 10);
@@ -254,7 +226,6 @@ function parseDateRobust(val) {
     return isNaN(d.getTime()) ? null : d;
   }
 
-  // 3) Fallback แปลงตรง
   const parsed = new Date(str);
   if (isNaN(parsed.getTime())) return null;
   if (parsed.getFullYear() > 2400) {
@@ -493,7 +464,9 @@ function computeAnalyticsStats_(ss, filterMonth, filterYear, filterPlant) {
   }
 
   if (summary.month > 0) {
-    summary.costPerCase = Math.round(summary.totalCostMonth / summary.month);
+    summary.totalCostMonth = round2_(summary.totalCostMonth);
+    summary.prevTotalCostMonth = round2_(summary.prevTotalCostMonth);
+    summary.costPerCase = round2_(summary.totalCostMonth / summary.month);
     summary.referralRate = Math.round((summary.referralCount / summary.month) * 1000) / 10;
   } else {
     summary.costPerCase = 0;
@@ -574,9 +547,6 @@ function computeAnalyticsStats_(ss, filterMonth, filterYear, filterPlant) {
   };
 }
 
-/**
- * บันทึกรายการตรวจรักษาและจ่ายยา (Outbound)
- */
 function saveOutbound(form) {
   if (!form) return { success: false, message: "ไม่พบข้อมูลการจ่ายยา" };
 
@@ -635,7 +605,12 @@ function saveOutbound(form) {
       return { success: false, message: `ไม่พบรหัสยา ${id} ในทะเบียนยา` };
     }
     const qty = Number(item.quantity);
-    const unitPrice = (master.price >= 0) ? master.price : 0;
+    // ราคายา: ใช้ราคาที่พยาบาลกรอกมาก่อน ถ้าไม่ส่งมาจึงใช้ราคาจากทะเบียนยา
+    const hasInputPrice = item.price !== undefined && item.price !== null && String(item.price).trim() !== '';
+    if (hasInputPrice && (isNaN(parseFloat(String(item.price).replace(/,/g, ''))) || toNumber_(item.price) < 0)) {
+      return { success: false, message: `ราคายา ${master.name} ไม่ถูกต้อง` };
+    }
+    const unitPrice = hasInputPrice ? round2_(toNumber_(item.price)) : ((master.price >= 0) ? master.price : 0);
     normalizedItems.push({
       drugId: id,
       drugName: master.name,
@@ -685,6 +660,10 @@ function saveOutbound(form) {
       form.position || "", form.dept || "", ts, referralStatus
     ]);
 
+    const newRow = ws.getLastRow();
+    ws.getRange(newRow, 2).setNumberFormat('@').setValue(ts);
+    ws.getRange(newRow, 22).setNumberFormat('@').setValue(ts);
+
     SpreadsheetApp.flush();
     bumpAnalyticsCacheVersion_();
     return {
@@ -708,9 +687,6 @@ function saveOutbound(form) {
   }
 }
 
-/**
- * ตรวจสอบความเพียงพอของสต็อกยาคงคลัง
- */
 function checkStockAvailability(items) {
   if (!items || items.length === 0) return { success: true };
 
@@ -756,9 +732,6 @@ function checkStockAvailability(items) {
   return { success: true };
 }
 
-/**
- * บันทึกการรับยาเข้าคลัง (Inbound)
- */
 function saveInbound(form) {
   if (!form) return { success: false, message: "ไม่พบข้อมูลรับยาเข้าคลัง" };
 
@@ -789,6 +762,12 @@ function saveInbound(form) {
   }
   if (!master) return { success: false, message: `ไม่พบรหัสยา ${drugId} ในทะเบียนยา` };
 
+  const hasPrice = form.price !== undefined && form.price !== null && String(form.price).trim() !== '';
+  if (hasPrice && (isNaN(parseFloat(String(form.price).replace(/,/g, ''))) || toNumber_(form.price) < 0)) {
+    return { success: false, message: "ราคายาไม่ถูกต้อง" };
+  }
+  const unitPrice = hasPrice ? round2_(toNumber_(form.price)) : master.price;
+
   const now = new Date();
   const ts = Utilities.formatDate(now, APP_CONFIG.TIMEZONE, "dd/MM/yyyy HH:mm:ss");
   const fmtDate = value => {
@@ -799,22 +778,20 @@ function saveInbound(form) {
 
   wsInbound.appendRow([
     "IN-" + Utilities.getUuid().replace(/-/g, '').slice(0, 10).toUpperCase(),
-    ts, drugId, master.name, "", qty, master.unit, master.price,
+    ts, drugId, master.name, "", qty, master.unit, unitPrice,
     fmtDate(form.prodDate), "", fmtDate(form.expireDate), nurseId, form.nurseName || ""
   ]);
+  wsInbound.getRange(wsInbound.getLastRow(), 2).setNumberFormat('@').setValue(ts);
   SpreadsheetApp.flush();
   bumpAnalyticsCacheVersion_();
 
   return {
     success: true,
-    message: `บันทึกรับยาเข้าคลังสำเร็จ • ${master.name} ${qty} ${master.unit} • ฿${round2_(qty * master.price).toFixed(2)}`,
-    totalCost: round2_(qty * master.price)
+    message: `บันทึกรับยาเข้าคลังสำเร็จ • ${master.name} ${qty} ${master.unit} • ฿${round2_(qty * unitPrice).toFixed(2)}`,
+    totalCost: round2_(qty * unitPrice)
   };
 }
 
-/**
- * บันทึกเวลาปฏิบัติงานของพยาบาล (Time Attendance)
- */
 function saveTimeAttendance(nId, nName, st) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let ws = getSheetSafe_(ss, ["Time Attendance", "Attendance"]);
@@ -833,9 +810,6 @@ function saveTimeAttendance(nId, nName, st) {
   return { success: true, message: `✅ บันทึกเวลา (${st}) สำเร็จ` };
 }
 
-/**
- * บันทึกข้อมูลพนักงานใหม่ หรืออัปเดตถ้ามีอยู่แล้ว
- */
 function saveEmployee(employee) {
   if (!employee) {
     return { success: false, message: "ไม่พบข้อมูลพนักงานที่ส่งมา" };
@@ -894,9 +868,6 @@ function round2_(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
 
-/**
- * คำนวณสต็อกยาคงคลังปัจจุบัน (รับเข้า - จ่ายออก)
- */
 function calculateCurrentStock(ss, preloadedOutboundData) {
   try {
     const regSheet = getSheetSafe_(ss, ["Drug Registration", "Drugs", "Drug"]);
@@ -1072,9 +1043,6 @@ function exportOutboundToExcel(month, year) {
   return generateExport(["Outbound", "Treatments"], `Export_Treat_${m}_${y}`, m, y, [1]);
 }
 
-/**
- * สร้างไฟล์ .xlsx (Office Open XML) แท้และคืนค่า Base64 สำหรับดาวน์โหลดทันที
- */
 function generateExport(sheetNames, targetName, month, year, dateCols) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const targetArray = Array.isArray(sheetNames) ? sheetNames : [sheetNames];
@@ -1132,9 +1100,6 @@ function generateExport(sheetNames, targetName, month, year, dateCols) {
   }
 }
 
-/**
- * ประกอบโครงสร้างไฟล์ .xlsx (Office Open XML / Zip) ที่สมบูรณ์ตามมาตรฐาน ISO/IEC 29500
- */
 function buildXlsxBase64_(sheetName, headers, rows) {
   const safeSheetName = String(sheetName || "Sheet1").replace(/[\\/?*\[\]:]/g, "").substring(0, 31) || "Sheet1";
 

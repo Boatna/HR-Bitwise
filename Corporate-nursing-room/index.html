@@ -31,9 +31,6 @@
 <span class="brand-icon"><img src="images/macod.png" onerror="this.onerror=null; this.src='macod.png';" alt="พยาบาลเพนกวิน"/></span>Nursing Station &amp; EHS
 </span>
 <div class="d-flex align-items-center gap-2">
-  <button class="btn btn-sm btn-light border fw-bold text-secondary" onclick="openApiSettingsModal()" title="ตั้งค่าการเชื่อมต่อ API">
-    <i class="fas fa-cog me-1"></i>ตั้งค่า API
-  </button>
   <a class="btn btn-sm btn-primary fw-bold text-white shadow-sm" href="dashboard.html">
     <i class="fas fa-chart-pie me-1"></i>Dashboard
   </a>
@@ -42,8 +39,6 @@
 </nav>
 
 <div class="container py-4 main-content">
-<div class="api-banner no-print" id="api-status-banner" style="display: none;"></div>
-
 <div class="page-section" id="home-page">
 <div class="executive-header d-flex flex-wrap justify-content-between align-items-center gap-3">
 <div class="d-flex align-items-center gap-3">
@@ -213,8 +208,8 @@
 <hr class="my-4"/>
 
 <div class="mb-3">
-<label class="fw-bold text-success mb-2 fs-6"><i class="fas fa-pills me-1"></i>รายการยาที่จ่าย (เลือกได้สูงสุด 2 รายการ — ระบบเติมหน่วยและราคาต่อหน่วยให้อัตโนมัติ)</label>
-<div class="small text-muted mb-2"><i class="fas fa-circle-info me-1"></i>เลือกยา → ระบบเติมหน่วยและราคาทันที → ใส่จำนวน → ระบบคำนวณรวมให้อัตโนมัติ</div>
+<label class="fw-bold text-success mb-2 fs-6"><i class="fas fa-pills me-1"></i>รายการยาที่จ่าย (เลือกได้สูงสุด 2 รายการ — กรอก/แก้ไขราคาต่อหน่วยได้)</label>
+<div class="small text-muted mb-2"><i class="fas fa-circle-info me-1"></i>เลือกยา → ระบบเติมราคาตั้งต้นจากทะเบียนยา → พยาบาลแก้ไขราคาต่อหน่วยตามจริงได้ → ใส่จำนวน → ระบบคำนวณรวมให้อัตโนมัติ</div>
 
 <!-- Drug Slot 1 -->
 <div class="drug-item p-3 border rounded-3 mb-3 bg-light-subtle">
@@ -234,8 +229,8 @@
 <input class="form-control bg-light" id="outbound-unit-1" placeholder="หน่วย" readonly="" type="text"/>
 </div>
 <div class="col-md-2 col-6">
-<label class="small text-muted">ราคาต่อหน่วย</label>
-<input class="form-control bg-light" id="outbound-price-display-1" placeholder="฿0.00" readonly="" type="text"/>
+<label class="small text-muted">ราคาต่อหน่วย (บาท · แก้ไขได้)</label>
+<input class="form-control border-warning" id="outbound-price-1" inputmode="decimal" min="0" placeholder="0.00" step="any" type="number"/>
 </div>
 <div class="col-md-2 col-6">
 <label class="small text-muted">รวมค่ายา</label>
@@ -243,7 +238,6 @@
 </div>
 </div>
 <input id="outbound-drugName-1" type="hidden"/>
-<input id="outbound-price-1" type="hidden"/>
 </div>
 
 <!-- Drug Slot 2 -->
@@ -264,8 +258,8 @@
 <input class="form-control bg-light" id="outbound-unit-2" placeholder="หน่วย" readonly="" type="text"/>
 </div>
 <div class="col-md-2 col-6">
-<label class="small text-muted">ราคาต่อหน่วย</label>
-<input class="form-control bg-light" id="outbound-price-display-2" placeholder="฿0.00" readonly="" type="text"/>
+<label class="small text-muted">ราคาต่อหน่วย (บาท · แก้ไขได้)</label>
+<input class="form-control border-warning" id="outbound-price-2" inputmode="decimal" min="0" placeholder="0.00" step="any" type="number"/>
 </div>
 <div class="col-md-2 col-6">
 <label class="small text-muted">รวมค่ายา</label>
@@ -273,14 +267,13 @@
 </div>
 </div>
 <input id="outbound-drugName-2" type="hidden"/>
-<input id="outbound-price-2" type="hidden"/>
 </div>
 </div>
 
 <div class="alert alert-primary d-flex justify-content-between align-items-center mb-4 py-3">
 <div>
 <div class="small text-muted">ยอดค่ายาอัตโนมัติ</div>
-<div class="small text-secondary">จำนวน × ราคาต่อหน่วย (ระบบดึงจากทะเบียนยา)</div>
+<div class="small text-secondary">จำนวน × ราคาต่อหน่วย (ตามราคาที่พยาบาลกรอก)</div>
 </div>
 <div class="fs-4 fw-bold text-primary" id="outbound-grand-total">฿0.00</div>
 </div>
@@ -361,8 +354,8 @@
 <input class="form-control bg-light" id="inbound-unit" placeholder="เช่น เม็ด, แผง" readonly="" type="text"/>
 </div>
 <div class="col-md-3 col-6">
-<label class="small fw-bold">ราคาต่อหน่วย</label>
-<input class="form-control bg-light" id="inbound-price" min="0" placeholder="฿" readonly="" step="any" type="number"/>
+<label class="small fw-bold">ราคาต่อหน่วย (บาท · แก้ไขได้)</label>
+<input class="form-control border-success" id="inbound-price" inputmode="decimal" min="0" placeholder="0.00" step="any" type="number"/>
 </div>
 <div class="col-md-3 col-6">
 <label class="small fw-bold">มูลค่ารับเข้า</label>
@@ -542,44 +535,6 @@
 <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">ยกเลิก</button>
 <button class="btn btn-primary fw-bold" onclick="executeExport()" type="button">
 <i class="fas fa-download me-2"></i>สร้างไฟล์และดาวน์โหลด
-</button>
-</div>
-</div>
-</div>
-</div>
-
-<!-- API Settings Modal -->
-<div class="modal fade" id="apiSettingsModal" tabindex="-1">
-<div class="modal-dialog modal-dialog-centered">
-<div class="modal-content">
-<div class="modal-header bg-dark text-white">
-<h5 class="modal-title"><i class="fas fa-plug me-2 text-warning"></i>ตั้งค่า Google Apps Script Web App URL</h5>
-<button class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
-</div>
-<div class="modal-body p-4">
-<p class="small text-muted mb-3">
-สามารถเปลี่ยน URL เมื่อ Deploy Google Apps Script เวอร์ชันใหม่ โดยไม่ต้องแก้ไขไฟล์ต้นฉบับ
-</p>
-<div class="mb-3">
-<label class="form-label fw-bold small">Web App Exec URL <span class="text-danger">*</span></label>
-<input class="form-control" id="settings-api-url" placeholder="https://script.google.com/macros/s/.../exec" type="url"/>
-</div>
-<div class="d-flex gap-2">
-<button class="btn btn-outline-info btn-sm" onclick="testApiConnection()" type="button">
-<i class="fas fa-bolt me-1"></i>ทดสอบการเชื่อมต่อ (Ping)
-</button>
-<button class="btn btn-outline-secondary btn-sm" onclick="resetApiUrlToDefault()" type="button">
-<i class="fas fa-rotate-left me-1"></i>รีเซ็ตเป็นค่าเริ่มต้น
-</button>
-</div>
-<div class="mt-2 small text-muted">
-<i class="fas fa-info-circle me-1"></i>ค่าเริ่มต้น: <code id="settings-default-url-hint" class="text-break" style="font-size:0.75rem;"></code>
-</div>
-</div>
-<div class="modal-footer">
-<button class="btn btn-secondary" data-bs-dismiss="modal" type="button">ยกเลิก</button>
-<button class="btn btn-primary fw-bold px-4" onclick="saveApiSettings()" type="button">
-<i class="fas fa-save me-1"></i>บันทึก URL
 </button>
 </div>
 </div>

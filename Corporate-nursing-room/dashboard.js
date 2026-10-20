@@ -1,7 +1,6 @@
 let charts = {};
 let cachedDashboardData = null;
 let allEmployees = [];
-let apiSettingsModal = null;
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -20,28 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
     monthSelect.value = new Date().getMonth() + 1;
   }
   
-  const modalEl = document.getElementById('apiSettingsModal');
-  if (modalEl) {
-    apiSettingsModal = new bootstrap.Modal(modalEl);
-  }
-
   checkApiSetup();
 });
 
 function checkApiSetup() {
-  const banner = document.getElementById('api-status-banner');
-
-  if (!AppApi.isConfigured()) {
-    if (banner) banner.style.display = 'flex';
-    const errorDiv = document.getElementById('dashboard-error');
-    if (errorDiv) {
-      errorDiv.style.display = 'block';
-      errorDiv.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>เชื่อมต่อ Google Sheets API ไม่สำเร็จ กรุณาคลิกปุ่ม "ตั้งค่า API" ด้านบนเพื่อระบุ URL';
-    }
-  } else {
-    if (banner) banner.style.display = 'none';
-    initDashboard();
-  }
+  initDashboard();
 }
 
 async function initDashboard(showLoading = true) {
@@ -108,7 +90,7 @@ function toggleLoader(show) {
           html: 'ระบบหยุดรอโดยอัตโนมัติ<br><small class="text-muted">กรุณาตรวจสอบการเชื่อมต่อ หรือลองรีเฟรชหน้าใหม่</small>'
         });
       }
-    }, 50000);
+    }, 70000);
   } else {
     loader.style.display = 'none';
     if (hint) hint.style.display = 'none';
@@ -139,7 +121,7 @@ function populateExecPlantFilter() {
 
   let opts = '<option value="all">ทั้งหมด (All Plants)</option>';
   plants.forEach(p => {
-    opts += `<option value="${p}">${p}</option>`;
+    opts += `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`;
   });
   plantSelect.innerHTML = opts;
   if (plants.includes(previousValue) || previousValue === 'all') {
@@ -708,83 +690,5 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-/* =========================================================================
-   API Settings Modal Handlers
-   ========================================================================= */
-function openApiSettingsModal() {
-  const input = document.getElementById('settings-api-url');
-  const defaultHint = document.getElementById('settings-default-url-hint');
-  if (input) input.value = ApiConfig.getUrl();
-  if (defaultHint) defaultHint.innerText = ApiConfig.DEFAULT_URL;
-  if (apiSettingsModal) apiSettingsModal.show();
-}
-
-async function testApiConnection() {
-  const input = document.getElementById('settings-api-url');
-  const testUrl = input ? input.value.trim() : '';
-
-  if (!testUrl || !testUrl.startsWith('https://script.google.com/macros/s/')) {
-    return Swal.fire('URL ไม่ถูกต้อง', 'URL ต้องขึ้นต้นด้วย https://script.google.com/macros/s/', 'warning');
-  }
-
-  toggleLoader(true);
-  try {
-    const res = await fetch(`${testUrl}?action=ping`, { method: 'GET', redirect: 'follow' });
-    const json = await res.json();
-    toggleLoader(false);
-    if (json && json.success) {
-      Swal.fire({
-        icon: 'success',
-        title: 'เชื่อมต่อสำเร็จ!',
-        html: `<p class="mb-1 text-success"><strong>${json.message}</strong></p><small class="text-muted">เวลาเซิร์ฟเวอร์: ${json.timestamp || '-'}</small>`
-      });
-    } else {
-      Swal.fire('เชื่อมต่อไม่สำเร็จ', json?.message || 'ไม่ได้รับข้อความตอบรับที่ถูกต้อง', 'error');
-    }
-  } catch (err) {
-    toggleLoader(false);
-    Swal.fire('การเชื่อมต่อล้มเหลว', `ไม่สามารถเรียก API ได้: ${err.message}`, 'error');
-  }
-}
-
-function resetApiUrlToDefault() {
-  const input = document.getElementById('settings-api-url');
-  if (input) input.value = ApiConfig.DEFAULT_URL;
-  ApiConfig.resetUrl();
-  Swal.fire({
-    icon: 'info',
-    title: 'รีเซ็ตค่าแล้ว',
-    text: 'รีเซ็ต URL กลับเป็นค่าเริ่มต้นเรียบร้อยแล้ว กด "บันทึก URL" เพื่อนำไปใช้',
-    timer: 2000,
-    showConfirmButton: false
-  });
-}
-
-function saveApiSettings() {
-  const input = document.getElementById('settings-api-url');
-  const url = input ? input.value.trim() : '';
-
-  if (!url || !url.startsWith('https://script.google.com/macros/s/')) {
-    return Swal.fire('URL ไม่ถูกต้อง', 'กรุณาระบุ Google Apps Script Web App URL ที่ถูกต้อง', 'warning');
-  }
-
-  ApiConfig.setUrl(url);
-  if (apiSettingsModal) apiSettingsModal.hide();
-
-  Swal.fire({
-    icon: 'success',
-    title: 'บันทึก URL เรียบร้อย',
-    text: 'ระบบจะเริ่มโหลดข้อมูลจาก Google Sheets ใหม่ทันที',
-    timer: 1500,
-    showConfirmButton: false
-  }).then(() => {
-    location.reload();
-  });
-}
-
 window.applyExecutiveFilters = applyExecutiveFilters;
 window.resetExecutiveFilters = resetExecutiveFilters;
-window.openApiSettingsModal = openApiSettingsModal;
-window.testApiConnection = testApiConnection;
-window.resetApiUrlToDefault = resetApiUrlToDefault;
-window.saveApiSettings = saveApiSettings;
