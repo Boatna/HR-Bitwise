@@ -455,3 +455,56 @@ body {
     box-shadow: none !important;
   }
 }
+
+/* Custom utilities & Asset / AC / Parking badges */
+.text-purple {
+  color: #7c3aed !important;
+}
+.bg-purple-subtle {
+  background-color: #ede9fe !important;
+  color: #6d28d9 !important;
+}
+.badge-asset-normal {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+.badge-asset-repair {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+.badge-asset-damaged {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+.badge-asset-lost {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+.badge-ac {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+}
+.badge-fan {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+}
+.badge-resident {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+.badge-non-resident {
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}

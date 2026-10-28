@@ -62,6 +62,13 @@
               <option value="Quad">Quad</option>
             </select>
           </div>
+          <div class="col-6 col-md-2">
+            <select id="filter-ac" class="form-select">
+              <option value="">ระบบปรับอากาศ (ทั้งหมด)</option>
+              <option value="Yes">❄️ ห้องแอร์</option>
+              <option value="No">🌀 ห้องพัดลม</option>
+            </select>
+          </div>
           <div class="col-12 col-md-1 d-flex justify-content-end">
             <button class="btn btn-outline-secondary w-100" onclick="loadRoomsData()" title="รีเฟรชข้อมูล">
               <i class="bi bi-arrow-clockwise"></i>
@@ -122,7 +129,9 @@
           <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-people-fill me-1 text-primary"></i>ผู้พักอาศัยปัจจุบัน</h6>
           <ul id="modal-occupants-list" class="list-group rounded-3 mb-4"></ul>
           <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-car-front-fill me-1 text-primary"></i>ที่จอดรถของห้องนี้</h6>
-          <ul id="modal-parking-list" class="list-group rounded-3 mb-3"></ul>
+          <ul id="modal-parking-list" class="list-group rounded-3 mb-4"></ul>
+          <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-box-seam me-1 text-purple"></i>รายการครุภัณฑ์ประจำห้อง (Assets)</h6>
+          <div id="modal-assets-list" class="mb-3"></div>
         </div>
         <div class="modal-footer border-0 bg-light py-3 d-flex justify-content-between">
           <div id="modal-quick-actions"></div>

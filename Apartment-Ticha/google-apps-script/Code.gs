@@ -4,6 +4,7 @@ const SHEETS = {
   OCCUPANCY: 'Occupancy',
   BUILDINGS: 'Buildings',
   PARKING: 'Parking',
+  ASSETS: 'Assets',
   SETTINGS: 'Settings',
   AUDIT_LOG: 'AuditLog'
 };
@@ -12,29 +13,31 @@ const TZ = 'Asia/Bangkok';
 
 // หัวคอลัมน์มาตรฐานของทุกตาราง (ใช้สร้างแผ่นงานที่ขาดหายอัตโนมัติ ไม่ให้ได้แผ่นงานหัวผิด)
 const SHEET_HEADERS = {
-  Rooms: ['RoomID', 'BuildingID', 'Floor', 'RoomNumber', 'RoomType', 'Capacity', 'Gender', 'MonthlyRate', 'Status', 'Remark', 'CreatedAt', 'UpdatedAt'],
+  Rooms: ['RoomID', 'BuildingID', 'Floor', 'RoomNumber', 'RoomType', 'Capacity', 'Gender', 'MonthlyRate', 'HasAirConditioner', 'Status', 'Remark', 'CreatedAt', 'UpdatedAt'],
   Employees: ['EmployeeID', 'Prefix', 'FirstName', 'LastName', 'FullName', 'Department', 'Position', 'Plant', 'Phone', 'Email', 'Status', 'CreatedAt', 'UpdatedAt'],
   Occupancy: ['OccupancyID', 'EmployeeID', 'RoomID', 'BedID', 'BedNumber', 'CheckInDate', 'ExpectedCheckOutDate', 'ActualCheckOutDate', 'Status', 'Remark', 'CreatedAt', 'UpdatedAt'],
   Buildings: ['BuildingID', 'BuildingCode', 'BuildingName', 'Location', 'NumberOfFloors', 'Status', 'Remark', 'CreatedAt', 'UpdatedAt'],
   Parking: ['SlotID', 'SlotNumber', 'Zone', 'VehicleType', 'Status', 'EmployeeID', 'RoomID', 'LicensePlate', 'VehicleModel', 'AssignedDate', 'Remark', 'CreatedAt', 'UpdatedAt'],
+  Assets: ['AssetID', 'RoomID', 'AssetName', 'AssetCode', 'Category', 'Quantity', 'Status', 'Condition', 'Remark', 'CreatedAt', 'UpdatedAt'],
   Settings: ['Key', 'Value'],
   AuditLog: ['LogID', 'Timestamp', 'UserEmail', 'Action', 'Module', 'RecordID', 'Remark']
 };
 
 // คอลัมน์ที่ต้องเก็บเป็นข้อความเสมอ (กันเบอร์โทร/รหัสที่ขึ้นต้นด้วย 0 ถูกแปลงเป็นตัวเลข)
-const TEXT_COLUMNS_ = ['EmployeeID', 'Phone', 'LicensePlate', 'RoomNumber', 'SlotNumber', 'BuildingCode',
+const TEXT_COLUMNS_ = ['EmployeeID', 'Phone', 'LicensePlate', 'RoomNumber', 'SlotNumber', 'BuildingCode', 'AssetID', 'AssetCode',
   'CheckInDate', 'ExpectedCheckOutDate', 'ActualCheckOutDate', 'AssignedDate', 'CreatedAt', 'UpdatedAt', 'Timestamp'];
 
 // คอลัมน์ที่ต้องแปลงเป็น String เสมอตอนอ่านจาก Sheets
 const STRING_ON_READ_ = ['EmployeeID', 'Phone', 'LicensePlate', 'RoomNumber', 'SlotNumber', 'BuildingCode',
-  'RoomID', 'BuildingID', 'SlotID', 'OccupancyID', 'BedID', 'Floor', 'FloorID'];
+  'RoomID', 'BuildingID', 'SlotID', 'OccupancyID', 'BedID', 'Floor', 'FloorID', 'AssetID', 'AssetCode'];
 
-/** รันฟังก์ชันนี้ 1 ครั้งหลังอัปเดตโค้ด เพื่อสร้างแผ่นงานที่ยังไม่มี (เช่น Parking) โดยไม่ลบข้อมูลเดิม */
+/** รันฟังก์ชันนี้ 1 ครั้งหลังอัปเดตโค้ด เพื่อสร้างแผ่นงานที่ยังไม่มี (เช่น Parking, Assets) โดยไม่ลบข้อมูลเดิม */
 function ensureAllSheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   Object.keys(SHEET_HEADERS).forEach(function (name) {
-    if (!ss.getSheetByName(name)) {
-      const sh = ss.insertSheet(name);
+    let sh = ss.getSheetByName(name);
+    if (!sh) {
+      sh = ss.insertSheet(name);
       const h = SHEET_HEADERS[name];
       sh.getRange(1, 1, 1, h.length).setValues([h]).setFontWeight('bold').setBackground('#1e3a8a').setFontColor('#ffffff');
       sh.setFrozenRows(1);
@@ -43,6 +46,22 @@ function ensureAllSheets() {
           sh.getRange(2, colIdx + 1, Math.max(sh.getMaxRows() - 1, 1), 1).setNumberFormat('@');
         }
       });
+    } else {
+      // ตรวจสอบคอลัมน์ที่อาจขาดหายในแผ่นงานเดิม (เช่น เพิ่ม HasAirConditioner ใน Rooms)
+      const lastCol = sh.getLastColumn();
+      if (lastCol > 0) {
+        const curHeaders = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+        const targetHeaders = SHEET_HEADERS[name];
+        targetHeaders.forEach(function (colName) {
+          if (curHeaders.indexOf(colName) === -1) {
+            const newColIdx = sh.getLastColumn() + 1;
+            sh.getRange(1, newColIdx).setValue(colName).setFontWeight('bold').setBackground('#1e3a8a').setFontColor('#ffffff');
+            if (TEXT_COLUMNS_.indexOf(colName) !== -1) {
+              sh.getRange(2, newColIdx, Math.max(sh.getMaxRows() - 1, 1), 1).setNumberFormat('@');
+            }
+          }
+        });
+      }
     }
   });
 }
@@ -256,6 +275,21 @@ function assertRoomUsable_(room) {
 
 function releaseParkingForEmployee_(employeeId, userEmail, reason) {
   const slots = sheetToObjects_(SHEETS.PARKING).filter(function (p) {
+    // ปลดเฉพาะช่องจอดที่ผูกกับการเข้าพักหอพัก (ไม่ใช่ช่องที่จองในฐานะพนักงานทั่วไป NON_RESIDENT)
+    return p.Status === 'Occupied' && String(p.EmployeeID) === String(employeeId) && String(p.RoomID).toUpperCase() !== 'NON_RESIDENT';
+  });
+  slots.forEach(function (p) {
+    updateRowById_(SHEETS.PARKING, 'SlotID', p.SlotID, {
+      Status: 'Available', EmployeeID: '', RoomID: '', LicensePlate: '', VehicleModel: '', AssignedDate: '',
+      Remark: reason || 'คืนช่องจอดอัตโนมัติ', UpdatedAt: nowStr_()
+    });
+    logAudit_(userEmail, 'RELEASE', 'Parking', p.SlotID, (reason || 'คืนช่องจอดอัตโนมัติ') + ' (' + p.SlotNumber + ' / ' + employeeId + ')');
+  });
+  return slots.length;
+}
+
+function releaseAllParkingForEmployee_(employeeId, userEmail, reason) {
+  const slots = sheetToObjects_(SHEETS.PARKING).filter(function (p) {
     return p.Status === 'Occupied' && String(p.EmployeeID) === String(employeeId);
   });
   slots.forEach(function (p) {
@@ -366,6 +400,19 @@ function computeRoomsData_() {
 
     const floorVal = (r.Floor !== undefined && r.Floor !== '') ? r.Floor : ((r.FloorID !== undefined && r.FloorID !== '') ? r.FloorID : '1');
 
+    const rawHasAc = (r.HasAirConditioner !== undefined && r.HasAirConditioner !== null) ? String(r.HasAirConditioner).trim().toLowerCase() : '';
+    let hasAirConditioner = true;
+    if (rawHasAc === 'no' || rawHasAc === 'false' || rawHasAc === 'ไม่มี' || rawHasAc === '0') {
+      hasAirConditioner = false;
+    } else if (rawHasAc === 'yes' || rawHasAc === 'true' || rawHasAc === 'มี' || rawHasAc === '1') {
+      hasAirConditioner = true;
+    } else {
+      const remarkLower = String(r.Remark || '').toLowerCase();
+      if (remarkLower.indexOf('ไม่มีแอร์') !== -1 || remarkLower.indexOf('ห้องพัดลม') !== -1 || (remarkLower.indexOf('พัดลม') !== -1 && remarkLower.indexOf('แอร์') === -1)) {
+        hasAirConditioner = false;
+      }
+    }
+
     return {
       roomId: r.RoomID,
       roomNumber: r.RoomNumber,
@@ -378,9 +425,9 @@ function computeRoomsData_() {
       capacity: capacity,
       gender: 'Any',
       monthlyRate: Number(r.MonthlyRate) || 0,
-      hasAirConditioner: true,
+      hasAirConditioner: hasAirConditioner,
       hasFurniture: true,
-      remark: r.Remark || 'เฟอร์นิเจอร์มาตรฐานครบชุด',
+      remark: r.Remark || (hasAirConditioner ? 'เฟอร์นิเจอร์มาตรฐานครบชุด (ห้องแอร์)' : 'เฟอร์นิเจอร์มาตรฐาน (ห้องพัดลม)'),
       computedStatus: computedStatus,
       canCheckIn: (computedStatus === 'Available' || computedStatus === 'Partially Occupied'),
       status: r.Status || 'Active',
@@ -587,6 +634,8 @@ const Actions = {
       }
     }
 
+    const hasAcVal = (d.hasAirConditioner === false || d.hasAirConditioner === 'No' || d.hasAirConditioner === 'ไม่มี') ? 'No' : 'Yes';
+
     if (d.roomId) {
       updateRowById_(SHEETS.ROOMS, 'RoomID', d.roomId, {
         BuildingID: d.buildingId,
@@ -596,10 +645,11 @@ const Actions = {
         Capacity: Math.max(Number(d.capacity) || 1, 1),
         Gender: 'Any',
         MonthlyRate: Number(d.monthlyRate) || 0,
+        HasAirConditioner: hasAcVal,
         Remark: d.remark || '',
         UpdatedAt: nowStr_()
       });
-      logAudit_(userEmail, 'UPDATE', 'Rooms', d.roomId, 'แก้ไขห้อง ' + d.roomNumber);
+      logAudit_(userEmail, 'UPDATE', 'Rooms', d.roomId, 'แก้ไขห้อง ' + d.roomNumber + ' (แอร์: ' + hasAcVal + ')');
       return { roomId: d.roomId };
     } else {
       const roomId = generateId_('ROOM');
@@ -612,12 +662,13 @@ const Actions = {
         Capacity: Math.max(Number(d.capacity) || 1, 1),
         Gender: 'Any',
         MonthlyRate: Number(d.monthlyRate) || 0,
+        HasAirConditioner: hasAcVal,
         Status: 'Active',
-        Remark: d.remark || 'เฟอร์นิเจอร์มาตรฐานครบชุด',
+        Remark: d.remark || (hasAcVal === 'Yes' ? 'เฟอร์นิเจอร์มาตรฐานครบชุด (ห้องแอร์)' : 'เฟอร์นิเจอร์มาตรฐาน (ห้องพัดลม)'),
         CreatedAt: nowStr_(),
         UpdatedAt: nowStr_()
       });
-      logAudit_(userEmail, 'CREATE', 'Rooms', roomId, 'เพิ่มห้องใหม่ ' + d.roomNumber);
+      logAudit_(userEmail, 'CREATE', 'Rooms', roomId, 'เพิ่มห้องใหม่ ' + d.roomNumber + ' (แอร์: ' + hasAcVal + ')');
       return { roomId: roomId };
     }
   },
@@ -771,7 +822,7 @@ const Actions = {
     if (activeOcc.length > 0) {
       throw new Error('ไม่สามารถลบพนักงานคนนี้ได้ เนื่องจากยังมีห้องพักที่ใช้งานอยู่ กรุณาทำรายการเช็คเอาท์ก่อน');
     }
-    releaseParkingForEmployee_(employeeId, userEmail, 'คืนช่องจอดเพราะลบพนักงาน');
+    releaseAllParkingForEmployee_(employeeId, userEmail, 'คืนช่องจอดเพราะลบพนักงาน');
     updateRowById_(SHEETS.EMPLOYEES, 'EmployeeID', employeeId, { Status: 'Deleted', UpdatedAt: nowStr_() });
     logAudit_(userEmail, 'DELETE', 'Employees', employeeId, 'ลบพนักงาน');
     return { employeeId: employeeId };
@@ -1054,13 +1105,31 @@ const Actions = {
       const room = roomMap[targetRoomKey] || roomNumMap[targetRoomKey] || {};
       const bld = bldMap[String(room.BuildingID)] || {};
       const fullName = emp.FullName || ((emp.FirstName || '') + ' ' + (emp.LastName || '')).trim() || (s.EmployeeID ? s.EmployeeID : '');
+      const isResident = !!curOcc;
+      const isNonResident = isOcc && !curOcc && (String(s.RoomID).toUpperCase() === 'NON_RESIDENT' || !s.RoomID);
+      let roomDisplay = '';
+      let bldDisplay = '';
+      if (isOcc) {
+        if (isResident) {
+          roomDisplay = room.RoomNumber || s.RoomID || '-';
+          bldDisplay = bld.BuildingName || ('อาคาร ' + (room.BuildingID || '-'));
+        } else if (isNonResident) {
+          roomDisplay = 'พนักงานทั่วไป';
+          bldDisplay = 'ไม่ได้พักหอพัก';
+        } else {
+          roomDisplay = room.RoomNumber || s.RoomID || 'พนักงานทั่วไป';
+          bldDisplay = bld.BuildingName || '-';
+        }
+      }
       return Object.assign({}, s, {
         ownerName: isOcc ? fullName : '',
         ownerDepartment: emp.Department || '',
         ownerPhone: emp.Phone || '',
-        roomNumber: isOcc ? (room.RoomNumber || s.RoomID || '') : '',
-        buildingName: isOcc ? (bld.BuildingName || '') : '',
-        needsReview: isOcc && !curOcc
+        isResident: isResident,
+        isNonResident: isNonResident,
+        roomNumber: roomDisplay,
+        buildingName: bldDisplay,
+        needsReview: isOcc && !curOcc && !isNonResident
       });
     });
   },
@@ -1136,21 +1205,22 @@ const Actions = {
     const activeOcc = sheetToObjects_(SHEETS.OCCUPANCY).find(function (o) {
       return o.Status === 'Active' && String(o.EmployeeID) === String(d.employeeId);
     });
-    if (!activeOcc) throw new Error('พนักงานคนนี้ยังไม่มีห้องพัก กรุณาเช็คอินเข้าห้องพักก่อนจองที่จอดรถ');
+    // พนักงานพักหอ -> ดึง RoomID อัตโนมัติ, พนักงานทั่วไป (ไม่ได้พักหอ) -> ระบุเป็น NON_RESIDENT
+    const assignedRoomId = activeOcc ? activeOcc.RoomID : 'NON_RESIDENT';
 
     const taken = sheetToObjects_(SHEETS.PARKING).filter(function (p) { return p.Status === 'Occupied'; });
     const normPlate_ = function (s) { return String(s || '').replace(/[\s\-]+/g, '').toLowerCase(); };
-    if (taken.some(function (p) { return normPlate_(p.LicensePlate) === normPlate_(plate); })) {
+    if (taken.some(function (p) { return normPlate_(p.LicensePlate) === normPlate_(plate) && String(p.SlotID) !== String(d.slotId); })) {
       throw new Error('ทะเบียน ' + plate + ' ถูกจองช่องจอดอื่นอยู่แล้ว');
     }
-    if (taken.some(function (p) { return String(p.EmployeeID) === String(d.employeeId) && p.VehicleType === slot.VehicleType; })) {
+    if (taken.some(function (p) { return String(p.EmployeeID) === String(d.employeeId) && p.VehicleType === slot.VehicleType && String(p.SlotID) !== String(d.slotId); })) {
       throw new Error('พนักงานคนนี้มีช่องจอด' + (slot.VehicleType === 'Car' ? 'รถยนต์' : 'มอเตอร์ไซค์') + 'อยู่แล้ว (1 คน / 1 ช่องต่อประเภท) หากต้องการเปลี่ยนให้คืนช่องเดิมก่อน');
     }
 
     updateRowById_(SHEETS.PARKING, 'SlotID', d.slotId, {
       Status: 'Occupied',
       EmployeeID: d.employeeId,
-      RoomID: activeOcc.RoomID,
+      RoomID: assignedRoomId,
       LicensePlate: plate,
       VehicleModel: d.vehicleModel || '',
       AssignedDate: d.assignedDate || nowStr_().split(' ')[0],
@@ -1158,8 +1228,9 @@ const Actions = {
       UpdatedAt: nowStr_()
     });
 
-    logAudit_(userEmail, 'ASSIGN', 'Parking', d.slotId, 'จองช่องจอด ' + slot.SlotNumber + ' ให้พนักงาน ' + d.employeeId + ' ห้อง ' + activeOcc.RoomID + ' (ทะเบียน: ' + plate + ')');
-    return { slotId: d.slotId, roomId: activeOcc.RoomID };
+    const roomDesc = activeOcc ? ('ห้อง ' + assignedRoomId) : 'พนักงานทั่วไป (ไม่ได้พักหอ)';
+    logAudit_(userEmail, 'ASSIGN', 'Parking', d.slotId, 'จองช่องจอด ' + slot.SlotNumber + ' ให้พนักงาน ' + d.employeeId + ' [' + roomDesc + '] (ทะเบียน: ' + plate + ')');
+    return { slotId: d.slotId, roomId: assignedRoomId, isResident: !!activeOcc };
   },
 
   releaseParking: function (body, userEmail) {
@@ -1259,9 +1330,131 @@ const Actions = {
   completeMaintenance: function (body, userEmail) {
     return Actions.toggleRoomMaintenance(body, userEmail);
   },
-  getRoomAssets: function () { return []; },
-  saveAsset: function () { return { success: true }; },
-  deleteAsset: function () { return { success: true }; },
+  getRoomAssets: function (body) {
+    const assets = sheetToObjects_(SHEETS.ASSETS).filter(function (a) { return a.Status !== 'Deleted'; });
+    const rooms = sheetToObjects_(SHEETS.ROOMS).filter(function (r) { return r.Status !== 'Deleted'; });
+    const blds = sheetToObjects_(SHEETS.BUILDINGS).filter(function (b) { return b.Status !== 'Deleted'; });
+    const roomMap = {}, bldMap = {};
+    rooms.forEach(function (r) { roomMap[String(r.RoomID)] = r; });
+    blds.forEach(function (b) { bldMap[String(b.BuildingID)] = b; });
+
+    const targetRoomId = (body && body.roomId) ? String(body.roomId).trim() : null;
+    const list = targetRoomId ? assets.filter(function (a) { return String(a.RoomID).trim() === targetRoomId; }) : assets;
+
+    return list.map(function (a) {
+      const room = roomMap[String(a.RoomID)] || {};
+      const bld = bldMap[String(room.BuildingID)] || {};
+      return Object.assign({}, a, {
+        RoomNumber: room.RoomNumber || a.RoomID || '-',
+        BuildingID: room.BuildingID || '',
+        BuildingName: bld.BuildingName || ('อาคาร ' + (room.BuildingID || '-')),
+        Floor: room.Floor || '1'
+      });
+    });
+  },
+
+  saveAsset: function (body, userEmail) {
+    const d = body.data;
+    if (!d || !d.roomId || !d.assetName) {
+      throw new Error('กรุณาระบุห้องพัก และชื่อทรัพย์สิน/ครุภัณฑ์');
+    }
+    const room = findRowObject_(SHEETS.ROOMS, 'RoomID', d.roomId);
+    if (!room || room.Status === 'Deleted') {
+      throw new Error('ไม่พบห้องพักที่ระบุ');
+    }
+
+    const assetName = String(d.assetName).trim();
+    const assetCode = String(d.assetCode || '').trim();
+    const category = d.category || 'เฟอร์นิเจอร์';
+    const quantity = Math.max(Number(d.quantity) || 1, 1);
+    const status = d.status || 'Normal';
+    const condition = d.condition || 'ปกติ';
+    const remark = d.remark || '';
+
+    if (d.assetId) {
+      const cur = findRowObject_(SHEETS.ASSETS, 'AssetID', d.assetId);
+      if (!cur || cur.Status === 'Deleted') throw new Error('ไม่พบครุภัณฑ์ที่ต้องการแก้ไข');
+      updateRowById_(SHEETS.ASSETS, 'AssetID', d.assetId, {
+        RoomID: d.roomId,
+        AssetName: assetName,
+        AssetCode: assetCode || cur.AssetCode || d.assetId,
+        Category: category,
+        Quantity: quantity,
+        Status: status,
+        Condition: condition,
+        Remark: remark,
+        UpdatedAt: nowStr_()
+      });
+      logAudit_(userEmail, 'UPDATE', 'Assets', d.assetId, 'แก้ไขครุภัณฑ์ ' + assetName + ' ห้อง ' + room.RoomNumber);
+      return { assetId: d.assetId };
+    } else {
+      const assetId = generateId_('AST');
+      appendRow_(SHEETS.ASSETS, {
+        AssetID: assetId,
+        RoomID: d.roomId,
+        AssetName: assetName,
+        AssetCode: assetCode || assetId,
+        Category: category,
+        Quantity: quantity,
+        Status: status,
+        Condition: condition,
+        Remark: remark,
+        CreatedAt: nowStr_(),
+        UpdatedAt: nowStr_()
+      });
+      logAudit_(userEmail, 'CREATE', 'Assets', assetId, 'เพิ่มครุภัณฑ์ใหม่ ' + assetName + ' ห้อง ' + room.RoomNumber);
+      return { assetId: assetId };
+    }
+  },
+
+  deleteAsset: function (body, userEmail) {
+    const assetId = body.assetId;
+    if (!assetId) throw new Error('กรุณาระบุรหัสครุภัณฑ์ที่ต้องการลบ');
+    const cur = findRowObject_(SHEETS.ASSETS, 'AssetID', assetId);
+    if (!cur || cur.Status === 'Deleted') throw new Error('ไม่พบครุภัณฑ์ที่ต้องการลบ');
+    updateRowById_(SHEETS.ASSETS, 'AssetID', assetId, { Status: 'Deleted', UpdatedAt: nowStr_() });
+    logAudit_(userEmail, 'DELETE', 'Assets', assetId, 'ลบครุภัณฑ์ ' + cur.AssetName + ' (' + assetId + ')');
+    return { assetId: assetId };
+  },
+
+  addDefaultAssetsForRoom: function (body, userEmail) {
+    const roomId = body.roomId;
+    if (!roomId) throw new Error('กรุณาระบุรหัสห้องพัก');
+    const room = findRowObject_(SHEETS.ROOMS, 'RoomID', roomId);
+    if (!room || room.Status === 'Deleted') throw new Error('ไม่พบห้องพัก');
+    const cap = Math.max(Number(room.Capacity) || 1, 1);
+    const rawHasAc = String(room.HasAirConditioner || '').trim().toLowerCase();
+    const hasAc = (rawHasAc !== 'no' && rawHasAc !== 'false' && rawHasAc !== 'ไม่มี');
+
+    const defaultItems = [
+      { name: hasAc ? 'เครื่องปรับอากาศ' : 'พัดลมติดผนัง / ตั้งพื้น', cat: 'เครื่องใช้ไฟฟ้า', qty: 1, cond: 'สภาพดี' },
+      { name: 'เตียงนอนเดี่ยว 3.5 ฟุต', cat: 'เฟอร์นิเจอร์', qty: cap, cond: 'สภาพดี' },
+      { name: 'ฟูกที่นอน 3.5 ฟุต', cat: 'เครื่องนอน', qty: cap, cond: 'สภาพดี' },
+      { name: 'ตู้เสื้อผ้า', cat: 'เฟอร์นิเจอร์', qty: cap, cond: 'สภาพดี' },
+      { name: 'โต๊ะทำงานพร้อมเก้าอี้', cat: 'เฟอร์นิเจอร์', qty: cap, cond: 'สภาพดี' },
+      { name: 'กุญแจห้องพัก / คีย์การ์ด', cat: 'ความปลอดภัย', qty: cap, cond: 'สภาพดี' }
+    ];
+
+    const now = nowStr_();
+    defaultItems.forEach(function (item) {
+      const astId = generateId_('AST');
+      appendRow_(SHEETS.ASSETS, {
+        AssetID: astId,
+        RoomID: roomId,
+        AssetName: item.name,
+        AssetCode: astId,
+        Category: item.cat,
+        Quantity: item.qty,
+        Status: 'Normal',
+        Condition: item.cond,
+        Remark: 'ชุดมาตรฐานประจำห้อง (' + room.RoomNumber + ')',
+        CreatedAt: now,
+        UpdatedAt: now
+      });
+    });
+    logAudit_(userEmail, 'CREATE', 'Assets', roomId, 'เพิ่มชุดครุภัณฑ์มาตรฐาน ' + defaultItems.length + ' รายการให้ห้อง ' + room.RoomNumber);
+    return { count: defaultItems.length };
+  },
   getKeys: function () { return []; },
   saveKey: function () { return { success: true }; }
 };

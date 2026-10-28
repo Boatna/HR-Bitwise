@@ -33,6 +33,9 @@
         <a class="nav-link" href="#" data-tab="rooms">
           <i class="bi bi-door-open text-success"></i> ข้อมูลห้องพัก (Rooms)
         </a>
+        <a class="nav-link" href="#" data-tab="assets">
+          <i class="bi bi-box-seam-fill text-purple"></i> ครุภัณฑ์ห้องพัก (Assets)
+        </a>
         <a class="nav-link" href="#" data-tab="employees">
           <i class="bi bi-person-badge text-info"></i> ข้อมูลพนักงาน (Employees)
         </a>
@@ -127,7 +130,7 @@
         <div class="alert alert-info border-0 shadow-sm rounded-3 py-2 px-3 mb-3 d-flex align-items-center gap-2">
           <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
           <div>
-            <strong>หมายเหตุเฟอร์นิเจอร์:</strong> ห้องพักทุกห้องมีเฟอร์นิเจอร์มาตรฐานครบชุดเหมือนกันหมด (เตียงนอน, ที่นอน, ตู้เสื้อผ้า, โต๊ะทำงาน, เก้าอี้, เครื่องปรับอากาศ)
+            <strong>ข้อมูลสิ่งอำนวยความสะดวก:</strong> แต่ละห้องพักสามารถกำหนดได้ว่ามี <strong>เครื่องปรับอากาศ (ห้องแอร์)</strong> หรือ <strong>พัดลม (ไม่มีเครื่องปรับอากาศ)</strong> และสามารถบันทึกตรวจนับครุภัณฑ์รายชิ้นได้ที่แท็บ <a href="#" class="alert-link" onclick="Admin.switchTab('assets')">ครุภัณฑ์ห้องพัก (Assets)</a>
           </div>
         </div>
 
@@ -140,6 +143,7 @@
                   <th>อาคาร</th>
                   <th>ชั้น</th>
                   <th>ประเภท</th>
+                  <th>ระบบปรับอากาศ</th>
                   <th>ความจุ</th>
                   <th>ผู้พักจริง / ว่าง</th>
                   <th>สถานะห้อง</th>
@@ -147,6 +151,118 @@
                 </tr>
               </thead>
               <tbody id="rooms-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab: จัดการ Asset ครุภัณฑ์ห้องพัก (Room Assets) -->
+      <section id="tab-assets" class="tab-content-section d-none">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
+          <div>
+            <h3 class="fw-bold mb-1 text-dark">
+              <i class="bi bi-box-seam-fill text-purple me-2"></i>จัดการ Asset และครุภัณฑ์ห้องพัก (Room Assets)
+            </h3>
+            <p class="text-muted mb-0">ตรวจสอบ เพิ่ม ลบ แก้ไข รายการทรัพย์สินและเฟอร์นิเจอร์ประจำแต่ละห้องพัก (เช่น เครื่องปรับอากาศ, พัดลม, เตียง, ตู้เสื้อผ้า ฯลฯ)</p>
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-outline-primary shadow-sm px-3" onclick="Admin.openBatchAssetModal()">
+              <i class="bi bi-magic me-1"></i> เพิ่มชุดมาตรฐานเข้าห้อง
+            </button>
+            <button class="btn btn-primary shadow-sm px-3" onclick="Admin.openAssetModal()">
+              <i class="bi bi-plus-lg me-1"></i> เพิ่ม Asset ใหม่
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary KPI Cards for Assets -->
+        <div class="row g-2 mb-3" id="asset-summary">
+          <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+              <div class="text-muted small">ครุภัณฑ์ทั้งหมด</div>
+              <div class="fs-4 fw-bold text-dark mt-1" id="asset-kpi-total">0</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+              <div class="text-muted small">ใช้งานปกติ</div>
+              <div class="fs-4 fw-bold text-success mt-1" id="asset-kpi-normal">0</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+              <div class="text-muted small">ชำรุด / รอซ่อม</div>
+              <div class="fs-4 fw-bold text-warning mt-1" id="asset-kpi-repair">0</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+              <div class="text-muted small">เสีย / สูญหาย</div>
+              <div class="fs-4 fw-bold text-danger mt-1" id="asset-kpi-lost">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="card border-0 shadow-sm rounded-4 mb-3">
+          <div class="card-body p-3">
+            <div class="row g-2 align-items-center">
+              <div class="col-12 col-md-4">
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                  <input type="text" id="search-assets" class="form-control border-start-0" placeholder="ค้นหาชื่อครุภัณฑ์, รหัส Asset, เลขห้อง..." oninput="Admin.filterAssets()">
+                </div>
+              </div>
+              <div class="col-6 col-md-2">
+                <select id="filter-asset-room" class="form-select" onchange="Admin.filterAssets()">
+                  <option value="">ทุกห้องพัก</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-2">
+                <select id="filter-asset-category" class="form-select" onchange="Admin.filterAssets()">
+                  <option value="">ทุกหมวดหมู่</option>
+                  <option value="เครื่องใช้ไฟฟ้า">เครื่องใช้ไฟฟ้า</option>
+                  <option value="เฟอร์นิเจอร์">เฟอร์นิเจอร์</option>
+                  <option value="เครื่องนอน">เครื่องนอน</option>
+                  <option value="ความปลอดภัย">ความปลอดภัย/กุญแจ</option>
+                  <option value="อื่นๆ">อื่นๆ</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-2">
+                <select id="filter-asset-status" class="form-select" onchange="Admin.filterAssets()">
+                  <option value="">ทุกสถานะ</option>
+                  <option value="Normal">ใช้งานปกติ</option>
+                  <option value="Repair">ชำรุด/รอซ่อม</option>
+                  <option value="Damaged">เสีย/รอจำหน่าย</option>
+                  <option value="Lost">สูญหาย</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-auto ms-auto">
+                <button class="btn btn-outline-secondary btn-sm" onclick="Admin.loadAssets()">
+                  <i class="bi bi-arrow-clockwise me-1"></i> รีเฟรช
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Asset Table -->
+        <div class="table-card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>รหัส Asset</th>
+                  <th>ห้องพัก / อาคาร</th>
+                  <th>รายการครุภัณฑ์</th>
+                  <th>หมวดหมู่</th>
+                  <th>จำนวน</th>
+                  <th>สถานะ / สภาพ</th>
+                  <th>หมายเหตุ / รายละเอียด</th>
+                  <th>จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="assets-table-body"></tbody>
             </table>
           </div>
         </div>
@@ -207,9 +323,9 @@
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
           <div>
             <h3 class="fw-bold mb-1 text-dark">
-              <i class="bi bi-car-front-fill text-primary me-2"></i>จองที่จอดรถ (ช่องนี้ของใคร / พักห้องไหน)
+              <i class="bi bi-car-front-fill text-primary me-2"></i>จัดการและจองที่จอดรถ (พนักงานพักหอพัก & พนักงานทั่วไป)
             </h3>
-            <p class="text-muted mb-0">จองช่องจอดให้พนักงานที่พักอยู่ในหอ ระบบดึงห้องพักให้อัตโนมัติ และคืนช่องให้เองเมื่อเช็คเอาท์</p>
+            <p class="text-muted mb-0">รองรับทั้งพนักงานที่พักอยู่ในหอ (ระบบเชื่อมโยงห้องพักอัตโนมัติ) และพนักงานทั่วไปที่มาจองที่จอดรถตามปกติ</p>
           </div>
           <button class="btn btn-primary shadow-sm px-3" onclick="Admin.openParkingSlotModal()">
             <i class="bi bi-plus-lg me-1"></i> เพิ่มช่องจอดใหม่
@@ -221,15 +337,22 @@
         <div class="card border-0 shadow-sm rounded-4 mb-3">
           <div class="card-body p-3">
             <div class="row g-2 align-items-center">
-              <div class="col-12 col-md-5">
+              <div class="col-12 col-md-4">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
                   <input type="text" id="search-parking" class="form-control border-start-0" placeholder="ค้นหาช่องจอด, ทะเบียน, ชื่อผู้จอง หรือเลขห้อง..." oninput="Admin.filterParking()">
                 </div>
               </div>
               <div class="col-6 col-md-2">
+                <select id="filter-parking-user-type" class="form-select" onchange="Admin.filterParking()">
+                  <option value="">ทุกกลุ่มผู้จอง</option>
+                  <option value="resident">พนักงานพักหอพัก</option>
+                  <option value="general">พนักงานทั่วไป (ไม่พักหอ)</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-2">
                 <select id="filter-parking-type" class="form-select" onchange="Admin.filterParking()">
-                  <option value="">ทุกประเภท</option>
+                  <option value="">ทุกประเภทยานพาหนะ</option>
                   <option value="Car">รถยนต์</option>
                   <option value="Motorcycle">มอเตอร์ไซค์</option>
                 </select>
@@ -322,6 +445,9 @@
               </button>
               <button class="btn btn-outline-primary" onclick="Reports.generateReport('parking')">
                 <i class="bi bi-car-front me-1"></i> รายงานที่จอดรถ
+              </button>
+              <button class="btn btn-outline-primary" onclick="Reports.generateReport('assets')">
+                <i class="bi bi-box-seam me-1"></i> รายงานครุภัณฑ์ห้องพัก
               </button>
             </div>
           </div>
@@ -620,7 +746,6 @@
     </div>
   </div>
 
-  <!-- Modal: Room (เพิ่ม/แก้ไขห้องพัก) -->
   <div class="modal fade" id="roomModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">
@@ -659,9 +784,18 @@
               </select>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">อัตราค่าเช่า (บาท/เดือน)</label>
-            <input type="number" id="room-rate" class="form-control" value="1500">
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">ระบบปรับอากาศ <span class="text-danger">*</span></label>
+              <select id="room-has-ac" class="form-select">
+                <option value="Yes">❄️ มีเครื่องปรับอากาศ (ห้องแอร์)</option>
+                <option value="No">🌀 ไม่มี (ห้องพัดลม / ธรรมดา)</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">อัตราค่าเช่า (บาท/เดือน)</label>
+              <input type="number" id="room-rate" class="form-control" value="1500">
+            </div>
           </div>
           <div class="mb-0">
             <label class="form-label fw-semibold">หมายเหตุ</label>
@@ -676,7 +810,6 @@
     </div>
   </div>
 
-  <!-- Modal: Building (เพิ่ม/แก้ไขอาคาร) -->
   <div class="modal fade" id="buildingModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4">
@@ -788,10 +921,10 @@
             <input type="text" id="ap-employee-input" class="form-control" list="ap-employee-list" autocomplete="off"
                    placeholder="พิมพ์รหัสหรือชื่อ แล้วเลือกจากรายการ..." oninput="Admin.onAssignEmployeeInput()" onchange="Admin.onAssignEmployeeInput()">
             <datalist id="ap-employee-list"></datalist>
-            <div class="form-text">แสดงเฉพาะพนักงานที่พักอยู่ในหอพัก (ต้องเช็คอินก่อนจึงจะจองที่จอดได้)</div>
+            <div class="form-text">สามารถจองได้ทั้งพนักงานที่พักในหอพัก (ระบบดึงห้องให้อัตโนมัติ) และพนักงานทั่วไปที่ไม่ได้พักหอพัก</div>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-semibold">ห้องพักของผู้จอง</label>
+            <label class="form-label fw-semibold">ห้องพักของผู้จอง (ถ้ามี)</label>
             <input type="text" id="ap-room-info" class="form-control bg-light" readonly placeholder="ระบบดึงให้อัตโนมัติเมื่อเลือกพนักงาน">
           </div>
           <div class="row g-2 mb-3">
@@ -818,6 +951,123 @@
         <div class="modal-footer bg-light border-0">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
           <button type="button" class="btn btn-primary px-4" onclick="Admin.submitAssignParking()">บันทึกการจอง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Asset (เพิ่ม/แก้ไขครุภัณฑ์ห้องพัก) -->
+  <div class="modal fade" id="assetModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-box-seam-fill text-purple me-2"></i>ข้อมูลครุภัณฑ์ห้องพัก (Room Asset)</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="ast-id">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">ห้องพัก <span class="text-danger">*</span></label>
+            <select id="ast-room-id" class="form-select"></select>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-8">
+              <label class="form-label fw-semibold">ชื่อครุภัณฑ์ / ทรัพย์สิน <span class="text-danger">*</span></label>
+              <input type="text" id="ast-name" class="form-control" list="asset-common-names" placeholder="เช่น เครื่องปรับอากาศ, เตียงนอน 3.5 ฟุต">
+              <datalist id="asset-common-names">
+                <option value="เครื่องปรับอากาศ"></option>
+                <option value="พัดลมติดผนัง"></option>
+                <option value="พัดลมตั้งพื้น"></option>
+                <option value="เตียงนอนเดี่ยว 3.5 ฟุต"></option>
+                <option value="ฟูกที่นอน 3.5 ฟุต"></option>
+                <option value="ตู้เสื้อผ้าไม้"></option>
+                <option value="โต๊ะทำงาน"></option>
+                <option value="เก้าอี้ทำงาน"></option>
+                <option value="ตู้เย็นมินิบาร์"></option>
+                <option value="เครื่องทำน้ำอุ่น"></option>
+                <option value="กุญแจห้องพัก"></option>
+                <option value="คีย์การ์ด"></option>
+              </datalist>
+            </div>
+            <div class="col-4">
+              <label class="form-label fw-semibold">จำนวน <span class="text-danger">*</span></label>
+              <input type="number" id="ast-quantity" class="form-control" value="1" min="1" max="100">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">หมวดหมู่</label>
+              <select id="ast-category" class="form-select">
+                <option value="เครื่องใช้ไฟฟ้า">เครื่องใช้ไฟฟ้า</option>
+                <option value="เฟอร์นิเจอร์">เฟอร์นิเจอร์</option>
+                <option value="เครื่องนอน">เครื่องนอน</option>
+                <option value="ความปลอดภัย">ความปลอดภัย / กุญแจ</option>
+                <option value="สุขภัณฑ์">สุขภัณฑ์ / ห้องน้ำ</option>
+                <option value="อื่นๆ">อื่นๆ</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">รหัสทรัพย์สิน / Serial No.</label>
+              <input type="text" id="ast-code" class="form-control" placeholder="เช่น AST-AC-0101">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">สถานะครุภัณฑ์ <span class="text-danger">*</span></label>
+              <select id="ast-status" class="form-select">
+                <option value="Normal">ใช้งานปกติ (Normal)</option>
+                <option value="Repair">ชำรุด / รอซ่อม (Need Repair)</option>
+                <option value="Damaged">เสีย / รอจำหน่าย (Damaged)</option>
+                <option value="Lost">สูญหาย (Lost)</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">สภาพการใช้งาน</label>
+              <input type="text" id="ast-condition" class="form-control" placeholder="เช่น สภาพดี 90%, แอร์เพิ่งล้าง">
+            </div>
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-semibold">หมายเหตุ / ข้อมูลจำเพาะ</label>
+            <input type="text" id="ast-remark" class="form-control" placeholder="เช่น ยี่ห้อ Daikin 12000 BTU หรือ สีไม้โอ๊ค">
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-primary px-4" onclick="Admin.saveAsset()">บันทึก Asset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Batch Asset (เพิ่มชุดเฟอร์นิเจอร์มาตรฐานเข้าห้องพัก) -->
+  <div class="modal fade" id="batchAssetModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-magic text-primary me-2"></i>เพิ่มชุดครุภัณฑ์มาตรฐานเข้าห้องพัก</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="text-muted small mb-3">ระบบจะสร้างชุดครุภัณฑ์มาตรฐานเข้าห้องพักที่เลือกตามความจุและระบบปรับอากาศอัตโนมัติ (ห้องแอร์ = ได้แอร์, ห้องพัดลม = ได้พัดลม, เตียง/ตู้/โต๊ะ/เก้าอี้ตามความจุห้อง)</p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">เลือกห้องพัก <span class="text-danger">*</span></label>
+            <select id="batch-ast-room-id" class="form-select"></select>
+          </div>
+          <div class="alert alert-secondary py-2 small mb-0">
+            <strong>รายการที่จะสร้างให้อัตโนมัติ:</strong>
+            <ul class="mb-0 ps-3 mt-1">
+              <li>เครื่องปรับอากาศ 1 เครื่อง (หรือพัดลม หากเป็นห้องพัดลม)</li>
+              <li>เตียงนอนเดี่ยว 3.5 ฟุต (ตามความจุผู้พัก)</li>
+              <li>ฟูกที่นอน 3.5 ฟุต (ตามความจุผู้พัก)</li>
+              <li>ตู้เสื้อผ้า (ตามความจุผู้พัก)</li>
+              <li>ชุดโต๊ะทำงานพร้อมเก้าอี้ (ตามความจุผู้พัก)</li>
+              <li>กุญแจห้องพัก / คีย์การ์ด (ตามความจุผู้พัก)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-success px-4" onclick="Admin.submitBatchAsset()">ยืนยันสร้างชุดครุภัณฑ์</button>
         </div>
       </div>
     </div>

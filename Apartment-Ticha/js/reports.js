@@ -13,7 +13,7 @@ const Reports = {
 
   async generateReport(type) {
     this.currentReportType = type;
-    const seq = ++this._seq; // กันผลลัพธ์รายงานเก่าที่ตอบกลับช้ากว่า มาเขียนทับรายงานใหม่
+    const seq = ++this._seq;
     const tableBody = document.getElementById('report-table-body');
     const titleEl = document.getElementById('report-title-display');
 
@@ -29,16 +29,17 @@ const Reports = {
           'เลขห้อง': r.roomNumber,
           'ชั้น': r.floorId || '1',
           'ประเภท': r.roomType || 'Standard',
+          'ระบบปรับอากาศ': (r.hasAirConditioner !== false && String(r.hasAirConditioner).toLowerCase() !== 'no') ? 'ห้องแอร์' : 'ห้องพัดลม',
           'ความจุ (คน)': r.capacity,
           'ผู้พักจริง (คน)': r.occupiedBedsCount,
           'ที่ว่าง (ที่)': r.availableBedsCount,
           'สถานะห้อง': this.statusLabel(r.computedStatus),
           'ที่จอดรถ': this.parkingText(r.parkingSlots),
-          'เฟอร์นิเจอร์': 'มาตรฐานครบชุด'
+          'หมายเหตุ': r.remark || '-'
         }));
 
         this.renderTable([
-          'อาคาร', 'เลขห้อง', 'ชั้น', 'ประเภท', 'ความจุ (คน)', 'ผู้พักจริง (คน)', 'ที่ว่าง (ที่)', 'สถานะห้อง', 'ที่จอดรถ', 'เฟอร์นิเจอร์'
+          'อาคาร', 'เลขห้อง', 'ชั้น', 'ประเภท', 'ระบบปรับอากาศ', 'ความจุ (คน)', 'ผู้พักจริง (คน)', 'ที่ว่าง (ที่)', 'สถานะห้อง', 'ที่จอดรถ', 'หมายเหตุ'
         ], this.currentReportData);
 
       } else if (type === 'occupants') {
@@ -75,6 +76,7 @@ const Reports = {
           'โซน': p.Zone || '-',
           'ประเภท': App.vehicleLabel(p.VehicleType),
           'สถานะ': p.Status === 'Occupied' ? 'มีผู้จอง' : (p.Status === 'Maintenance' ? 'ปิดปรับปรุง' : 'ว่าง'),
+          'กลุ่มผู้จอง': p.Status === 'Occupied' ? (p.isResident ? 'พนักงานพักหอ' : 'พนักงานทั่วไป') : '-',
           'รหัสพนักงาน': p.EmployeeID || '-',
           'ชื่อผู้จอง': p.ownerName || '-',
           'แผนก': p.ownerDepartment || '-',
@@ -86,7 +88,26 @@ const Reports = {
           'วันที่เริ่มจอง': p.AssignedDate ? App.formatDate(p.AssignedDate) : '-'
         }));
         this.renderTable([
-          'ช่องจอด', 'โซน', 'ประเภท', 'สถานะ', 'รหัสพนักงาน', 'ชื่อผู้จอง', 'แผนก', 'เบอร์โทร', 'อาคาร', 'ห้องพัก', 'ทะเบียนรถ', 'รุ่น/ยี่ห้อ', 'วันที่เริ่มจอง'
+          'ช่องจอด', 'โซน', 'ประเภท', 'สถานะ', 'กลุ่มผู้จอง', 'รหัสพนักงาน', 'ชื่อผู้จอง', 'แผนก', 'เบอร์โทร', 'อาคาร', 'ห้องพัก', 'ทะเบียนรถ', 'รุ่น/ยี่ห้อ', 'วันที่เริ่มจอง'
+        ], this.currentReportData);
+
+      } else if (type === 'assets') {
+        if (titleEl) titleEl.textContent = 'รายงานครุภัณฑ์และเฟอร์นิเจอร์ประจำห้องพัก (Room Assets)';
+        const assets = await API.getRoomAssets();
+        if (seq !== this._seq) return;
+        this.currentReportData = (assets || []).map(a => ({
+          'รหัส Asset': a.AssetCode || a.AssetID,
+          'อาคาร': a.BuildingName || '-',
+          'เลขห้อง': a.RoomNumber || '-',
+          'รายการครุภัณฑ์': a.AssetName,
+          'หมวดหมู่': a.Category || '-',
+          'จำนวน': a.Quantity || 1,
+          'สถานะ': a.Status === 'Normal' ? 'ใช้งานปกติ' : (a.Status === 'Repair' ? 'ชำรุด/รอซ่อม' : (a.Status === 'Damaged' ? 'เสีย/รอจำหน่าย' : 'สูญหาย')),
+          'สภาพการใช้งาน': a.Condition || '-',
+          'หมายเหตุ': a.Remark || '-'
+        }));
+        this.renderTable([
+          'รหัส Asset', 'อาคาร', 'เลขห้อง', 'รายการครุภัณฑ์', 'หมวดหมู่', 'จำนวน', 'สถานะ', 'สภาพการใช้งาน', 'หมายเหตุ'
         ], this.currentReportData);
 
       } else if (type === 'history') {
@@ -142,7 +163,7 @@ const Reports = {
     }
 
     const headers = Object.keys(this.currentReportData[0]);
-    let csvContent = '\uFEFF'; // UTF-8 BOM สำหรับเปิดใน Microsoft Excel ได้อย่างถูกต้อง
+    let csvContent = '\uFEFF';
 
     csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\r\n';
 
@@ -152,11 +173,8 @@ const Reports = {
         if (val === null || val === undefined) val = '';
         let str = String(val);
         if (/^0\d+$/.test(str)) {
-          // เบอร์โทร/รหัสที่ขึ้นต้นด้วย 0: ใช้รูปแบบ ="..." เพื่อให้ Excel คงเลข 0 นำหน้าไว้ (ปลอดภัย เพราะเป็นตัวเลขล้วน)
           return `"=""${str}"""`;
         }
-        // กัน CSV/Formula injection เมื่อเปิดใน Excel (ค่าที่ขึ้นต้นด้วย = + - @)
-        // ยกเว้นเครื่องหมาย "-" ที่ใช้แทนค่าว่าง และตัวเลขติดลบ (ของเดิมใส่ ' นำหน้า "-" ทุกช่อง)
         if (str !== '-' && !/^-?\d+(\.\d+)?$/.test(str) && /^[=+\-@\t\r]/.test(str)) str = "'" + str;
         return `"${str.replace(/"/g, '""')}"`;
       }).join(',');

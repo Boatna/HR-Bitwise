@@ -187,6 +187,43 @@ const App = {
     return `<span class="badge-status ${s}"><i class="bi ${icon}"></i> ${this.escHtml(label)}</span>`;
   },
 
+  getAssetStatusBadge(status) {
+    let cls = 'badge-asset-normal';
+    let label = 'ใช้งานปกติ';
+    let icon = 'bi-check-circle-fill text-success';
+    switch (status) {
+      case 'Normal':
+        label = 'ใช้งานปกติ';
+        cls = 'badge-asset-normal';
+        icon = 'bi-check-circle-fill text-success';
+        break;
+      case 'Need Repair':
+      case 'Repair':
+        label = 'ชำรุด/รอซ่อม';
+        cls = 'badge-asset-repair';
+        icon = 'bi-tools text-warning';
+        break;
+      case 'Damaged':
+        label = 'เสีย/รอจำหน่าย';
+        cls = 'badge-asset-damaged';
+        icon = 'bi-exclamation-triangle-fill text-danger';
+        break;
+      case 'Lost':
+        label = 'สูญหาย';
+        cls = 'badge-asset-lost';
+        icon = 'bi-question-diamond-fill text-muted';
+        break;
+    }
+    return `<span class="badge ${cls} px-2 py-1"><i class="bi ${icon} me-1"></i>${this.escHtml(label)}</span>`;
+  },
+
+  getAcBadge(hasAirConditioner) {
+    if (hasAirConditioner !== false && String(hasAirConditioner).toLowerCase() !== 'no' && String(hasAirConditioner).toLowerCase() !== 'false') {
+      return `<span class="badge badge-ac px-2 py-1"><i class="bi bi-snow text-success"></i> ห้องแอร์</span>`;
+    }
+    return `<span class="badge badge-fan px-2 py-1"><i class="bi bi-wind text-secondary"></i> ห้องพัดลม</span>`;
+  },
+
   /**
    * จัดรูปแบบวันที่ DD/MM/YYYY
    */

@@ -10,7 +10,7 @@ function setupDormitoryDatabase() {
   const sheetDefs = {
     'Rooms': [
       'RoomID', 'BuildingID', 'Floor', 'RoomNumber', 'RoomType', 'Capacity',
-      'Gender', 'MonthlyRate', 'Status', 'Remark', 'CreatedAt', 'UpdatedAt'
+      'Gender', 'MonthlyRate', 'HasAirConditioner', 'Status', 'Remark', 'CreatedAt', 'UpdatedAt'
     ],
     'Employees': [
       'EmployeeID', 'Prefix', 'FirstName', 'LastName', 'FullName', 'Department',
@@ -27,6 +27,10 @@ function setupDormitoryDatabase() {
     'Parking': [
       'SlotID', 'SlotNumber', 'Zone', 'VehicleType', 'Status', 'EmployeeID',
       'RoomID', 'LicensePlate', 'VehicleModel', 'AssignedDate', 'Remark', 'CreatedAt', 'UpdatedAt'
+    ],
+    'Assets': [
+      'AssetID', 'RoomID', 'AssetName', 'AssetCode', 'Category', 'Quantity',
+      'Status', 'Condition', 'Remark', 'CreatedAt', 'UpdatedAt'
     ],
     'Settings': [
       'Key', 'Value'
@@ -62,7 +66,7 @@ function setupDormitoryDatabase() {
   try { ss.setSpreadsheetTimeZone('Asia/Bangkok'); } catch (e) {}
 
   // คอลัมน์ที่ต้องเก็บเป็นข้อความ (กันเลข 0 นำหน้าของเบอร์โทร/รหัสหาย)
-  const textColumns = ['EmployeeID', 'Phone', 'LicensePlate', 'RoomNumber', 'SlotNumber', 'BuildingCode'];
+  const textColumns = ['EmployeeID', 'Phone', 'LicensePlate', 'RoomNumber', 'SlotNumber', 'BuildingCode', 'AssetID', 'AssetCode'];
 
   const tabColors = {
     'Rooms': '#2563eb',
@@ -70,6 +74,7 @@ function setupDormitoryDatabase() {
     'Occupancy': '#16a34a',
     'Buildings': '#4f46e5',
     'Parking': '#d97706',
+    'Assets': '#7c3aed',
     'Settings': '#475569',
     'AuditLog': '#64748b'
   };
@@ -113,11 +118,12 @@ function setupDormitoryDatabase() {
   });
 
   const doneMsg = 'สร้างฐานข้อมูลหอพักพนักงานสำเร็จ 100%!\n\n' +
-    'สร้างแผ่นงานครบทั้ง 7 ตาราง (ตั้งเขตเวลา Asia/Bangkok ให้แล้ว):\n' +
-    '• Rooms (8 ห้อง ตัวอย่างครบ 4 สถานะ: ว่าง / ว่างบางส่วน / เต็ม / ปิดซ่อม)\n' +
+    'สร้างแผ่นงานครบทั้ง 8 ตาราง (ตั้งเขตเวลา Asia/Bangkok ให้แล้ว):\n' +
+    '• Rooms (8 ห้อง ตัวอย่างห้องแอร์ และห้องพัดลม)\n' +
     '• Employees (8 คน ทั้งที่มีห้องและยังไม่มีห้องพัก)\n' +
     '• Occupancy (รายการเข้าพักจริง เชื่อมต่อห้องและเตียง)\n' +
-    '• Parking (9 ช่องจอด ทั้งรถยนต์และมอเตอร์ไซค์ พร้อมผู้จอง/ทะเบียน/ห้องพัก)\n' +
+    '• Parking (9 ช่องจอด รองรับทั้งพนักงานพักหอ และพนักงานทั่วไป)\n' +
+    '• Assets (ครุภัณฑ์และเฟอร์นิเจอร์ประจำห้องพัก)\n' +
     '• Buildings (อาคารหอพัก)\n' +
     '• Settings (การตั้งค่าระบบ)\n' +
     '• AuditLog (บันทึกประวัติการทำงาน)\n\n' +
@@ -137,16 +143,16 @@ function seedSampleData_(ss) {
     ['BLD-B', 'B', 'หอพักพนักงานหญิง (อาคาร B)', 'โซนโรงงาน 1', 2, 'Active', 'หอพักหญิง 2 ชั้น', now, now]
   ]);
 
-  ss.getSheetByName('Rooms').getRange(2, 1, 8, 12).setValues([
-    ['ROOM-A101', 'BLD-A', '1', 'A-101', 'Double', 2, 'Male', 1500, 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด', now, now],
-    ['ROOM-A102', 'BLD-A', '1', 'A-102', 'Double', 2, 'Male', 1500, 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด', now, now],
-    ['ROOM-A201', 'BLD-A', '2', 'A-201', 'Double', 2, 'Male', 1500, 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด', now, now],
-    ['ROOM-A202', 'BLD-A', '2', 'A-202', 'Double', 2, 'Male', 1500, 'Maintenance', 'ห้องอยู่ระหว่างทาสีและปรับปรุงแอร์', now, now],
-    // อาคาร B (หญิง)
-    ['ROOM-B101', 'BLD-B', '1', 'B-101', 'Double', 2, 'Female', 1500, 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด', now, now],
-    ['ROOM-B102', 'BLD-B', '1', 'B-102', 'Single', 1, 'Female', 2000, 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด', now, now],
-    ['ROOM-B201', 'BLD-B', '2', 'B-201', 'Double', 2, 'Female', 1500, 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด', now, now],
-    ['ROOM-B202', 'BLD-B', '2', 'B-202', 'Double', 2, 'Female', 1500, 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด', now, now]
+  ss.getSheetByName('Rooms').getRange(2, 1, 8, 13).setValues([
+    ['ROOM-A101', 'BLD-A', '1', 'A-101', 'Double', 2, 'Male', 1500, 'Yes', 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด (ห้องแอร์)', now, now],
+    ['ROOM-A102', 'BLD-A', '1', 'A-102', 'Double', 2, 'Male', 1500, 'Yes', 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด (ห้องแอร์)', now, now],
+    ['ROOM-A201', 'BLD-A', '2', 'A-201', 'Double', 2, 'Male', 1500, 'Yes', 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด (ห้องแอร์)', now, now],
+    ['ROOM-A202', 'BLD-A', '2', 'A-202', 'Double', 2, 'Male', 1500, 'Yes', 'Maintenance', 'ห้องอยู่ระหว่างทาสีและปรับปรุงแอร์', now, now],
+    // อาคาร B (หญิง): ตัวอย่างห้อง B-101 เป็นห้องพัดลม (ไม่มีเครื่องปรับอากาศ)
+    ['ROOM-B101', 'BLD-B', '1', 'B-101', 'Double', 2, 'Female', 1200, 'No', 'Active', 'ห้องพัดลม (ไม่มีเครื่องปรับอากาศ) มีพัดลมติดผนัง 2 ตัว', now, now],
+    ['ROOM-B102', 'BLD-B', '1', 'B-102', 'Single', 1, 'Female', 2000, 'Yes', 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด (ห้องแอร์)', now, now],
+    ['ROOM-B201', 'BLD-B', '2', 'B-201', 'Double', 2, 'Female', 1500, 'Yes', 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด (ห้องแอร์)', now, now],
+    ['ROOM-B202', 'BLD-B', '2', 'B-202', 'Double', 2, 'Female', 1500, 'Yes', 'Active', 'เฟอร์นิเจอร์มาตรฐานครบชุด (ห้องแอร์)', now, now]
   ]);
 
   ss.getSheetByName('Employees').getRange(2, 1, 8, 13).setValues([
@@ -176,15 +182,28 @@ function seedSampleData_(ss) {
   ]);
 
   ss.getSheetByName('Parking').getRange(2, 1, 9, 13).setValues([
-    ['PARK-001', 'P-01', 'โซนอาคาร A', 'Car', 'Occupied', 'EMP-0001', 'ROOM-A101', '1กข-5678 กทม.', 'Toyota Yaris (สีขาว)', today, 'จองพร้อมเข้าพัก', now, now],
-    ['PARK-002', 'P-02', 'โซนอาคาร B', 'Car', 'Occupied', 'EMP-0004', 'ROOM-B201', '2ขค-9988 กทม.', 'Honda City (สีดำ)', today, 'จองพร้อมเข้าพัก', now, now],
-    ['PARK-003', 'P-03', 'โซนอาคาร A', 'Car', 'Available', '', '', '', '', '', 'ช่องจอดรถยนต์ว่าง', now, now],
+    ['PARK-001', 'P-01', 'โซนอาคาร A', 'Car', 'Occupied', 'EMP-0001', 'ROOM-A101', '1กข-5678 กทม.', 'Toyota Yaris (สีขาว)', today, 'จองพร้อมเข้าพักหอพัก', now, now],
+    ['PARK-002', 'P-02', 'โซนอาคาร B', 'Car', 'Occupied', 'EMP-0004', 'ROOM-B201', '2ขค-9988 กทม.', 'Honda City (สีดำ)', today, 'จองพร้อมเข้าพักหอพัก', now, now],
+    ['PARK-003', 'P-03', 'โซนพนักงานทั่วไป', 'Car', 'Occupied', 'EMP-0008', 'NON_RESIDENT', '5กง-7890 กทม.', 'Mazda 2 (สีแดง)', today, 'พนักงานทั่วไป (ไม่ได้พักหอพัก) จองที่จอดรถปกติ', now, now],
     ['PARK-004', 'P-04', 'โซนอาคาร A', 'Car', 'Available', '', '', '', '', '', 'ช่องจอดรถยนต์ว่าง', now, now],
     ['PARK-005', 'P-05', 'โซนลานจอดกลาง', 'Car', 'Maintenance', '', '', '', '', '', 'ปิดปรับปรุงตีเส้นช่องจอด', now, now],
-    ['PARK-006', 'M-01', 'โซนอาคาร A', 'Motorcycle', 'Occupied', 'EMP-0002', 'ROOM-A201', '3กง-4455 นนทบุรี', 'Yamaha Grand Filano (สีฟ้า)', today, 'จองพร้อมเข้าพัก', now, now],
-    ['PARK-007', 'M-02', 'โซนอาคาร B', 'Motorcycle', 'Occupied', 'EMP-0003', 'ROOM-B101', '9กง-1234 กทม.', 'Honda Wave 110i (สีแดง)', today, 'จองพร้อมเข้าพัก', now, now],
+    ['PARK-006', 'M-01', 'โซนอาคาร A', 'Motorcycle', 'Occupied', 'EMP-0002', 'ROOM-A201', '3กง-4455 นนทบุรี', 'Yamaha Grand Filano (สีฟ้า)', today, 'จองพร้อมเข้าพักหอพัก', now, now],
+    ['PARK-007', 'M-02', 'โซนอาคาร B', 'Motorcycle', 'Occupied', 'EMP-0003', 'ROOM-B101', '9กง-1234 กทม.', 'Honda Wave 110i (สีแดง)', today, 'จองพร้อมเข้าพักหอพัก', now, now],
     ['PARK-008', 'M-03', 'โซนอาคาร B', 'Motorcycle', 'Available', '', '', '', '', '', 'ช่องจอดมอเตอร์ไซค์ว่าง', now, now],
     ['PARK-009', 'M-04', 'โซนอาคาร B', 'Motorcycle', 'Available', '', '', '', '', '', 'ช่องจอดมอเตอร์ไซค์ว่าง', now, now]
+  ]);
+
+  ss.getSheetByName('Assets').getRange(2, 1, 10, 11).setValues([
+    ['AST-0001', 'ROOM-A101', 'เครื่องปรับอากาศ', 'AC-A101', 'เครื่องใช้ไฟฟ้า', 1, 'Normal', 'สภาพดี 95%', 'Daikin Inverter 12000 BTU ล้างแอร์ล่าสุด ม.ค.', now, now],
+    ['AST-0002', 'ROOM-A101', 'เตียงนอนเดี่ยว 3.5 ฟุต', 'BED-A101-1', 'เฟอร์นิเจอร์', 2, 'Normal', 'สภาพดี', 'โครงเหล็กมาตรฐาน 2 เตียง', now, now],
+    ['AST-0003', 'ROOM-A101', 'ตู้เสื้อผ้าไม้ 2 บาน', 'WD-A101', 'เฟอร์นิเจอร์', 2, 'Normal', 'สภาพดี', 'พร้อมกุญแจล็อค', now, now],
+    ['AST-0004', 'ROOM-A101', 'โต๊ะทำงานพร้อมเก้าอี้', 'DSK-A101', 'เฟอร์นิเจอร์', 2, 'Normal', 'สภาพดี', 'ชุดโต๊ะเก้าอี้ประจำห้อง', now, now],
+    ['AST-0005', 'ROOM-B101', 'พัดลมติดผนัง 16 นิ้ว', 'FAN-B101', 'เครื่องใช้ไฟฟ้า', 2, 'Normal', 'สภาพดี (ห้องพัดลม ไม่มีแอร์)', 'Hatari รีโมทคอนโทรล 2 เครื่อง', now, now],
+    ['AST-0006', 'ROOM-B101', 'เตียงนอนเดี่ยว 3.5 ฟุต', 'BED-B101-1', 'เฟอร์นิเจอร์', 2, 'Normal', 'สภาพดี', 'โครงเหล็กมาตรฐาน', now, now],
+    ['AST-0007', 'ROOM-B101', 'ตู้เสื้อผ้าไม้ 2 บาน', 'WD-B101', 'เฟอร์นิเจอร์', 2, 'Normal', 'สภาพดี', 'พร้อมกุญแจ', now, now],
+    ['AST-0008', 'ROOM-A202', 'เครื่องปรับอากาศ', 'AC-A202', 'เครื่องใช้ไฟฟ้า', 1, 'Repair', 'คอมเพรสเซอร์มีเสียงดัง', 'รอช่างเข้ามาตรวจสอบเปลี่ยนอะไหล่', now, now],
+    ['AST-0009', 'ROOM-B102', 'เครื่องปรับอากาศ', 'AC-B102', 'เครื่องใช้ไฟฟ้า', 1, 'Normal', 'สภาพดีมาก', 'Mitsubishi 9000 BTU', now, now],
+    ['AST-0010', 'ROOM-B102', 'ตู้เย็นมินิบาร์ 1.7 คิว', 'REF-B102', 'เครื่องใช้ไฟฟ้า', 1, 'Normal', 'สภาพดี', 'ห้อง Single สวัสดิการพิเศษ', now, now]
   ]);
 
   ss.getSheetByName('Settings').getRange(2, 1, 5, 2).setValues([

@@ -4,6 +4,8 @@ const Admin = {
   cachedRooms: [],
   cachedBuildings: [],
   cachedOccupancy: [],
+  cachedParking: [],
+  cachedAssets: [],
 
   init() {
     this.bindEvents();
@@ -44,7 +46,7 @@ const Admin = {
     if (tab) {
       if (document.getElementById('tab-' + tab)) this.currentTab = tab;
     }
-    // ล้างพารามิเตอร์ออกจาก URL กันการรีเฟรชแล้วป๊อปอัปเด้งซ้ำ
+
     if (window.location.search) {
       window.history.replaceState(null, '', window.location.pathname);
     }
@@ -93,6 +95,9 @@ const Admin = {
       case 'rooms':
         this.loadRooms();
         break;
+      case 'assets':
+        this.loadAssets();
+        break;
       case 'employees':
         this.loadEmployees();
         break;
@@ -111,7 +116,6 @@ const Admin = {
     }
   },
 
-  // ===================== 1. จัดการการเข้าพัก (Occupancy) =====================
   async loadOccupancy() {
     const tableBody = document.getElementById('occupancy-table-body');
     if (tableBody) tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังโหลดข้อมูลการเข้าพัก...</td></tr>';
@@ -189,7 +193,6 @@ const Admin = {
     `).join('');
   },
 
-  // ===================== 2. ข้อมูลห้องพัก (Rooms) =====================
   async loadRooms() {
     const tableBody = document.getElementById('rooms-table-body');
     if (tableBody) tableBody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังโหลดข้อมูลห้องพัก...</td></tr>';
@@ -217,6 +220,7 @@ const Admin = {
             <td>${App.escHtml(r.buildingName)}</td>
             <td>ชั้น ${App.escHtml(r.floorId || '1')}</td>
             <td><span class="badge bg-light text-dark">${App.escHtml(r.roomType)}</span></td>
+            <td>${App.getAcBadge(r.hasAirConditioner)}</td>
             <td>${App.escHtml(r.capacity)} คน</td>
             <td>
               <span class="fw-bold">${r.occupiedBedsCount}</span> / ${r.capacity} คน
@@ -224,6 +228,9 @@ const Admin = {
             </td>
             <td>${App.getStatusBadge(r.computedStatus)}</td>
             <td>
+              <button class="btn btn-sm btn-outline-info me-1" onclick="Admin.viewRoomAssets('${App.escAttr(r.roomId)}', '${App.escAttr(r.roomNumber)}')" title="ดู Asset ประจำห้อง">
+                <i class="bi bi-box-seam"></i> Asset
+              </button>
               <button class="btn btn-sm ${isMaint ? 'btn-outline-success' : 'btn-outline-warning'} me-1" onclick="Admin.toggleRoomMaintenance('${App.escAttr(r.roomId)}', '${App.escAttr(r.roomNumber)}', ${isMaint})" title="${isMaint ? 'เปิดห้องใช้งาน' : 'ปิดปรับปรุง'}">
                 <i class="bi ${isMaint ? 'bi-check-circle' : 'bi-cone-striped'}"></i> ${isMaint ? 'เปิดใช้' : 'ปิดซ่อม'}
               </button>
@@ -287,6 +294,10 @@ const Admin = {
     document.getElementById('room-capacity').value = room ? room.capacity : '2';
     document.getElementById('room-rate').value = room ? (room.monthlyRate || 0) : '1500';
     document.getElementById('room-remark').value = room ? (room.remark || '') : 'เฟอร์นิเจอร์มาตรฐานครบชุด';
+    const hasAc = room ? (room.hasAirConditioner !== false && String(room.hasAirConditioner).toLowerCase() !== 'no') : true;
+    if (document.getElementById('room-has-ac')) {
+      document.getElementById('room-has-ac').value = hasAc ? 'Yes' : 'No';
+    }
 
     const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('roomModal'));
     modal.show();
@@ -306,6 +317,7 @@ const Admin = {
     const roomType = document.getElementById('room-type')?.value;
     const capacity = document.getElementById('room-capacity')?.value;
     const monthlyRate = document.getElementById('room-rate')?.value;
+    const hasAirConditioner = document.getElementById('room-has-ac')?.value || 'Yes';
     const remark = document.getElementById('room-remark')?.value;
 
     if (!buildingId || !roomNumber || !capacity) {
@@ -321,6 +333,7 @@ const Admin = {
         roomNumber,
         floor,
         roomType,
+        hasAirConditioner,
         capacity: Number(capacity),
         monthlyRate: Number(monthlyRate) || 0,
         remark
@@ -351,7 +364,6 @@ const Admin = {
     }
   },
 
-  // ===================== 3. ข้อมูลพนักงาน (Employees) =====================
   async loadEmployees() {
     const tableBody = document.getElementById('employees-table-body');
     if (tableBody) tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังโหลดรายชื่อพนักงาน...</td></tr>';
@@ -507,7 +519,6 @@ const Admin = {
     }
   },
 
-  // ===================== 4. ข้อมูลอาคาร (Buildings) =====================
   async loadBuildings() {
     const container = document.getElementById('buildings-list-container');
     if (container) container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
@@ -599,7 +610,6 @@ const Admin = {
     }
   },
 
-  // ===================== 6. ที่จอดรถ (Parking) =====================
   cachedParking: [],
   _assignEmployeeMap: {},
 
@@ -640,9 +650,12 @@ const Admin = {
     const kw = (document.getElementById('search-parking')?.value || '').trim().toLowerCase();
     const type = document.getElementById('filter-parking-type')?.value || '';
     const st = document.getElementById('filter-parking-status')?.value || '';
+    const userType = document.getElementById('filter-parking-user-type')?.value || '';
     const rows = this.cachedParking.filter(p => {
       if (type && p.VehicleType !== type) return false;
       if (st && p.Status !== st) return false;
+      if (userType === 'resident' && !p.isResident) return false;
+      if (userType === 'general' && (p.isResident || p.Status !== 'Occupied')) return false;
       if (!kw) return true;
       return [p.SlotNumber, p.Zone, p.LicensePlate, p.VehicleModel, p.EmployeeID, p.ownerName, p.roomNumber, p.buildingName]
         .some(v => String(v || '').toLowerCase().includes(kw));
@@ -675,11 +688,14 @@ const Admin = {
           <td><i class="bi ${moto ? 'bi-bicycle' : 'bi-car-front-fill'} me-1 text-secondary"></i>${App.escHtml(App.vehicleLabel(p.VehicleType))}</td>
           <td>${App.getStatusBadge(p.Status === 'Maintenance' ? 'Maintenance' : (occ ? 'Occupied' : 'Available'))}</td>
           <td>${occ ? `
-            <div class="fw-semibold text-dark">${App.escHtml(p.ownerName)}</div>
+            <div class="fw-semibold text-dark">
+              ${App.escHtml(p.ownerName)}
+              ${p.isResident ? '<span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7 ms-1">พักหอ</span>' : '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle fs-7 ms-1">ทั่วไป</span>'}
+            </div>
             <small class="text-muted">${App.escHtml(p.EmployeeID)} | ${App.escHtml(p.ownerDepartment || '-')} | โทร: ${App.escHtml(p.ownerPhone || '-')}</small>
             ${p.needsReview ? '<div class="small text-warning fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>ผู้จองไม่ได้พักอยู่แล้ว ควรคืนช่อง</div>' : ''}
           ` : '<span class="text-muted">-</span>'}</td>
-          <td>${occ ? `<strong>ห้อง ${App.escHtml(p.roomNumber || '-')}</strong><div class="small text-muted">${App.escHtml(p.buildingName || '')}</div>` : '<span class="text-muted">-</span>'}</td>
+          <td>${occ ? (p.isResident ? `<strong>ห้อง ${App.escHtml(p.roomNumber || '-')}</strong><div class="small text-muted">${App.escHtml(p.buildingName || '')}</div>` : `<span class="badge badge-non-resident px-2 py-1"><i class="bi bi-person me-1"></i>พนักงานทั่วไป</span><div class="small text-muted">ไม่ได้พักหอพัก</div>`) : '<span class="text-muted">-</span>'}</td>
           <td>${occ ? `<div class="fw-semibold">${App.escHtml(p.LicensePlate || '-')}</div><small class="text-muted">${App.escHtml(p.VehicleModel || '')}</small>` : '<span class="text-muted">-</span>'}</td>
           <td>${occ ? App.formatDate(p.AssignedDate) : '-'}</td>
           <td class="text-nowrap">
@@ -756,9 +772,9 @@ const Admin = {
       App.closeLoading();
 
       this._assignEmployeeMap = {};
-      const resident = emps.filter(e => e.isAccommodated);
-      document.getElementById('ap-employee-list').innerHTML = resident.map(e => {
-        const label = `${e.EmployeeID} - ${e.FullName} (ห้อง ${e.currentRoomNumber})`;
+      document.getElementById('ap-employee-list').innerHTML = emps.map(e => {
+        const tag = e.isAccommodated ? `[พักหอ: ห้อง ${e.currentRoomNumber}]` : '[พนักงานทั่วไป (ไม่ได้พักหอ)]';
+        const label = `${e.EmployeeID} - ${e.FullName} ${tag}`;
         this._assignEmployeeMap[label] = e;
         this._assignEmployeeMap[String(e.EmployeeID).trim()] = e;
         return `<option value="${App.escHtml(label)}"></option>`;
@@ -794,7 +810,13 @@ const Admin = {
     const empIdEl = document.getElementById('ap-employee-id');
     const roomInfoEl = document.getElementById('ap-room-info');
     if (empIdEl) empIdEl.value = emp ? emp.EmployeeID : '';
-    if (roomInfoEl) roomInfoEl.value = emp ? `ห้อง ${emp.currentRoomNumber}` : '';
+    if (roomInfoEl) {
+      if (emp) {
+        roomInfoEl.value = emp.isAccommodated ? `ห้อง ${emp.currentRoomNumber} (ผู้พักในหอพัก)` : 'พนักงานทั่วไป (ไม่ได้พักหอพัก)';
+      } else {
+        roomInfoEl.value = '';
+      }
+    }
   },
 
   async submitAssignParking() {
@@ -915,6 +937,244 @@ const Admin = {
     } catch (e) {
       App.closeLoading();
       App.showError('บันทึกการตั้งค่าไม่สำเร็จ', e.message);
+    }
+  },
+
+  // ===================== 6. จัดการ Asset ครุภัณฑ์ห้องพัก (Room Assets) =====================
+  async loadAssets() {
+    const tableBody = document.getElementById('assets-table-body');
+    if (tableBody) tableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังโหลดข้อมูลครุภัณฑ์...</td></tr>';
+
+    try {
+      const [assets, rooms, buildings] = await Promise.all([
+        API.getRoomAssets(),
+        API.getRooms(),
+        API.getBuildings()
+      ]);
+      this.cachedAssets = assets || [];
+      this.cachedRooms = rooms || [];
+      this.cachedBuildings = buildings || [];
+
+      // เติมตัวเลือกห้องพักในตัวกรอง Asset
+      const filterRoom = document.getElementById('filter-asset-room');
+      if (filterRoom) {
+        const curVal = filterRoom.value;
+        filterRoom.innerHTML = '<option value="">ทุกห้องพัก</option>' +
+          (rooms || []).map(r => `<option value="${App.escAttr(r.roomId)}">ห้อง ${App.escHtml(r.roomNumber)} (${App.escHtml(r.buildingName)})</option>`).join('');
+        filterRoom.value = curVal;
+      }
+
+      this.renderAssetSummary();
+      this.filterAssets();
+    } catch (e) {
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">${App.escHtml(e.message)}</td></tr>`;
+    }
+  },
+
+  renderAssetSummary() {
+    const list = this.cachedAssets || [];
+    const totalEl = document.getElementById('asset-kpi-total');
+    const normalEl = document.getElementById('asset-kpi-normal');
+    const repairEl = document.getElementById('asset-kpi-repair');
+    const lostEl = document.getElementById('asset-kpi-lost');
+
+    if (totalEl) totalEl.textContent = list.length;
+    if (normalEl) normalEl.textContent = list.filter(a => a.Status === 'Normal').length;
+    if (repairEl) repairEl.textContent = list.filter(a => a.Status === 'Repair' || a.Status === 'Need Repair').length;
+    if (lostEl) lostEl.textContent = list.filter(a => a.Status === 'Damaged' || a.Status === 'Lost').length;
+  },
+
+  filterAssets() {
+    const kw = (document.getElementById('search-assets')?.value || '').trim().toLowerCase();
+    const roomId = document.getElementById('filter-asset-room')?.value || '';
+    const category = document.getElementById('filter-asset-category')?.value || '';
+    const status = document.getElementById('filter-asset-status')?.value || '';
+
+    const rows = (this.cachedAssets || []).filter(a => {
+      if (roomId && String(a.RoomID) !== String(roomId)) return false;
+      if (category && a.Category !== category) return false;
+      if (status && a.Status !== status) return false;
+      if (!kw) return true;
+      return [a.AssetID, a.AssetCode, a.AssetName, a.RoomNumber, a.BuildingName, a.Condition, a.Remark]
+        .some(v => String(v || '').toLowerCase().includes(kw));
+    });
+    this.renderAssetTable(rows);
+  },
+
+  renderAssetTable(rows) {
+    const tableBody = document.getElementById('assets-table-body');
+    if (!tableBody) return;
+    if (!rows || rows.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">ไม่พบรายการครุภัณฑ์ที่ค้นหา</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = rows.map(a => {
+      const astId = App.escAttr(a.AssetID);
+      const astName = App.escAttr(a.AssetName);
+      return `
+        <tr>
+          <td>
+            <strong class="text-purple">${App.escHtml(a.AssetCode || a.AssetID)}</strong>
+            <div class="text-muted fs-7">${App.escHtml(a.AssetID)}</div>
+          </td>
+          <td>
+            <strong class="text-dark">ห้อง ${App.escHtml(a.RoomNumber || '-')}</strong>
+            <div class="small text-muted">${App.escHtml(a.BuildingName || '')}</div>
+          </td>
+          <td>
+            <div class="fw-semibold text-dark">${App.escHtml(a.AssetName)}</div>
+          </td>
+          <td><span class="badge bg-light text-dark border">${App.escHtml(a.Category || 'เฟอร์นิเจอร์')}</span></td>
+          <td><span class="badge bg-secondary-subtle text-secondary">${App.escHtml(a.Quantity || 1)}</span></td>
+          <td>
+            <div>${App.getAssetStatusBadge(a.Status)}</div>
+            ${a.Condition ? `<small class="text-muted d-block mt-1">${App.escHtml(a.Condition)}</small>` : ''}
+          </td>
+          <td><small class="text-muted">${App.escHtml(a.Remark || '-')}</small></td>
+          <td class="text-nowrap">
+            <button class="btn btn-sm btn-outline-secondary me-1" onclick="Admin.openAssetModal('${astId}')" title="แก้ไข">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="Admin.deleteAsset('${astId}', '${astName}')" title="ลบ">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  viewRoomAssets(roomId, roomNumber) {
+    this.switchTab('assets');
+    setTimeout(() => {
+      const filterRoom = document.getElementById('filter-asset-room');
+      if (filterRoom) {
+        filterRoom.value = roomId;
+        this.filterAssets();
+      }
+    }, 200);
+  },
+
+  async openAssetModal(assetId = null) {
+    let asset = null;
+    if (assetId) {
+      asset = (this.cachedAssets || []).find(a => this._idEquals(a.AssetID, assetId));
+    }
+
+    if (!this.cachedRooms || this.cachedRooms.length === 0) {
+      try {
+        this.cachedRooms = await API.getRooms();
+      } catch (err) {}
+    }
+
+    const roomSelect = document.getElementById('ast-room-id');
+    if (roomSelect) {
+      roomSelect.innerHTML = '<option value="">-- เลือกห้องพัก --</option>' +
+        (this.cachedRooms || []).map(r => `<option value="${App.escAttr(r.roomId)}">ห้อง ${App.escHtml(r.roomNumber)} (${App.escHtml(r.buildingName)})</option>`).join('');
+      if (asset && asset.RoomID) {
+        roomSelect.value = String(asset.RoomID);
+      }
+    }
+
+    document.getElementById('ast-id').value = asset ? asset.AssetID : '';
+    document.getElementById('ast-name').value = asset ? asset.AssetName : '';
+    document.getElementById('ast-code').value = asset ? (asset.AssetCode || '') : '';
+    document.getElementById('ast-category').value = asset ? (asset.Category || 'เฟอร์นิเจอร์') : 'เฟอร์นิเจอร์';
+    document.getElementById('ast-quantity').value = asset ? (asset.Quantity || 1) : '1';
+    document.getElementById('ast-status').value = asset ? (asset.Status || 'Normal') : 'Normal';
+    document.getElementById('ast-condition').value = asset ? (asset.Condition || 'สภาพดี') : 'สภาพดี';
+    document.getElementById('ast-remark').value = asset ? (asset.Remark || '') : '';
+
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('assetModal'));
+    modal.show();
+  },
+
+  async saveAsset() {
+    const assetId = document.getElementById('ast-id')?.value;
+    const roomId = document.getElementById('ast-room-id')?.value;
+    const assetName = document.getElementById('ast-name')?.value?.trim();
+    const assetCode = document.getElementById('ast-code')?.value?.trim();
+    const category = document.getElementById('ast-category')?.value;
+    const quantity = document.getElementById('ast-quantity')?.value;
+    const status = document.getElementById('ast-status')?.value;
+    const condition = document.getElementById('ast-condition')?.value?.trim();
+    const remark = document.getElementById('ast-remark')?.value?.trim();
+
+    if (!roomId || !assetName) {
+      App.showError('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกห้องพักและกรอกชื่อครุภัณฑ์');
+      return;
+    }
+
+    try {
+      App.showLoading('กำลังบันทึกข้อมูลครุภัณฑ์...');
+      await API.saveAsset({
+        assetId,
+        roomId,
+        assetName,
+        assetCode,
+        category,
+        quantity: Number(quantity) || 1,
+        status,
+        condition,
+        remark
+      });
+      App.closeLoading();
+      bootstrap.Modal.getInstance(document.getElementById('assetModal'))?.hide();
+      App.showToast('บันทึกข้อมูลครุภัณฑ์สำเร็จ', 'success');
+      this.loadAssets();
+    } catch (e) {
+      App.closeLoading();
+      App.showError('บันทึกไม่สำเร็จ', e.message);
+    }
+  },
+
+  async deleteAsset(assetId, assetName) {
+    const ok = await App.confirm('ยืนยันการลบครุภัณฑ์', `ต้องการลบรายการ "${assetName}" ใช่หรือไม่?`);
+    if (!ok) return;
+
+    try {
+      App.showLoading('กำลังลบครุภัณฑ์...');
+      await API.deleteAsset(assetId);
+      App.closeLoading();
+      App.showToast('ลบรายการครุภัณฑ์สำเร็จ', 'success');
+      this.loadAssets();
+    } catch (e) {
+      App.closeLoading();
+      App.showError('ลบไม่สำเร็จ', e.message);
+    }
+  },
+
+  async openBatchAssetModal() {
+    if (!this.cachedRooms || this.cachedRooms.length === 0) {
+      try {
+        this.cachedRooms = await API.getRooms();
+      } catch (err) {}
+    }
+    const selectEl = document.getElementById('batch-ast-room-id');
+    if (selectEl) {
+      selectEl.innerHTML = '<option value="">-- เลือกห้องพักที่ต้องการใส่ชุดครุภัณฑ์มาตรฐาน --</option>' +
+        (this.cachedRooms || []).map(r => `<option value="${App.escAttr(r.roomId)}">ห้อง ${App.escHtml(r.roomNumber)} (${App.escHtml(r.buildingName)} - ${r.hasAirConditioner ? 'ห้องแอร์' : 'ห้องพัดลม'})</option>`).join('');
+    }
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('batchAssetModal')).show();
+  },
+
+  async submitBatchAsset() {
+    const roomId = document.getElementById('batch-ast-room-id')?.value;
+    if (!roomId) {
+      App.showError('กรุณาเลือกห้องพัก');
+      return;
+    }
+    try {
+      App.showLoading('กำลังสร้างชุดครุภัณฑ์มาตรฐาน...');
+      const res = await API.addDefaultAssetsForRoom(roomId);
+      App.closeLoading();
+      bootstrap.Modal.getInstance(document.getElementById('batchAssetModal'))?.hide();
+      App.showToast(`สร้างชุดครุภัณฑ์มาตรฐานสำเร็จ (${res.count || 6} รายการ)`, 'success');
+      this.loadAssets();
+    } catch (e) {
+      App.closeLoading();
+      App.showError('สร้างไม่สำเร็จ', e.message);
     }
   }
 };

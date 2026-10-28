@@ -80,12 +80,15 @@ function applyFilterAndRender() {
   const bldVal = document.getElementById('filter-building')?.value || '';
   const statusVal = document.getElementById('filter-status')?.value || '';
   const typeVal = document.getElementById('filter-type')?.value || '';
+  const acVal = document.getElementById('filter-ac')?.value || '';
   const searchVal = (document.getElementById('search-room')?.value || '').trim().toLowerCase();
 
   const filtered = allRooms.filter(room => {
     if (bldVal && String(room.buildingId) !== bldVal) return false;
     if (statusVal && room.computedStatus !== statusVal) return false;
     if (typeVal && room.roomType !== typeVal) return false;
+    if (acVal === 'Yes' && (room.hasAirConditioner === false || String(room.hasAirConditioner).toLowerCase() === 'no')) return false;
+    if (acVal === 'No' && (room.hasAirConditioner !== false && String(room.hasAirConditioner).toLowerCase() !== 'no')) return false;
 
     if (searchVal) {
       const matchRoom = App.lc(room.roomNumber).includes(searchVal);
@@ -195,6 +198,7 @@ function renderRooms(rooms) {
               <div class="card-body p-3 pt-2">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <small class="text-muted">${App.escHtml(room.roomType || 'Standard')}</small>
+                  ${App.getAcBadge(room.hasAirConditioner)}
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -246,12 +250,54 @@ function showRoomDetails(roomId) {
   document.getElementById('modal-capacity').textContent = `${room.occupiedBedsCount} / ${room.capacity} คน (ว่าง ${room.availableBedsCount} ที่)`;
   document.getElementById('modal-rate').textContent = room.monthlyRate ? `${Number(room.monthlyRate).toLocaleString()} บาท/เดือน` : 'ฟรี/สวัสดิการ';
   
-  // ทุกห้องมีเฟอร์นิเจอร์มาตรฐานครบชุดเหมือนกันหมด
+  // แสดงข้อมูลสิ่งอำนวยความสะดวกและระบบปรับอากาศ
+  const hasAc = room.hasAirConditioner !== false && String(room.hasAirConditioner).toLowerCase() !== 'no';
   document.getElementById('modal-facilities').innerHTML = `
-    <span class="badge bg-primary-subtle text-primary me-1 py-1 px-2 mb-1"><i class="bi bi-box-seam me-1"></i>เฟอร์นิเจอร์มาตรฐานครบชุด (เตียงนอน, ที่นอน, ตู้เสื้อผ้า, โต๊ะทำงาน, เก้าอี้)</span>
-    <span class="badge bg-success-subtle text-success me-1 py-1 px-2 mb-1"><i class="bi bi-snow me-1"></i>เครื่องปรับอากาศ</span>
-    <span class="badge bg-light text-muted py-1 px-2 mb-1"><i class="bi bi-shield-check me-1"></i>มาตรฐานเดียวกันทุกห้อง</span>
+    <span class="badge bg-primary-subtle text-primary me-1 py-1 px-2 mb-1"><i class="bi bi-box-seam me-1"></i>เฟอร์นิเจอร์มาตรฐาน (เตียง, ที่นอน, ตู้, โต๊ะ, เก้าอี้)</span>
+    ${hasAc
+      ? '<span class="badge bg-success-subtle text-success me-1 py-1 px-2 mb-1"><i class="bi bi-snow me-1"></i>เครื่องปรับอากาศ (ห้องแอร์)</span>'
+      : '<span class="badge bg-secondary-subtle text-secondary me-1 py-1 px-2 mb-1"><i class="bi bi-wind me-1"></i>พัดลม (ไม่มีเครื่องปรับอากาศ)</span>'}
   `;
+
+  // รายการครุภัณฑ์ประจำห้อง (Assets)
+  const assetsContainer = document.getElementById('modal-assets-list');
+  if (assetsContainer) {
+    assetsContainer.innerHTML = '<div class="text-muted small py-2"><div class="spinner-border spinner-border-sm me-1"></div>กำลังโหลดครุภัณฑ์ประจำห้อง...</div>';
+    API.getRoomAssets(room.roomId).then(assets => {
+      if (!assets || assets.length === 0) {
+        assetsContainer.innerHTML = '<div class="text-muted small py-2">ไม่มีรายการครุภัณฑ์ที่ลงทะเบียนไว้</div>';
+        return;
+      }
+      assetsContainer.innerHTML = `
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered align-middle mb-0 small">
+            <thead class="table-light">
+              <tr>
+                <th>ครุภัณฑ์</th>
+                <th>หมวดหมู่</th>
+                <th>จำนวน</th>
+                <th>สถานะ</th>
+                <th>หมายเหตุ / สภาพ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${assets.map(a => `
+                <tr>
+                  <td><strong>${App.escHtml(a.AssetName)}</strong> ${a.AssetCode ? `<span class="text-muted fs-7">(${App.escHtml(a.AssetCode)})</span>` : ''}</td>
+                  <td>${App.escHtml(a.Category || '-')}</td>
+                  <td>${App.escHtml(a.Quantity || 1)}</td>
+                  <td>${App.getAssetStatusBadge(a.Status)}</td>
+                  <td>${App.escHtml(a.Remark || a.Condition || '-')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }).catch(() => {
+      assetsContainer.innerHTML = '<div class="text-muted small py-2">ไม่สามารถโหลดรายการครุภัณฑ์ได้</div>';
+    });
+  }
 
   // รายชื่อผู้พักปัจจุบัน
   const occContainer = document.getElementById('modal-occupants-list');
@@ -372,7 +418,7 @@ async function toggleRoomMaintenanceFromModal(roomId) {
 
 document.addEventListener('DOMContentLoaded', () => {
   loadRoomsData();
-  ['filter-building', 'filter-status', 'filter-type'].forEach(id => {
+  ['filter-building', 'filter-status', 'filter-type', 'filter-ac'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', applyFilterAndRender);
   });
   document.getElementById('search-room')?.addEventListener('input', applyFilterAndRender);
