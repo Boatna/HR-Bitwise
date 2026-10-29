@@ -2,7 +2,8 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f2438">
   <title>ระบบตรวจเช็ครถโฟล์คลิฟท์ | Forklift Daily Inspection System</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -132,10 +133,11 @@
             <div class="v3bar">
               <button class="btn alt" onclick="v3zoom(-1.2)" aria-label="ซูมเข้า">+</button>
               <button class="btn alt" onclick="v3zoom(1.2)" aria-label="ซูมออก">−</button>
+              <button class="btn alt" id="btnLabels" onclick="toggleV3Labels()">🔢 ซ่อนเลข</button>
               <button class="btn alt" onclick="v3reset()">รีเซ็ตมุมมอง</button>
             </div>
             <div class="v3note">
-              ลากเมาส์/ทัชเพื่อหมุน 360° · เลื่อนลูกกลิ้งเพื่อซูม · แตะหมายเลขบนโมเดลเพื่อชี้จุดตรวจ
+              ลากเมาส์/ทัชเพื่อหมุน 360° · เลื่อนลูกกลิ้งเพื่อซูม · แตะหมายเลขบนโมเดลเพื่อชี้จุดตรวจ (กล้องจะเลื่อนไปที่ชิ้นส่วนนั้น)
             </div>
           </div>
 
@@ -160,6 +162,22 @@
 
           <!-- Progress Bar -->
           <div class="prog"><i id="pg"></i></div>
+
+          <!-- Part Viewer: แสดงชิ้นส่วนที่กำลังตรวจแบบ 3D แยกออกมา -->
+          <div class="partbox" id="partBox">
+            <div class="partbox-head">
+              <div class="partbox-title">
+                <small>🔍 ชิ้นส่วนที่กำลังตรวจ (3D)</small>
+                <b id="partName">-</b>
+                <span id="partCat" class="partbox-cat"></span>
+              </div>
+              <button type="button" class="btn alt" id="btnPartToggle" style="padding:4px 12px; font-size:12.5px;" onclick="togglePartBox()">ซ่อน</button>
+            </div>
+            <div class="partbox-stage" id="partStage">
+              <canvas id="cvPart" aria-label="แบบจำลอง 3 มิติของชิ้นส่วนที่กำลังตรวจ"></canvas>
+              <span class="partbox-hint">ลากเพื่อหมุน · เลื่อนล้อเมาส์เพื่อซูม · ดับเบิลคลิกเพื่อรีเซ็ต</span>
+            </div>
+          </div>
 
           <!-- 1. Focused Point View (Shows Focused Inspection Point + Matching Cleaning Task) -->
           <div id="boxFocusView"></div>
