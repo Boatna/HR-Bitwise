@@ -167,15 +167,20 @@
           <div class="partbox" id="partBox">
             <div class="partbox-head">
               <div class="partbox-title">
-                <small>🔍 ชิ้นส่วนที่กำลังตรวจ (3D)</small>
+                <small>🔍 ชิ้นส่วนที่กำลังตรวจ (รูปจริง)</small>
                 <b id="partName">-</b>
                 <span id="partCat" class="partbox-cat"></span>
               </div>
               <button type="button" class="btn alt" id="btnPartToggle" style="padding:4px 12px; font-size:12.5px;" onclick="togglePartBox()">ซ่อน</button>
             </div>
             <div class="partbox-stage" id="partStage">
-              <canvas id="cvPart" aria-label="แบบจำลอง 3 มิติของชิ้นส่วนที่กำลังตรวจ"></canvas>
-              <span class="partbox-hint">ลากเพื่อหมุน · เลื่อนล้อเมาส์เพื่อซูม · ดับเบิลคลิกเพื่อรีเซ็ต</span>
+              <img id="partImg" class="partbox-img hide" alt="รูปจริงของชิ้นส่วนที่กำลังตรวจ" onclick="openPartImage()">
+              <div id="partPlaceholder" class="partbox-ph">
+                <span style="font-size:34px;">📷</span>
+                <b>ยังไม่มีรูปจริงสำหรับจุดตรวจนี้</b>
+                <small id="partPhText">วางไฟล์รูปไว้ในโฟลเดอร์ asset</small>
+              </div>
+              <span class="partbox-hint" id="partHint">แตะรูปเพื่อขยายดู</span>
             </div>
           </div>
 
@@ -304,6 +309,15 @@
         <button class="btn alt" onclick="closeSettings()">ยกเลิก</button>
         <button class="btn" onclick="testAndSaveApi()">ทดสอบและบันทึก</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Lightbox: ขยายรูปจริงของจุดตรวจ -->
+  <div class="modal-overlay hide" id="imgModal" onclick="closePartImage()">
+    <div class="lightbox" onclick="event.stopPropagation()">
+      <img id="imgModalPic" alt="">
+      <div class="lightbox-cap" id="imgModalCap"></div>
+      <button class="btn" type="button" onclick="closePartImage()">ปิด</button>
     </div>
   </div>
 

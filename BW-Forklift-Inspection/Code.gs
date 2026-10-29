@@ -15,7 +15,7 @@ const SH = {
 const HEAD = {
   Employees: ['Employee_ID', 'Employee_Name', 'Department', 'Position', 'Plant', 'PIN'],
   Forklift: ['Forklift_ID', 'Forklift_Name', 'Model_Type', 'Location', 'Owner_Emp_ID', 'Department'],
-  Checklist: ['Item_ID', 'Forklift_ID', 'Category', 'Inspection_Point', 'Standard_Criteria'],
+  Checklist: ['Item_ID', 'Forklift_ID', 'Category', 'Inspection_Point', 'Standard_Criteria', 'Image_File'],
   Inspection_Logs: ['Timestamp', 'Forklift_ID', 'Inspector_ID', 'Owner_ID', 'Overall_Status', 'Check_Data_JSON', 'Remark'],
   Cleaning: ['Task_ID', 'Forklift_ID', 'Area', 'Task', 'Method', 'Tool'],
   Management: ['Config_Key', 'Config_Value', 'Last_Updated', 'Updated_By']
@@ -251,7 +251,8 @@ function getFormData(token) {
       forkliftId: c.Forklift_ID,
       cat: c.Category || 'ทั่วไป',
       point: c.Inspection_Point,
-      std: c.Standard_Criteria
+      std: c.Standard_Criteria,
+      img: c.Image_File || ''   // ชื่อไฟล์รูปในโฟลเดอร์ asset (เว้นว่างได้)
     })),
     clean: safeRows_(SH.CLN).map(c => ({
       id: c.Task_ID,
@@ -432,6 +433,12 @@ const SEED_INSPECT_FORKLIFT = {
   ]
 };
 
+// ชื่อไฟล์รูปจริงในโฟลเดอร์ asset ตามลำดับรายการตรวจ ('' = ไม่มีรูป ระบบจะใช้ตัวจับคู่ในเว็บแทน)
+const SEED_IMG_FORKLIFT = {
+  gas: ['', '', '', 'battery-water.jpg', 'hydraulic-oil.jpg', 'mast-forks.jpg', 'wheel-tire.jpg', 'hydraulic-hose.jpg', 'lights-horn.jpg', 'brake.jpg', '', '', '', 'chain.jpg'],
+  electric: ['battery-water.jpg', 'battery-terminal.jpg', 'charge-plug.jpg', 'mast-forks.jpg', 'wheel-tire.jpg', 'hydraulic-oil.jpg', 'lights-horn.jpg', 'hydraulic-hose.jpg', 'chain.jpg', 'brake.jpg']
+};
+
 const SEED_CLEAN_FORKLIFT = [
   ['ความปลอดภัยก่อนเริ่ม', 'ดับเครื่องยนต์/ปิดสวิตช์กุญแจ และดึงเบรคมือ (ถอดปลั๊กแบตเตอรี่กรณีรถไฟฟ้า)', 'ปิดกุญแจ ดึงเบรคมือ และติดป้ายห้ามใช้งานขณะทำความสะอาด', 'กุญแจรถ / ป้ายเตือน'],
   ['ห้องคนขับและเบาะนั่ง', 'เช็ดทำความสะอาดพวงมาลัย เบาะนั่ง คอนโซล และเข็มขัดนิรภัย', 'ใช้ผ้าชุบน้ำหมาดหรือน้ำยาทำความสะอาด เช็ดคราบเหงื่อและฝุ่น', 'ผ้าสะอาด / น้ำยาทำความสะอาด'],
@@ -475,6 +482,12 @@ function seedForkliftSample() {
   const clSh = sheet_(SH.CL);
   const cnSh = sheet_(SH.CLN);
 
+  // ให้แน่ใจว่าชีต Checklist มีหัวคอลัมน์ Image_File (คอลัมน์ F)
+  if (s_(clSh.getRange(1, 6).getValue()) !== 'Image_File') {
+    clSh.getRange(1, 6).setValue('Image_File')
+      .setFontWeight('bold').setBackground('#1c3a57').setFontColor('#ffffff');
+  }
+
   // Clear existing checklists and reseed with exact forklift specifications
   if (clSh.getLastRow() > 1) clSh.deleteRows(2, clSh.getLastRow() - 1);
   if (cnSh.getLastRow() > 1) cnSh.deleteRows(2, cnSh.getLastRow() - 1);
@@ -485,6 +498,7 @@ function seedForkliftSample() {
   ms.forEach(m => {
     const isElectric = /ไฟฟ้า|electric/i.test(m.Model_Type + ' ' + m.Forklift_Name);
     const inspectList = isElectric ? SEED_INSPECT_FORKLIFT.electric : SEED_INSPECT_FORKLIFT.gas;
+    const imgList = isElectric ? SEED_IMG_FORKLIFT.electric : SEED_IMG_FORKLIFT.gas;
 
     inspectList.forEach((it, idx) => {
       clRows.push([
@@ -492,7 +506,8 @@ function seedForkliftSample() {
         m.Forklift_ID,
         it[0], // Category
         it[1], // Inspection_Point
-        it[2]  // Standard_Criteria
+        it[2], // Standard_Criteria
+        imgList[idx] || '' // Image_File
       ]);
     });
 
@@ -508,7 +523,7 @@ function seedForkliftSample() {
     });
   });
 
-  if (clRows.length) clSh.getRange(2, 1, clRows.length, 5).setValues(clRows);
+  if (clRows.length) clSh.getRange(2, 1, clRows.length, 6).setValues(clRows);
   if (cnRows.length) cnSh.getRange(2, 1, cnRows.length, 6).setValues(cnRows);
 }
 
