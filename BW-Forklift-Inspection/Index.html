@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบตรวจเช็ครถโฟล์คลิฟท์ | Forklift Daily Inspection System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="top hide" id="top">
+    <div class="in">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">🚜</div>
+        <div>
+          <b>ระบบตรวจเช็ครถโฟล์คลิฟท์</b>
+          <small>Forklift Daily Inspection System · One-Point Lesson</small>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button id="nForm" onclick="show('form')">📋 ตรวจเช็ค</button>
+        <button id="nDash" onclick="show('dash')">📊 Dashboard</button>
+      </nav>
+
+      <div class="user-area">
+        <div class="status-pill" id="apiStatusPill" title="คลิกเพื่อตั้งค่าการเชื่อมต่อ Google Sheets" onclick="openSettings()" role="button" tabindex="0">
+          <span class="status-dot" id="apiDot"></span>
+          <span id="apiStatusText">Google Sheets API</span>
+        </div>
+
+        <div class="av" id="av" title="ผู้ใช้งาน">U</div>
+        <span class="nm" id="whoName" style="font-weight:600;">-</span>
+        <button class="btn alt" style="padding:6px 12px; font-size:13px;" onclick="doLogout()">ออก</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- 1. หน้าเข้าสู่ระบบ (Login View) -->
+    <section id="vLogin" class="card lg">
+      <div class="l">
+        <div>
+          <h1>ระบบตรวจเช็ค<br>รถโฟล์คลิฟท์</h1>
+          <p>ตรวจสอบความพร้อมประจำวัน เพื่อความปลอดภัยสูงสุดในการปฏิบัติงาน (Daily Safety Inspection)</p>
+        </div>
+
+        <div class="lg-art">
+          <!-- Forklift Silhouette SVG Art -->
+          <svg viewBox="0 0 200 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Mast & Forks -->
+            <rect x="145" y="15" width="8" height="95" rx="2" fill="#f08a1c" />
+            <rect x="155" y="15" width="6" height="95" rx="1.5" fill="#f08a1c" opacity="0.8" />
+            <path d="M140 90 L185 90 L185 95 L135 95 Z" fill="#94a3b8" />
+            <!-- Body / Chassis -->
+            <path d="M40 85 L140 85 L140 65 L95 65 L95 40 L60 40 L40 60 Z" fill="#f08a1c" />
+            <path d="M30 65 Q25 85 45 85 L55 85 L50 65 Z" fill="#d97706" />
+            <!-- Overhead Guard -->
+            <path d="M60 40 L60 18 L120 18 L125 65" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" />
+            <line x1="80" y1="18" x2="80" y2="40" stroke="#ffffff" stroke-width="2" />
+            <line x1="100" y1="18" x2="100" y2="65" stroke="#ffffff" stroke-width="2" />
+            <!-- Seat & Steering -->
+            <rect x="75" y="48" width="16" height="16" rx="2" fill="#1e293b" />
+            <line x1="110" y1="58" x2="102" y2="42" stroke="#94a3b8" stroke-width="3" />
+            <circle cx="100" cy="40" r="6" stroke="#94a3b8" stroke-width="2.5" />
+            <!-- Wheels -->
+            <circle cx="60" cy="95" r="16" fill="#111827" />
+            <circle cx="60" cy="95" r="7" fill="#64748b" />
+            <circle cx="132" cy="95" r="18" fill="#111827" />
+            <circle cx="132" cy="95" r="8" fill="#64748b" />
+            <!-- Warning beacon -->
+            <circle cx="90" cy="14" r="4" fill="#fbbf24" />
+          </svg>
+        </div>
+
+        <div style="font-size:12.5px; opacity:0.75; display:flex; justify-content:space-between; align-items:center;">
+          <span>รองรับทั้งแบบน้ำมัน+แก๊ส และแบบไฟฟ้า</span>
+          <span>Google Sheets Database</span>
+        </div>
+      </div>
+
+      <div class="r">
+        <h2 style="font-size:22px; color:var(--navy); margin-bottom:14px;">เข้าสู่ระบบตรวจเช็ค</h2>
+
+        <label class="k" for="selDept">หน่วยงาน / แผนก</label>
+        <select id="selDept" style="margin-bottom:12px;"></select>
+
+        <label class="k" for="selName">ชื่อผู้ตรวจเช็ค</label>
+        <select id="selName">
+          <option value="">กำลังโหลดรายชื่อ...</option>
+        </select>
+
+        <div class="dots" id="dots" aria-label="PIN dots"></div>
+        <div class="keys" id="keys"></div>
+
+        <div class="err" id="loginErr" role="alert"></div>
+        <div id="pinHint" style="font-size:12px; color:var(--mute); margin-top:4px;">
+          โหมดจำลอง — PIN ทดสอบ: <b>1234</b> (ผู้ขับรถ) · <b>9999</b> / <b>0000</b> (แผนกซ่อมบำรุง)
+        </div>
+        <button type="button" class="link-btn" onclick="openSettings()">⚙️ ตั้งค่าการเชื่อมต่อ Google Sheets</button>
+      </div>
+    </section>
+
+    <!-- 2. หน้าตรวจเช็ค (Inspection Form View) -->
+    <section id="vForm" class="hide">
+      <div class="g2">
+
+        <!-- Left Column: Forklift Selection & 3D Interactive Model -->
+        <div class="card pad16">
+          <div class="dept-fl-grid" style="display:grid; grid-template-columns: 1fr 1.2fr; gap:10px; margin-bottom:10px;">
+            <div>
+              <label class="k" for="selFormDept">หน่วยงาน / แผนก</label>
+              <select id="selFormDept"></select>
+            </div>
+            <div>
+              <label class="k" for="selForklift">เลือกรถโฟล์คลิฟท์</label>
+              <select id="selForklift"></select>
+            </div>
+          </div>
+
+          <!-- Forklift Details Card -->
+          <div class="minfo" id="minfo"></div>
+
+          <!-- Interactive 3D Canvas -->
+          <div class="v3" id="v3box">
+            <canvas id="cv" aria-label="แบบจำลอง 3 มิติรถโฟล์คลิฟท์"></canvas>
+            <div class="v3bar">
+              <button class="btn alt" onclick="v3zoom(-1.2)" aria-label="ซูมเข้า">+</button>
+              <button class="btn alt" onclick="v3zoom(1.2)" aria-label="ซูมออก">−</button>
+              <button class="btn alt" onclick="v3reset()">รีเซ็ตมุมมอง</button>
+            </div>
+            <div class="v3note">
+              ลากเมาส์/ทัชเพื่อหมุน 360° · เลื่อนลูกกลิ้งเพื่อซูม · แตะหมายเลขบนโมเดลเพื่อชี้จุดตรวจ
+            </div>
+          </div>
+
+          <div class="sec" style="margin-top:16px;">
+            <span>จุดสำคัญประจำรถโฟล์คลิฟท์ (ดึงจากรายการตรวจ)</span>
+          </div>
+          <ol class="plist" id="plist"></ol>
+        </div>
+
+        <!-- Right Column: Inspection Checklist, Cleaning, Notes, Submit -->
+        <div class="card pad16">
+          <div class="sec">
+            <span>รายการตรวจเช็คประจำวัน</span>
+            <span class="hint" style="margin:0 0 0 auto; font-size:14px; font-weight:600; color:var(--navy);" id="cnt">0/0</span>
+          </div>
+
+          <!-- Mode Switcher: Focus View vs All View -->
+          <div class="mode-switch">
+            <button type="button" id="btnModeFocus" class="active" onclick="switchCheckMode('focus')">🎯 ตรวจตามจุดสำคัญ (3D Focus)</button>
+            <button type="button" id="btnModeAll" onclick="switchCheckMode('all')">📋 แสดงทั้งหมด</button>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="prog"><i id="pg"></i></div>
+
+          <!-- 1. Focused Point View (Shows Focused Inspection Point + Matching Cleaning Task) -->
+          <div id="boxFocusView"></div>
+
+          <!-- 2. All Items View Container -->
+          <div id="boxAllView" class="hide">
+            <!-- Dynamic Inspection Items Tiles -->
+            <div id="tiles"></div>
+
+            <p class="hint" style="margin:10px 0 6px;">
+              💡 <b>คำแนะนำ:</b> แตะ 1 ครั้ง = <span style="color:var(--ok); font-weight:600;">✓ ปกติ</span> · แตะ 2 ครั้ง = <span style="color:var(--ng); font-weight:600;">✕ ผิดปกติ</span> · แตะ 3 ครั้ง = ล้างค่า
+            </p>
+
+            <div class="row">
+              <button class="btn alt" onclick="allOk()">✓ ปกติทั้งหมด</button>
+              <button class="btn alt" onclick="clearAll()">ล้างค่าทั้งหมด</button>
+            </div>
+
+            <!-- Cleaning Section -->
+            <div class="sec" style="margin-top:20px;">
+              <span>การทำความสะอาดและบำรุงรักษาเบื้องต้น</span>
+              <span class="hint" style="margin:0 0 0 auto;" id="cc">0/0</span>
+            </div>
+            <div class="chk" id="clean"></div>
+            <div class="row" style="margin:8px 0 0;">
+              <button class="btn alt" onclick="cleanAll()">ทำความสะอาดครบทุกข้อ</button>
+            </div>
+          </div>
+
+          <!-- Remark Section -->
+          <div class="sec" style="margin-top:20px;">หมายเหตุ / รายละเอียดความผิดปกติ</div>
+          <textarea id="note" rows="3" placeholder="กรณีพบจุดผิดปกติ (NG) ต้องระบุรายละเอียดหรือความเสียหายที่พบที่นี่..."></textarea>
+
+          <div class="row" style="margin-top:16px;">
+            <button class="btn big" id="btnSave" onclick="saveInspection()">บันทึกผลการตรวจเช็ค</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. หน้า Dashboard & รายงานผล -->
+    <section id="vDash" class="hide">
+      <!-- KPI Stats -->
+      <div class="kpi">
+        <div class="kc">
+          <span>ตรวจวันนี้</span>
+          <b id="kTotal">0</b>
+        </div>
+        <div class="kc r">
+          <span>ผิดปกติวันนี้ (NG)</span>
+          <b id="kNg">0</b>
+        </div>
+        <div class="kc o">
+          <span>ยังไม่ตรวจวันนี้</span>
+          <b id="kPend">0</b>
+        </div>
+        <div class="kc g">
+          <span>ความพร้อมเฉลี่ย 7 วัน</span>
+          <b id="kRate">0%</b>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="g3">
+        <div class="card pad16">
+          <div class="sec">สัดส่วนความพร้อม 7 วัน</div>
+          <div class="ring" id="ring" style="--p:0">
+            <div>
+              <span id="ringTxt">0%</span>
+              <small>อัตราปกติ</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="card pad16">
+          <div class="sec">จำนวนการตรวจเช็คย้อนหลัง 7 วัน</div>
+          <div class="bars" id="bars"></div>
+          <p class="hint" style="text-align:right; margin-top:8px;">
+            <span style="color:var(--ok);">■ ปกติ</span> &nbsp;
+            <span style="color:var(--ng);">■ ผิดปกติ (NG)</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Forklift Status Grid -->
+      <div class="card pad16" style="margin-bottom:16px;">
+        <div class="sec">สถานะรถโฟล์คลิฟท์ทั้งหมดในระบบ</div>
+        <div class="mgrid" id="mgrid"></div>
+      </div>
+
+      <!-- Recent Logs Table -->
+      <div class="card pad16">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="sec" style="margin-bottom:0;">ประวัติการตรวจเช็คล่าสุด</div>
+          <button class="btn alt" style="padding:6px 14px;" onclick="loadDash()">🔄 รีเฟรชข้อมูล</button>
+        </div>
+        <div class="scroll">
+          <table id="tRecent"></table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 4. Settings Modal (ตั้งค่า Google Apps Script Web App URL) -->
+  <div class="modal-overlay hide" id="settingsModal">
+    <div class="modal">
+      <h3>⚙️ ตั้งค่าการเชื่อมต่อ Google Sheets</h3>
+      <p>
+        ระบุ <b>Web App URL</b> ของ Google Apps Script เพื่อบันทึกและดึงข้อมูลจาก Google Sheets (หรือปล่อยว่างไว้เพื่อใช้งานในโหมดจำลอง Offline)
+      </p>
+
+      <label class="k" for="txtApiUrl">Google Apps Script Web App URL</label>
+      <input type="text" id="txtApiUrl" placeholder="https://script.google.com/macros/s/.../exec">
+
+      <div style="font-size:12.5px; color:var(--mute); margin:10px 0 16px; line-height:1.5;">
+        💡 <b>วิธีนำ URL มาใส่:</b> ใน Google Sheet ไปที่ Extensions &gt; Apps Script วางโค้ด <code>Code.gs</code> แล้วคลิก <b>Deploy &gt; New deployment &gt; Web app</b> (ตั้งค่า Who has access: <b>Anyone</b>) แล้วคัดลอก URL มาวางที่นี่
+      </div>
+
+      <div id="apiTestResult" style="font-size:13px; font-weight:500; min-height:22px; margin-bottom:14px;"></div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn alt" onclick="closeSettings()">ยกเลิก</button>
+        <button class="btn" onclick="testAndSaveApi()">ทดสอบและบันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast hide" id="toast" role="status"></div>
+
+  <!-- Three.js 3D Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+
+</body>
+</html>
