@@ -1,4 +1,4 @@
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAroHAWinXAyNjaTXZnmQ-UWz4cn976jPdRAxUG2nqfQK4OJxKZQJD_zsWeLsJJMaH/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwITy08kM9M91rBfHGDpmloomOnEmg4vp1VrTnsQJ4_kAhswRKPdPwyUnNIePeDmncD/exec';
 const MOCK_PEOPLE = [
   { id: 'EMP-001', name: 'สมชาย ใจดี', dept: 'คลังสินค้าวัตถุดิบ', pin: '1234' },
   { id: 'EMP-002', name: 'วิชัย มั่นคง', dept: 'คลังสินค้าวัตถุดิบ', pin: '1234' },
@@ -2051,7 +2051,28 @@ async function testAndSaveApi() {
   }
 }
 
+// ย่อ Top Header เหลือแถบไอคอนเล็กๆ เมื่อเลื่อนลง (เฉพาะจอมือถือ)
+function initCompactHeader() {
+  const top = $('top');
+  if (!top) return;
+  const mq = window.matchMedia('(max-width: 820px)');
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const y = window.scrollY || document.documentElement.scrollTop || 0;
+    if (!mq.matches) { top.classList.remove('compact'); return; }
+    if (y > 100) top.classList.add('compact');
+    else if (y < 15) top.classList.remove('compact');
+  };
+  window.addEventListener('scroll', () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+}
+
 window.addEventListener('DOMContentLoaded', () => {
+  initCompactHeader();
   buildKeys();
   drawDots();
 

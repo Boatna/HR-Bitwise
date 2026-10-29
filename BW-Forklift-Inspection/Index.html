@@ -24,8 +24,8 @@
       </div>
 
       <nav class="nav">
-        <button id="nForm" onclick="show('form')">📋 ตรวจเช็ค</button>
-        <button id="nDash" onclick="show('dash')">📊 Dashboard</button>
+        <button id="nForm" onclick="show('form')" aria-label="ตรวจเช็ค" title="ตรวจเช็ค"><span class="ic">📋</span><span class="tx"> ตรวจเช็ค</span></button>
+        <button id="nDash" onclick="show('dash')" aria-label="Dashboard" title="Dashboard"><span class="ic">📊</span><span class="tx"> Dashboard</span></button>
       </nav>
 
       <div class="user-area">
@@ -36,7 +36,7 @@
 
         <div class="av" id="av" title="ผู้ใช้งาน">U</div>
         <span class="nm" id="whoName" style="font-weight:600;">-</span>
-        <button class="btn alt" style="padding:6px 12px; font-size:13px;" onclick="doLogout()">ออก</button>
+        <button class="btn alt" style="padding:6px 12px; font-size:13px;" onclick="doLogout()" aria-label="ออกจากระบบ" title="ออกจากระบบ"><span class="ic" aria-hidden="true">🚪</span><span class="tx"> ออก</span></button>
       </div>
     </div>
   </header>

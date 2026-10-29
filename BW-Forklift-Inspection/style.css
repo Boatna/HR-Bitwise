@@ -1400,3 +1400,35 @@ select, textarea, input[type="text"] { min-height: 44px; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+
+/* ============================================================
+   Top Header บนมือถือ: เล็กลง + ย่อเป็นแถบไอคอนเมื่อเลื่อนลง
+   ============================================================ */
+@media (max-width: 820px) {
+  .top { border-bottom-width: 3px; }
+  .top .in { flex-wrap: wrap; gap: 6px 8px; padding-top: 6px; padding-bottom: 6px; }
+  .brand { order: 1; flex: 1 1 0; min-width: 0; gap: 8px; }
+  .brand > div:last-child { min-width: 0; }
+  .brand b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mark { width: 30px; height: 30px; font-size: 17px; border-radius: 8px; }
+  .user-area { order: 2; gap: 6px; }
+  .user-area .nm { display: none; }
+  .status-pill { padding: 7px; }
+  #apiStatusText { display: none; }
+  .av { width: 28px; height: 28px; font-size: 14px; }
+  .user-area .btn { min-height: 32px; padding: 4px 10px !important; }
+  .nav { order: 3; flex: 1 1 100%; gap: 6px; }
+  .nav button { min-height: 38px; padding: 6px 8px; font-size: 13.5px; border-color: rgba(255,255,255,.18); }
+
+  /* โหมดย่อ: เหลือแถบเดียว ปุ่มเป็นไอคอน */
+  .top.compact .in { flex-wrap: nowrap; padding-top: 4px; padding-bottom: 4px; gap: 8px; }
+  .top.compact .brand { display: none; }
+  .top.compact .nav { order: 1; flex: 0 0 auto; }
+  .top.compact .nav button { min-height: 34px; min-width: 42px; padding: 4px 10px; font-size: 17px; }
+  .top.compact .nav .tx { display: none; }
+  .top.compact .user-area { order: 2; margin-left: auto; }
+  .top.compact .user-area .btn { min-width: 36px; padding: 4px 8px !important; font-size: 16px; }
+  .top.compact .user-area .btn .tx { display: none; }
+  .top { transition: box-shadow .2s; }
+}
