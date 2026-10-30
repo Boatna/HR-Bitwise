@@ -1,4 +1,4 @@
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgVFLfuMeSIHG-ZBOtoE66rvE_H556TU_P5oOL4zoHmb2nf-f1F4Ia_H4DTlfg8SpC/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyysi_zOE2vUMyYGUOZMRrWYOIOhDknyXuaTY-ZtObv4UZi6VI68oa7VSbsYiLvR2c/exec';
 const MOCK_PEOPLE = [
   { id: 'EMP-001', name: 'สมชาย ใจดี', dept: 'คลังสินค้าวัตถุดิบ', pin: '1234' },
   { id: 'EMP-002', name: 'วิชัย มั่นคง', dept: 'คลังสินค้าวัตถุดิบ', pin: '1234' },
@@ -39,7 +39,6 @@ const ITEMS_GAS = [
   { no: 14, point: 'สภาพโซ่', cat: 'เสาและชุดยก', std: 'โซ่ยกตึงเท่ากันทั้งสองข้าง ไม่หย่อน ข้อต่อโซ่ไม่บิดเบี้ยวหรือตาย มีการหล่อลื่นเหมาะสม' }
 ];
 
-// 10 ข้อ สำหรับ แบบไฟฟ้า
 const ITEMS_ELEC = [
   { no: 1, point: 'ระดับน้ำกลั่นแบตเตอร์รี่', cat: 'แบตเตอรี่และระบบชาร์จ', std: 'ลูกลอยวัดระดับน้ำกลั่นลอยปกติ น้ำกลั่นท่วมแผ่นธาตุทุกเซลล์ ไม่มีสภาพแห้ง' },
   { no: 2, point: 'ขั้วแบตเตอร์รี่', cat: 'แบตเตอรี่และระบบชาร์จ', std: 'ขั้วต่อแน่น สะอาด ปราศจากคราบขี้เกลือสะสม ฝาครอบขั้วปิดเรียบร้อย สายไฟไม่ไหม้' },
@@ -61,9 +60,6 @@ const MOCK_CLEAN = [
   { id: 'C5', area: 'ล้อและเพลาขับ', task: 'ตรวจและดึงเศษเชือก เศษพลาสติก หรือลวดที่พันรอบแกนล้อออก', method: 'ใช้คีมหรือกรรไกรตัดเศษที่พันรอบแกนล้อเพื่อป้องกันซีลล้อชำรุด', tool: 'คีม / ถุงมือ' }
 ];
 
-// ----------------------------------------------------
-// 2. Global State & Config
-// ----------------------------------------------------
 const TIMEZONE = 'Asia/Bangkok';
 
 function getBangkokWeekday(date = new Date()) {
@@ -91,9 +87,7 @@ function toggleSimMonday() {
   else drawClean();
 }
 
-let API_URL = (GOOGLE_APPS_SCRIPT_URL && !GOOGLE_APPS_SCRIPT_URL.includes('REPLACE_WITH_YOUR_ID')) 
-  ? GOOGLE_APPS_SCRIPT_URL 
-  : (localStorage.getItem('fl_gas_url') || '');
+const API_URL = GOOGLE_APPS_SCRIPT_URL;
 let TOKEN = sessionStorage.getItem('fl_token') || '';
 let USER_NAME = sessionStorage.getItem('fl_user_name') || '';
 let USER_ID = sessionStorage.getItem('fl_user_id') || '';
@@ -110,13 +104,13 @@ const stripNo = t => String(t == null ? '' : t).replace(/^\s*\d+\s*[.)]\s*/, '')
 const pad2 = n => String(n).padStart(2, '0');
 const isoDay = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
 
-function toast(m) {
+function toast(m, ms) {
   const t = $('toast');
   if (!t) return;
   t.textContent = m;
   t.classList.remove('hide');
   clearTimeout(t._h);
-  t._h = setTimeout(() => t.classList.add('hide'), 2800);
+  t._h = setTimeout(() => t.classList.add('hide'), ms || 2800);
 }
 
 function updateApiStatus(isOnline, note) {
@@ -204,57 +198,75 @@ async function loadNames() {
   }
 
   PEOPLE = emps;
-  const ds = [...new Set(PEOPLE.map(p => p.dept).filter(Boolean))];
+  const ds = [...new Set(PEOPLE.map(p => (p.dept || '').trim()).filter(Boolean))];
   $('selDept').innerHTML = '<option value="">ทุกหน่วยงาน</option>' + ds.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
-  $('selDept').onchange = fillNames;
+  $('selDept').onchange = () => {
+    $('loginErr').textContent = '';
+    fillNames();
+  };
+  $('selName').onchange = () => {
+    $('loginErr').textContent = '';
+    const empId = $('selName').value;
+    if (empId) {
+      const p = PEOPLE.find(x => x.id === empId);
+      if (p && p.dept && !$('selDept').value) {
+        $('selDept').value = p.dept;
+      }
+    }
+  };
   fillNames();
 }
 
 function fillNames() {
-  const d = $('selDept').value;
+  const d = ($('selDept').value || '').trim();
   $('selName').innerHTML = '<option value="">-- เลือกชื่อผู้ตรวจ --</option>' +
-    PEOPLE.filter(p => !d || p.dept === d).map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.id)})</option>`).join('');
+    PEOPLE.filter(p => !d || (p.dept || '').trim() === d).map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.id)})</option>`).join('');
 }
 
 async function doLogin() {
   const empId = $('selName').value;
   if (!empId) {
+    $('loginErr').style.color = 'var(--ng)';
     $('loginErr').textContent = 'กรุณาเลือกชื่อผู้ตรวจเช็ค';
     return;
   }
   if (pin.length < 4) {
+    $('loginErr').style.color = 'var(--ng)';
     $('loginErr').textContent = 'กรุณากรอก PIN 4 หลัก';
     return;
   }
 
-  $('loginErr').textContent = '';
+  $('loginErr').style.color = 'var(--navy)';
+  $('loginErr').textContent = 'กำลังตรวจสอบข้อมูล...';
 
   if (API_URL) {
-    // โหมดเชื่อมต่อ Google Sheet: ตรวจ PIN จากชีตเท่านั้น (ไม่มี PIN สำรอง)
     const r = await apiPost('login', { empId, pin });
     if (r && r.ok) {
       TOKEN = r.token;
       USER_NAME = r.name;
       USER_ID = r.id || empId;
+      $('loginErr').textContent = '';
       finishLogin(r.dept || $('selDept').value);
       return;
     }
+    $('loginErr').style.color = 'var(--ng)';
     $('loginErr').textContent = !r
-      ? 'เชื่อมต่อ Google Sheet ไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต หรือ Web App URL'
-      : (r.msg || r.error || 'เข้าสู่ระบบไม่สำเร็จ');
+      ? 'เชื่อมต่อ Google Sheet ไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต'
+      : (r.msg || r.error || 'PIN ไม่ถูกต้อง');
     pin = '';
     drawDots();
     return;
   }
 
-  // โหมดจำลอง (Offline): ใช้ PIN ตามรายชื่อทดสอบ
   const mockEmp = MOCK_PEOPLE.find(p => p.id === empId);
   if (mockEmp && pin === mockEmp.pin) {
     TOKEN = 'MOCK-TOKEN-' + Date.now();
     USER_NAME = mockEmp.name;
     USER_ID = empId;
+    $('loginErr').textContent = '';
     finishLogin(mockEmp.dept || '');
   } else {
+    $('loginErr').style.color = 'var(--ng)';
     $('loginErr').textContent = 'PIN ไม่ถูกต้อง';
     pin = '';
     drawDots();
@@ -378,16 +390,18 @@ const curForklift = () => {
 };
 
 function populateForkliftSelect() {
-  const selectedDept = $('selFormDept') ? $('selFormDept').value : '';
+  if (!FORM || !FORM.forklifts) return;
+  const selDeptEl = $('selFormDept');
+  const selectedDept = selDeptEl ? selDeptEl.value.trim() : '';
   let filtered = FORM.forklifts || [];
   if (selectedDept) {
-    filtered = filtered.filter(m => m.dept === selectedDept);
+    filtered = filtered.filter(m => (m.dept || '').trim().toLowerCase() === selectedDept.toLowerCase());
   }
 
   if (!filtered.length) {
     $('selForklift').innerHTML = '<option value="">-- ไม่พบรถในแผนกนี้ --</option>';
     $('minfo').innerHTML = '<span style="color:var(--mute); font-size:13.5px;">ไม่พบรถโฟล์คลิฟท์ที่ลงทะเบียนในแผนกนี้</span>';
-    ['boxFocusView', 'plist', 'tiles', 'clean'].forEach(id => { $(id).innerHTML = ''; });
+    ['boxFocusView', 'plist', 'tiles', 'clean'].forEach(id => { const el = $(id); if (el) el.innerHTML = ''; });
     $('cnt').textContent = '0/0 ข้อ';
     $('pg').style.width = '0%';
     $('btnSave').disabled = true;
@@ -396,11 +410,36 @@ function populateForkliftSelect() {
   $('btnSave').disabled = false;
 
   $('selForklift').innerHTML = filtered.map(m => {
-    const isElec = /ไฟฟ้า|electric/i.test(m.model + ' ' + m.name);
+    const isElec = /ไฟฟ้า|electric/i.test((m.model || '') + ' ' + (m.name || ''));
     return `<option value="${esc(m.id)}">${esc(m.id)} - ${esc(m.name)} [${isElec ? '⚡ ไฟฟ้า' : '⛽ น้ำมัน+แก๊ส'}]</option>`;
   }).join('');
 
   pickForklift();
+}
+
+function updateFormDeptFilter() {
+  if (!$('selFormDept') || !FORM || !FORM.forklifts) return;
+  const depts = [...new Set((FORM.forklifts || []).map(m => (m.dept || '').trim()).filter(Boolean))].sort();
+
+  const currentVal = $('selFormDept').value;
+  $('selFormDept').innerHTML = '<option value="">ทุกหน่วยงาน (แสดงทั้งหมด)</option>' +
+    depts.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+
+  // Auto-select user's department if available
+  const userDeptNorm = (USER_DEPT || '').trim();
+  const matchedDept = depts.find(d => d.toLowerCase() === userDeptNorm.toLowerCase());
+
+  if (matchedDept) {
+    $('selFormDept').value = matchedDept;
+  } else if (currentVal && depts.includes(currentVal)) {
+    $('selFormDept').value = currentVal;
+  } else {
+    $('selFormDept').value = '';
+  }
+
+  $('selFormDept').onchange = () => {
+    populateForkliftSelect();
+  };
 }
 
 async function loadForm() {
@@ -415,21 +454,6 @@ async function loadForm() {
       }
       if (!FORM) {
         FORM = { forklifts: MOCK_FORKLIFTS, items: [], clean: MOCK_CLEAN };
-      }
-
-      // Populate Department Filter dropdown in Form
-      const depts = [...new Set((FORM.forklifts || []).map(m => m.dept).filter(Boolean))];
-      if ($('selFormDept')) {
-        $('selFormDept').innerHTML = '<option value="">ทุกหน่วยงาน (แสดงทั้งหมด)</option>' +
-          depts.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
-
-        if (USER_DEPT && depts.includes(USER_DEPT)) {
-          $('selFormDept').value = USER_DEPT;
-        }
-
-        $('selFormDept').onchange = () => {
-          populateForkliftSelect();
-        };
       }
 
       $('selForklift').onchange = pickForklift;
@@ -459,6 +483,7 @@ async function loadForm() {
         if (c) toggleFocusClean(c, e.target.checked);
       };
     }
+    updateFormDeptFilter();
     populateForkliftSelect();
   } catch (err) {
     console.error(err);
@@ -853,8 +878,12 @@ async function saveInspection() {
 
   const payload = {
     forkliftId: m.id,
+    inspectorId: USER_ID,
+    inspectorName: USER_NAME,
+    inspectorDept: USER_DEPT,
     results: res,
     cleaning: cres,
+    cleaningRequired: isMondayCleaningDay(),
     note: note
   };
 
@@ -869,7 +898,14 @@ async function saveInspection() {
         toast(r.error || r.msg || 'บันทึกไม่สำเร็จ');
         return;
       }
-      toast('บันทึกผลการตรวจเช็คลง Google Sheet สำเร็จ!');
+      const successMsg = r.message || 'บันทึกผลการตรวจเช็คลง Google Sheet สำเร็จ!';
+      if (r.emailSent === false) {
+        // บันทึกลงชีตสำเร็จ แต่อีเมล์ไม่ออก → แจ้งให้เห็นชัดและค้างไว้นานขึ้น
+        console.warn('Email error:', r.emailError);
+        toast('⚠️ ' + successMsg + (r.emailError ? ' (' + r.emailError + ')' : ''), 7000);
+      } else {
+        toast('✓ ' + successMsg, 4500);
+      }
     } else {
       saveLocalLog(m, payload, hasNg ? 'NG' : 'OK');
       toast('บันทึกผลการตรวจเช็คแล้ว (โหมดจำลอง)');
@@ -927,7 +963,12 @@ const V3 = {
   parts: [], selectedPart: -1, target: null, tgoal: null, showLabels: true
 };
 
-const PV = { hidden: false, src: '' };
+const PV = {
+  hidden: false, src: '', tok: 0, item: null,
+  mode: (function () { try { return localStorage.getItem('fl_part_mode') === '3d' ? '3d' : 'photo'; } catch (e) { return 'photo'; } })(),
+  inited: false, st: null, pivot: null, drag: null,
+  rotY: 0.7, rotX: 0.35, zoom: 5.2, auto: true
+};
 
 /* ---------------- Materials & geometry helpers ---------------- */
 function M(c, o) {
@@ -1414,7 +1455,6 @@ const PART_DEFS = {
   generic:     { build: pGeneric,     pos: () => [0, 1.5, 0] }
 };
 
-// จับคู่ "จุดตรวจ" กับชิ้นส่วน 3D จากชื่อรายการ (ใช้ได้กับรายการที่แก้ไขใน Google Sheet)
 function partKeyFor(it, elec) {
   const t = (it && it.point) || '';
   if (/น้ำมันเครื่อง/.test(t)) return 'engine';
@@ -1436,7 +1476,6 @@ function partKeyFor(it, elec) {
   return 'generic';
 }
 
-/* ---------------- ตัวรถ (Chassis) ---------------- */
 function buildBase(g, elec) {
   const gm = () => M(0x20262d, { metalness: 0.6, roughness: 0.45 });
   RB(g, 1.85, 0.14, 2.2, M(0x3a4048, { roughness: 0.8, metalness: 0.5 }), 0, 0.72, 0.15, 0.03);
@@ -1637,6 +1676,7 @@ function init3D() {
 function loop3D() {
   requestAnimationFrame(loop3D);
   renderMain();
+  renderPartStage();
 }
 
 function renderMain() {
@@ -1752,33 +1792,61 @@ function renderForklift3D(m, isElec) {
   showPartViewer(curFocusIdx);
 }
 
-/* ---------------- Part viewer (รูปจริงของจุดตรวจ จากโฟลเดอร์ asset) ---------------- */
 const ASSET_DIR = 'asset/';
-
-// จับคู่ "ชิ้นส่วน" กับไฟล์รูปในโฟลเดอร์ asset (ใช้เมื่อใน Google Sheet ไม่ได้ระบุคอลัมน์ Image_File)
 const PART_IMAGES = {
-  battery:     'battery-water.jpg',
-  batteryElec: 'battery-water.jpg',
-  terminals:   'battery-terminal.jpg',
-  chargePlug:  'charge-plug.jpg',
-  hydTank:     'hydraulic-oil.jpg',
-  hoses:       'hydraulic-hose.jpg',
-  mast:        'mast-forks.jpg',
-  wheel:       'wheel-tire.jpg',
-  lights:      'lights-horn.jpg',
-  brake:       'brake.jpg',
-  chain:       'chain.jpg'
-  // เพิ่มรูปใหม่ได้ เช่น engine: 'engine-oil.jpg', coolant: 'coolant.jpg', mirror: 'mirror.jpg',
-  //                    steering: 'steering.jpg', seatbelt: 'seatbelt.jpg', brakeFluid: 'brake-fluid.jpg'
+  gas: {
+    battery:     'gas/battery-water.jpg',
+    hydTank:     'gas/hydraulic-oil.jpg',
+    mast:        'gas/mast-forks.jpg',
+    wheel:       'gas/wheel-tire.jpg',
+    hoses:       'gas/hydraulic-hose.jpg',
+    lights:      'gas/lights-horn.jpg',
+    brake:       'gas/brake.jpg',
+    chain:       'gas/chain.jpg'
+  },
+  electric: {
+    battery:     'electric/battery-water.jpg',
+    batteryElec: 'electric/battery-water.jpg',
+    terminals:   'electric/battery-terminal.jpg',
+    chargePlug:  'electric/charge-plug.jpg',
+    hydTank:     'electric/hydraulic-oil.jpg',
+    hoses:       'electric/hydraulic-hose.jpg',
+    mast:        'electric/mast-forks.jpg',
+    wheel:       'electric/wheel-tire.jpg',
+    lights:      'electric/lights-horn.jpg',
+    chain:       'electric/chain.jpg',
+    brake:       'electric/brake.jpg'
+  }
 };
 
 function partImageSrc(it, key) {
-  let f = (it && it.img) ? String(it.img).trim() : '';   // 1) ชื่อไฟล์จากชีต Checklist (คอลัมน์ Image_File)
-  if (!f) f = PART_IMAGES[key] || '';                      // 2) จับคู่ตามชนิดชิ้นส่วน
+  const isElec = isCurElectric();
+  const typeFolder = isElec ? 'electric' : 'gas';
+  const typeMap = isElec ? PART_IMAGES.electric : PART_IMAGES.gas;
+
+  let f = (it && it.img) ? String(it.img).trim() : '';
+  if (!f) {
+    f = (typeMap && typeMap[key]) || '';
+  }
   if (!f) return '';
-  if (EMBEDDED_IMAGES[f]) return EMBEDDED_IMAGES[f];       // รูปที่ฝังไว้ในโค้ด (ไม่ต้องพึ่งไฟล์ใน asset)
-  if (/^(https?:|data:)/i.test(f) || f.indexOf('/') >= 0) return f;
-  return ASSET_DIR + encodeURIComponent(f);
+
+  // Direct match or base name in EMBEDDED_IMAGES
+  const baseName = f.split('/').pop();
+  if (EMBEDDED_IMAGES[f]) return EMBEDDED_IMAGES[f];
+  if (EMBEDDED_IMAGES[`${typeFolder}/${baseName}`]) return EMBEDDED_IMAGES[`${typeFolder}/${baseName}`];
+  if (EMBEDDED_IMAGES[baseName]) return EMBEDDED_IMAGES[baseName];
+
+  // Full URL or data URI
+  if (/^(https?:|data:)/i.test(f)) return f;
+
+  // If f already begins with asset/
+  if (f.startsWith('asset/')) return f;
+
+  // If f specifies subfolder (e.g. 'gas/...' or 'electric/...')
+  if (f.includes('/')) return ASSET_DIR + f;
+
+  // Otherwise, default to forklift type subfolder
+  return `${ASSET_DIR}${typeFolder}/${encodeURIComponent(f)}`;
 }
 
 function showPartViewer(idx) {
@@ -1788,10 +1856,41 @@ function showPartViewer(idx) {
   if (!it) return;
   nameEl.textContent = (idx + 1) + '. ' + it.point;
   if ($('partCat')) $('partCat').textContent = it.cat || '';
+  PV.item = it;
+  applyPartMode();
+}
 
-  const img = $('partImg'), ph = $('partPlaceholder');
-  if (!img || !ph) return;
-  const src = partImageSrc(it, partKeyFor(it, isCurElectric()));
+function applyPartMode() {
+  const it = PV.item;
+  const img = $('partImg'), ph = $('partPlaceholder'), cv = $('cvPart');
+  if (!it || !img || !ph) return;
+  const is3d = PV.mode === '3d';
+
+  if ($('btnPartMode')) $('btnPartMode').textContent = is3d ? '📷 ดูรูปจริง' : '🧊 ดู 3D';
+  if ($('partModeLabel')) $('partModeLabel').textContent = is3d ? '3D' : 'รูปจริง';
+  if ($('partHint')) $('partHint').textContent = is3d
+    ? 'ลากเพื่อหมุน · เลื่อนล้อเมาส์เพื่อซูม · ดับเบิลคลิกเพื่อรีเซ็ต'
+    : 'แตะรูปเพื่อขยายดู';
+
+  if (is3d) {
+    img.classList.add('hide');
+    ph.classList.add('hide');
+    PV.tok++;
+    if (cv && initPV()) {
+      cv.classList.remove('hide');
+      build3DPart(it);
+    } else {
+      if (cv) cv.classList.add('hide');
+      $('partPhText').textContent = 'ไม่สามารถแสดงโมเดล 3D ได้ (โหลด Three.js ไม่สำเร็จ)';
+      ph.classList.remove('hide');
+    }
+    return;
+  }
+
+  if (cv) cv.classList.add('hide');
+  const isElec = isCurElectric();
+  const typeFolder = isElec ? 'electric' : 'gas';
+  const primarySrc = partImageSrc(it, partKeyFor(it, isElec));
   PV.src = '';
 
   const showPh = msg => {
@@ -1801,28 +1900,125 @@ function showPartViewer(idx) {
     PV.src = '';
   };
 
-  if (!src) {
+  if (!primarySrc) {
     img.removeAttribute('src');
-    showPh('วางไฟล์รูปไว้ในโฟลเดอร์ asset แล้วระบุชื่อไฟล์ในคอลัมน์ Image_File ของชีต Checklist');
+    showPh(`วางไฟล์รูปไว้ในโฟลเดอร์ asset/${typeFolder} หรือระบุใน Checklist (หรือกด "ดู 3D")`);
     return;
   }
 
-  // โหลดรูปล่วงหน้าด้วย Image() แล้วค่อยแสดง (img ที่ซ่อนอยู่จะไม่เริ่มโหลดเอง)
-  const tok = PV.tok = (PV.tok || 0) + 1;
-  const pre = new Image();
-  pre.onload = () => {
-    if (tok !== PV.tok) return;
-    img.src = src;
-    img.alt = it.point;
-    ph.classList.add('hide');
-    img.classList.remove('hide');
-    PV.src = src;
+  const tok = PV.tok = PV.tok + 1;
+  const tryLoad = (url, fallbackUrl = null) => {
+    const pre = new Image();
+    pre.onload = () => {
+      if (tok !== PV.tok) return;
+      img.src = url;
+      img.alt = it.point;
+      ph.classList.add('hide');
+      img.classList.remove('hide');
+      PV.src = url;
+    };
+    pre.onerror = () => {
+      if (tok !== PV.tok) return;
+      if (fallbackUrl) {
+        tryLoad(fallbackUrl, null);
+      } else {
+        showPh('ไม่พบไฟล์รูป: ' + (url.length > 80 ? url.slice(0, 60) + '…' : url));
+      }
+    };
+    pre.src = url;
   };
-  pre.onerror = () => {
-    if (tok !== PV.tok) return;
-    showPh('ไม่พบไฟล์รูป: ' + (src.length > 80 ? src.slice(0, 60) + '…' : src));
-  };
-  pre.src = src;
+
+  // Fallback: If url points to asset/gas/file.jpg or asset/electric/file.jpg, fallback to asset/file.jpg
+  let fallbackSrc = null;
+  if (primarySrc.startsWith('asset/gas/') || primarySrc.startsWith('asset/electric/')) {
+    fallbackSrc = 'asset/' + primarySrc.split('/').pop();
+  }
+  tryLoad(primarySrc, fallbackSrc);
+}
+
+function togglePartMode() {
+  PV.mode = PV.mode === '3d' ? 'photo' : '3d';
+  try { localStorage.setItem('fl_part_mode', PV.mode); } catch (e) {}
+  if (PV.hidden) togglePartBox();
+  applyPartMode();
+}
+
+function initPV() {
+  if (PV.inited) return true;
+  try {
+    if (!window.THREE) return false;
+    const cv = $('cvPart');
+    if (!cv) return false;
+    PV.st = makeStage(cv, 3);
+    PV.st.sun.position.set(3, 6, 4);
+    PV.st.camera.fov = 34;
+    PV.st.camera.updateProjectionMatrix();
+
+    cv.addEventListener('pointerdown', e => {
+      PV.drag = { x: e.clientX, y: e.clientY };
+      PV.auto = false;
+      cv.setPointerCapture(e.pointerId);
+    });
+    cv.addEventListener('pointermove', e => {
+      if (!PV.drag) return;
+      PV.rotY -= (e.clientX - PV.drag.x) * 0.012;
+      PV.rotX = Math.max(-0.15, Math.min(1.25, PV.rotX + (e.clientY - PV.drag.y) * 0.01));
+      PV.drag.x = e.clientX;
+      PV.drag.y = e.clientY;
+    });
+    const end = () => { PV.drag = null; };
+    cv.addEventListener('pointerup', end);
+    cv.addEventListener('pointercancel', end);
+    cv.addEventListener('dblclick', () => { PV.auto = true; PV.zoom = 5.2; PV.rotX = 0.35; });
+    cv.addEventListener('wheel', e => {
+      e.preventDefault();
+      PV.zoom = Math.max(3, Math.min(8, PV.zoom + (e.deltaY > 0 ? 0.4 : -0.4)));
+    }, { passive: false });
+
+    PV.inited = true;
+    return true;
+  } catch (err) {
+    console.warn('Part viewer skipped:', err);
+    return false;
+  }
+}
+
+function build3DPart(it) {
+  const isElec = isCurElectric();
+  BODY_C = isElec ? 0x0a84c6 : 0xf08a1c;
+  const key = partKeyFor(it, isElec);
+  const def = PART_DEFS[key] || PART_DEFS.generic;
+
+  if (PV.pivot) { PV.st.scene.remove(PV.pivot); disposeObj(PV.pivot); }
+  const part = def.build(true, { elec: isElec });
+  const box = new THREE.Box3().setFromObject(part);
+  const size = box.getSize(new THREE.Vector3()), ctr = box.getCenter(new THREE.Vector3());
+  const s = 2.0 / Math.max(size.x, size.y, size.z, 0.001);
+  part.scale.setScalar(s);
+  part.position.set(-ctr.x * s, -ctr.y * s, -ctr.z * s);
+
+  const pivot = new THREE.Group();
+  pivot.add(part);
+  const floorY = -(size.y * s) / 2 - 0.04;
+  put(pivot, new THREE.CylinderGeometry(1.55, 1.6, 0.06, 56), M(0xdfe5eb, { roughness: 0.85, metalness: 0.05 }), 0, floorY - 0.03, 0);
+  put(pivot, new THREE.TorusGeometry(1.5, 0.014, 8, 72), M(0xfacc15, { roughness: 0.5 }), 0, floorY + 0.002, 0, PI / 2);
+  shadowize(pivot);
+  PV.st.scene.add(pivot);
+  PV.pivot = pivot;
+  PV.auto = true;
+  PV.st.sun.target = pivot;
+}
+
+function renderPartStage() {
+  if (PV.mode !== '3d' || !PV.inited || !PV.pivot) return;
+  const cv = $('cvPart');
+  if (!cv || !cv.offsetParent || !fitStage(PV.st, cv)) return;
+  if (PV.auto) PV.rotY += 0.009;
+  const cam = PV.st.camera;
+  const Z = PV.zoom * Math.min(1.6, Math.max(1, 1.25 / cam.aspect));
+  cam.position.set(Math.sin(PV.rotY) * Math.cos(PV.rotX) * Z, Math.sin(PV.rotX) * Z, Math.cos(PV.rotY) * Math.cos(PV.rotX) * Z);
+  cam.lookAt(0, 0, 0);
+  PV.st.renderer.render(PV.st.scene, cam);
 }
 
 function openPartImage() {
@@ -1842,9 +2038,6 @@ function togglePartBox() {
   $('btnPartToggle').textContent = PV.hidden ? 'แสดง' : 'ซ่อน';
 }
 
-// ----------------------------------------------------
-// 8. Dashboard Statistics
-// ----------------------------------------------------
 async function loadDash() {
   try {
     let d = null;
@@ -1854,11 +2047,9 @@ async function loadDash() {
     }
 
     if (!d) {
-      // Generate stats from local data
       d = generateLocalDashboard();
     }
 
-    // KPIs
     $('kTotal').textContent = d.total || 0;
     $('kNg').textContent = d.ngToday || 0;
     $('kPend').textContent = d.pending || 0;
@@ -1873,7 +2064,6 @@ async function loadDash() {
     $('ring').style.setProperty('--p', rate);
     $('ring').style.background = totalAll ? '' : '#cbd5e1';
 
-    // Bars
     const maxVal = Math.max(1, ...d.series.map(s => (s.ok || 0) + (s.ng || 0)));
     $('bars').innerHTML = d.series.map(s => {
       const sum = (s.ok || 0) + (s.ng || 0);
@@ -1889,7 +2079,6 @@ async function loadDash() {
       `;
     }).join('');
 
-    // Forklift Grid
     const tag = s => `<span class="tag ${s}">${s === 'OK' ? '✓ ปกติ' : s === 'NG' ? '✕ ผิดปกติ' : 'รอตรวจ'}</span>`;
     $('mgrid').innerHTML = d.forklifts.map(m => {
       const isElec = /ไฟฟ้า|electric/i.test(m.model + ' ' + m.name);
@@ -1911,7 +2100,6 @@ async function loadDash() {
       `;
     }).join('');
 
-    // Recent Logs Table
     $('tRecent').innerHTML = `
       <tr>
         <th>วัน-เวลา</th>
@@ -1939,7 +2127,6 @@ async function loadDash() {
 }
 
 function generateLocalDashboard() {
-  // โหมดจำลอง (Offline): รวมผลที่บันทึกในเครื่องนี้ + ตัวเลขตัวอย่างย้อนหลังสำหรับดูหน้าตา Dashboard
   const localLogs = JSON.parse(localStorage.getItem('fl_local_logs') || '[]');
   const fmtD = d => pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1);
   const fmtT = d => fmtD(d) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
@@ -1991,60 +2178,6 @@ function generateLocalDashboard() {
   };
 }
 
-// ----------------------------------------------------
-// 9. Settings Modal (Configure Google Apps Script URL)
-// ----------------------------------------------------
-function openSettings() {
-  $('txtApiUrl').value = API_URL;
-  $('settingsModal').classList.remove('hide');
-}
-
-function closeSettings() {
-  $('settingsModal').classList.add('hide');
-}
-
-async function testAndSaveApi() {
-  const url = $('txtApiUrl').value.trim();
-  const testMsg = $('apiTestResult');
-  testMsg.textContent = 'กำลังทดสอบเชื่อมต่อไปยัง Google Apps Script...';
-  testMsg.style.color = 'var(--navy)';
-
-  if (!url) {
-    API_URL = '';
-    localStorage.removeItem('fl_gas_url');
-    updateApiStatus(false, 'โหมดจำลอง (Offline)');
-    testMsg.textContent = 'ล้างการตั้งค่าแล้ว เปลี่ยนเป็นโหมดจำลอง';
-    toast('บันทึกโหมดจำลองแล้ว');
-    setTimeout(closeSettings, 1200);
-    return;
-  }
-
-  try {
-    const res = await fetch(`${url}?action=ping`, { method: 'GET', redirect: 'follow' });
-    const json = await res.json();
-    if (json && json.ok) {
-      API_URL = url;
-      localStorage.setItem('fl_gas_url', API_URL);
-      updateApiStatus(true, 'Google Sheet ออนไลน์');
-      testMsg.textContent = '✓ เชื่อมต่อ Google Sheet สำเร็จ!';
-      testMsg.style.color = 'var(--ok)';
-      toast('เชื่อมต่อ Google Sheet สำเร็จแล้ว!');
-      FORM = null;
-      setTimeout(() => {
-        closeSettings();
-        if ($('vForm') && !$('vForm').classList.contains('hide')) loadForm();
-        else if ($('vDash') && !$('vDash').classList.contains('hide')) loadDash();
-      }, 1200);
-    } else {
-      throw new Error((json && json.error) || 'Invalid response');
-    }
-  } catch (err) {
-    testMsg.textContent = '✕ เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบว่า Deploy เป็น Web App (Anyone) แล้วหรือไม่';
-    testMsg.style.color = 'var(--ng)';
-  }
-}
-
-// ย่อ Top Header เหลือแถบไอคอนเล็กๆ เมื่อเลื่อนลง (เฉพาะจอมือถือ)
 function initCompactHeader() {
   const top = $('top');
   if (!top) return;
@@ -2064,7 +2197,24 @@ function initCompactHeader() {
   update();
 }
 
-window.addEventListener('keydown', e => { if (e.key === 'Escape') closePartImage(); });
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePartImage();
+  const vLogin = $('vLogin');
+  if (vLogin && !vLogin.classList.contains('hide')) {
+    if (/^[0-9]$/.test(e.key)) {
+      if (pin.length < 4) {
+        pin += e.key;
+        drawDots();
+        if (pin.length === 4) doLogin();
+      }
+    } else if (e.key === 'Backspace') {
+      pin = pin.slice(0, -1);
+      drawDots();
+    } else if (e.key === 'Enter') {
+      doLogin();
+    }
+  }
+});
 
 window.addEventListener('DOMContentLoaded', () => {
   initCompactHeader();
@@ -2072,12 +2222,10 @@ window.addEventListener('DOMContentLoaded', () => {
   drawDots();
 
   if (API_URL) {
-    updateApiStatus(true, 'เชื่อมต่อ API');
+    updateApiStatus(true, 'Google Sheet ออนไลน์');
   } else {
-    updateApiStatus(false, 'โหมดจำลอง (คลิกเพื่อตั้งค่า)');
+    updateApiStatus(false, 'โหมดจำลอง (Offline)');
   }
-
-  if ($('pinHint')) $('pinHint').classList.toggle('hide', !!API_URL);
 
   if (TOKEN) {
     enter();

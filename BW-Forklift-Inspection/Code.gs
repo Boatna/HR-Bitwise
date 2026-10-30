@@ -21,11 +21,12 @@ const HEAD = {
   Management: ['Config_Key', 'Config_Value', 'Last_Updated', 'Updated_By']
 };
 
-const TTL = 8 * 60 * 60; // 8 hours session
+const TTL = 6 * 60 * 60; // 6 hours session (ขีดจำกัดสูงสุดของ CacheService)
 const MAX_FAIL = 5;
 const LOCK_SEC = 300;
 const TIMEZONE = 'Asia/Bangkok';
 const TZ = TIMEZONE;
+const DEFAULT_NOTIFICATION_EMAIL = 'nattapong.p@bitwise.co.th';
 
 /* ----------------------------------------------------
  * 1. Web App Entry Points (doGet & doPost for REST API)
@@ -110,18 +111,6 @@ function doPost(e) {
       case 'submitCheck':
         result = submitCheck(body.token, body.data || body);
         break;
-      case 'setup':
-        setup();
-        result = { ok: true, message: 'Setup completed successfully' };
-        break;
-      case 'seedData':
-        seedForkliftSample();
-        result = { ok: true, message: 'Forklift seed data created' };
-        break;
-      case 'seedTestData':
-        seedTestData();
-        result = { ok: true, message: 'Test inspection logs created' };
-        break;
       default:
         result = { ok: false, error: 'Unknown POST action: ' + action };
     }
@@ -149,10 +138,23 @@ function rows_(name) {
   if (!sh) throw new Error('ไม่พบชีต ' + name + ' (กรุณารัน setup() ก่อน)');
   const v = sh.getDataRange().getValues();
   if (v.length < 2) return [];
-  const h = v[0].map(s_);
-  return v.slice(1).filter(r => s_(r[0]) !== '').map(r => {
+
+  // ค้นหาแถวที่เป็นหัวตารางจริง (ป้องกันกรณีมีแถวว่างด้านบน)
+  let headerIdx = -1;
+  for (let i = 0; i < v.length; i++) {
+    if (s_(v[i][0]) !== '') {
+      headerIdx = i;
+      break;
+    }
+  }
+  if (headerIdx === -1 || headerIdx === v.length - 1) return [];
+
+  const h = v[headerIdx].map(s_);
+  return v.slice(headerIdx + 1).filter(r => s_(r[0]) !== '').map(r => {
     const o = {};
-    h.forEach((k, i) => o[k] = r[i] instanceof Date ? r[i] : s_(r[i]));
+    h.forEach((k, i) => {
+      if (k) o[k] = r[i] instanceof Date ? r[i] : s_(r[i]);
+    });
     return o;
   });
 }
@@ -160,18 +162,34 @@ function rows_(name) {
 const safeRows_ = n => (sheet_(n) ? rows_(n) : []);
 const pin_ = v => { const s = s_(v); return /^\d{1,3}$/.test(s) ? s.padStart(4, '0') : s; };
 
-function auth_(token) {
-  if (!token) return { id: 'GUEST', name: 'ผู้ใช้งาน' };
-  const j = CacheService.getScriptCache().get('t_' + token);
-  if (!j) return { id: 'EMP-001', name: 'ผู้ตรวจเช็ค' }; // Fallback friendly to prevent harsh block
-  return JSON.parse(j);
+function parseDate_(val) {
+  if (val instanceof Date) return val;
+  if (!val) return null;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d;
 }
+
+function auth_(token) {
+  if (!token) return null;
+  const j = CacheService.getScriptCache().get('t_' + token);
+  return j ? JSON.parse(j) : null; // null = session หมดอายุ / ไม่มี token
+}
+
+// กันข้อความที่ขึ้นต้นด้วย = + - @ ถูกชีตตีความเป็นสูตร (formula injection)
+const safeCell_ = v => { const t = s_(v); return /^[=+\-@]/.test(t) ? "'" + t : t; };
+
+// ป้องกันข้อความจากผู้ใช้ทำให้ HTML อีเมล์เพี้ยน
+const h_ = v => String(v == null ? '' : v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 const nameMap_ = () => {
   const m = {};
   rows_(SH.EMP).forEach(e => m[e.Employee_ID] = e.Employee_Name);
   return m;
 };
+
+const cleanDept_ = d => (d ? String(d).trim().replace(/^หน่วยโลหะแผ่น\//, '') : 'ทั่วไป');
 
 /* ----------------------------------------------------
  * 3. Core Business Logic
@@ -192,8 +210,14 @@ function setup() {
   });
 
   const cfg = sheet_(SH.CFG);
-  if (cfg && cfg.getLastRow() < 2) {
-    cfg.appendRow(['IMAGE_DEFAULT', '', new Date(), 'ใส่ File ID รูปใน Google Drive']);
+  if (cfg) {
+    const existing = rows_(SH.CFG);
+    if (!existing.some(r => r.Config_Key === 'IMAGE_DEFAULT')) {
+      cfg.appendRow(['IMAGE_DEFAULT', '', new Date(), 'ใส่ File ID รูปใน Google Drive']);
+    }
+    if (!existing.some(r => r.Config_Key === 'NOTIFICATION_EMAIL')) {
+      cfg.appendRow(['NOTIFICATION_EMAIL', DEFAULT_NOTIFICATION_EMAIL, new Date(), 'อีเมล์สำหรับรับแจ้งเตือนผลการตรวจเช็ค']);
+    }
   }
 
   const empSh = sheet_(SH.EMP);
@@ -206,7 +230,7 @@ function getLoginData() {
   return rows_(SH.EMP).map(e => ({
     id: e.Employee_ID,
     name: e.Employee_Name,
-    dept: e.Department ? e.Department.replace(/^หน่วยโลหะแผ่น\//, '') : 'ทั่วไป'
+    dept: cleanDept_(e.Department)
   }));
 }
 
@@ -224,7 +248,7 @@ function login(empId, pin) {
   cache.remove(fk);
   const token = Utilities.getUuid();
   cache.put('t_' + token, JSON.stringify({ id: e.Employee_ID, name: e.Employee_Name }), TTL);
-  return { ok: true, token, name: e.Employee_Name, id: e.Employee_ID, dept: e.Department || 'ทั่วไป' };
+  return { ok: true, token, name: e.Employee_Name, id: e.Employee_ID, dept: cleanDept_(e.Department) };
 }
 
 function logout(token) {
@@ -244,7 +268,7 @@ function getFormData(token) {
       model: m.Model_Type,
       loc: m.Location,
       owner: names[m.Owner_Emp_ID] || m.Owner_Emp_ID,
-      dept: m.Department || empDepts[m.Owner_Emp_ID] || 'ทั่วไป'
+      dept: cleanDept_(m.Department || empDepts[m.Owner_Emp_ID])
     })),
     items: rows_(SH.CL).map(c => ({
       id: c.Item_ID,
@@ -278,7 +302,7 @@ function getImage(token, forkliftId) {
 }
 
 function submitCheck(token, d) {
-  const u = auth_(token);
+  const u = auth_(token) || {};
   const flId = d.forkliftId || d.machineId;
   const m = rows_(SH.FL).find(r => r.Forklift_ID === flId);
   if (!m) throw new Error('ไม่พบข้อมูลรถโฟล์คลิฟท์ ' + flId);
@@ -286,14 +310,16 @@ function submitCheck(token, d) {
   const items = rows_(SH.CL).filter(c => c.Forklift_ID === flId);
   if (!items.length) throw new Error('รถโฟล์คลิฟท์นี้ยังไม่มีรายการตรวจใน Checklist');
 
-  const left = items.filter(c => !d.results[c.Item_ID]).length;
+  const resMap = d.results || {};
+  const left = items.filter(c => !resMap[c.Item_ID]).length;
   if (left) throw new Error('ยังไม่ได้เลือกผลตรวจ ' + left + ' จุด');
 
   const data = items.map(c => ({
     id: c.Item_ID,
-    cat: c.Category,
+    cat: c.Category || 'ทั่วไป',
     point: c.Inspection_Point,
-    result: d.results[c.Item_ID] === 'NG' ? 'NG' : 'OK'
+    std: c.Standard_Criteria || '',
+    result: resMap[c.Item_ID] === 'NG' ? 'NG' : 'OK'
   }));
 
   const status = data.some(x => x.result === 'NG') ? 'NG' : 'OK';
@@ -301,7 +327,9 @@ function submitCheck(token, d) {
     throw new Error('กรุณาระบุหมายเหตุเมื่อพบจุดผิดปกติ (NG)');
   }
 
-  const tasks = safeRows_(SH.CLN).filter(c => c.Forklift_ID === flId);
+  // หน้าเว็บกำหนดทำความสะอาดเฉพาะวันจันทร์ → วันอื่นไม่บันทึก/ไม่แสดงในอีเมล์ (กันแสดงว่า "ยังไม่ทำ" ผิดๆ)
+  const cleaningRequired = d.cleaningRequired !== false;
+  const tasks = cleaningRequired ? safeRows_(SH.CLN).filter(c => c.Forklift_ID === flId) : [];
   const cleaning = tasks.map(t => ({
     id: t.Task_ID,
     area: t.Area,
@@ -309,17 +337,271 @@ function submitCheck(token, d) {
     done: !!(d.cleaning || {})[t.Task_ID]
   }));
 
-  sheet_(SH.LOG).appendRow([
-    new Date(),
+  const emps = rows_(SH.EMP);
+  const inspectorId = u.id || s_(d.inspectorId) || '-';
+  const inspectorEmp = emps.find(e => e.Employee_ID === inspectorId);
+  const inspectorName = (inspectorEmp && inspectorEmp.Employee_Name) || u.name || d.inspectorName || 'ผู้ตรวจเช็ค';
+  const inspectorDept = d.inspectorDept || (inspectorEmp ? cleanDept_(inspectorEmp.Department) : '-');
+
+  const logSh = sheet_(SH.LOG);
+  const now = new Date();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000); // กันหลายคนบันทึกพร้อมกันแล้วแถวทับกัน
+  try {
+  logSh.appendRow([
+    now,
     flId,
-    u.id,
+    inspectorId,
     m.Owner_Emp_ID,
     status,
     JSON.stringify({ items: data, cleaning, steps: tasks.length ? [] : (d.steps || []) }),
-    d.note || ''
+    safeCell_(d.note)
   ]);
+  const lastRow = logSh.getLastRow();
+  if (lastRow > 1) {
+    logSh.getRange(lastRow, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  }
+  } finally {
+    lock.releaseLock();
+  }
 
-  return { ok: true, status: status, message: 'บันทึกข้อมูลเรียบร้อยแล้ว' };
+  // ส่งข้อมูลแจ้งเตือนไปยังอีเมล์
+  let emailSent = false, emailError = '';
+  try {
+    emailSent = sendInspectionEmail_({
+      inspector: { id: inspectorId, name: inspectorName },
+      inspectorDept: inspectorDept,
+      forklift: m,
+      status: status,
+      items: data,
+      cleaning: cleaning,
+      note: d.note || '',
+      timestamp: now
+    });
+  } catch (mailErr) {
+    emailError = mailErr.message || String(mailErr);
+    Logger.log('Mail send error: ' + emailError);
+  }
+
+  return {
+    ok: true,
+    status: status,
+    message: 'บันทึกข้อมูลเรียบร้อยแล้ว' + (emailSent ? ' และส่งอีเมล์รายงานแล้ว' : ' แต่ส่งอีเมล์ไม่สำเร็จ'),
+    emailSent: emailSent,
+    emailError: emailError
+  };
+}
+
+/**
+ * ส่งอีเมล์แจ้งเตือนผลการตรวจเช็ครถโฟล์คลิฟท์
+ */
+function getRecipients_() {
+  const cfg = safeRows_(SH.CFG);
+  const emailCfg = (cfg.find(r => r.Config_Key === 'NOTIFICATION_EMAIL') || {}).Config_Value;
+  const list = (s_(emailCfg) || DEFAULT_NOTIFICATION_EMAIL)
+    .split(/[,;\s]+/).map(x => x.trim()).filter(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+  return list.length ? list.join(',') : DEFAULT_NOTIFICATION_EMAIL;
+}
+
+function sendInspectionEmail_(info) {
+  const recipient = getRecipients_();
+  if (MailApp.getRemainingDailyQuota() < 1) throw new Error('โควต้าส่งอีเมล์ของวันนี้เต็มแล้ว');
+
+  const u = info.inspector;
+  const m = info.forklift;
+  const status = info.status;
+  const items = info.items || [];
+  const cleaning = info.cleaning || [];
+  const note = info.note || '';
+  const nowStr = Utilities.formatDate(info.timestamp || new Date(), TZ, 'dd/MM/yyyy HH:mm:ss');
+
+  const isNg = status === 'NG';
+  const ngList = items.filter(x => x.result === 'NG');
+  const okList = items.filter(x => x.result !== 'NG');
+  const statusText = isNg ? 'พบจุดผิดปกติ (NG)' : 'ผ่านเกณฑ์ปกติ (OK)';
+  const statusColor = isNg ? '#e53e3e' : '#38a169';
+  const statusBg = isNg ? '#fff5f5' : '#f0fff4';
+  const statusBadge = isNg ? '⚠️ ไม่ผ่าน (NG) ' + ngList.length + ' ข้อ' : '✓ ผ่านทุกข้อ (OK)';
+
+  const names = nameMap_();
+  const ownerName = names[m.Owner_Emp_ID] || m.Owner_Emp_ID || '-';
+
+  const subject = (isNg ? '⚠️ [ไม่ผ่าน NG ' + ngList.length + ' ข้อ]' : '✓ [ผ่านการตรวจ - OK]') +
+    ' ผลตรวจโฟล์คลิฟท์ ' + m.Forklift_ID + ' (' + m.Forklift_Name + ') โดย ' + u.name;
+
+  // ตารางรายการตรวจเช็ค (เรียงข้อ NG ขึ้นก่อน)
+  let itemRowsHtml = '';
+  let itemRowsText = '';
+  items.forEach((it, idx) => {
+    const itNg = it.result === 'NG';
+    const rowBg = itNg ? '#fff5f5' : (idx % 2 === 0 ? '#ffffff' : '#f8fafc');
+    const resBadge = itNg
+      ? '<span style="color:#c53030;font-weight:bold;background:#fed7d7;padding:4px 10px;border-radius:4px;display:inline-block;">✕ ไม่ผ่าน (NG)</span>'
+      : '<span style="color:#22543d;font-weight:bold;background:#c6f6d5;padding:4px 10px;border-radius:4px;display:inline-block;">✓ ผ่าน (OK)</span>';
+
+    itemRowsHtml += '<tr style="background:' + rowBg + ';border-bottom:1px solid #e2e8f0;">' +
+      '<td style="padding:10px 8px;text-align:center;font-size:13px;color:#718096;">' + (idx + 1) + '</td>' +
+      '<td style="padding:10px 8px;font-size:13px;color:#4a5568;">' + h_(it.cat || 'ทั่วไป') + '</td>' +
+      '<td style="padding:10px 8px;font-size:13px;font-weight:600;color:#2d3748;">' + h_(it.point) + '</td>' +
+      '<td style="padding:10px 8px;font-size:12px;color:#718096;">' + h_(it.std || '-') + '</td>' +
+      '<td style="padding:10px 8px;text-align:center;font-size:13px;">' + resBadge + '</td>' +
+      '</tr>';
+
+    itemRowsText += (idx + 1) + '. [' + (it.cat || 'ทั่วไป') + '] ' + it.point + ' : ' + (itNg ? '✕ ไม่ผ่าน (NG)' : '✓ ผ่าน (OK)') + '\n';
+  });
+
+  // ส่วนทำความสะอาด (ถ้ามี)
+  let cleanSectionHtml = '';
+  let cleanSectionText = '';
+  if (cleaning.length > 0) {
+    let cleanRows = '';
+    cleaning.forEach((c, idx) => {
+      const isDone = c.done;
+      cleanRows += '<tr style="border-bottom:1px solid #e2e8f0;background:' + (idx % 2 === 0 ? '#fff' : '#f8fafc') + ';">' +
+        '<td style="padding:8px 10px;font-size:13px;color:#4a5568;">' + h_(c.area || '-') + '</td>' +
+        '<td style="padding:8px 10px;font-size:13px;color:#2d3748;">' + h_(c.task || '-') + '</td>' +
+        '<td style="padding:8px 10px;text-align:center;font-size:13px;">' +
+        (isDone ? '<span style="color:#22543d;font-weight:600;">✓ เรียบร้อย</span>' : '<span style="color:#a0aec0;">-</span>') +
+        '</td></tr>';
+      cleanSectionText += '- ' + (c.area || '') + ' (' + (c.task || '') + '): ' + (isDone ? 'เรียบร้อย' : 'ยังไม่ทำ') + '\n';
+    });
+
+    cleanSectionHtml = '<div style="margin-top:22px;">' +
+      '<h4 style="margin:0 0 8px 0;color:#1c3a57;font-size:14px;border-bottom:2px solid #e2e8f0;padding-bottom:6px;">🧹 บันทึกการทำความสะอาด</h4>' +
+      '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;">' +
+      '<thead><tr style="background:#edf2f7;color:#4a5568;font-size:12px;text-align:left;">' +
+      '<th style="padding:8px 10px;">จุดทำความสะอาด</th><th style="padding:8px 10px;">รายการงาน</th><th style="padding:8px 10px;text-align:center;">สถานะ</th></tr></thead>' +
+      '<tbody>' + cleanRows + '</tbody></table></div>';
+  }
+
+  // กล่องแจ้งเตือนจุดผิดปกติ (NG Highlight)
+  let ngAlertHtml = '';
+  if (isNg) {
+    const ngItemsList = ngList
+      .map(x => '<li style="margin-bottom:4px;"><b>' + h_(x.point) + '</b> (' + h_(x.cat || 'ทั่วไป') + ') - เกณฑ์: ' + h_(x.std || '-') + '</li>')
+      .join('');
+    ngAlertHtml = '<div style="background:#fff5f5;border-left:5px solid #e53e3e;padding:14px 18px;margin:0 0 20px 0;border-radius:6px;">' +
+      '<div style="color:#c53030;font-weight:bold;font-size:15px;margin-bottom:8px;">⚠️ รายการที่ไม่ผ่านเกณฑ์มาตรฐาน (NG) ' + ngList.length + ' ข้อ:</div>' +
+      '<ul style="margin:0 0 10px 0;padding-left:22px;color:#9b2c2c;font-size:13px;line-height:1.6;">' + ngItemsList + '</ul>' +
+      (note ? '<div style="color:#742a2a;font-size:13px;background:#fed7d7;padding:10px 14px;border-radius:4px;border-left:3px solid #e53e3e;"><b>หมายเหตุจากผู้ตรวจ:</b> ' + h_(note) + '</div>' : '') +
+      '</div>';
+  }
+
+  // กล่องสรุปจำนวนผ่าน / ไม่ผ่าน
+  const summaryHtml = '<table role="presentation" style="width:100%;border-collapse:separate;border-spacing:8px 0;margin:0 0 18px 0;"><tr>' +
+    '<td style="background:#f0fff4;border:1px solid #c6f6d5;border-radius:8px;padding:12px;text-align:center;width:33%;"><div style="font-size:24px;font-weight:bold;color:#22543d;">' + okList.length + '</div><div style="font-size:12px;color:#276749;">ผ่าน (OK)</div></td>' +
+    '<td style="background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;padding:12px;text-align:center;width:33%;"><div style="font-size:24px;font-weight:bold;color:#c53030;">' + ngList.length + '</div><div style="font-size:12px;color:#9b2c2c;">ไม่ผ่าน (NG)</div></td>' +
+    '<td style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center;width:33%;"><div style="font-size:24px;font-weight:bold;color:#1c3a57;">' + items.length + '</div><div style="font-size:12px;color:#4a5568;">ทั้งหมด</div></td>' +
+    '</tr></table>';
+
+  const htmlBody = '<!DOCTYPE html><html><head><meta charset="utf-8"></head>' +
+    '<body style="margin:0;padding:24px 10px;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;">' +
+    '<div style="max-width:680px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">' +
+
+    '<div style="background:#1c3a57;padding:24px 20px;text-align:center;color:#ffffff;">' +
+    '<div style="font-size:12px;letter-spacing:1.5px;color:#f08a1c;font-weight:bold;margin-bottom:6px;">ระบบตรวจเช็ครถโฟล์คลิฟท์ประจำวัน (Bitwise)</div>' +
+    '<h2 style="margin:0;font-size:20px;color:#ffffff;">รายงานผลการตรวจเช็ครถโฟล์คลิฟท์</h2>' +
+    '</div>' +
+
+    '<table role="presentation" style="width:100%;border-collapse:collapse;background:' + statusBg + ';border-bottom:2px solid ' + statusColor + ';"><tr>' +
+    '<td style="padding:14px 20px;font-size:14px;color:#4a5568;font-weight:500;">ผลการตรวจภาพรวม:</td>' +
+    '<td style="padding:14px 20px;text-align:right;font-size:16px;font-weight:bold;color:' + statusColor + ';">' + statusBadge + '</td>' +
+    '</tr></table>' +
+
+    '<div style="padding:22px 20px;">' +
+    ngAlertHtml +
+    summaryHtml +
+
+    '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 18px;margin-bottom:20px;">' +
+    '<table style="width:100%;font-size:13px;border-collapse:collapse;color:#2d3748;line-height:1.7;">' +
+    '<tr>' +
+    '<td style="padding:4px 0;width:50%;"><b>👤 ผู้ตรวจเช็ค:</b> ' + h_(u.name) + ' (' + h_(u.id) + ')</td>' +
+    '<td style="padding:4px 0;width:50%;"><b>🏢 แผนกผู้ตรวจ:</b> ' + h_(info.inspectorDept || '-') + '</td>' +
+    '</tr>' +
+    '<tr>' +
+    '<td style="padding:4px 0;"><b>🚜 รถโฟล์คลิฟท์:</b> ' + h_(m.Forklift_Name) + ' (' + h_(m.Forklift_ID) + ')</td>' +
+    '<td style="padding:4px 0;"><b>⚙️ ประเภท:</b> ' + h_(m.Model_Type || '-') + '</td>' +
+    '</tr>' +
+    '<tr>' +
+    '<td style="padding:4px 0;"><b>📍 ประจำแผนก/ที่ตั้ง:</b> ' + h_(cleanDept_(m.Department)) + ' / ' + h_(m.Location || '-') + '</td>' +
+    '<td style="padding:4px 0;"><b>📅 วันที่-เวลา:</b> ' + nowStr + ' น.</td>' +
+    '</tr>' +
+    '<tr>' +
+    '<td style="padding:4px 0;" colspan="2"><b>👷 ผู้รับผิดชอบรถ:</b> ' + h_(ownerName) + '</td>' +
+    '</tr>' +
+    (note && !isNg ? '<tr><td colspan="2" style="padding:6px 0;color:#4a5568;"><b>📝 หมายเหตุ:</b> ' + h_(note) + '</td></tr>' : '') +
+    '</table>' +
+    '</div>' +
+
+    '<h4 style="margin:0 0 10px 0;color:#1c3a57;font-size:14px;border-bottom:2px solid #e2e8f0;padding-bottom:6px;">📋 รายละเอียดการตรวจเช็ครายข้อ (' + items.length + ' รายการ)</h4>' +
+    '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;">' +
+    '<thead><tr style="background:#edf2f7;color:#4a5568;font-size:12px;text-align:left;">' +
+    '<th style="padding:10px 8px;text-align:center;width:35px;">#</th>' +
+    '<th style="padding:10px 8px;width:90px;">หมวดหมู่</th>' +
+    '<th style="padding:10px 8px;">จุดตรวจเช็ค</th>' +
+    '<th style="padding:10px 8px;width:140px;">เกณฑ์มาตรฐาน</th>' +
+    '<th style="padding:10px 8px;text-align:center;width:115px;">ผลการตรวจ</th>' +
+    '</tr></thead>' +
+    '<tbody>' + itemRowsHtml + '</tbody></table>' +
+
+    cleanSectionHtml +
+    '</div>' +
+
+    '<div style="background:#f7fafc;border-top:1px solid #e2e8f0;padding:16px 20px;text-align:center;font-size:12px;color:#a0aec0;line-height:1.6;">' +
+    'อีเมล์นี้ถูกส่งโดยอัตโนมัติจากระบบตรวจเช็ครถโฟล์คลิฟท์ Bitwise<br>' +
+    'บันทึกข้อมูลเมื่อ ' + nowStr + ' น.' +
+    '</div>' +
+    '</div></body></html>';
+
+  const textBody = 'รายงานผลการตรวจเช็ครถโฟล์คลิฟท์ Bitwise\n' +
+    '====================================\n' +
+    'สถานะ: ' + statusText + ' | ผ่าน ' + okList.length + ' / ไม่ผ่าน ' + ngList.length + ' / ทั้งหมด ' + items.length + '\n' +
+    'ผู้ตรวจเช็ค: ' + u.name + ' (' + u.id + ') แผนก: ' + (info.inspectorDept || '-') + '\n' +
+    'รถโฟล์คลิฟท์: ' + m.Forklift_Name + ' (' + m.Forklift_ID + ')\n' +
+    'ประเภท: ' + (m.Model_Type || '-') + '\n' +
+    'ประจำแผนก/ที่ตั้ง: ' + cleanDept_(m.Department) + ' / ' + (m.Location || '-') + '\n' +
+    'วัน-เวลา: ' + nowStr + ' น.\n' +
+    (note ? 'หมายเหตุ: ' + note + '\n' : '') + '\n' +
+    'รายการตรวจเช็ค (' + items.length + ' รายการ):\n' +
+    itemRowsText + '\n' +
+    (cleanSectionText ? 'การทำความสะอาด:\n' + cleanSectionText + '\n' : '') +
+    '====================================\n';
+
+  MailApp.sendEmail({
+    to: recipient,
+    subject: subject,
+    htmlBody: htmlBody,
+    body: textBody,
+    name: 'ระบบตรวจเช็คโฟล์คลิฟท์ Bitwise'
+  });
+
+  return true;
+}
+
+/**
+ * ฟังก์ชันสำหรับทดสอบการส่งอีเมล์
+ */
+function sendTestEmail() {
+  const recipient = getRecipients_();
+
+  const subject = '✓ [ทดสอบระบบ] ทดสอบการส่งอีเมล์แจ้งเตือนระบบตรวจเช็ครถโฟล์คลิฟท์ Bitwise';
+  const htmlBody = '<div style="font-family:Arial,sans-serif;padding:24px;border:1px solid #e2e8f0;border-radius:10px;max-width:600px;background:#ffffff;">' +
+    '<h3 style="color:#1c3a57;margin-top:0;">🚜 ทดสอบระบบส่งอีเมล์แจ้งเตือน (Forklift Inspection)</h3>' +
+    '<p>อีเมล์นี้เป็นการทดสอบการส่งอีเมล์อัตโนมัติจาก Google Apps Script ไปยัง <b>' + h_(recipient) + '</b></p>' +
+    '<p><b>เวลาทดสอบ:</b> ' + Utilities.formatDate(new Date(), TZ, 'dd/MM/yyyy HH:mm:ss') + ' น.</p>' +
+    '<div style="background:#f0fff4;border:1px solid #c6f6d5;color:#22543d;padding:12px;border-radius:6px;font-weight:bold;">' +
+    '✓ ระบบส่งอีเมล์ทำงานปกติพร้อมรับรายงานการตรวจเช็ค' +
+    '</div>' +
+    '</div>';
+
+  MailApp.sendEmail({
+    to: recipient,
+    subject: subject,
+    htmlBody: htmlBody,
+    body: 'ทดสอบการส่งอีเมล์แจ้งเตือนระบบตรวจเช็ครถโฟล์คลิฟท์ Bitwise ไปยัง ' + recipient + ' สำเร็จ'
+  });
+
+  return { ok: true, recipient: recipient, message: 'ส่งอีเมล์ทดสอบไปยัง ' + recipient + ' สำเร็จแล้ว' };
 }
 
 /* ----------------------------------------------------
@@ -345,7 +627,13 @@ function cleanText_(json) {
 
 function getDashboard(token) {
   const day = d => Utilities.formatDate(d, TZ, 'yyyy-MM-dd'), names = nameMap_();
-  const logs = rows_(SH.LOG).filter(r => r.Timestamp instanceof Date).sort((a, b) => a.Timestamp - b.Timestamp);
+  const logs = rows_(SH.LOG)
+    .map(r => {
+      r.Timestamp = parseDate_(r.Timestamp);
+      return r;
+    })
+    .filter(r => r.Timestamp instanceof Date)
+    .sort((a, b) => a.Timestamp - b.Timestamp);
   const today = day(new Date()), days = [];
   for (let i = 6; i >= 0; i--) days.push(day(new Date(Date.now() - i * 864e5)));
 
@@ -433,10 +721,32 @@ const SEED_INSPECT_FORKLIFT = {
   ]
 };
 
-// ชื่อไฟล์รูปจริงในโฟลเดอร์ asset ตามลำดับรายการตรวจ ('' = ไม่มีรูป ระบบจะใช้ตัวจับคู่ในเว็บแทน)
+// ชื่อไฟล์รูปจริงแยกตามโฟลเดอร์ประเภทรถ (gas/ และ electric/)
 const SEED_IMG_FORKLIFT = {
-  gas: ['', '', '', 'battery-water.jpg', 'hydraulic-oil.jpg', 'mast-forks.jpg', 'wheel-tire.jpg', 'hydraulic-hose.jpg', 'lights-horn.jpg', 'brake.jpg', '', '', '', 'chain.jpg'],
-  electric: ['battery-water.jpg', 'battery-terminal.jpg', 'charge-plug.jpg', 'mast-forks.jpg', 'wheel-tire.jpg', 'hydraulic-oil.jpg', 'lights-horn.jpg', 'hydraulic-hose.jpg', 'chain.jpg', 'brake.jpg']
+  gas: [
+    '', '', '', 
+    'gas/battery-water.jpg', 
+    'gas/hydraulic-oil.jpg', 
+    'gas/mast-forks.jpg', 
+    'gas/wheel-tire.jpg', 
+    'gas/hydraulic-hose.jpg', 
+    'gas/lights-horn.jpg', 
+    'gas/brake.jpg', 
+    '', '', '', 
+    'gas/chain.jpg'
+  ],
+  electric: [
+    'electric/battery-water.jpg', 
+    'electric/battery-terminal.jpg', 
+    'electric/charge-plug.jpg', 
+    'electric/mast-forks.jpg', 
+    'electric/wheel-tire.jpg', 
+    'electric/hydraulic-oil.jpg', 
+    'electric/lights-horn.jpg', 
+    'electric/hydraulic-hose.jpg', 
+    'electric/chain.jpg', 
+    'electric/brake.jpg'
+  ]
 };
 
 const SEED_CLEAN_FORKLIFT = [
