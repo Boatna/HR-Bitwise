@@ -314,18 +314,39 @@ function submitCheck(token, d) {
   const left = items.filter(c => !resMap[c.Item_ID]).length;
   if (left) throw new Error('ยังไม่ได้เลือกผลตรวจ ' + left + ' จุด');
 
-  const data = items.map(c => ({
-    id: c.Item_ID,
-    cat: c.Category || 'ทั่วไป',
-    point: c.Inspection_Point,
-    std: c.Standard_Criteria || '',
-    result: resMap[c.Item_ID] === 'NG' ? 'NG' : 'OK'
-  }));
+  // รายละเอียดความผิดปกติรายข้อ { Item_ID: 'ข้อความ' }
+  const ngDetails = (d.ngDetails && typeof d.ngDetails === 'object') ? d.ngDetails : null;
+
+  const data = items.map(c => {
+    const isNg = resMap[c.Item_ID] === 'NG';
+    const row = {
+      id: c.Item_ID,
+      cat: c.Category || 'ทั่วไป',
+      point: c.Inspection_Point,
+      std: c.Standard_Criteria || '',
+      result: isNg ? 'NG' : 'OK'
+    };
+    if (isNg) row.detail = s_(ngDetails && ngDetails[c.Item_ID]).slice(0, 500);
+    return row;
+  });
 
   const status = data.some(x => x.result === 'NG') ? 'NG' : 'OK';
-  if (status === 'NG' && !s_(d.note)) {
-    throw new Error('กรุณาระบุหมายเหตุเมื่อพบจุดผิดปกติ (NG)');
+  if (status === 'NG') {
+    if (ngDetails) {
+      // หน้าเว็บเวอร์ชันใหม่: ทุกข้อ NG ต้องมีรายละเอียดของตัวเอง
+      const noDetail = data.filter(x => x.result === 'NG' && !x.detail);
+      if (noDetail.length) {
+        throw new Error('กรุณาระบุรายละเอียดความผิดปกติ: ' + noDetail.map(x => x.point).join(', '));
+      }
+    } else if (!s_(d.note)) {
+      // หน้าเว็บเวอร์ชันเก่า (ไม่ส่ง ngDetails): ใช้หมายเหตุรวมแทน
+      throw new Error('กรุณาระบุหมายเหตุเมื่อพบจุดผิดปกติ (NG)');
+    }
   }
+
+  // คอลัมน์ Remark ในชีต: ถ้าไม่ได้กรอกหมายเหตุรวม ให้สรุปจากรายละเอียดรายข้อ
+  const remarkText = s_(d.note) || data.filter(x => x.result === 'NG' && x.detail)
+    .map(x => x.point + ': ' + x.detail).join(' | ');
 
   // หน้าเว็บกำหนดทำความสะอาดเฉพาะวันจันทร์ → วันอื่นไม่บันทึก/ไม่แสดงในอีเมล์ (กันแสดงว่า "ยังไม่ทำ" ผิดๆ)
   const cleaningRequired = d.cleaningRequired !== false;
@@ -355,7 +376,7 @@ function submitCheck(token, d) {
     m.Owner_Emp_ID,
     status,
     JSON.stringify({ items: data, cleaning, steps: tasks.length ? [] : (d.steps || []) }),
-    safeCell_(d.note)
+    safeCell_(remarkText)
   ]);
   const lastRow = logSh.getLastRow();
   if (lastRow > 1) {
@@ -442,12 +463,15 @@ function sendInspectionEmail_(info) {
     itemRowsHtml += '<tr style="background:' + rowBg + ';border-bottom:1px solid #e2e8f0;">' +
       '<td style="padding:10px 8px;text-align:center;font-size:13px;color:#718096;">' + (idx + 1) + '</td>' +
       '<td style="padding:10px 8px;font-size:13px;color:#4a5568;">' + h_(it.cat || 'ทั่วไป') + '</td>' +
-      '<td style="padding:10px 8px;font-size:13px;font-weight:600;color:#2d3748;">' + h_(it.point) + '</td>' +
+      '<td style="padding:10px 8px;font-size:13px;font-weight:600;color:#2d3748;">' + h_(it.point) +
+        (itNg && it.detail ? '<div style="margin-top:6px;padding:6px 10px;background:#fed7d7;border-left:3px solid #e53e3e;border-radius:4px;font-size:12px;font-weight:normal;color:#742a2a;"><b>รายละเอียดความผิดปกติ:</b> ' + h_(it.detail) + '</div>' : '') +
+        '</td>' +
       '<td style="padding:10px 8px;font-size:12px;color:#718096;">' + h_(it.std || '-') + '</td>' +
       '<td style="padding:10px 8px;text-align:center;font-size:13px;">' + resBadge + '</td>' +
       '</tr>';
 
-    itemRowsText += (idx + 1) + '. [' + (it.cat || 'ทั่วไป') + '] ' + it.point + ' : ' + (itNg ? '✕ ไม่ผ่าน (NG)' : '✓ ผ่าน (OK)') + '\n';
+    itemRowsText += (idx + 1) + '. [' + (it.cat || 'ทั่วไป') + '] ' + it.point + ' : ' + (itNg ? '✕ ไม่ผ่าน (NG)' : '✓ ผ่าน (OK)') + '\n' +
+      (itNg && it.detail ? '     รายละเอียดความผิดปกติ: ' + it.detail + '\n' : '');
   });
 
   // ส่วนทำความสะอาด (ถ้ามี)
@@ -478,7 +502,8 @@ function sendInspectionEmail_(info) {
   let ngAlertHtml = '';
   if (isNg) {
     const ngItemsList = ngList
-      .map(x => '<li style="margin-bottom:4px;"><b>' + h_(x.point) + '</b> (' + h_(x.cat || 'ทั่วไป') + ') - เกณฑ์: ' + h_(x.std || '-') + '</li>')
+      .map(x => '<li style="margin-bottom:6px;"><b>' + h_(x.point) + '</b> (' + h_(x.cat || 'ทั่วไป') + ') - เกณฑ์: ' + h_(x.std || '-') +
+        (x.detail ? '<br><span style="color:#742a2a;">➜ <b>รายละเอียด:</b> ' + h_(x.detail) + '</span>' : '') + '</li>')
       .join('');
     ngAlertHtml = '<div style="background:#fff5f5;border-left:5px solid #e53e3e;padding:14px 18px;margin:0 0 20px 0;border-radius:6px;">' +
       '<div style="color:#c53030;font-weight:bold;font-size:15px;margin-bottom:8px;">⚠️ รายการที่ไม่ผ่านเกณฑ์มาตรฐาน (NG) ' + ngList.length + ' ข้อ:</div>' +
@@ -610,7 +635,8 @@ function sendTestEmail() {
 
 function ngText_(json) {
   try {
-    return JSON.parse(json).items.filter(x => x.result === 'NG').map(x => x.point).join(', ');
+    return JSON.parse(json).items.filter(x => x.result === 'NG')
+      .map(x => x.point + (x.detail ? ' (' + x.detail + ')' : '')).join(', ');
   } catch (e) {
     return '';
   }

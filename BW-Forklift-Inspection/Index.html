@@ -165,7 +165,7 @@
           <div id="boxAllView" class="hide">
             <div id="tiles"></div>
             <p class="hint" style="margin:10px 0 6px;">
-              💡 <b>คำแนะนำ:</b> แตะ 1 ครั้ง = <span style="color:var(--ok); font-weight:600;">✓ ปกติ</span> · แตะ 2 ครั้ง = <span style="color:var(--ng); font-weight:600;">✕ ผิดปกติ</span> · แตะ 3 ครั้ง = ล้างค่า
+              💡 <b>คำแนะนำ:</b> แตะ 1 ครั้ง = <span style="color:var(--ok); font-weight:600;">✓ ปกติ</span> · แตะ 2 ครั้ง = <span style="color:var(--ng); font-weight:600;">✕ ผิดปกติ</span> (จะมีช่อง "รายละเอียดความผิดปกติ" ขึ้นให้กรอกในข้อนั้น) · แตะ 3 ครั้ง = ล้างค่า
             </p>
             <div class="row">
               <button class="btn alt" onclick="allOk()">✓ ปกติทั้งหมด</button>
@@ -180,8 +180,8 @@
               <button class="btn alt" onclick="cleanAll()">ทำความสะอาดครบทุกข้อ</button>
             </div>
           </div>
-          <div class="sec" style="margin-top:20px;">หมายเหตุ / รายละเอียดความผิดปกติ</div>
-          <textarea id="note" rows="3" placeholder="กรณีพบจุดผิดปกติ (NG) ต้องระบุรายละเอียดหรือความเสียหายที่พบที่นี่..."></textarea>
+          <div class="sec" style="margin-top:20px;">หมายเหตุเพิ่มเติม (ถ้ามี)</div>
+          <textarea id="note" rows="3" placeholder="หมายเหตุอื่นๆ (ไม่บังคับ) · รายละเอียดความผิดปกติให้กรอกในแต่ละข้อที่เลือก NG"></textarea>
 
           <div class="row" style="margin-top:16px;">
             <button class="btn big" id="btnSave" onclick="saveInspection()">บันทึกผลการตรวจเช็ค</button>

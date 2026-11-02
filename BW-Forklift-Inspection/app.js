@@ -1,4 +1,4 @@
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyysi_zOE2vUMyYGUOZMRrWYOIOhDknyXuaTY-ZtObv4UZi6VI68oa7VSbsYiLvR2c/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlsEY-vnNTl15QymAWZijc-xwcm93zSUZPnkx9Ch9VcoBwsTljmbofTMGIJiFK8V6S/exec';
 const MOCK_PEOPLE = [
   { id: 'EMP-001', name: 'สมชาย ใจดี', dept: 'คลังสินค้าวัตถุดิบ', pin: '1234' },
   { id: 'EMP-002', name: 'วิชัย มั่นคง', dept: 'คลังสินค้าวัตถุดิบ', pin: '1234' },
@@ -94,6 +94,7 @@ let USER_ID = sessionStorage.getItem('fl_user_id') || '';
 let USER_DEPT = sessionStorage.getItem('fl_user_dept') || '';
 let FORM = null;
 let res = {};
+let ngd = {};   // รายละเอียดความผิดปกติรายข้อ { itemId: 'ข้อความ' }
 let cres = {};
 let pin = '';
 let PEOPLE = [];
@@ -466,10 +467,14 @@ async function loadForm() {
         }
       };
       $('tiles').onclick = e => {
+        if (e.target.closest('.ng-detail')) return; // คลิกในช่องกรอกรายละเอียด ไม่ต้องสลับสถานะ
         const b = e.target.closest('.tile');
         if (b) tap(b.dataset.i);
       };
+      $('tiles').oninput = onNgInput;
+      $('boxFocusView').oninput = onNgInput;
       $('tiles').onkeydown = e => {
+        if (e.target.closest('.ng-detail')) return; // พิมพ์เว้นวรรค/Enter ในช่องกรอกได้ตามปกติ
         if (e.key !== 'Enter' && e.key !== ' ') return;
         const b = e.target.closest('.tile');
         if (b) { e.preventDefault(); tap(b.dataset.i); }
@@ -495,6 +500,7 @@ function pickForklift() {
   const m = curForklift();
   if (!m) return;
   res = {};
+  ngd = {};
   cres = {};
   curFocusIdx = 0;
   $('note').value = '';
@@ -619,6 +625,8 @@ function renderFocusView() {
         </button>
       </div>
 
+      ${curStatus === 'NG' ? ngDetailBox(item.id) : ''}
+
       <!-- Matching Cleaning Task for this Point (แสดงเฉพาะวันจันทร์) -->
       ${isMondayCleaningDay() ? `
         <div class="focus-clean-card">
@@ -653,13 +661,37 @@ function renderFocusView() {
   drawPlist();
 }
 
+// ---- รายละเอียดความผิดปกติ (แสดงเฉพาะข้อที่เลือก NG) ----
+function ngDetailBox(id) {
+  return `
+    <div class="ng-detail">
+      <label for="ngd_${esc(id)}">⚠️ รายละเอียดความผิดปกติ <span class="req">* จำเป็นต้องกรอก</span></label>
+      <textarea id="ngd_${esc(id)}" class="ng-detail-input" data-ngd="${esc(id)}" rows="3" maxlength="500"
+        placeholder="ระบุสิ่งที่พบ เช่น ตำแหน่ง/อาการ/ความเสียหาย">${esc(ngd[id] || '')}</textarea>
+    </div>`;
+}
+
+function onNgInput(e) {
+  const id = e.target && e.target.dataset && e.target.dataset.ngd;
+  if (id) ngd[id] = e.target.value;
+}
+
+function focusNgInput(id) {
+  setTimeout(() => {
+    const list = Array.from(document.querySelectorAll('textarea[data-ngd]')).filter(t => t.dataset.ngd === String(id) && t.offsetParent !== null);
+    if (list[0]) list[0].focus({ preventScroll: false });
+  }, 60);
+}
+
 function setFocusResult(itemId, val) {
   if (val) res[itemId] = val;
   else delete res[itemId];
+  if (val !== 'NG') delete ngd[itemId];
 
   updateProgress();
   renderFocusView();
   drawTiles();
+  if (val === 'NG') focusNgInput(itemId);
 
   if (val === 'OK' && curFocusIdx < getCurItems().length - 1) {
     setTimeout(() => {
@@ -762,6 +794,7 @@ function drawTiles() {
           <span class="tile-state">${stateLabel}</span>
         </div>
         <div class="tile-std">${esc(item.std)}</div>
+        ${state === 'NG' ? ngDetailBox(item.id) : ''}
       </div>
     `;
   });
@@ -776,6 +809,7 @@ function tap(id) {
   if (!cur) res[id] = 'OK';
   else if (cur === 'OK') res[id] = 'NG';
   else delete res[id];
+  if (res[id] !== 'NG') delete ngd[id];
 
   const its = getCurItems();
   const idx = its.findIndex(i => i.id === id);
@@ -789,9 +823,11 @@ function tap(id) {
   drawTiles();
   drawPlist();
   if (checkMode === 'focus') renderFocusView();
+  if (res[id] === 'NG') focusNgInput(id);
 }
 
 function allOk() {
+  ngd = {};
   getCurItems().forEach(i => res[i.id] = 'OK');
   updateProgress();
   drawTiles();
@@ -802,6 +838,7 @@ function allOk() {
 
 function clearAll() {
   res = {};
+  ngd = {};
   updateProgress();
   drawTiles();
   drawPlist();
@@ -860,11 +897,19 @@ async function saveInspection() {
 
   const hasNg = its.some(i => res[i.id] === 'NG');
   const note = $('note').value.trim();
-  if (hasNg && !note) {
-    toast('พบจุดผิดปกติ (NG) กรุณาระบุรายละเอียดในหมายเหตุ');
-    $('note').focus();
+
+  // ทุกข้อที่เลือก NG ต้องมีรายละเอียดความผิดปกติ
+  const missing = its.filter(i => res[i.id] === 'NG' && !(ngd[i.id] || '').trim());
+  if (missing.length) {
+    const first = missing[0];
+    toast(`กรุณากรอกรายละเอียดความผิดปกติ (เหลืออีก ${missing.length} ข้อ) เริ่มที่: ${first.point}`, 4500);
+    const idx = its.findIndex(i => i.id === first.id);
+    if (idx >= 0) selectInspectionPoint(idx);
+    focusNgInput(first.id);
     return;
   }
+  const ngDetails = {};
+  its.forEach(i => { if (res[i.id] === 'NG') ngDetails[i.id] = ngd[i.id].trim(); });
 
   const m = curForklift();
   if (!m) {
@@ -882,6 +927,7 @@ async function saveInspection() {
     inspectorName: USER_NAME,
     inspectorDept: USER_DEPT,
     results: res,
+    ngDetails: ngDetails,
     cleaning: cres,
     cleaningRequired: isMondayCleaningDay(),
     note: note
@@ -912,6 +958,7 @@ async function saveInspection() {
     }
 
     res = {};
+    ngd = {};
     cres = {};
     curFocusIdx = 0;
     $('note').value = '';
@@ -934,7 +981,8 @@ function saveLocalLog(m, payload, status) {
   const logs = JSON.parse(localStorage.getItem('fl_local_logs') || '[]');
   const now = new Date();
   const timeStr = `${pad2(now.getDate())}/${pad2(now.getMonth() + 1)} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
-  const ngItems = getCurItems().filter(i => payload.results[i.id] === 'NG').map(i => i.point).join(', ');
+  const ngItems = getCurItems().filter(i => payload.results[i.id] === 'NG')
+    .map(i => i.point + ((payload.ngDetails || {})[i.id] ? ' (' + payload.ngDetails[i.id] + ')' : '')).join(', ');
 
   logs.unshift({
     t: timeStr,
