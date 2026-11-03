@@ -1,8 +1,3 @@
-/**
- * ระบบตรวจเช็ครถโฟล์คลิฟท์ (Forklift Daily Inspection System)
- * Google Apps Script Backend (API for GitHub Pages / VS Code & Web App)
- */
-
 const SH = {
   EMP: 'Employees',
   FL: 'Forklift',
@@ -21,22 +16,17 @@ const HEAD = {
   Management: ['Config_Key', 'Config_Value', 'Last_Updated', 'Updated_By']
 };
 
-const TTL = 6 * 60 * 60; // 6 hours session (ขีดจำกัดสูงสุดของ CacheService)
+const TTL = 6 * 60 * 60;
 const MAX_FAIL = 5;
 const LOCK_SEC = 300;
-const TIMEZONE = 'Asia/Bangkok';
-const TZ = TIMEZONE;
+const TZ = 'Asia/Bangkok';
+const DASH_MAX_ROWS = 1500;
+const ERR_AUTH = 'SESSION_EXPIRED';
 const DEFAULT_NOTIFICATION_EMAIL = 'nattapong.p@bitwise.co.th';
-
-/* ----------------------------------------------------
- * 1. Web App Entry Points (doGet & doPost for REST API)
- * ---------------------------------------------------- */
 
 function doGet(e) {
   const p = (e && e.parameter) || {};
   const action = p.action || '';
-
-  // If called as API
   if (action) {
     try {
       let result;
@@ -53,22 +43,15 @@ function doGet(e) {
         case 'getDashboard':
           result = { ok: true, data: getDashboard(p.token) };
           break;
-        case 'getImage':
-          result = { ok: true, data: getImage(p.token, p.forkliftId || p.machineId) };
-          break;
-        case 'checkData':
-          result = { ok: true, issues: checkData() };
-          break;
         default:
           result = { ok: false, error: 'Unknown action: ' + action };
       }
       return jsonResponse_(result);
     } catch (err) {
-      return jsonResponse_({ ok: false, error: err.message || String(err) });
+      return jsonResponse_(errorResult_(err));
     }
   }
 
-  // If accessed directly in browser
   return HtmlService.createHtmlOutput(
     '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Forklift Inspection API</title>' +
     '<style>body{font-family:sans-serif;padding:30px;line-height:1.6;color:#1c3a57;max-width:700px;margin:auto}' +
@@ -79,7 +62,7 @@ function doGet(e) {
     '<div class="box"><b>สถานะ:</b> ออนไลน์ (Online)<br>' +
     '<b>เวลาเซิร์ฟเวอร์:</b> ' + Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm:ss') + '<br>' +
     '<b>URL สำหรับนำไปใส่ในเว็บ:</b> ใช้ URL ของหน้านี้ได้เลย</div>' +
-    '<p>ทดสอบเรียกข้อมูล: <a href="?action=ping">?action=ping</a> | <a href="?action=getLoginData">?action=getLoginData</a></p>' +
+    '<p>ทดสอบเรียกข้อมูล: <a href="?action=ping">?action=ping</a></p>' +
     '</body></html>'
   ).setTitle('ระบบตรวจเช็ครถโฟล์คลิฟท์ API');
 }
@@ -97,10 +80,8 @@ function doPost(e) {
       body = e.parameter;
     }
 
-    const action = body.action || '';
     let result;
-
-    switch (action) {
+    switch (body.action || '') {
       case 'login':
         result = login(body.empId, body.pin);
         break;
@@ -109,15 +90,14 @@ function doPost(e) {
         result = { ok: true };
         break;
       case 'submitCheck':
-        result = submitCheck(body.token, body.data || body);
+        result = submitCheck(body.token, body.data || {});
         break;
       default:
-        result = { ok: false, error: 'Unknown POST action: ' + action };
+        result = { ok: false, error: 'Unknown POST action: ' + (body.action || '') };
     }
-
     return jsonResponse_(result);
   } catch (err) {
-    return jsonResponse_({ ok: false, error: err.message || String(err) });
+    return jsonResponse_(errorResult_(err));
   }
 }
 
@@ -126,9 +106,10 @@ function jsonResponse_(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-/* ----------------------------------------------------
- * 2. Helpers & Sheet Operations
- * ---------------------------------------------------- */
+function errorResult_(err) {
+  const msg = (err && err.message) || String(err);
+  return msg === ERR_AUTH ? { ok: false, error: msg, code: 'AUTH' } : { ok: false, error: msg };
+}
 
 const sheet_ = n => SpreadsheetApp.getActiveSpreadsheet().getSheetByName(n);
 const s_ = v => (v == null ? '' : String(v).trim());
@@ -138,8 +119,6 @@ function rows_(name) {
   if (!sh) throw new Error('ไม่พบชีต ' + name + ' (กรุณารัน setup() ก่อน)');
   const v = sh.getDataRange().getValues();
   if (v.length < 2) return [];
-
-  // ค้นหาแถวที่เป็นหัวตารางจริง (ป้องกันกรณีมีแถวว่างด้านบน)
   let headerIdx = -1;
   for (let i = 0; i < v.length; i++) {
     if (s_(v[i][0]) !== '') {
@@ -169,31 +148,54 @@ function parseDate_(val) {
   return isNaN(d.getTime()) ? null : d;
 }
 
-function auth_(token) {
-  if (!token) return null;
-  const j = CacheService.getScriptCache().get('t_' + token);
-  return j ? JSON.parse(j) : null; // null = session หมดอายุ / ไม่มี token
-}
-
-// กันข้อความที่ขึ้นต้นด้วย = + - @ ถูกชีตตีความเป็นสูตร (formula injection)
 const safeCell_ = v => { const t = s_(v); return /^[=+\-@]/.test(t) ? "'" + t : t; };
-
-// ป้องกันข้อความจากผู้ใช้ทำให้ HTML อีเมล์เพี้ยน
 const h_ = v => String(v == null ? '' : v)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 const nameMap_ = () => {
   const m = {};
-  rows_(SH.EMP).forEach(e => m[e.Employee_ID] = e.Employee_Name);
+  rows_(SH.EMP).forEach(e => { m[e.Employee_ID] = e.Employee_Name; });
   return m;
 };
 
 const cleanDept_ = d => (d ? String(d).trim().replace(/^หน่วยโลหะแผ่น\//, '') : 'ทั่วไป');
 
-/* ----------------------------------------------------
- * 3. Core Business Logic
- * ---------------------------------------------------- */
+function requireAuth_(token) {
+  if (!token) throw new Error(ERR_AUTH);
+  const j = CacheService.getScriptCache().get('t_' + token);
+  if (!j) throw new Error(ERR_AUTH);
+  return JSON.parse(j);
+}
+
+function getLoginData() {
+  return rows_(SH.EMP).map(e => ({
+    id: e.Employee_ID,
+    name: e.Employee_Name,
+    dept: cleanDept_(e.Department)
+  }));
+}
+
+function login(empId, pin) {
+  const id = s_(empId);
+  const cache = CacheService.getScriptCache(), fk = 'f_' + id;
+  if (Number(cache.get(fk) || 0) >= MAX_FAIL) {
+    return { ok: false, msg: 'กรอก PIN ผิดหลายครั้ง กรุณารอ 5 นาที' };
+  }
+  const e = rows_(SH.EMP).find(r => r.Employee_ID === id);
+  if (!e || pin_(e.PIN) !== pin_(pin)) {
+    cache.put(fk, String(Number(cache.get(fk) || 0) + 1), LOCK_SEC);
+    return { ok: false, msg: 'PIN ไม่ถูกต้อง' };
+  }
+  cache.remove(fk);
+  const token = Utilities.getUuid();
+  cache.put('t_' + token, JSON.stringify({ id: e.Employee_ID, name: e.Employee_Name }), TTL);
+  return { ok: true, token, name: e.Employee_Name, id: e.Employee_ID, dept: cleanDept_(e.Department) };
+}
+
+function logout(token) {
+  if (token) CacheService.getScriptCache().remove('t_' + token);
+}
 
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -210,14 +212,8 @@ function setup() {
   });
 
   const cfg = sheet_(SH.CFG);
-  if (cfg) {
-    const existing = rows_(SH.CFG);
-    if (!existing.some(r => r.Config_Key === 'IMAGE_DEFAULT')) {
-      cfg.appendRow(['IMAGE_DEFAULT', '', new Date(), 'ใส่ File ID รูปใน Google Drive']);
-    }
-    if (!existing.some(r => r.Config_Key === 'NOTIFICATION_EMAIL')) {
-      cfg.appendRow(['NOTIFICATION_EMAIL', DEFAULT_NOTIFICATION_EMAIL, new Date(), 'อีเมล์สำหรับรับแจ้งเตือนผลการตรวจเช็ค']);
-    }
+  if (cfg && !rows_(SH.CFG).some(r => r.Config_Key === 'NOTIFICATION_EMAIL')) {
+    cfg.appendRow(['NOTIFICATION_EMAIL', DEFAULT_NOTIFICATION_EMAIL, new Date(), 'อีเมล์สำหรับรับแจ้งเตือนผลการตรวจเช็ค (คั่นหลายอีเมล์ด้วย , )']);
   }
 
   const empSh = sheet_(SH.EMP);
@@ -226,40 +222,14 @@ function setup() {
   }
 }
 
-function getLoginData() {
-  return rows_(SH.EMP).map(e => ({
-    id: e.Employee_ID,
-    name: e.Employee_Name,
-    dept: cleanDept_(e.Department)
-  }));
-}
-
-function login(empId, pin) {
-  const cache = CacheService.getScriptCache(), fk = 'f_' + empId;
-  if (Number(cache.get(fk) || 0) >= MAX_FAIL) {
-    return { ok: false, msg: 'กรอก PIN ผิดหลายครั้ง กรุณารอ 5 นาที' };
-  }
-  const emps = rows_(SH.EMP);
-  const e = emps.find(r => r.Employee_ID === s_(empId));
-  if (!e || pin_(e.PIN) !== pin_(pin)) {
-    cache.put(fk, String(Number(cache.get(fk) || 0) + 1), LOCK_SEC);
-    return { ok: false, msg: 'PIN ไม่ถูกต้อง' };
-  }
-  cache.remove(fk);
-  const token = Utilities.getUuid();
-  cache.put('t_' + token, JSON.stringify({ id: e.Employee_ID, name: e.Employee_Name }), TTL);
-  return { ok: true, token, name: e.Employee_Name, id: e.Employee_ID, dept: cleanDept_(e.Department) };
-}
-
-function logout(token) {
-  if (token) CacheService.getScriptCache().remove('t_' + token);
-}
-
 function getFormData(token) {
-  auth_(token);
-  const names = nameMap_();
-  const empDepts = {};
-  rows_(SH.EMP).forEach(e => empDepts[e.Employee_ID] = e.Department);
+  requireAuth_(token);
+  const emps = rows_(SH.EMP);
+  const names = {}, empDepts = {};
+  emps.forEach(e => {
+    names[e.Employee_ID] = e.Employee_Name;
+    empDepts[e.Employee_ID] = e.Department;
+  });
 
   return {
     forklifts: rows_(SH.FL).map(m => ({
@@ -276,7 +246,7 @@ function getFormData(token) {
       cat: c.Category || 'ทั่วไป',
       point: c.Inspection_Point,
       std: c.Standard_Criteria,
-      img: c.Image_File || ''   // ชื่อไฟล์รูปในโฟลเดอร์ asset (เว้นว่างได้)
+      img: c.Image_File || ''
     })),
     clean: safeRows_(SH.CLN).map(c => ({
       id: c.Task_ID,
@@ -289,21 +259,10 @@ function getFormData(token) {
   };
 }
 
-function getImage(token, forkliftId) {
-  try {
-    const cfg = rows_(SH.CFG), find = k => (cfg.find(r => r.Config_Key === k) || {}).Config_Value;
-    const id = find('IMAGE_' + forkliftId) || find('IMAGE_DEFAULT');
-    if (!id) return '';
-    const b = DriveApp.getFileById(id).getBlob();
-    return 'data:' + b.getContentType() + ';base64,' + Utilities.base64Encode(b.getBytes());
-  } catch (e) {
-    return '';
-  }
-}
-
 function submitCheck(token, d) {
-  const u = auth_(token) || {};
-  const flId = d.forkliftId || d.machineId;
+  const u = requireAuth_(token);          // ผู้ตรวจ = เจ้าของ token เท่านั้น (ไม่เชื่อค่าจาก client)
+  d = d || {};
+  const flId = s_(d.forkliftId);
   const m = rows_(SH.FL).find(r => r.Forklift_ID === flId);
   if (!m) throw new Error('ไม่พบข้อมูลรถโฟล์คลิฟท์ ' + flId);
 
@@ -314,7 +273,6 @@ function submitCheck(token, d) {
   const left = items.filter(c => !resMap[c.Item_ID]).length;
   if (left) throw new Error('ยังไม่ได้เลือกผลตรวจ ' + left + ' จุด');
 
-  // รายละเอียดความผิดปกติรายข้อ { Item_ID: 'ข้อความ' }
   const ngDetails = (d.ngDetails && typeof d.ngDetails === 'object') ? d.ngDetails : null;
 
   const data = items.map(c => {
@@ -333,70 +291,69 @@ function submitCheck(token, d) {
   const status = data.some(x => x.result === 'NG') ? 'NG' : 'OK';
   if (status === 'NG') {
     if (ngDetails) {
-      // หน้าเว็บเวอร์ชันใหม่: ทุกข้อ NG ต้องมีรายละเอียดของตัวเอง
       const noDetail = data.filter(x => x.result === 'NG' && !x.detail);
       if (noDetail.length) {
         throw new Error('กรุณาระบุรายละเอียดความผิดปกติ: ' + noDetail.map(x => x.point).join(', '));
       }
     } else if (!s_(d.note)) {
-      // หน้าเว็บเวอร์ชันเก่า (ไม่ส่ง ngDetails): ใช้หมายเหตุรวมแทน
       throw new Error('กรุณาระบุหมายเหตุเมื่อพบจุดผิดปกติ (NG)');
     }
   }
 
-  // คอลัมน์ Remark ในชีต: ถ้าไม่ได้กรอกหมายเหตุรวม ให้สรุปจากรายละเอียดรายข้อ
-  const remarkText = s_(d.note) || data.filter(x => x.result === 'NG' && x.detail)
+  const note = s_(d.note);
+  const remarkText = note || data.filter(x => x.result === 'NG' && x.detail)
     .map(x => x.point + ': ' + x.detail).join(' | ');
 
-  // หน้าเว็บกำหนดทำความสะอาดเฉพาะวันจันทร์ → วันอื่นไม่บันทึก/ไม่แสดงในอีเมล์ (กันแสดงว่า "ยังไม่ทำ" ผิดๆ)
-  const cleaningRequired = d.cleaningRequired !== false;
-  const tasks = cleaningRequired ? safeRows_(SH.CLN).filter(c => c.Forklift_ID === flId) : [];
-  const cleaning = tasks.map(t => ({
-    id: t.Task_ID,
-    area: t.Area,
-    task: t.Task,
-    done: !!(d.cleaning || {})[t.Task_ID]
-  }));
+  const tasks = d.cleaningRequired !== false ? safeRows_(SH.CLN).filter(c => c.Forklift_ID === flId) : [];
+  const doneMap = d.cleaning || {};
+  const cleaning = tasks.map(t => ({ id: t.Task_ID, area: t.Area, task: t.Task, done: !!doneMap[t.Task_ID] }));
 
   const emps = rows_(SH.EMP);
-  const inspectorId = u.id || s_(d.inspectorId) || '-';
-  const inspectorEmp = emps.find(e => e.Employee_ID === inspectorId);
-  const inspectorName = (inspectorEmp && inspectorEmp.Employee_Name) || u.name || d.inspectorName || 'ผู้ตรวจเช็ค';
-  const inspectorDept = d.inspectorDept || (inspectorEmp ? cleanDept_(inspectorEmp.Department) : '-');
+  const inspectorEmp = emps.find(e => e.Employee_ID === u.id);
+  const inspectorName = (inspectorEmp && inspectorEmp.Employee_Name) || u.name;
+  const inspectorDept = inspectorEmp ? cleanDept_(inspectorEmp.Department) : '-';
+  const ownerEmp = emps.find(e => e.Employee_ID === m.Owner_Emp_ID);
+  const ownerName = ownerEmp ? ownerEmp.Employee_Name : m.Owner_Emp_ID;
 
   const logSh = sheet_(SH.LOG);
+  if (!logSh) throw new Error('ไม่พบชีต ' + SH.LOG + ' (กรุณารัน setup() ก่อน)');
+
+  // กันบันทึก/ส่งอีเมล์ซ้ำ เมื่อ client เน็ตหลุดแล้วกดส่งใหม่ด้วย submitId เดิม
+  const cache = CacheService.getScriptCache();
+  const dupKey = d.submitId ? 's_' + s_(d.submitId).slice(0, 64) : '';
   const now = new Date();
   const lock = LockService.getScriptLock();
-  lock.waitLock(20000); // กันหลายคนบันทึกพร้อมกันแล้วแถวทับกัน
+  lock.waitLock(20000);
   try {
-  logSh.appendRow([
-    now,
-    flId,
-    inspectorId,
-    m.Owner_Emp_ID,
-    status,
-    JSON.stringify({ items: data, cleaning, steps: tasks.length ? [] : (d.steps || []) }),
-    safeCell_(remarkText)
-  ]);
-  const lastRow = logSh.getLastRow();
-  if (lastRow > 1) {
-    logSh.getRange(lastRow, 1).setNumberFormat('dd/MM/yyyy HH:mm');
-  }
+    if (dupKey && cache.get(dupKey)) {
+      return { ok: true, duplicate: true, status: status, emailSent: true, message: 'ระบบบันทึกรายการนี้ไปแล้ว' };
+    }
+    logSh.appendRow([
+      now,
+      flId,
+      u.id,
+      m.Owner_Emp_ID,
+      status,
+      JSON.stringify({ items: data, cleaning: cleaning }),
+      safeCell_(remarkText)
+    ]);
+    logSh.getRange(logSh.getLastRow(), 1).setNumberFormat('dd/MM/yyyy HH:mm');
+    if (dupKey) cache.put(dupKey, '1', TTL);
   } finally {
     lock.releaseLock();
   }
 
-  // ส่งข้อมูลแจ้งเตือนไปยังอีเมล์
   let emailSent = false, emailError = '';
   try {
     emailSent = sendInspectionEmail_({
-      inspector: { id: inspectorId, name: inspectorName },
+      inspector: { id: u.id, name: inspectorName },
       inspectorDept: inspectorDept,
       forklift: m,
+      ownerName: ownerName,
       status: status,
       items: data,
       cleaning: cleaning,
-      note: d.note || '',
+      note: note,
       timestamp: now
     });
   } catch (mailErr) {
@@ -413,9 +370,6 @@ function submitCheck(token, d) {
   };
 }
 
-/**
- * ส่งอีเมล์แจ้งเตือนผลการตรวจเช็ครถโฟล์คลิฟท์
- */
 function getRecipients_() {
   const cfg = safeRows_(SH.CFG);
   const emailCfg = (cfg.find(r => r.Config_Key === 'NOTIFICATION_EMAIL') || {}).Config_Value;
@@ -444,8 +398,7 @@ function sendInspectionEmail_(info) {
   const statusBg = isNg ? '#fff5f5' : '#f0fff4';
   const statusBadge = isNg ? '⚠️ ไม่ผ่าน (NG) ' + ngList.length + ' ข้อ' : '✓ ผ่านทุกข้อ (OK)';
 
-  const names = nameMap_();
-  const ownerName = names[m.Owner_Emp_ID] || m.Owner_Emp_ID || '-';
+  const ownerName = info.ownerName || m.Owner_Emp_ID || '-';
 
   const subject = (isNg ? '⚠️ [ไม่ผ่าน NG ' + ngList.length + ' ข้อ]' : '✓ [ผ่านการตรวจ - OK]') +
     ' ผลตรวจโฟล์คลิฟท์ ' + m.Forklift_ID + ' (' + m.Forklift_Name + ') โดย ' + u.name;
@@ -474,7 +427,6 @@ function sendInspectionEmail_(info) {
       (itNg && it.detail ? '     รายละเอียดความผิดปกติ: ' + it.detail + '\n' : '');
   });
 
-  // ส่วนทำความสะอาด (ถ้ามี)
   let cleanSectionHtml = '';
   let cleanSectionText = '';
   if (cleaning.length > 0) {
@@ -498,7 +450,6 @@ function sendInspectionEmail_(info) {
       '<tbody>' + cleanRows + '</tbody></table></div>';
   }
 
-  // กล่องแจ้งเตือนจุดผิดปกติ (NG Highlight)
   let ngAlertHtml = '';
   if (isNg) {
     const ngItemsList = ngList
@@ -512,7 +463,6 @@ function sendInspectionEmail_(info) {
       '</div>';
   }
 
-  // กล่องสรุปจำนวนผ่าน / ไม่ผ่าน
   const summaryHtml = '<table role="presentation" style="width:100%;border-collapse:separate;border-spacing:8px 0;margin:0 0 18px 0;"><tr>' +
     '<td style="background:#f0fff4;border:1px solid #c6f6d5;border-radius:8px;padding:12px;text-align:center;width:33%;"><div style="font-size:24px;font-weight:bold;color:#22543d;">' + okList.length + '</div><div style="font-size:12px;color:#276749;">ผ่าน (OK)</div></td>' +
     '<td style="background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;padding:12px;text-align:center;width:33%;"><div style="font-size:24px;font-weight:bold;color:#c53030;">' + ngList.length + '</div><div style="font-size:12px;color:#9b2c2c;">ไม่ผ่าน (NG)</div></td>' +
@@ -603,9 +553,6 @@ function sendInspectionEmail_(info) {
   return true;
 }
 
-/**
- * ฟังก์ชันสำหรับทดสอบการส่งอีเมล์
- */
 function sendTestEmail() {
   const recipient = getRecipients_();
 
@@ -629,10 +576,6 @@ function sendTestEmail() {
   return { ok: true, recipient: recipient, message: 'ส่งอีเมล์ทดสอบไปยัง ' + recipient + ' สำเร็จแล้ว' };
 }
 
-/* ----------------------------------------------------
- * 4. Dashboard Queries
- * ---------------------------------------------------- */
-
 function ngText_(json) {
   try {
     return JSON.parse(json).items.filter(x => x.result === 'NG')
@@ -651,24 +594,38 @@ function cleanText_(json) {
   }
 }
 
-function getDashboard(token) {
-  const day = d => Utilities.formatDate(d, TZ, 'yyyy-MM-dd'), names = nameMap_();
-  const logs = rows_(SH.LOG)
+function recentLogs_(maxRows) {
+  const sh = sheet_(SH.LOG);
+  if (!sh) throw new Error('ไม่พบชีต ' + SH.LOG + ' (กรุณารัน setup() ก่อน)');
+  const last = sh.getLastRow();
+  if (last < 2) return [];
+  const cols = HEAD.Inspection_Logs;
+  const n = Math.min(maxRows, last - 1);
+  return sh.getRange(last - n + 1, 1, n, cols.length).getValues()
     .map(r => {
-      r.Timestamp = parseDate_(r.Timestamp);
-      return r;
+      const o = {};
+      cols.forEach((k, i) => { o[k] = r[i] instanceof Date ? r[i] : s_(r[i]); });
+      o.Timestamp = parseDate_(o.Timestamp);
+      return o;
     })
-    .filter(r => r.Timestamp instanceof Date)
+    .filter(r => r.Timestamp)
     .sort((a, b) => a.Timestamp - b.Timestamp);
-  const today = day(new Date()), days = [];
+}
+
+function getDashboard(token) {
+  requireAuth_(token);
+  const day = d => Utilities.formatDate(d, TZ, 'yyyy-MM-dd');
+  const names = nameMap_();
+  const logs = recentLogs_(DASH_MAX_ROWS);
+  const today = day(new Date());
+  const days = [];
   for (let i = 6; i >= 0; i--) days.push(day(new Date(Date.now() - i * 864e5)));
 
   const series = days.map(d => ({ d: d.slice(5), ok: 0, ng: 0 }));
   const latest = {};
-
   logs.forEach(r => {
     const i = days.indexOf(day(r.Timestamp));
-    if (i >= 0) r.Overall_Status === 'NG' ? series[i].ng++ : series[i].ok++;
+    if (i >= 0) { if (r.Overall_Status === 'NG') series[i].ng++; else series[i].ok++; }
     latest[r.Forklift_ID] = r;
   });
 
@@ -689,14 +646,14 @@ function getDashboard(token) {
     };
   });
 
-  const td = logs.filter(r => day(r.Timestamp) === today);
   const flname = {};
-  forklifts.forEach(m => flname[m.id] = m.name);
+  forklifts.forEach(m => { flname[m.id] = m.name; });
+  const doneToday = forklifts.filter(m => m.checkedToday);   // นับเป็นคัน (ผลล่าสุดของวันนี้)
 
   return {
-    total: td.length,
-    ngToday: td.filter(r => r.Overall_Status === 'NG').length,
-    pending: forklifts.filter(m => !m.checkedToday).length,
+    total: doneToday.length,
+    ngToday: doneToday.filter(m => m.status === 'NG').length,
+    pending: forklifts.length - doneToday.length,
     series: series,
     forklifts: forklifts,
     recent: logs.slice(-15).reverse().map(r => ({
@@ -710,12 +667,7 @@ function getDashboard(token) {
   };
 }
 
-/* ----------------------------------------------------
- * 5. Forklift Seed Data (14 items Gas/Oil & 10 items Electric)
- * ---------------------------------------------------- */
-
 const SEED_INSPECT_FORKLIFT = {
-  // 1. แบบน้ำมัน+แก๊ส (14 ข้อ)
   gas: [
     ['ห้องเครื่องยนต์', '1.ระดับน้ำมันเครื่อง', 'ดึงก้านวัดขณะดับเครื่อง ระดับอยู่ระหว่างขีด Min-Max น้ำมันไม่ดำข้นเหนียวหรือมีตะกอน'],
     ['ระบบระบายความร้อน', '2.ระดับน้ำหม้อพักน้ำ', 'ระดับน้ำยาหล่อเย็นอยู่ในระดับ Full/Max ฝาปิดแน่นสนิท ครีบหม้อน้ำไม่อุดตัน ไม่มีรอยรั่ว'],
@@ -732,7 +684,7 @@ const SEED_INSPECT_FORKLIFT = {
     ['ระบบความปลอดภัย', '13.เข็มขัดนิรภัย', 'สายเข็มขัดไม่ฉีกขาด กลไกดึงล็อกกระตุกทำงานดี หัวล็อกแน่นไม่หลุดเอง'],
     ['เสาและชุดยก', '14.สภาพโซ่', 'โซ่ยกตึงเท่ากันทั้งสองข้าง ไม่หย่อน ข้อต่อโซ่ไม่บิดเบี้ยวหรือตาย มีการหล่อลื่นเหมาะสม']
   ],
-  // 2. แบบไฟฟ้า (10 ข้อ)
+
   electric: [
     ['แบตเตอรี่และระบบชาร์จ', '1.ระดับน้ำกลั่นแบตเตอร์รี่', 'ลูกลอยวัดระดับน้ำกลั่นลอยปกติ น้ำกลั่นท่วมแผ่นธาตุทุกเซลล์ ไม่มีสภาพแห้ง'],
     ['แบตเตอรี่และระบบชาร์จ', '2.ขั้วแบตเตอร์รี่', 'ขั้วต่อแน่น สะอาด ปราศจากคราบขี้เกลือสะสม ฝาครอบขั้วปิดเรียบร้อย สายไฟไม่ไหม้'],
@@ -747,7 +699,6 @@ const SEED_INSPECT_FORKLIFT = {
   ]
 };
 
-// ชื่อไฟล์รูปจริงแยกตามโฟลเดอร์ประเภทรถ (gas/ และ electric/)
 const SEED_IMG_FORKLIFT = {
   gas: [
     '', '', '', 
@@ -783,7 +734,7 @@ const SEED_CLEAN_FORKLIFT = [
   ['ล้อและเพลาขับ', 'ตรวจและดึงเศษเชือก เศษพลาสติก หรือลวดที่พันรอบแกนล้อออก', 'ใช้คีมหรือกรรไกรตัดเศษที่พันรอบแกนล้อเพื่อป้องกันซีลล้อชำรุด', 'คีม / ถุงมือ']
 ];
 
-function seedForkliftSample() {
+function seedForkliftSample(force) {
   setup();
   const empSh = sheet_(SH.EMP);
   if (empSh.getLastRow() < 2) {
@@ -818,13 +769,15 @@ function seedForkliftSample() {
   const clSh = sheet_(SH.CL);
   const cnSh = sheet_(SH.CLN);
 
-  // ให้แน่ใจว่าชีต Checklist มีหัวคอลัมน์ Image_File (คอลัมน์ F)
   if (s_(clSh.getRange(1, 6).getValue()) !== 'Image_File') {
     clSh.getRange(1, 6).setValue('Image_File')
       .setFontWeight('bold').setBackground('#1c3a57').setFontColor('#ffffff');
   }
 
-  // Clear existing checklists and reseed with exact forklift specifications
+  // ป้องกันการลบข้อมูลจริงโดยไม่ตั้งใจ — ต้องสั่ง seedForkliftSample(true) เองเท่านั้น
+  if (!force && (clSh.getLastRow() > 1 || cnSh.getLastRow() > 1)) {
+    throw new Error('ชีต Checklist/Cleaning มีข้อมูลอยู่แล้ว ถ้าต้องการล้างและสร้างใหม่ให้เรียก seedForkliftSample(true)');
+  }
   if (clSh.getLastRow() > 1) clSh.deleteRows(2, clSh.getLastRow() - 1);
   if (cnSh.getLastRow() > 1) cnSh.deleteRows(2, cnSh.getLastRow() - 1);
 
@@ -840,10 +793,10 @@ function seedForkliftSample() {
       clRows.push([
         m.Forklift_ID + '-CHK-' + String(idx + 1).padStart(2, '0'),
         m.Forklift_ID,
-        it[0], // Category
-        it[1], // Inspection_Point
-        it[2], // Standard_Criteria
-        imgList[idx] || '' // Image_File
+        it[0],
+        it[1],
+        it[2],
+        imgList[idx] || ''
       ]);
     });
 
@@ -851,10 +804,10 @@ function seedForkliftSample() {
       cnRows.push([
         m.Forklift_ID + '-CLN-' + String(idx + 1).padStart(2, '0'),
         m.Forklift_ID,
-        c[0], // Area
-        c[1], // Task
-        c[2], // Method
-        c[3]  // Tool
+        c[0],
+        c[1],
+        c[2],
+        c[3]
       ]);
     });
   });
@@ -863,52 +816,21 @@ function seedForkliftSample() {
   if (cnRows.length) cnSh.getRange(2, 1, cnRows.length, 6).setValues(cnRows);
 }
 
-function seedTestData() {
-  setup();
-  const emps = rows_(SH.EMP), cl = rows_(SH.CL), cn = safeRows_(SH.CLN), fls = rows_(SH.FL), out = [];
-  if (!emps.length || !cl.length) throw new Error('ต้องมีข้อมูล Employees และ Checklist ก่อน (รัน seedForkliftSample ก่อน)');
-
-  for (let d = 6; d >= 0; d--) {
-    fls.forEach((m, mi) => {
-      if (d === 0 && mi === fls.length - 1) return; // รถคันสุดท้ายให้ค้างสถานะ "ยังไม่ตรวจวันนี้"
-      const items = cl.filter(c => c.Forklift_ID === m.Forklift_ID).map(c => ({
-        id: c.Item_ID, cat: c.Category, point: c.Inspection_Point, result: Math.random() < 0.08 ? 'NG' : 'OK'
-      }));
-      if (!items.length) return;
-      const cleaning = cn.filter(c => c.Forklift_ID === m.Forklift_ID).map(c => ({
-        id: c.Task_ID, area: c.Area, task: c.Task, done: Math.random() < 0.9
-      }));
-      const bad = items.some(x => x.result === 'NG');
-      const t = new Date(Date.now() - d * 864e5);
-      t.setHours(8 + mi, Math.floor(Math.random() * 50) + 5, 0, 0);
-
-      out.push([
-        t,
-        m.Forklift_ID,
-        emps[Math.floor(Math.random() * emps.length)].Employee_ID,
-        m.Owner_Emp_ID,
-        bad ? 'NG' : 'OK',
-        JSON.stringify({ items, cleaning, steps: [] }),
-        bad ? 'พบจุดผิดปกติ แจ้งช่างซ่อมบำรุงแล้ว' : 'สภาพพร้อมใช้งาน'
-      ]);
-    });
-  }
-
-  const sh = sheet_(SH.LOG);
-  sh.getRange(sh.getLastRow() + 1, 1, out.length, 7).setValues(out);
-  sh.getRange(2, 1, sh.getLastRow() - 1, 1).setNumberFormat('dd/MM/yyyy HH:mm');
-}
-
 function checkData() {
   const issues = [];
   const emps = rows_(SH.EMP), fls = rows_(SH.FL), cl = rows_(SH.CL);
-  const eid = {}, flid = {};
-  emps.forEach(e => eid[e.Employee_ID] = 1);
-  fls.forEach(m => flid[m.Forklift_ID] = 1);
+  const eid = {}, flid = {}, seen = {};
+  emps.forEach(e => { eid[e.Employee_ID] = 1; });
+  fls.forEach(m => { flid[m.Forklift_ID] = 1; });
 
   fls.forEach(m => {
     if (!eid[m.Owner_Emp_ID]) issues.push('รถ ' + m.Forklift_ID + ' มี Owner ที่ไม่อยู่ใน Employees');
     if (!cl.some(c => c.Forklift_ID === m.Forklift_ID)) issues.push('รถ ' + m.Forklift_ID + ' ยังไม่มีรายการตรวจ');
+  });
+  cl.forEach(c => {
+    if (!flid[c.Forklift_ID]) issues.push('Checklist ' + c.Item_ID + ' อ้างอิงรถ ' + c.Forklift_ID + ' ที่ไม่มีในชีต Forklift');
+    if (seen[c.Item_ID]) issues.push('Item_ID ซ้ำใน Checklist: ' + c.Item_ID + ' (ผลตรวจจะทับกัน)');
+    seen[c.Item_ID] = 1;
   });
 
   const msg = issues.length ? 'พบ ' + issues.length + ' ประเด็น:\n- ' + issues.join('\n- ') : 'ข้อมูลถูกต้องสมบูรณ์';

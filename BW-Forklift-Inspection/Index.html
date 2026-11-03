@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261102">
 </head>
 <body>
   <header class="top hide" id="top">
@@ -27,7 +27,7 @@
       </nav>
 
       <div class="user-area">
-        <div class="status-pill" id="apiStatusPill">
+        <div class="status-pill" title="สถานะการเชื่อมต่อ Google Sheets">
           <span class="status-dot" id="apiDot"></span>
           <span id="apiStatusText">Google Sheets</span>
         </div>
@@ -107,7 +107,7 @@
           </div>
 
           <div class="minfo" id="minfo"></div>
-          <div class="v3" id="v3box">
+          <div class="v3">
             <canvas id="cv" aria-label="แบบจำลอง 3 มิติรถโฟล์คลิฟท์"></canvas>
             <div class="v3bar">
               <button class="btn alt" onclick="v3zoom(-1.2)" aria-label="ซูมเข้า">+</button>
@@ -138,7 +138,7 @@
           </div>
 
           <div class="prog"><i id="pg"></i></div>
-          <div class="partbox" id="partBox">
+          <div class="partbox">
             <div class="partbox-head">
               <div class="partbox-title">
                 <small>🔍 ชิ้นส่วนที่กำลังตรวจ (<span id="partModeLabel">รูปจริง</span>)</small>
@@ -258,7 +258,7 @@
   </div>
   <div class="toast hide" id="toast" role="status"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20261102"></script>
 
 </body>
 </html>
