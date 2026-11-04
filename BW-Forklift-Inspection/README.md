@@ -61,14 +61,14 @@ Forklift Inspection/
 
 รูปภาพชิ้นส่วนสำหรับ One-Point Lesson ถูกแยกตามประเภทรถเพื่อให้ง่ายต่อการจัดการและอัปเดต:
 
-- **`asset/gas/`** สำหรับรถโฟล์คลิฟท์เครื่องยนต์ (แบบน้ำมัน+แก๊ส) เช่น:
+- **`asset/engine/`** สำหรับรถโฟล์คลิฟท์เครื่องยนต์ (แบบน้ำมัน+แก๊ส) เช่น:
   - `battery-water.jpg`, `hydraulic-oil.jpg`, `mast-forks.jpg`, `wheel-tire.jpg`, `hydraulic-hose.jpg`, `lights-horn.jpg`, `brake.jpg`, `chain.jpg`
 - **`asset/electric/`** สำหรับรถโฟล์คลิฟท์แบบไฟฟ้า เช่น:
   - `battery-water.jpg`, `battery-terminal.jpg`, `charge-plug.jpg`, `mast-forks.jpg`, `wheel-tire.jpg`, `hydraulic-oil.jpg`, `lights-horn.jpg`, `hydraulic-hose.jpg`, `chain.jpg`, `brake.jpg`
 
 > 💡 **การทำงานของระบบรูปภาพ:** 
-> 1. เมื่อเลือกรถโฟล์คลิฟท์ ระบบจะค้นหารูปในโฟลเดอร์ของประเภทรถนั้นก่อนโดยอัตโนมัติ (`asset/gas/` หรือ `asset/electric/`)
-> 2. ในชีต `Checklist` สามารถระบุชื่อไฟล์แบบมีโฟลเดอร์ เช่น `gas/engine.jpg` หรือระบุเฉพาะชื่อไฟล์ เช่น `battery-water.jpg` ได้โดยตรง
+> 1. เมื่อเลือกรถโฟล์คลิฟท์ ระบบจะค้นหารูปในโฟลเดอร์ของประเภทรถนั้นก่อนโดยอัตโนมัติ (`asset/engine/` หรือ `asset/electric/`)
+> 2. ในชีต `Checklist` สามารถระบุชื่อไฟล์แบบมีโฟลเดอร์ เช่น `engine/mast-forks.jpg` หรือระบุเฉพาะชื่อไฟล์ เช่น `battery-water.jpg` ได้โดยตรง
 > 3. หากยังไม่มีรูปจริงในจุดตรวจใด ผู้ใช้สามารถกดปุ่ม **"🧊 ดู 3D"** เพื่อหมุนดูโมเดลจำลอง 3 มิติของชิ้นส่วนนั้นแทนได้
 
 ---
@@ -95,7 +95,7 @@ Forklift Inspection/
 5. **ผูก URL ในโค้ด (ไม่ต้องกดตั้งค่าในหน้าเว็บ):**
    - เปิดไฟล์ `app.js` บรรทัดที่ 1 แล้วนำ Web App URL มาใส่ที่ตัวแปร:
      ```javascript
-     const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/.../exec';
+     const API_URL = 'https://script.google.com/macros/s/.../exec';
      ```
    - จากนั้นตัวระบบจะเชื่อมต่อ Google Sheet ให้โดยตรงอัตโนมัติทันที
 
@@ -126,7 +126,7 @@ Forklift Inspection/
 
 ---
 
-## 🏢 ข้อมูลทดสอบในระบบ (Test Data 8 คัน 5 แผนก)
+## 🏢 ข้อมูลทดสอบในระบบ (Test Data 9 คัน 5 แผนก)
 
 ระบบมีข้อมูลทดสอบพร้อมใช้งานทันที (รหัส PIN ทดสอบ: `1234`):
 1. **คลังสินค้าวัตถุดิบ:**
@@ -140,6 +140,7 @@ Forklift Inspection/
    - FL-06: โฟล์คลิฟท์ไฟฟ้า #3 (แบบไฟฟ้า)
 4. **แผนกผลิตและแปรรูป:**
    - FL-07: โฟล์คลิฟท์เครื่องยนต์ #4 (แบบน้ำมัน+แก๊ส)
+   - FL-09: โฟล์คลิฟท์แก๊ส #1 (แบบแก๊ส LPG)
 5. **แผนกซ่อมบำรุง:**
    - FL-08: โฟล์คลิฟท์ไฟฟ้า #4 (แบบไฟฟ้า)
 

@@ -9,7 +9,7 @@ const SH = {
 
 const HEAD = {
   Employees: ['Employee_ID', 'Employee_Name', 'Department', 'Position', 'Plant', 'PIN'],
-  Forklift: ['Forklift_ID', 'Forklift_Name', 'Model_Type', 'Location', 'Owner_Emp_ID', 'Department'],
+  Forklift: ['Forklift_ID', 'Forklift_Name', 'Model_Type', 'Location', 'Owner_Emp_ID', 'Department', 'Load_Capacity'],
   Checklist: ['Item_ID', 'Forklift_ID', 'Category', 'Inspection_Point', 'Standard_Criteria', 'Image_File'],
   Inspection_Logs: ['Timestamp', 'Forklift_ID', 'Inspector_ID', 'Owner_ID', 'Overall_Status', 'Check_Data_JSON', 'Remark'],
   Cleaning: ['Task_ID', 'Forklift_ID', 'Area', 'Task', 'Method', 'Tool'],
@@ -160,7 +160,6 @@ const nameMap_ = () => {
 };
 
 const cleanDept_ = d => (d ? String(d).trim().replace(/^หน่วยโลหะแผ่น\//, '') : 'ทั่วไป');
-
 function requireAuth_(token) {
   if (!token) throw new Error(ERR_AUTH);
   const j = CacheService.getScriptCache().get('t_' + token);
@@ -208,6 +207,15 @@ function setup() {
         .setBackground('#1c3a57')
         .setFontColor('#ffffff');
       sh.setFrozenRows(1);
+    } else {
+      let col = sh.getLastColumn();
+      const cur = sh.getRange(1, 1, 1, Math.max(col, 1)).getValues()[0].map(s_);
+      HEAD[n].forEach(k => {
+        if (cur.indexOf(k) === -1) {
+          sh.getRange(1, ++col).setValue(k)
+            .setFontWeight('bold').setBackground('#1c3a57').setFontColor('#ffffff');
+        }
+      });
     }
   });
 
@@ -222,6 +230,77 @@ function setup() {
   }
 }
 
+// ===== ตารางประเภทรถ (เพิ่มประเภทใหม่ที่นี่ที่เดียว) =====
+// ระบบดึงประเภทจากคอลัมน์ Model_Type ในชีต Forklift แล้วหาแถวแรกที่ match ตรง (เรียงลำดับความสำคัญจากบนลงล่าง)
+//   match = คำที่พบใน Model_Type (ไม่สนตัวพิมพ์เล็ก/ใหญ่)
+//   group = ชุดรายการตรวจที่ใช้: 'electric' (ชุดไฟฟ้า) หรือ 'engine' (ชุดเครื่องยนต์ 14 ข้อ)
+//   icon / badge = ไอคอนและสีป้ายบนหน้าเว็บ (badge-gas ส้ม, badge-lpg เขียว, badge-elec ฟ้า, badge-other เทา)
+// ตัวอย่างเพิ่มประเภทใหม่: { key: 'cng', match: /cng|ngv/i, group: 'engine', icon: '🔥', badge: 'badge-lpg' },
+const FORKLIFT_TYPES = [
+  { key: 'electric', match: /ไฟฟ้า|electric|แบตเตอรี่/i, group: 'electric', icon: '⚡', badge: 'badge-elec' },
+  { key: 'dual',     match: /(น้ำมัน|ดีเซล|เบนซิน).*(แก๊ส|แก๊ซ|lpg|cng)|(แก๊ส|แก๊ซ|lpg|cng).*(น้ำมัน|ดีเซล|เบนซิน)|dual|bi-?fuel/i, group: 'engine', icon: '⛽', badge: 'badge-gas' },
+  { key: 'diesel',   match: /ดีเซล|diesel|น้ำมัน|เบนซิน|petrol|gasoline/i, group: 'engine', icon: '⛽', badge: 'badge-gas' },
+  { key: 'lpg',      match: /lpg|cng|ngv|แก๊ส|แก๊ซ|gas/i, group: 'engine', icon: '🔥', badge: 'badge-lpg' }
+];
+// ประเภทที่ไม่ตรงกับตารางด้านบน (เช่น Hybrid ฯลฯ) -> ใช้ชุดเครื่องยนต์เป็นค่าเริ่มต้น
+const DEFAULT_TYPE = { key: 'other', group: 'engine', icon: '🚜', badge: 'badge-other' };
+
+function typeOf_(m) {
+  const t = s_(m.Model_Type) || s_(m.Forklift_Name);
+  return FORKLIFT_TYPES.find(x => x.match.test(t)) || DEFAULT_TYPE;
+}
+const kindOf_ = m => typeOf_(m).group;
+const typeFields_ = m => { const t = typeOf_(m); return { group: t.group, icon: t.icon, badge: t.badge }; };
+
+// ชุดรายการตรวจนี้ตรงกับประเภทหรือไม่ (ดูจากจุดตรวจเฉพาะของรถไฟฟ้า เช่น ปลั๊กชาร์จ/ขั้วแบต)
+function itemsMatchKind_(items, kind) {
+  const hasElec = items.some(x => /ปลั๊กชาร์จ|ขั้วแบต/.test(s_(x.Inspection_Point)));
+  return kind === 'electric' ? hasElec : !hasElec;
+}
+
+// รายการตรวจของรถ 1 คัน: ใช้แถวของรถคันนั้นก่อน (ถ้าตรงกับประเภท)
+// ถ้าไม่มี/ไม่ตรงประเภท -> ใช้ชุดของรถประเภทเดียวกันในชีต -> ถ้าไม่มีอีกใช้ชุดมาตรฐานในโค้ด
+function checklistFor_(m, cls, fls) {
+  const kind = kindOf_(m);
+  const own = cls.filter(c => c.Forklift_ID === m.Forklift_ID);
+  if (own.length && itemsMatchKind_(own, kind)) return own;
+
+  let tpl = null;
+  for (let i = 0; i < fls.length && !tpl; i++) {
+    const f = fls[i];
+    if (f.Forklift_ID === m.Forklift_ID || kindOf_(f) !== kind) continue;
+    const rows = cls.filter(c => c.Forklift_ID === f.Forklift_ID);
+    if (rows.length && itemsMatchKind_(rows, kind)) tpl = rows;
+  }
+  const id = n => m.Forklift_ID + '-CHK-' + String(n + 1).padStart(2, '0');
+  if (tpl) {
+    return tpl.map((c, i) => Object.assign({}, c, { Item_ID: id(i), Forklift_ID: m.Forklift_ID }));
+  }
+  return SEED_INSPECT_FORKLIFT[kind].map((it, i) => ({
+    Item_ID: id(i),
+    Forklift_ID: m.Forklift_ID,
+    Category: it[0],
+    Inspection_Point: it[1],
+    Standard_Criteria: it[2],
+    Image_File: SEED_IMG_FORKLIFT[kind][i] || ''
+  }));
+}
+
+// รายการทำความสะอาดของรถ 1 คัน: ใช้แถวของรถคันนั้นก่อน -> ไม่มีก็ใช้ชุดแรกในชีต Cleaning -> ไม่มีอีกใช้ชุดมาตรฐาน
+function cleanFor_(m, cns) {
+  const own = cns.filter(c => c.Forklift_ID === m.Forklift_ID);
+  if (own.length) return own;
+  const id = n => m.Forklift_ID + '-CLN-' + String(n + 1).padStart(2, '0');
+  if (cns.length) {
+    const firstId = cns[0].Forklift_ID;
+    return cns.filter(c => c.Forklift_ID === firstId)
+      .map((c, i) => Object.assign({}, c, { Task_ID: id(i), Forklift_ID: m.Forklift_ID }));
+  }
+  return SEED_CLEAN_FORKLIFT.map((c, i) => ({
+    Task_ID: id(i), Forklift_ID: m.Forklift_ID, Area: c[0], Task: c[1], Method: c[2], Tool: c[3]
+  }));
+}
+
 function getFormData(token) {
   requireAuth_(token);
   const emps = rows_(SH.EMP);
@@ -231,16 +310,25 @@ function getFormData(token) {
     empDepts[e.Employee_ID] = e.Department;
   });
 
+  const fls = rows_(SH.FL), cls = rows_(SH.CL), cns = safeRows_(SH.CLN);
+  const allItems = [], allClean = [];
+  fls.forEach(m => {
+    checklistFor_(m, cls, fls).forEach(x => allItems.push(x));
+    cleanFor_(m, cns).forEach(x => allClean.push(x));
+  });
+
   return {
-    forklifts: rows_(SH.FL).map(m => ({
+    forklifts: fls.map(m => ({
+      ...typeFields_(m),
       id: m.Forklift_ID,
       name: m.Forklift_Name,
       model: m.Model_Type,
       loc: m.Location,
+      capacity: m.Load_Capacity || '',
       owner: names[m.Owner_Emp_ID] || m.Owner_Emp_ID,
       dept: cleanDept_(m.Department || empDepts[m.Owner_Emp_ID])
     })),
-    items: rows_(SH.CL).map(c => ({
+    items: allItems.map(c => ({
       id: c.Item_ID,
       forkliftId: c.Forklift_ID,
       cat: c.Category || 'ทั่วไป',
@@ -248,7 +336,7 @@ function getFormData(token) {
       std: c.Standard_Criteria,
       img: c.Image_File || ''
     })),
-    clean: safeRows_(SH.CLN).map(c => ({
+    clean: allClean.map(c => ({
       id: c.Task_ID,
       forkliftId: c.Forklift_ID,
       area: c.Area,
@@ -260,17 +348,18 @@ function getFormData(token) {
 }
 
 function submitCheck(token, d) {
-  const u = requireAuth_(token);          // ผู้ตรวจ = เจ้าของ token เท่านั้น (ไม่เชื่อค่าจาก client)
+  const u = requireAuth_(token);
   d = d || {};
   const flId = s_(d.forkliftId);
-  const m = rows_(SH.FL).find(r => r.Forklift_ID === flId);
+  const fls = rows_(SH.FL);
+  const m = fls.find(r => r.Forklift_ID === flId);
   if (!m) throw new Error('ไม่พบข้อมูลรถโฟล์คลิฟท์ ' + flId);
 
-  const items = rows_(SH.CL).filter(c => c.Forklift_ID === flId);
+  const items = checklistFor_(m, rows_(SH.CL), fls);
   if (!items.length) throw new Error('รถโฟล์คลิฟท์นี้ยังไม่มีรายการตรวจใน Checklist');
 
   const resMap = d.results || {};
-  const left = items.filter(c => !resMap[c.Item_ID]).length;
+  const left = items.filter(c => resMap[c.Item_ID] !== 'OK' && resMap[c.Item_ID] !== 'NG').length;
   if (left) throw new Error('ยังไม่ได้เลือกผลตรวจ ' + left + ' จุด');
 
   const ngDetails = (d.ngDetails && typeof d.ngDetails === 'object') ? d.ngDetails : null;
@@ -304,7 +393,7 @@ function submitCheck(token, d) {
   const remarkText = note || data.filter(x => x.result === 'NG' && x.detail)
     .map(x => x.point + ': ' + x.detail).join(' | ');
 
-  const tasks = d.cleaningRequired !== false ? safeRows_(SH.CLN).filter(c => c.Forklift_ID === flId) : [];
+  const tasks = d.cleaningRequired !== false ? cleanFor_(m, safeRows_(SH.CLN)) : [];
   const doneMap = d.cleaning || {};
   const cleaning = tasks.map(t => ({ id: t.Task_ID, area: t.Area, task: t.Task, done: !!doneMap[t.Task_ID] }));
 
@@ -402,8 +491,6 @@ function sendInspectionEmail_(info) {
 
   const subject = (isNg ? '⚠️ [ไม่ผ่าน NG ' + ngList.length + ' ข้อ]' : '✓ [ผ่านการตรวจ - OK]') +
     ' ผลตรวจโฟล์คลิฟท์ ' + m.Forklift_ID + ' (' + m.Forklift_Name + ') โดย ' + u.name;
-
-  // ตารางรายการตรวจเช็ค (เรียงข้อ NG ขึ้นก่อน)
   let itemRowsHtml = '';
   let itemRowsText = '';
   items.forEach((it, idx) => {
@@ -495,7 +582,7 @@ function sendInspectionEmail_(info) {
     '</tr>' +
     '<tr>' +
     '<td style="padding:4px 0;"><b>🚜 รถโฟล์คลิฟท์:</b> ' + h_(m.Forklift_Name) + ' (' + h_(m.Forklift_ID) + ')</td>' +
-    '<td style="padding:4px 0;"><b>⚙️ ประเภท:</b> ' + h_(m.Model_Type || '-') + '</td>' +
+    '<td style="padding:4px 0;"><b>⚙️ ประเภท:</b> ' + h_(m.Model_Type || '-') + '<br><b>⚖️ พิกัด:</b> ' + h_(m.Load_Capacity || '-') + '</td>' +
     '</tr>' +
     '<tr>' +
     '<td style="padding:4px 0;"><b>📍 ประจำแผนก/ที่ตั้ง:</b> ' + h_(cleanDept_(m.Department)) + ' / ' + h_(m.Location || '-') + '</td>' +
@@ -534,6 +621,7 @@ function sendInspectionEmail_(info) {
     'ผู้ตรวจเช็ค: ' + u.name + ' (' + u.id + ') แผนก: ' + (info.inspectorDept || '-') + '\n' +
     'รถโฟล์คลิฟท์: ' + m.Forklift_Name + ' (' + m.Forklift_ID + ')\n' +
     'ประเภท: ' + (m.Model_Type || '-') + '\n' +
+    'พิกัด: ' + (m.Load_Capacity || '-') + '\n' +
     'ประจำแผนก/ที่ตั้ง: ' + cleanDept_(m.Department) + ' / ' + (m.Location || '-') + '\n' +
     'วัน-เวลา: ' + nowStr + ' น.\n' +
     (note ? 'หมายเหตุ: ' + note + '\n' : '') + '\n' +
@@ -632,10 +720,12 @@ function getDashboard(token) {
   const forklifts = rows_(SH.FL).map(m => {
     const r = latest[m.Forklift_ID];
     return {
+      ...typeFields_(m),
       id: m.Forklift_ID,
       name: m.Forklift_Name,
       model: m.Model_Type,
       loc: m.Location,
+      capacity: m.Load_Capacity || '',
       owner: names[m.Owner_Emp_ID] || '',
       last: r ? Utilities.formatDate(r.Timestamp, TZ, 'dd/MM/yy HH:mm') : '-',
       status: r ? r.Overall_Status : '-',
@@ -667,8 +757,9 @@ function getDashboard(token) {
   };
 }
 
+// engine = ใช้ร่วมกันทั้งแบบ "น้ำมัน+แก๊ส" และแบบ "แก๊ส" / electric = แบบไฟฟ้า
 const SEED_INSPECT_FORKLIFT = {
-  gas: [
+  engine: [
     ['ห้องเครื่องยนต์', '1.ระดับน้ำมันเครื่อง', 'ดึงก้านวัดขณะดับเครื่อง ระดับอยู่ระหว่างขีด Min-Max น้ำมันไม่ดำข้นเหนียวหรือมีตะกอน'],
     ['ระบบระบายความร้อน', '2.ระดับน้ำหม้อพักน้ำ', 'ระดับน้ำยาหล่อเย็นอยู่ในระดับ Full/Max ฝาปิดแน่นสนิท ครีบหม้อน้ำไม่อุดตัน ไม่มีรอยรั่ว'],
     ['ระบบเบรคและควบคุม', '3.ระดับน้ำมันเบรค + ครัช', 'ระดับน้ำมันในกระปุกอยู่ในเกณฑ์ที่กำหนด กระปุกไม่แตกร้าว ไม่มีคราบน้ำมันรั่วซึม'],
@@ -700,17 +791,17 @@ const SEED_INSPECT_FORKLIFT = {
 };
 
 const SEED_IMG_FORKLIFT = {
-  gas: [
+  engine: [
     '', '', '', 
-    'gas/battery-water.jpg', 
-    'gas/hydraulic-oil.jpg', 
-    'gas/mast-forks.jpg', 
-    'gas/wheel-tire.jpg', 
-    'gas/hydraulic-hose.jpg', 
-    'gas/lights-horn.jpg', 
-    'gas/brake.jpg', 
+    'engine/battery-water.jpg', 
+    'engine/hydraulic-oil.jpg', 
+    'engine/mast-forks.jpg', 
+    'engine/wheel-tire.jpg', 
+    'engine/hydraulic-hose.jpg', 
+    'engine/lights-horn.jpg', 
+    'engine/brake.jpg', 
     '', '', '', 
-    'gas/chain.jpg'
+    'engine/chain.jpg'
   ],
   electric: [
     'electric/battery-water.jpg', 
@@ -753,15 +844,16 @@ function seedForkliftSample(force) {
 
   const flSh = sheet_(SH.FL);
   if (flSh.getLastRow() < 2) {
-    flSh.getRange(2, 1, 8, 6).setValues([
-      ['FL-01', 'โฟล์คลิฟท์เครื่องยนต์ #1', 'แบบน้ำมัน+แก๊ส', 'คลังวัตถุดิบ อาคาร A', 'EMP-001', 'คลังสินค้าวัตถุดิบ'],
-      ['FL-02', 'โฟล์คลิฟท์เครื่องยนต์ #2', 'แบบน้ำมัน+แก๊ส', 'ลานกองวัตถุดิบกลางแจ้ง', 'EMP-002', 'คลังสินค้าวัตถุดิบ'],
-      ['FL-03', 'โฟล์คลิฟท์ไฟฟ้า #1', 'แบบไฟฟ้า', 'คลังสินค้าสำเร็จรูป ชั้น 1', 'EMP-003', 'คลังสินค้าสำเร็จรูป'],
-      ['FL-04', 'โฟล์คลิฟท์ไฟฟ้า #2', 'แบบไฟฟ้า', 'พื้นที่แพ็คเกจจิ้งและจัดเก็บ', 'EMP-004', 'คลังสินค้าสำเร็จรูป'],
-      ['FL-05', 'โฟล์คลิฟท์เครื่องยนต์ #3', 'แบบน้ำมัน+แก๊ส', 'ลานโหลดสินค้าและตู้คอนเทนเนอร์', 'EMP-005', 'แผนกจัดส่งและโลจิสติกส์'],
-      ['FL-06', 'โฟล์คลิฟท์ไฟฟ้า #3', 'แบบไฟฟ้า', 'อาคารพักสินค้าเตรียมส่งมอบ', 'EMP-006', 'แผนกจัดส่งและโลจิสติกส์'],
-      ['FL-07', 'โฟล์คลิฟท์เครื่องยนต์ #4', 'แบบน้ำมัน+แก๊ส', 'พื้นที่ลำเลียงและป้อนวัตถุดิบไลน์ผลิต', 'EMP-007', 'แผนกผลิตและแปรรูป'],
-      ['FL-08', 'โฟล์คลิฟท์ไฟฟ้า #4', 'แบบไฟฟ้า', 'โรงจอดซ่อมบำรุงและรถสำรอง', 'EMP-008', 'แผนกซ่อมบำรุง']
+    flSh.getRange(2, 1, 9, 7).setValues([
+      ['FL-01', 'โฟล์คลิฟท์เครื่องยนต์ #1', 'ดีเซล', 'คลังวัตถุดิบ อาคาร A', 'EMP-001', 'คลังสินค้าวัตถุดิบ', '3 ตัน'],
+      ['FL-02', 'โฟล์คลิฟท์เครื่องยนต์ #2', 'ดีเซล', 'ลานกองวัตถุดิบกลางแจ้ง', 'EMP-002', 'คลังสินค้าวัตถุดิบ', '3 ตัน'],
+      ['FL-03', 'โฟล์คลิฟท์ไฟฟ้า #1', 'ไฟฟ้า', 'คลังสินค้าสำเร็จรูป ชั้น 1', 'EMP-003', 'คลังสินค้าสำเร็จรูป', '2 ตัน'],
+      ['FL-04', 'โฟล์คลิฟท์ไฟฟ้า #2', 'ไฟฟ้า', 'พื้นที่แพ็คเกจจิ้งและจัดเก็บ', 'EMP-004', 'คลังสินค้าสำเร็จรูป', '2 ตัน'],
+      ['FL-05', 'โฟล์คลิฟท์เครื่องยนต์ #3', 'ดีเซล', 'ลานโหลดสินค้าและตู้คอนเทนเนอร์', 'EMP-005', 'แผนกจัดส่งและโลจิสติกส์', '3 ตัน'],
+      ['FL-06', 'โฟล์คลิฟท์ไฟฟ้า #3', 'ไฟฟ้า', 'อาคารพักสินค้าเตรียมส่งมอบ', 'EMP-006', 'แผนกจัดส่งและโลจิสติกส์', '2 ตัน'],
+      ['FL-07', 'โฟล์คลิฟท์เครื่องยนต์ #4', 'ดีเซล', 'พื้นที่ลำเลียงและป้อนวัตถุดิบไลน์ผลิต', 'EMP-007', 'แผนกผลิตและแปรรูป', '3 ตัน'],
+      ['FL-08', 'โฟล์คลิฟท์ไฟฟ้า #4', 'ไฟฟ้า', 'โรงจอดซ่อมบำรุงและรถสำรอง', 'EMP-008', 'แผนกซ่อมบำรุง', '2 ตัน'],
+      ['FL-09', 'โฟล์คลิฟท์แก๊ส #1', 'LPG', 'พื้นที่ลำเลียงวัตถุดิบไลน์ผลิต 2', 'EMP-007', 'แผนกผลิตและแปรรูป', '2.5 ตัน']
     ]);
   }
 
@@ -774,7 +866,6 @@ function seedForkliftSample(force) {
       .setFontWeight('bold').setBackground('#1c3a57').setFontColor('#ffffff');
   }
 
-  // ป้องกันการลบข้อมูลจริงโดยไม่ตั้งใจ — ต้องสั่ง seedForkliftSample(true) เองเท่านั้น
   if (!force && (clSh.getLastRow() > 1 || cnSh.getLastRow() > 1)) {
     throw new Error('ชีต Checklist/Cleaning มีข้อมูลอยู่แล้ว ถ้าต้องการล้างและสร้างใหม่ให้เรียก seedForkliftSample(true)');
   }
@@ -785,9 +876,9 @@ function seedForkliftSample(force) {
   const cnRows = [];
 
   ms.forEach(m => {
-    const isElectric = /ไฟฟ้า|electric/i.test(m.Model_Type + ' ' + m.Forklift_Name);
-    const inspectList = isElectric ? SEED_INSPECT_FORKLIFT.electric : SEED_INSPECT_FORKLIFT.gas;
-    const imgList = isElectric ? SEED_IMG_FORKLIFT.electric : SEED_IMG_FORKLIFT.gas;
+    const isElectric = kindOf_(m) === 'electric';
+    const inspectList = isElectric ? SEED_INSPECT_FORKLIFT.electric : SEED_INSPECT_FORKLIFT.engine;
+    const imgList = isElectric ? SEED_IMG_FORKLIFT.electric : SEED_IMG_FORKLIFT.engine;
 
     inspectList.forEach((it, idx) => {
       clRows.push([
@@ -816,6 +907,46 @@ function seedForkliftSample(force) {
   if (cnRows.length) cnSh.getRange(2, 1, cnRows.length, 6).setValues(cnRows);
 }
 
+// เรียกจากหน้า Apps Script (Run) เมื่อมีข้อมูลเดิมอยู่แล้ว: ล้าง Checklist/Cleaning แล้วสร้างใหม่ให้รถทุกคันในชีต Forklift
+function seedForkliftSampleForce() {
+  seedForkliftSample(true);
+}
+
+// สร้างประวัติการตรวจทดสอบย้อนหลัง 7 วัน (รันจากหน้า Apps Script เท่านั้น) — ใช้ดู Dashboard
+// ต้องรัน seedForkliftSample() ก่อน ข้อมูลจะถูก "เพิ่มต่อท้าย" ชีต Inspection_Logs (ไม่ส่งอีเมล์)
+function seedTestData() {
+  setup();
+  const fls = rows_(SH.FL), cls = rows_(SH.CL);
+  if (!fls.length) throw new Error('ยังไม่มีรถในชีต Forklift (กรุณารัน seedForkliftSample ก่อน)');
+  const out = [];
+  for (let back = 6; back >= 0; back--) {
+    fls.forEach((m, fi) => {
+      if (back > 0 && (back + fi) % 5 === 4) return;          // บางวันไม่ตรวจ ให้ดูสมจริง
+      const items = checklistFor_(m, cls, fls);
+      if (!items.length) return;
+      const ngIdx = ((back + fi) % 4 === 0) ? (fi + back) % items.length : -1;
+      const data = items.map((c, i) => {
+        const row = { id: c.Item_ID, cat: c.Category || 'ทั่วไป', point: c.Inspection_Point, std: c.Standard_Criteria || '', result: i === ngIdx ? 'NG' : 'OK' };
+        if (i === ngIdx) row.detail = 'ข้อมูลทดสอบ: พบความผิดปกติ ต้องตรวจซ่อม';
+        return row;
+      });
+      const ng = ngIdx >= 0 ? data[ngIdx] : null;
+      out.push([
+        new Date(Date.now() - back * 864e5 - (fi + 1) * 600000),
+        m.Forklift_ID, m.Owner_Emp_ID, m.Owner_Emp_ID,
+        ng ? 'NG' : 'OK',
+        JSON.stringify({ items: data, cleaning: [] }),
+        ng ? safeCell_(ng.point + ': ' + ng.detail) : ''
+      ]);
+    });
+  }
+  const sh = sheet_(SH.LOG);
+  const start = sh.getLastRow() + 1;
+  sh.getRange(start, 1, out.length, 7).setValues(out);
+  sh.getRange(start, 1, out.length, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+  Logger.log('เพิ่มข้อมูลทดสอบ ' + out.length + ' รายการ');
+}
+
 function checkData() {
   const issues = [];
   const emps = rows_(SH.EMP), fls = rows_(SH.FL), cl = rows_(SH.CL);
@@ -824,8 +955,10 @@ function checkData() {
   fls.forEach(m => { flid[m.Forklift_ID] = 1; });
 
   fls.forEach(m => {
+    if (typeOf_(m).key === 'other') issues.push('รถ ' + m.Forklift_ID + ' มีประเภท "' + m.Model_Type + '" ที่ระบบยังไม่รู้จัก (ใช้ชุดเครื่องยนต์เป็นค่าเริ่มต้น — เพิ่มประเภทใหม่ในตาราง FORKLIFT_TYPES)');
     if (!eid[m.Owner_Emp_ID]) issues.push('รถ ' + m.Forklift_ID + ' มี Owner ที่ไม่อยู่ใน Employees');
-    if (!cl.some(c => c.Forklift_ID === m.Forklift_ID)) issues.push('รถ ' + m.Forklift_ID + ' ยังไม่มีรายการตรวจ');
+    if (!cl.some(c => c.Forklift_ID === m.Forklift_ID)) issues.push('รถ ' + m.Forklift_ID + ' ยังไม่มีรายการตรวจของตัวเอง (ระบบจะใช้ชุดมาตรฐานตามประเภท ' + m.Model_Type + ' ให้อัตโนมัติ)');
+    else if (!itemsMatchKind_(cl.filter(c => c.Forklift_ID === m.Forklift_ID), kindOf_(m))) issues.push('รถ ' + m.Forklift_ID + ' (' + m.Model_Type + ') มีรายการตรวจไม่ตรงประเภท (ระบบจะใช้ชุดมาตรฐานตามประเภทแทน)');
   });
   cl.forEach(c => {
     if (!flid[c.Forklift_ID]) issues.push('Checklist ' + c.Item_ID + ' อ้างอิงรถ ' + c.Forklift_ID + ' ที่ไม่มีในชีต Forklift');

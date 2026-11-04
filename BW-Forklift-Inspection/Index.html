@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0f2438">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="color-scheme" content="light">
   <title>ระบบตรวจเช็ครถโฟล์คลิฟท์ | Forklift Daily Inspection System</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20261102">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20261107">
 </head>
 <body>
   <header class="top hide" id="top">
@@ -16,25 +17,28 @@
       <div class="brand">
         <div class="mark" aria-hidden="true">🚜</div>
         <div>
-          <b>ระบบตรวจเช็ครถโฟล์คลิฟท์</b>
-          <small>Forklift Daily Inspection System · One-Point Lesson</small>
+          <b data-i18n="brandTitle">ระบบตรวจเช็ครถโฟล์คลิฟท์</b>
+          <small data-i18n="brandSub">Forklift Daily Inspection System · One-Point Lesson</small>
         </div>
       </div>
 
       <nav class="nav">
-        <button id="nForm" onclick="show('form')" aria-label="ตรวจเช็ค" title="ตรวจเช็ค"><span class="ic">📋</span><span class="tx"> ตรวจเช็ค</span></button>
-        <button id="nDash" onclick="show('dash')" aria-label="Dashboard" title="Dashboard"><span class="ic">📊</span><span class="tx"> Dashboard</span></button>
+        <button id="nForm" onclick="show('form')" data-i18n-title="navForm"><span class="ic">📋</span><span class="tx" data-i18n="navForm"> ตรวจเช็ค</span></button>
+        <button id="nDash" onclick="show('dash')" data-i18n-title="navDash"><span class="ic">📊</span><span class="tx" data-i18n="navDash"> Dashboard</span></button>
       </nav>
 
       <div class="user-area">
-        <div class="status-pill" title="สถานะการเชื่อมต่อ Google Sheets">
+        <div class="lang-switch" role="group" aria-label="Language / ภาษา / ဘာသာစကား">
+          <button type="button" data-lang="th">ไทย</button>
+          <button type="button" data-lang="my">မြန်မာ</button>
+        </div>
+        <div class="status-pill" title="Google Sheets">
           <span class="status-dot" id="apiDot"></span>
           <span id="apiStatusText">Google Sheets</span>
         </div>
-
-        <div class="av" id="av" title="ผู้ใช้งาน">U</div>
+        <div class="av" id="av">U</div>
         <span class="nm" id="whoName" style="font-weight:600;">-</span>
-        <button class="btn alt" style="padding:6px 12px; font-size:13px;" onclick="doLogout()" aria-label="ออกจากระบบ" title="ออกจากระบบ"><span class="ic" aria-hidden="true">🚪</span><span class="tx"> ออก</span></button>
+        <button class="btn alt" style="padding:6px 12px; font-size:13px;" onclick="doLogout()" data-i18n-title="logout"><span class="ic" aria-hidden="true">🚪</span><span class="tx" data-i18n="logout"> ออก</span></button>
       </div>
     </div>
   </header>
@@ -43,49 +47,53 @@
     <section id="vLogin" class="card lg">
       <div class="l">
         <div>
-          <h1>ระบบตรวจเช็ค<br>รถโฟล์คลิฟท์</h1>
-          <p>ตรวจสอบความพร้อมประจำวัน เพื่อความปลอดภัยสูงสุดในการปฏิบัติงาน (Daily Safety Inspection)</p>
+          <h1 data-i18n-html="loginHero">ระบบตรวจเช็ค<br>รถโฟล์คลิฟท์</h1>
+          <p data-i18n="loginTag">ตรวจสอบความพร้อมประจำวัน เพื่อความปลอดภัยสูงสุดในการปฏิบัติงาน (Daily Safety Inspection)</p>
         </div>
 
         <div class="lg-art">
-          <svg viewBox="0 0 200 130" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="145" y="15" width="8" height="95" rx="2" fill="#f08a1c" />
-            <rect x="155" y="15" width="6" height="95" rx="1.5" fill="#f08a1c" opacity="0.8" />
-            <path d="M140 90 L185 90 L185 95 L135 95 Z" fill="#94a3b8" />
-            <path d="M40 85 L140 85 L140 65 L95 65 L95 40 L60 40 L40 60 Z" fill="#f08a1c" />
-            <path d="M30 65 Q25 85 45 85 L55 85 L50 65 Z" fill="#d97706" />
+          <svg viewBox="0 0 200 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="145" y="15" width="8" height="95" rx="2" fill="#ffb020" />
+            <rect x="155" y="15" width="6" height="95" rx="1.5" fill="#ffb020" opacity="0.8" />
+            <path d="M140 90 L185 90 L185 95 L135 95 Z" fill="#cbd5e1" />
+            <path d="M40 85 L140 85 L140 65 L95 65 L95 40 L60 40 L40 60 Z" fill="#ffb020" />
+            <path d="M30 65 Q25 85 45 85 L55 85 L50 65 Z" fill="#f08a1c" />
             <path d="M60 40 L60 18 L120 18 L125 65" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" />
             <line x1="80" y1="18" x2="80" y2="40" stroke="#ffffff" stroke-width="2" />
             <line x1="100" y1="18" x2="100" y2="65" stroke="#ffffff" stroke-width="2" />
-            <rect x="75" y="48" width="16" height="16" rx="2" fill="#1e293b" />
-            <line x1="110" y1="58" x2="102" y2="42" stroke="#94a3b8" stroke-width="3" />
-            <circle cx="100" cy="40" r="6" stroke="#94a3b8" stroke-width="2.5" />
-            <circle cx="60" cy="95" r="16" fill="#111827" />
-            <circle cx="60" cy="95" r="7" fill="#64748b" />
-            <circle cx="132" cy="95" r="18" fill="#111827" />
-            <circle cx="132" cy="95" r="8" fill="#64748b" />
-            <circle cx="90" cy="14" r="4" fill="#fbbf24" />
+            <rect x="75" y="48" width="16" height="16" rx="2" fill="#1e3a8a" />
+            <line x1="110" y1="58" x2="102" y2="42" stroke="#cbd5e1" stroke-width="3" />
+            <circle cx="100" cy="40" r="6" stroke="#cbd5e1" stroke-width="2.5" />
+            <circle cx="60" cy="95" r="16" fill="#1e293b" />
+            <circle cx="60" cy="95" r="7" fill="#94a3b8" />
+            <circle cx="132" cy="95" r="18" fill="#1e293b" />
+            <circle cx="132" cy="95" r="8" fill="#94a3b8" />
+            <circle cx="90" cy="14" r="4" fill="#fde047" />
           </svg>
         </div>
 
-        <div style="font-size:12.5px; opacity:0.75; display:flex; justify-content:space-between; align-items:center;">
-          <span>รองรับทั้งแบบน้ำมัน+แก๊ส และแบบไฟฟ้า</span>
+        <div class="lg-foot">
+          <span data-i18n="loginSupport">รองรับแบบน้ำมัน+แก๊ส แบบแก๊ส และแบบไฟฟ้า</span>
           <span>Google Sheets Database</span>
         </div>
       </div>
 
       <div class="r">
-        <h2 style="font-size:22px; color:var(--navy); margin-bottom:14px;">เข้าสู่ระบบตรวจเช็ค</h2>
+        <div class="lang-switch" role="group" aria-label="Language / ภาษา / ဘာသာစကား">
+          <button type="button" data-lang="th">ไทย</button>
+          <button type="button" data-lang="my">မြန်မာ</button>
+        </div>
+        <h2 style="font-size:22px; color:var(--navy); margin-bottom:14px;" data-i18n="loginTitle">เข้าสู่ระบบตรวจเช็ค</h2>
 
-        <label class="k" for="selDept">หน่วยงาน / แผนก</label>
+        <label class="k" for="selDept" data-i18n="lblDept">หน่วยงาน / แผนก</label>
         <select id="selDept" style="margin-bottom:12px;"></select>
 
-        <label class="k" for="selName">ชื่อผู้ตรวจเช็ค</label>
+        <label class="k" for="selName" data-i18n="lblName">ชื่อผู้ตรวจเช็ค</label>
         <select id="selName">
-          <option value="">กำลังโหลดรายชื่อ...</option>
+          <option value="">...</option>
         </select>
 
-        <div class="dots" id="dots" aria-label="PIN dots"></div>
+        <div class="dots" id="dots" aria-label="PIN"></div>
         <div class="keys" id="keys"></div>
 
         <div class="err" id="loginErr" role="alert"></div>
@@ -93,172 +101,138 @@
     </section>
 
     <section id="vForm" class="hide">
+
       <div class="g2">
         <div class="card pad16">
           <div class="dept-fl-grid" style="display:grid; grid-template-columns: 1fr 1.2fr; gap:10px; margin-bottom:10px;">
             <div>
-              <label class="k" for="selFormDept">หน่วยงาน / แผนก</label>
+              <label class="k" for="selFormDept" data-i18n="lblDept">หน่วยงาน / แผนก</label>
               <select id="selFormDept"></select>
             </div>
             <div>
-              <label class="k" for="selForklift">เลือกรถโฟล์คลิฟท์</label>
+              <label class="k" for="selForklift" data-i18n="lblForklift">เลือกรถโฟล์คลิฟท์</label>
               <select id="selForklift"></select>
             </div>
           </div>
 
           <div class="minfo" id="minfo"></div>
           <div class="v3">
-            <canvas id="cv" aria-label="แบบจำลอง 3 มิติรถโฟล์คลิฟท์"></canvas>
+            <canvas id="cv" aria-label="3D forklift"></canvas>
             <div class="v3bar">
-              <button class="btn alt" onclick="v3zoom(-1.2)" aria-label="ซูมเข้า">+</button>
-              <button class="btn alt" onclick="v3zoom(1.2)" aria-label="ซูมออก">−</button>
-              <button class="btn alt" id="btnLabels" onclick="toggleV3Labels()">🔢 ซ่อนเลข</button>
-              <button class="btn alt" onclick="v3reset()">รีเซ็ตมุมมอง</button>
+              <button class="btn alt" onclick="v3zoom(-1.2)" data-i18n-title="zoomIn">+</button>
+              <button class="btn alt" onclick="v3zoom(1.2)" data-i18n-title="zoomOut">−</button>
+              <button class="btn alt" id="btnLabels" onclick="toggleV3Labels()">🔢</button>
+              <button class="btn alt" onclick="v3reset()" data-i18n="resetView">รีเซ็ตมุมมอง</button>
             </div>
-            <div class="v3note">
-              ลากเมาส์/ทัชเพื่อหมุน 360° · เลื่อนลูกกลิ้งเพื่อซูม · แตะหมายเลขบนโมเดลเพื่อชี้จุดตรวจ (กล้องจะเลื่อนไปที่ชิ้นส่วนนั้น)
+            <div class="v3note" data-i18n="v3note">
+              ลากเมาส์/ทัชเพื่อหมุน 360° · เลื่อนลูกกลิ้งเพื่อซูม · แตะหมายเลขบนโมเดลเพื่อชี้จุดตรวจ
             </div>
           </div>
 
           <div class="sec" style="margin-top:16px;">
-            <span>จุดสำคัญประจำรถโฟล์คลิฟท์ (ดึงจากรายการตรวจ)</span>
+            <span data-i18n="keyPoints">จุดสำคัญประจำรถโฟล์คลิฟท์ (ดึงจากรายการตรวจ)</span>
           </div>
           <ol class="plist" id="plist"></ol>
         </div>
 
         <div class="card pad16">
           <div class="sec">
-            <span>รายการตรวจเช็คประจำวัน</span>
-            <span class="hint" style="margin:0 0 0 auto; font-size:14px; font-weight:600; color:var(--navy);" id="cnt">0/0</span>
-          </div>
-
-          <div class="mode-switch">
-            <button type="button" id="btnModeFocus" class="active" onclick="switchCheckMode('focus')">🎯 ตรวจตามจุดสำคัญ</button>
-            <button type="button" id="btnModeAll" onclick="switchCheckMode('all')">📋 แสดงทั้งหมด</button>
+            <span data-i18n="dailyList">รายการตรวจเช็คประจำวัน</span>
+            <span class="hint" style="margin:0 0 0 auto; font-size:15px; font-weight:700; color:var(--navy);" id="cnt">0/0</span>
           </div>
 
           <div class="prog"><i id="pg"></i></div>
           <div class="partbox">
             <div class="partbox-head">
               <div class="partbox-title">
-                <small>🔍 ชิ้นส่วนที่กำลังตรวจ (<span id="partModeLabel">รูปจริง</span>)</small>
+                <small>🔍 <span data-i18n="partTitle">ชิ้นส่วนที่กำลังตรวจ</span> (<span id="partModeLabel">รูปจริง</span>)</small>
                 <b id="partName">-</b>
                 <span id="partCat" class="partbox-cat"></span>
               </div>
               <div style="display:flex; gap:6px; flex:none;">
-                <button type="button" class="btn alt" id="btnPartMode" style="padding:4px 12px; font-size:12.5px;" onclick="togglePartMode()" title="สลับระหว่างรูปจริงและโมเดล 3D">🧊 ดู 3D</button>
+                <button type="button" class="btn alt" id="btnPartMode" style="padding:4px 12px; font-size:12.5px;" onclick="togglePartMode()">🧊</button>
                 <button type="button" class="btn alt" id="btnPartToggle" style="padding:4px 12px; font-size:12.5px;" onclick="togglePartBox()">ซ่อน</button>
               </div>
             </div>
             <div class="partbox-stage" id="partStage">
-              <canvas id="cvPart" class="hide" aria-label="แบบจำลอง 3 มิติของชิ้นส่วนที่กำลังตรวจ"></canvas>
-              <img id="partImg" class="partbox-img hide" alt="รูปจริงของชิ้นส่วนที่กำลังตรวจ" onclick="openPartImage()">
+              <canvas id="cvPart" class="hide" aria-label="3D part"></canvas>
+              <img id="partImg" class="partbox-img hide" alt="" onclick="openPartImage()">
               <div id="partPlaceholder" class="partbox-ph">
                 <span style="font-size:34px;">📷</span>
-                <b>ยังไม่มีรูปจริงสำหรับจุดตรวจนี้</b>
-                <small id="partPhText">วางไฟล์รูปไว้ในโฟลเดอร์ asset</small>
+                <b data-i18n="phNone">ยังไม่มีรูปจริงสำหรับจุดตรวจนี้</b>
+                <small id="partPhText"></small>
               </div>
-              <span class="partbox-hint" id="partHint">แตะรูปเพื่อขยายดู</span>
+              <span class="partbox-hint" id="partHint"></span>
             </div>
           </div>
           <div id="boxFocusView"></div>
-          <div id="boxAllView" class="hide">
-            <div id="tiles"></div>
-            <p class="hint" style="margin:10px 0 6px;">
-              💡 <b>คำแนะนำ:</b> แตะ 1 ครั้ง = <span style="color:var(--ok); font-weight:600;">✓ ปกติ</span> · แตะ 2 ครั้ง = <span style="color:var(--ng); font-weight:600;">✕ ผิดปกติ</span> (จะมีช่อง "รายละเอียดความผิดปกติ" ขึ้นให้กรอกในข้อนั้น) · แตะ 3 ครั้ง = ล้างค่า
-            </p>
-            <div class="row">
-              <button class="btn alt" onclick="allOk()">✓ ปกติทั้งหมด</button>
-              <button class="btn alt" onclick="clearAll()">ล้างค่าทั้งหมด</button>
-            </div>
-            <div class="sec" style="margin-top:20px;">
-              <span>การทำความสะอาดและบำรุงรักษาเบื้องต้น</span>
-              <span class="hint" style="margin:0 0 0 auto;" id="cc">0/0</span>
-            </div>
-            <div class="chk" id="clean"></div>
-            <div class="row" style="margin:8px 0 0;">
-              <button class="btn alt" onclick="cleanAll()">ทำความสะอาดครบทุกข้อ</button>
-            </div>
-          </div>
-          <div class="sec" style="margin-top:20px;">หมายเหตุเพิ่มเติม (ถ้ามี)</div>
-          <textarea id="note" rows="3" placeholder="หมายเหตุอื่นๆ (ไม่บังคับ) · รายละเอียดความผิดปกติให้กรอกในแต่ละข้อที่เลือก NG"></textarea>
+          <div class="sec" style="margin-top:20px;" data-i18n="noteTitle">หมายเหตุเพิ่มเติม (ถ้ามี)</div>
+          <textarea id="note" rows="3" data-i18n-ph="notePh" placeholder=""></textarea>
 
           <div class="row" style="margin-top:16px;">
-            <button class="btn big" id="btnSave" onclick="saveInspection()">บันทึกผลการตรวจเช็ค</button>
+            <button class="btn big" id="btnSave" onclick="saveInspection()" data-i18n="btnSave">บันทึกผลการตรวจเช็ค</button>
           </div>
-          <p class="hint" style="margin:8px 0 0; text-align:center;">
+          <p class="hint" style="margin:8px 0 0; text-align:center;" data-i18n="emailHint">
             📧 เมื่อบันทึกแล้ว ระบบจะส่งรายงานผลการตรวจ (ใคร ตรวจอะไร ผ่าน/ไม่ผ่าน) ไปยังอีเมล์ผู้รับผิดชอบอัตโนมัติ
           </p>
         </div>
-
       </div>
     </section>
+
     <section id="vDash" class="hide">
       <div class="kpi">
-        <div class="kc">
-          <span>ตรวจวันนี้</span>
-          <b id="kTotal">0</b>
-        </div>
-        <div class="kc r">
-          <span>ผิดปกติวันนี้ (NG)</span>
-          <b id="kNg">0</b>
-        </div>
-        <div class="kc o">
-          <span>ยังไม่ตรวจวันนี้</span>
-          <b id="kPend">0</b>
-        </div>
-        <div class="kc g">
-          <span>ความพร้อมเฉลี่ย 7 วัน</span>
-          <b id="kRate">0%</b>
-        </div>
+        <div class="kc"><i class="kic">✅</i><div><span data-i18n="kToday">ตรวจวันนี้</span><b id="kTotal">0</b></div></div>
+        <div class="kc r"><i class="kic">🚨</i><div><span data-i18n="kNg">ผิดปกติวันนี้ (NG)</span><b id="kNg">0</b></div></div>
+        <div class="kc o"><i class="kic">⏳</i><div><span data-i18n="kPend">ยังไม่ตรวจวันนี้</span><b id="kPend">0</b></div></div>
+        <div class="kc g"><i class="kic">📈</i><div><span data-i18n="kRate">ความพร้อมเฉลี่ย 7 วัน</span><b id="kRate">0%</b></div></div>
       </div>
       <div class="g3">
         <div class="card pad16">
-          <div class="sec">สัดส่วนความพร้อม 7 วัน</div>
+          <div class="sec" data-i18n="ringTitle">สัดส่วนความพร้อม 7 วัน</div>
           <div class="ring" id="ring" style="--p:0">
             <div>
               <span id="ringTxt">0%</span>
-              <small>อัตราปกติ</small>
+              <small data-i18n="ringSub">อัตราปกติ</small>
             </div>
           </div>
         </div>
 
         <div class="card pad16">
-          <div class="sec">จำนวนการตรวจเช็คย้อนหลัง 7 วัน</div>
+          <div class="sec" data-i18n="barsTitle">จำนวนการตรวจเช็คย้อนหลัง 7 วัน</div>
           <div class="bars" id="bars"></div>
           <p class="hint" style="text-align:right; margin-top:8px;">
-            <span style="color:var(--ok);">■ ปกติ</span> &nbsp;
-            <span style="color:var(--ng);">■ ผิดปกติ (NG)</span>
+            <span style="color:var(--ok);" data-i18n="legendOk">■ ปกติ</span> &nbsp;
+            <span style="color:var(--ng);" data-i18n="legendNg">■ ผิดปกติ (NG)</span>
           </p>
         </div>
       </div>
       <div class="card pad16" style="margin-bottom:16px;">
-        <div class="sec">สถานะรถโฟล์คลิฟท์ทั้งหมดในระบบ</div>
+        <div class="sec" data-i18n="allForklifts">สถานะรถโฟล์คลิฟท์ทั้งหมดในระบบ</div>
         <div class="mgrid" id="mgrid"></div>
       </div>
       <div class="card pad16">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div class="sec" style="margin-bottom:0;">ประวัติการตรวจเช็คล่าสุด</div>
-          <button class="btn alt" style="padding:6px 14px;" onclick="loadDash()">🔄 รีเฟรชข้อมูล</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+          <div class="sec" style="margin-bottom:0;" data-i18n="recentTitle">ประวัติการตรวจเช็คล่าสุด</div>
+          <button class="btn alt" style="padding:6px 14px;" onclick="loadDash()" data-i18n="refresh">🔄 รีเฟรชข้อมูล</button>
         </div>
         <div class="scroll">
           <table id="tRecent"></table>
         </div>
       </div>
     </section>
-
   </main>
 
   <div class="modal-overlay hide" id="imgModal" onclick="closePartImage()">
     <div class="lightbox" onclick="event.stopPropagation()">
       <img id="imgModalPic" alt="">
       <div class="lightbox-cap" id="imgModalCap"></div>
-      <button class="btn" type="button" onclick="closePartImage()">ปิด</button>
+      <button class="btn" type="button" onclick="closePartImage()" data-i18n="close">ปิด</button>
     </div>
   </div>
   <div class="toast hide" id="toast" role="status"></div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="app.js?v=20261102"></script>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="i18n.js?v=20261107"></script>
+  <script src="app.js?v=20261107"></script>
 </body>
 </html>

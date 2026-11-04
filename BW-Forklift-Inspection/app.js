@@ -1,4 +1,4 @@
-const API_URL = 'https://script.google.com/macros/s/AKfycbyDhDCEfr9EViZbhrFY87ogix7gEFe3bIyLRHcMiij7Szfa2uUbXiNFons7OgxSDhSq/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyZTAP3WLEJ7mIDFBRPXscanWWHFLxueWM-mbhfw5d4_xmyCNeD2cLuFYpbtCi1vQG3/exec';
 const API_TIMEOUT_MS = 30000;
 const TIMEZONE = 'Asia/Bangkok';
 const ASSET_DIR = 'asset/';
@@ -11,7 +11,7 @@ let USER_DEPT = sessionStorage.getItem('fl_user_dept') || '';
 
 let FORM = null;
 let formLoading = false;
-const CUR = { forklift: null, elec: false, items: [], clean: [] };
+const CUR = { forklift: null, elec: false, kind: 'engine', items: [], clean: [] };
 
 let res = {};
 let ngd = {};
@@ -24,13 +24,21 @@ let PEOPLE = [];
 let loginBusy = false;
 let namesLoading = false;
 
-let checkMode = 'focus';
 let curFocusIdx = 0;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const stripNo = t => String(t == null ? '' : t).replace(/^\s*\d+\s*[.)]\s*/, '');
-const isElecForklift = m => !!m && /ไฟฟ้า|electric/i.test((m.model || '') + ' ' + (m.name || ''));
+const typeInfo = m => {
+  if (!m) return { group: 'engine', icon: '🚜', badge: 'badge-other', label: '' };
+  const label = String(m.model || '').trim();
+  if (m.group) return { group: m.group, icon: m.icon || '🚜', badge: m.badge || 'badge-other', label };
+  return /ไฟฟ้า|electric/i.test(label || m.name || '')
+    ? { group: 'electric', icon: '⚡', badge: 'badge-elec', label }
+    : { group: 'engine', icon: '⛽', badge: 'badge-gas', label };
+};
+const forkliftKind = m => typeInfo(m).group;
+const isElecForklift = m => forkliftKind(m) === 'electric';
 const newSubmitId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2);
 
 function toast(m, ms) {
@@ -46,7 +54,8 @@ function setApiStatus(isOnline, note) {
   const dot = $('apiDot'), txt = $('apiStatusText');
   if (!dot || !txt) return;
   dot.className = 'status-dot ' + (isOnline ? '' : 'offline');
-  txt.textContent = note || (isOnline ? 'Google Sheet ออนไลน์' : 'เชื่อมต่อไม่ได้');
+  window._apiState = isOnline;
+  txt.textContent = note || _t(isOnline ? 'apiOnline' : 'apiOffline');
 }
 
 function getBangkokWeekday(date = new Date()) {
@@ -56,11 +65,11 @@ const isMondayCleaningDay = () => window._simMonday === true || getBangkokWeekda
 
 function toggleSimMonday() {
   window._simMonday = !window._simMonday;
-  toast(window._simMonday ? 'เปิดโหมดจำลอง: แสดงการทำความสะอาด (เสมือนเป็นวันจันทร์)' : 'ปิดโหมดจำลอง');
-  if (checkMode === 'focus') renderFocusView(); else drawClean();
+  toast(_t(window._simMonday ? 'simOn' : 'simOff'));
+  renderFocusView();
 }
 const simButtonHtml = css => SIM_ENABLED
-  ? `<button type="button" class="btn alt" style="${css}" onclick="toggleSimMonday()">${window._simMonday ? 'ปิดจำลอง' : 'ทดสอบโหมดวันจันทร์'}</button>`
+  ? `<button type="button" class="btn alt" style="${css}" onclick="toggleSimMonday()">${_t(window._simMonday ? 'simBtnOn' : 'simBtnOff')}</button>`
   : '';
 
 async function api(method, action, payload = {}) {
@@ -80,7 +89,7 @@ async function api(method, action, payload = {}) {
     const json = await r.json();
     setApiStatus(true);
     if (json && json.code === 'AUTH') handleSessionExpired();
-    return json || { ok: false, error: 'ไม่ได้รับข้อมูลจากเซิร์ฟเวอร์' };
+    return json || { ok: false, error: _t('errNoResp') };
   } catch (err) {
     console.warn('API failed:', action, err);
     setApiStatus(false);
@@ -88,8 +97,8 @@ async function api(method, action, payload = {}) {
       ok: false,
       network: true,
       error: err.name === 'AbortError'
-        ? 'เซิร์ฟเวอร์ตอบช้าเกินไป กรุณาลองใหม่'
-        : 'เชื่อมต่อ Google Sheet ไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต'
+        ? _t('errTimeout')
+        : _t('errNetwork')
     };
   } finally {
     clearTimeout(timer);
@@ -100,7 +109,7 @@ const apiPost = (action, payload) => api('POST', action, payload);
 
 function handleSessionExpired() {
   if (!TOKEN) return;
-  toast('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่', 4500);
+  toast(_t('sessionExpired'), 4500);
   doLogout(false);
 }
 
@@ -133,39 +142,40 @@ function buildKeys() {
 async function loadNames() {
   if (namesLoading) return;
   namesLoading = true;
-  $('selName').innerHTML = '<option value="">กำลังโหลดรายชื่อ...</option>';
+  $('selName').innerHTML = '<option value="">' + _t('namesLoadingOpt') + '</option>';
   const r = await apiGet('getLoginData');
   namesLoading = false;
 
   if (!(r.ok && Array.isArray(r.data) && r.data.length)) {
     PEOPLE = [];
-    $('selName').innerHTML = '<option value="">โหลดรายชื่อไม่สำเร็จ (แตะเพื่อลองใหม่)</option>';
-    loginMsg(r.error || 'ไม่พบรายชื่อพนักงานในชีต Employees', true);
+    $('selName').innerHTML = '<option value="">' + _t('namesFailOpt') + '</option>';
+    loginMsg(_tr(r.error || _t('namesNone')), true);
     return;
   }
 
   loginMsg('');
   PEOPLE = r.data;
-  const ds = [...new Set(PEOPLE.map(p => (p.dept || '').trim()).filter(Boolean))];
-  $('selDept').innerHTML = '<option value="">ทุกหน่วยงาน</option>' + ds.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  renderDeptOptions();
   fillNames();
 }
 
 function fillNames() {
   const d = ($('selDept').value || '').trim();
-  $('selName').innerHTML = '<option value="">-- เลือกชื่อผู้ตรวจ --</option>' +
+  const keepName = $('selName').value;
+  $('selName').innerHTML = '<option value="">' + _t('pickName') + '</option>' +
     PEOPLE.filter(p => !d || (p.dept || '').trim() === d)
-      .map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.id)})</option>`).join('');
+      .map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  $('selName').value = keepName;
 }
 
 async function doLogin() {
   if (loginBusy) return;
   const empId = $('selName').value;
-  if (!empId) return loginMsg('กรุณาเลือกชื่อผู้ตรวจเช็ค', true);
-  if (pin.length < 4) return loginMsg('กรุณากรอก PIN 4 หลัก', true);
+  if (!empId) return loginMsg(_t('pickNameErr'), true);
+  if (pin.length < 4) return loginMsg(_t('pinLenErr'), true);
 
   loginBusy = true;
-  loginMsg('กำลังตรวจสอบข้อมูล...');
+  loginMsg(_t('checking'));
   const r = await apiPost('login', { empId, pin });
   loginBusy = false;
 
@@ -178,7 +188,7 @@ async function doLogin() {
     finishLogin();
     return;
   }
-  loginMsg(r.msg || r.error || 'PIN ไม่ถูกต้อง', true);
+  loginMsg(_tr(r.msg || r.error || _t('pinWrong')), true);
   pin = '';
   drawDots();
 }
@@ -230,6 +240,7 @@ function show(v) {
 function setCurrent(m) {
   CUR.forklift = m || null;
   CUR.elec = isElecForklift(m);
+  CUR.kind = forkliftKind(m);
   CUR.items = m && FORM ? FORM.items.filter(i => i.forkliftId === m.id).map(i => ({ ...i, point: stripNo(i.point) })) : [];
   CUR.clean = m && FORM ? FORM.clean.filter(c => c.forkliftId === m.id) : [];
 }
@@ -263,8 +274,8 @@ function resetInspection() {
 }
 
 function showFormError(msg) {
-  $('minfo').innerHTML = `<div style="color:var(--ng); font-weight:600; margin-bottom:8px;">⚠️ ${esc(msg)}</div>` +
-    '<button type="button" class="btn alt" onclick="retryLoadForm()">🔄 ลองใหม่</button>';
+  $('minfo').innerHTML = `<div style="color:var(--ng); font-weight:600; margin-bottom:8px;">⚠️ ${esc(_tr(msg))}</div>` +
+    '<button type="button" class="btn alt" onclick="retryLoadForm()">' + _t('retry') + '</button>';
   $('btnSave').disabled = true;
 }
 
@@ -276,11 +287,11 @@ function retryLoadForm() {
 async function loadForm() {
   if (FORM || formLoading) return;
   formLoading = true;
-  $('minfo').innerHTML = '<span style="color:var(--mute); font-size:13.5px;">กำลังโหลดข้อมูลรถและรายการตรวจ...</span>';
+  $('minfo').innerHTML = '<span style="color:var(--mute); font-size:13.5px;">' + _t('formLoading') + '</span>';
   try {
     const r = await apiGet('getFormData', { token: TOKEN });
     if (!(r.ok && r.data)) {
-      if (r.code !== 'AUTH') showFormError(r.error || 'โหลดข้อมูลแบบฟอร์มไม่สำเร็จ');
+      if (r.code !== 'AUTH') showFormError(r.error || _t('formLoadFail'));
       return;
     }
     FORM = r.data;
@@ -291,7 +302,7 @@ async function loadForm() {
     populateForkliftSelect();
   } catch (err) {
     console.error(err);
-    showFormError('เกิดข้อผิดพลาดในการโหลดข้อมูลแบบฟอร์ม');
+    showFormError(_t('formLoadErr'));
   } finally {
     formLoading = false;
   }
@@ -300,8 +311,8 @@ async function loadForm() {
 function updateFormDeptFilter() {
   const depts = [...new Set(FORM.forklifts.map(m => (m.dept || '').trim()).filter(Boolean))].sort();
   const sel = $('selFormDept');
-  sel.innerHTML = '<option value="">ทุกหน่วยงาน (แสดงทั้งหมด)</option>' +
-    depts.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  sel.innerHTML = '<option value="">' + _t('allDeptsShow') + '</option>' +
+    depts.map(d => `<option value="${esc(d)}">${esc(_tr(d))}</option>`).join('');
   const mine = depts.find(d => d.toLowerCase() === (USER_DEPT || '').trim().toLowerCase());
   sel.value = mine || '';
 }
@@ -312,12 +323,12 @@ function populateForkliftSelect() {
   const list = dept ? FORM.forklifts.filter(m => (m.dept || '').trim().toLowerCase() === dept) : FORM.forklifts;
 
   if (!list.length) {
-    $('selForklift').innerHTML = '<option value="">-- ไม่พบรถในแผนกนี้ --</option>';
-    $('minfo').innerHTML = '<span style="color:var(--mute); font-size:13.5px;">ไม่พบรถโฟล์คลิฟท์ที่ลงทะเบียนในแผนกนี้</span>';
-    ['boxFocusView', 'plist', 'tiles', 'clean'].forEach(id => { $(id).innerHTML = ''; });
+    $('selForklift').innerHTML = '<option value="">' + _t('noForkliftOpt') + '</option>';
+    $('minfo').innerHTML = '<span style="color:var(--mute); font-size:13.5px;">' + _t('noForkliftInfo') + '</span>';
+    ['boxFocusView', 'plist'].forEach(id => { $(id).innerHTML = ''; });
     setCurrent(null);
     resetInspection();
-    $('cnt').textContent = '0/0 ข้อ';
+    $('cnt').textContent = _t('cntFmt', { a: 0, b: 0 });
     $('pg').style.width = '0%';
     $('btnSave').disabled = true;
     return;
@@ -325,7 +336,7 @@ function populateForkliftSelect() {
 
   $('btnSave').disabled = false;
   $('selForklift').innerHTML = list.map(m =>
-    `<option value="${esc(m.id)}">${esc(m.id)} - ${esc(m.name)} [${isElecForklift(m) ? '⚡ ไฟฟ้า' : '⛽ น้ำมัน+แก๊ส'}]</option>`
+    `<option value="${esc(m.id)}">${esc(forkliftLabel(m))}</option>`
   ).join('');
   pickForklift();
 }
@@ -336,64 +347,35 @@ function pickForklift() {
   setCurrent(m);
   if (!m) return;
 
-  const badgeClass = CUR.elec ? 'badge-elec' : 'badge-gas';
-  const badgeText = (CUR.elec ? '⚡ แบบไฟฟ้า' : '⛽ แบบน้ำมัน+แก๊ส') + ` (${CUR.items.length} รายการ)`;
-  $('minfo').innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-      <b>🚜 ${esc(m.name)} (${esc(m.id)})</b>
-      <span class="badge-tag ${badgeClass}">${badgeText}</span>
-    </div>
-    <div style="font-size:13px; color:var(--mute); line-height:1.6;">
-      <span>🏢 <b>แผนก:</b> ${esc(m.dept || '-')}</span> &nbsp;·&nbsp;
-      <span>📍 <b>ที่ตั้ง:</b> ${esc(m.loc)}</span><br>
-      <span>👤 <b>ผู้รับผิดชอบ:</b> ${esc(m.owner)}</span>
-    </div>`;
+  renderMinfo(m);
 
   renderForklift3D(m, CUR.elec);
+  if (!V3.inited) showPartViewer(curFocusIdx);
   renderAll();
 }
 
 function renderAll() {
   updateProgress();
   renderFocusView();
-  drawTiles();
-  drawClean();
   $('btnSave').disabled = !CUR.items.length;
-}
-
-function switchCheckMode(mode) {
-  checkMode = mode;
-  $('btnModeFocus').classList.toggle('active', mode === 'focus');
-  $('btnModeAll').classList.toggle('active', mode === 'all');
-  $('boxFocusView').classList.toggle('hide', mode !== 'focus');
-  $('boxAllView').classList.toggle('hide', mode === 'focus');
-  if (mode === 'focus') renderFocusView();
-  else { drawTiles(); drawClean(); }
 }
 
 function refreshViews() {
   updateProgress();
-  if (checkMode === 'focus') renderFocusView();
-  else { drawTiles(); drawPlist(); }
+  renderFocusView();
 }
 
 function updateProgress() {
   const total = CUR.items.length;
   const checked = CUR.items.filter(i => res[i.id]).length;
-  $('cnt').textContent = `${checked}/${total} ข้อ`;
+  $('cnt').textContent = _t('cntFmt', { a: checked, b: total });
   $('pg').style.width = (total ? (checked / total) * 100 : 0) + '%';
-}
-
-function updateCleanStats() {
-  if (!isMondayCleaningDay()) { $('cc').textContent = 'เฉพาะวันจันทร์'; return; }
-  const tasks = CUR.clean;
-  $('cc').textContent = `${tasks.filter(c => cres[c.id]).length}/${tasks.length} ข้อ`;
 }
 
 function renderFocusView() {
   const its = CUR.items;
   if (!its.length) {
-    $('boxFocusView').innerHTML = '<p class="hint" style="padding:10px 0;">ยังไม่มีรายการตรวจของรถคันนี้ในชีต Checklist</p>';
+    $('boxFocusView').innerHTML = '<p class="hint" style="padding:10px 0;">' + _t('noChecklist') + '</p>';
     drawPlist();
     return;
   }
@@ -404,17 +386,17 @@ function renderFocusView() {
   const relCleans = getCleaningForPoint(item);
 
   const statusBadge = curStatus === 'OK'
-    ? '<span class="plist-status OK">✓ ตรวจแล้ว: ปกติ</span>'
+    ? '<span class="plist-status OK">' + _t('stOkFull') + '</span>'
     : curStatus === 'NG'
-      ? '<span class="plist-status NG">✕ ตรวจแล้ว: ผิดปกติ</span>'
-      : '<span class="plist-status pend">⏳ ยังไม่ตรวจ</span>';
+      ? '<span class="plist-status NG">' + _t('stNgFull') + '</span>'
+      : '<span class="plist-status pend">' + _t('stPend') + '</span>';
 
   const cleanHtml = relCleans.map(c => `
     <label style="display:flex; align-items:flex-start; gap:10px; margin-top:8px; cursor:pointer;">
       <input type="checkbox" data-fc="${esc(c.id)}" ${cres[c.id] ? 'checked' : ''} style="width:19px; height:19px; accent-color:var(--orange); margin-top:3px; flex:none;">
       <span style="font-size:13.5px;">
-        <b>${esc(c.area)}: ${esc(c.task)}</b>
-        ${c.method ? `<span class="t" style="display:block; font-size:12px; color:var(--mute); margin-top:2px;">วิธีทำ: ${esc(c.method)}${c.tool ? ' · อุปกรณ์: ' + esc(c.tool) : ''}</span>` : ''}
+        <b>${esc(_tr(c.area))}: ${esc(_tr(c.task))}</b>
+        ${c.method ? `<span class="t" style="display:block; font-size:12px; color:var(--mute); margin-top:2px;">${esc(_t('cleanHow'))}: ${esc(_tr(c.method))}${c.tool ? ' · ' + esc(_t('cleanTool')) + ': ' + esc(_tr(c.tool)) : ''}</span>` : ''}
       </span>
     </label>`).join('');
 
@@ -424,8 +406,8 @@ function renderFocusView() {
       cleanBlock = `
         <div class="focus-clean-card">
           <div class="focus-clean-title">
-            <span>🧹 การทำความสะอาดประจำจุดนี้</span>
-            <span style="font-size:12px; font-weight:normal; color:#ea580c; margin-left:auto;">📅 ประจำวันจันทร์</span>
+            <span>${_t('cleanTitle')}</span>
+            <span style="font-size:12px; font-weight:normal; color:#ea580c; margin-left:auto;">${_t('cleanMon')}</span>
           </div>
           ${cleanHtml}
         </div>`;
@@ -433,7 +415,7 @@ function renderFocusView() {
   } else {
     cleanBlock = `
       <div style="background:#f8fafc; border:1.5px dashed var(--line); border-radius:10px; padding:10px 14px; margin-top:14px; font-size:13px; color:var(--mute); display:flex; justify-content:space-between; align-items:center; gap:8px;">
-        <span>🗓️ <b>การทำความสะอาดประจำจุด:</b> กำหนดทำทุกวันจันทร์ (วันนี้ไม่ต้องทำความสะอาด)</span>
+        <span>${_t('cleanOff')}</span>
         ${simButtonHtml('padding:3px 9px; font-size:11.5px;')}
       </div>`;
   }
@@ -441,33 +423,33 @@ function renderFocusView() {
   $('boxFocusView').innerHTML = `
     <div class="focus-card">
       <div class="focus-header">
-        <span class="badge-tag" style="background:#f1f5f9; color:var(--navy2); border:1px solid var(--line);">📂 ${esc(item.cat)}</span>
+        <span class="badge-tag" style="background:#f1f5f9; color:var(--navy2); border:1px solid var(--line);">📂 ${esc(_tr(item.cat))}</span>
         ${statusBadge}
       </div>
 
       <div class="focus-title">
         <span class="mark" style="width:30px; height:30px; font-size:15px; font-weight:700;">${curFocusIdx + 1}</span>
-        <span>${esc(item.point)}</span>
+        <span>${esc(_tr(item.point))}</span>
       </div>
 
       <div class="focus-std-box">
-        <b style="color:var(--navy2); display:block; margin-bottom:4px;">📋 เกณฑ์และวิธีตรวจสอบ:</b>
-        ${esc(item.std)}
+        <b style="color:var(--navy2); display:block; margin-bottom:4px;">${_t('stdTitle')}</b>
+        ${esc(_tr(item.std))}
       </div>
 
       <div class="focus-actions">
-        <button type="button" class="btn-choice btn-ok ${curStatus === 'OK' ? 'active' : ''}" data-act="res" data-id="${esc(item.id)}" data-val="OK">✓ ปกติ (OK)</button>
-        <button type="button" class="btn-choice btn-ng ${curStatus === 'NG' ? 'active' : ''}" data-act="res" data-id="${esc(item.id)}" data-val="NG">✕ ผิดปกติ (NG)</button>
-        <button type="button" class="btn-choice btn-clear" data-act="res" data-id="${esc(item.id)}" data-val="">ล้างค่า</button>
+        <button type="button" class="btn-choice btn-ok ${curStatus === 'OK' ? 'active' : ''}" data-act="res" data-id="${esc(item.id)}" data-val="OK">${_t('btnOk')}</button>
+        <button type="button" class="btn-choice btn-ng ${curStatus === 'NG' ? 'active' : ''}" data-act="res" data-id="${esc(item.id)}" data-val="NG">${_t('btnNg')}</button>
+        <button type="button" class="btn-choice btn-clear" data-act="res" data-id="${esc(item.id)}" data-val="">${_t('btnClear')}</button>
       </div>
 
       ${curStatus === 'NG' ? ngDetailBox(item.id, 'f') : ''}
       ${cleanBlock}
 
       <div class="step-nav">
-        <button type="button" class="btn alt" style="padding:6px 14px; font-size:13px;" onclick="prevFocusPoint()" ${curFocusIdx === 0 ? 'disabled' : ''}>🠔 จุดก่อนหน้า</button>
-        <span style="font-family:'Kanit',sans-serif; font-weight:600; font-size:14px; color:var(--navy2);">จุดตรวจที่ ${curFocusIdx + 1} / ${its.length}</span>
-        <button type="button" class="btn alt" style="padding:6px 14px; font-size:13px;" onclick="nextFocusPoint()" ${curFocusIdx === its.length - 1 ? 'disabled' : ''}>จุดถัดไป ➔</button>
+        <button type="button" class="btn alt" style="padding:6px 14px; font-size:13px;" onclick="prevFocusPoint()" ${curFocusIdx === 0 ? 'disabled' : ''}>${_t('prevPt')}</button>
+        <span style="font-family:'Kanit',sans-serif; font-weight:600; font-size:14px; color:var(--navy2);">${_t('ptOf', { a: curFocusIdx + 1, b: its.length })}</span>
+        <button type="button" class="btn alt" style="padding:6px 14px; font-size:13px;" onclick="nextFocusPoint()" ${curFocusIdx === its.length - 1 ? 'disabled' : ''}>${_t('nextPt')}</button>
       </div>
     </div>`;
 
@@ -477,9 +459,9 @@ function renderFocusView() {
 function ngDetailBox(id, view) {
   return `
     <div class="ng-detail">
-      <label for="ngd_${view}_${esc(id)}">⚠️ รายละเอียดความผิดปกติ <span class="req">* จำเป็นต้องกรอก</span></label>
+      <label for="ngd_${view}_${esc(id)}">${_t('ngLabel')} <span class="req">${_t('ngReq')}</span></label>
       <textarea id="ngd_${view}_${esc(id)}" class="ng-detail-input" data-ngd="${esc(id)}" rows="3" maxlength="500"
-        placeholder="ระบุสิ่งที่พบ เช่น ตำแหน่ง/อาการ/ความเสียหาย">${esc(ngd[id] || '')}</textarea>
+        placeholder="${esc(_t('ngPh'))}">${esc(ngd[id] || '')}</textarea>
     </div>`;
 }
 
@@ -513,33 +495,21 @@ function selectInspectionPoint(idx) {
   curFocusIdx = idx;
   sel3DPart(idx);
   showPartViewer(idx);
-
-  if (checkMode === 'focus') {
-    renderFocusView();
-    return;
-  }
-  const it = CUR.items[idx];
-  const tile = it && Array.from(document.querySelectorAll('.tile')).find(t => t.dataset.i === it.id);
-  if (tile) {
-    tile.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    tile.style.outline = '3px solid var(--orange)';
-    setTimeout(() => { tile.style.outline = ''; }, 1600);
-  }
-  drawPlist();
+  renderFocusView();
 }
 
 function drawPlist() {
   $('plist').innerHTML = CUR.items.map((item, idx) => {
     const state = res[item.id] || '';
-    const label = state === 'OK' ? '✓ ปกติ' : state === 'NG' ? '✕ ผิดปกติ' : 'รอตรวจ';
+    const label = state === 'OK' ? _t('lOk') : state === 'NG' ? _t('lNg') : _t('lWait');
     const cls = state === 'OK' ? 'OK' : state === 'NG' ? 'NG' : 'pend';
     return `
       <li>
         <button type="button" class="${idx === curFocusIdx ? 'on' : ''}" data-p="${idx}">
           <span class="no">${idx + 1}</span>
           <span style="flex:1; min-width:0;">
-            <b style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(item.point)}</b>
-            <span class="t">${esc(item.cat)}</span>
+            <b style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(_tr(item.point))}</b>
+            <span class="t">${esc(_tr(item.cat))}</span>
           </span>
           <span class="plist-status ${cls}">${label}</span>
         </button>
@@ -547,104 +517,18 @@ function drawPlist() {
   }).join('');
 }
 
-function drawTiles() {
-  let h = '', lastCat = null;
-  CUR.items.forEach((item, idx) => {
-    if (item.cat !== lastCat) {
-      if (lastCat !== null) h += '</div>';
-      h += `<div class="cat-header"><span>📂 หมวด: ${esc(item.cat)}</span></div><div class="tiles">`;
-      lastCat = item.cat;
-    }
-    const state = res[item.id] || '';
-    const stateLabel = state === 'OK' ? '✓ ปกติ' : state === 'NG' ? '✕ ผิดปกติ' : 'แตะเพื่อตรวจ';
-    h += `
-      <div class="tile ${state}" data-i="${esc(item.id)}" role="button" tabindex="0">
-        <div class="tile-top">
-          <div class="tile-no">
-            <span class="mark" style="width:26px; height:26px; font-size:13px; font-weight:700;">${idx + 1}</span>
-            <span>${esc(item.point)}</span>
-          </div>
-          <span class="tile-state">${stateLabel}</span>
-        </div>
-        <div class="tile-std">${esc(item.std)}</div>
-        ${state === 'NG' ? ngDetailBox(item.id, 't') : ''}
-      </div>`;
-  });
-  if (lastCat !== null) h += '</div>';
-  $('tiles').innerHTML = h;
-  updateProgress();
-}
-
-function tap(id) {
-  const cur = res[id];
-  if (!cur) res[id] = 'OK';
-  else if (cur === 'OK') res[id] = 'NG';
-  else delete res[id];
-  if (res[id] !== 'NG') delete ngd[id];
-
-  const idx = CUR.items.findIndex(i => i.id === id);
-  if (idx >= 0) {
-    curFocusIdx = idx;
-    sel3DPart(idx);
-    showPartViewer(idx);
-  }
-  drawTiles();
-  drawPlist();
-  if (res[id] === 'NG') focusNgInput(id);
-}
-
-function allOk() {
-  ngd = {};
-  CUR.items.forEach(i => { res[i.id] = 'OK'; });
-  refreshViews();
-  toast('เลือกผล "ปกติ" ครบทุกข้อแล้ว');
-}
-
-function clearAll() {
-  res = {};
-  ngd = {};
-  refreshViews();
-}
-
-function drawClean() {
-  if (isMondayCleaningDay()) {
-    $('clean').innerHTML = CUR.clean.map(c => `
-      <label>
-        <input type="checkbox" data-c="${esc(c.id)}"${cres[c.id] ? ' checked' : ''}>
-        <span>
-          <b>${esc(c.area)}: ${esc(c.task)}</b>
-          ${c.method ? `<span class="t">วิธีทำ: ${esc(c.method)}${c.tool ? ' · อุปกรณ์: ' + esc(c.tool) : ''}</span>` : ''}
-        </span>
-      </label>`).join('');
-    updateCleanStats();
-  } else {
-    $('clean').innerHTML = `
-      <div style="background:#f8fafc; border:1.5px dashed var(--line); border-radius:10px; padding:14px; font-size:13px; color:var(--mute); text-align:center;">
-        🗓️ การทำความสะอาดและบำรุงรักษาประจำสัปดาห์ <b>กำหนดทำเฉพาะทุกวันจันทร์</b> (วันนี้ไม่ต้องทำความสะอาด)
-        <div style="margin-top:8px;">${simButtonHtml('padding:4px 12px; font-size:12px;')}</div>
-      </div>`;
-    $('cc').textContent = 'เฉพาะวันจันทร์';
-  }
-}
-
-function cleanAll() {
-  CUR.clean.forEach(c => { cres[c.id] = true; });
-  drawClean();
-  toast('ทำความสะอาดครบทุกข้อแล้ว');
-}
-
 async function saveInspection() {
   const its = CUR.items;
   const m = CUR.forklift;
-  if (!m) return toast('กรุณาเลือกรถโฟล์คลิฟท์');
-  if (!its.length) return toast('ไม่พบรายการตรวจ');
+  if (!m) return toast(_t('pickForkliftToast'));
+  if (!its.length) return toast(_t('noItemsToast'));
 
   const left = its.filter(i => !res[i.id]).length;
-  if (left > 0) return toast(`ยังตรวจเช็คไม่ครบ (เหลืออีก ${left} ข้อ)`);
+  if (left > 0) return toast(_t('notComplete', { n: left }));
 
   const missing = its.filter(i => res[i.id] === 'NG' && !(ngd[i.id] || '').trim());
   if (missing.length) {
-    toast(`กรุณากรอกรายละเอียดความผิดปกติ (เหลืออีก ${missing.length} ข้อ) เริ่มที่: ${missing[0].point}`, 4500);
+    toast(_t('ngMissing', { n: missing.length, p: _tr(missing[0].point) }), 4500);
     selectInspectionPoint(its.findIndex(i => i.id === missing[0].id));
     focusNgInput(missing[0].id);
     return;
@@ -656,7 +540,7 @@ async function saveInspection() {
   if (!submitId) submitId = newSubmitId();
   const btn = $('btnSave');
   btn.disabled = true;
-  btn.textContent = 'กำลังบันทึกข้อมูล...';
+  btn.textContent = _t('saving');
   $('vForm').classList.add('busy');
 
   try {
@@ -675,14 +559,14 @@ async function saveInspection() {
 
     if (!r.ok) {
       if (r.code === 'AUTH') return;
-      toast(r.network ? r.error + ' — ข้อมูลอาจยังไม่ถูกบันทึก กดบันทึกซ้ำได้ (ระบบกันบันทึกซ้ำให้)' : (r.error || r.msg || 'บันทึกไม่สำเร็จ'), 6000);
+      toast(r.network ? _t('netNotSaved', { err: r.error }) : _tr(r.error || r.msg || _t('saveFail')), 6000);
       return;
     }
 
-    const msg = r.message || 'บันทึกผลการตรวจเช็คลง Google Sheet สำเร็จ!';
+    const msg = _t('saveOk');
     if (r.emailSent === false) {
       console.warn('Email error:', r.emailError);
-      toast('⚠️ ' + msg + (r.emailError ? ' (' + r.emailError + ')' : ''), 7000);
+      toast('⚠️ ' + msg + ' · ' + _t('emailFail') + (r.emailError ? ' (' + r.emailError + ')' : ''), 7000);
     } else {
       toast('✓ ' + msg, 4500);
     }
@@ -694,16 +578,16 @@ async function saveInspection() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (err) {
     console.error(err);
-    toast('เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้ง');
+    toast(_t('saveErr'));
   } finally {
     btn.disabled = !CUR.items.length;
-    btn.textContent = 'บันทึกผลการตรวจเช็ค';
+    btn.textContent = _t('btnSave');
     $('vForm').classList.remove('busy');
   }
 }
 
 const PI = Math.PI;
-let BODY_C = 0xf08a1c;
+let BODY_C = 0xff8a1c;
 
 const V3 = {
   inited: false, st: null, root: null, drag: null,
@@ -1338,6 +1222,16 @@ function setGlow(group, on) {
   });
 }
 
+// กระพริบชิ้นส่วนที่เลือก (เรียกทุกเฟรมจาก renderMain) k = 0..1
+function pulseGlow(group, k) {
+  group.traverse(o => {
+    if (o.isMesh && o.material && o.material.emissive) {
+      o.material.emissive.setHex(0xff9a1f);
+      o.material.emissiveIntensity = 0.1 + k * 1.3;
+    }
+  });
+}
+
 const badgeCache = {};
 function numberBadgeTexture(num, isSelected) {
   const key = num + (isSelected ? 's' : 'n');
@@ -1347,7 +1241,7 @@ function numberBadgeTexture(num, isSelected) {
   const ctx = c.getContext('2d');
   ctx.beginPath();
   ctx.arc(32, 32, 28, 0, Math.PI * 2);
-  ctx.fillStyle = isSelected ? '#f08a1c' : '#0f2438';
+  ctx.fillStyle = isSelected ? '#f59e0b' : '#1e3a8a';
   ctx.fill();
   ctx.lineWidth = 4;
   ctx.strokeStyle = '#ffffff';
@@ -1372,7 +1266,7 @@ function init3D() {
     V3.st = makeStage(canvas, 9);
     const scene = V3.st.scene;
 
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 64), new THREE.MeshStandardMaterial({ color: 0xdfe5ea, roughness: 0.92, metalness: 0 }));
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 64), new THREE.MeshStandardMaterial({ color: 0xe3ecf7, roughness: 0.92, metalness: 0 }));
     floor.rotation.x = -PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
@@ -1442,6 +1336,12 @@ function renderMain() {
     t.z + D * Math.sin(V3.phi) * Math.cos(V3.theta)
   );
   cam.lookAt(t);
+  const sp = V3.parts[V3.selectedPart];
+  if (sp) {
+    const k = 0.5 + 0.5 * Math.sin(performance.now() / 120);
+    if (sp.group) pulseGlow(sp.group, k);
+    if (sp.sprite) { const s = 0.38 + 0.14 * k; sp.sprite.scale.set(s, s, s); }
+  }
   V3.st.renderer.render(V3.st.scene, cam);
 }
 
@@ -1449,7 +1349,7 @@ function toggleV3Labels() {
   V3.showLabels = !V3.showLabels;
   V3.parts.forEach(p => { if (p.sprite) p.sprite.visible = V3.showLabels; });
   const b = $('btnLabels');
-  if (b) b.textContent = V3.showLabels ? '🔢 ซ่อนเลข' : '🔢 แสดงเลข';
+  if (b) b.textContent = _t(V3.showLabels ? 'hideNum' : 'showNum');
 }
 
 function v3zoom(d) {
@@ -1481,6 +1381,7 @@ function sel3DPart(idx) {
     const on = k === idx;
     if (p.group) setGlow(p.group, on);
     if (p.sprite) {
+      if (!on) p.sprite.scale.set(0.38, 0.38, 0.38);
       p.sprite.material.map = numberBadgeTexture(k + 1, on);
       p.sprite.material.needsUpdate = true;
     }
@@ -1497,7 +1398,7 @@ function renderForklift3D(m, isElec) {
   V3.root = new THREE.Group();
   V3.st.scene.add(V3.root);
   V3.parts = [];
-  BODY_C = isElec ? 0x0a84c6 : 0xf08a1c;
+  BODY_C = isElec ? 0x1b7fd9 : 0xff8a1c;
 
   const base = new THREE.Group();
   buildBase(base, isElec);
@@ -1541,15 +1442,15 @@ function renderForklift3D(m, isElec) {
 }
 
 const PART_IMAGES = {
-  gas: {
-    battery:     'gas/battery-water.jpg',
-    hydTank:     'gas/hydraulic-oil.jpg',
-    mast:        'gas/mast-forks.jpg',
-    wheel:       'gas/wheel-tire.jpg',
-    hoses:       'gas/hydraulic-hose.jpg',
-    lights:      'gas/lights-horn.jpg',
-    brake:       'gas/brake.jpg',
-    chain:       'gas/chain.jpg'
+  engine: {
+    battery:     'engine/battery-water.jpg',
+    hydTank:     'engine/hydraulic-oil.jpg',
+    mast:        'engine/mast-forks.jpg',
+    wheel:       'engine/wheel-tire.jpg',
+    hoses:       'engine/hydraulic-hose.jpg',
+    lights:      'engine/lights-horn.jpg',
+    brake:       'engine/brake.jpg',
+    chain:       'engine/chain.jpg'
   },
   electric: {
     battery:     'electric/battery-water.jpg',
@@ -1566,16 +1467,28 @@ const PART_IMAGES = {
   }
 };
 
-function partImageSrc(it, key) {
-  const typeFolder = CUR.elec ? 'electric' : 'gas';
-  const typeMap = PART_IMAGES[typeFolder];
-  const f = ((it && it.img) ? String(it.img).trim() : '') || typeMap[key] || '';
-  if (!f) return '';
-
-  if (/^(https?:|data:)/i.test(f)) return f;
-  if (f.startsWith(ASSET_DIR)) return f;
-  if (f.includes('/')) return ASSET_DIR + f;
-  return `${ASSET_DIR}${typeFolder}/${encodeURIComponent(f)}`;
+// รถ "น้ำมัน+แก๊ส" และ "แก๊ส" ใช้รูปชุดเดียวกันในโฟลเดอร์ asset/engine/ (รองรับโฟลเดอร์เดิม asset/gas/ เป็นตัวสำรอง)
+function partImageCandidates(it, key) {
+  const folder = CUR.elec ? 'electric' : 'engine';
+  const f = ((it && it.img) ? String(it.img).trim() : '') || PART_IMAGES[folder][key] || '';
+  if (!f) return [];
+  if (/^(https?:|data:)/i.test(f)) return [f];
+  const rel = f.startsWith(ASSET_DIR) ? f.slice(ASSET_DIR.length) : f;
+  const out = [];
+  const add = p => { const u = ASSET_DIR + p; if (!out.includes(u)) out.push(u); };
+  if (rel.includes('/')) {
+    add(rel);
+    const parts = rel.split('/'), dir = parts[0], name = parts.slice(1).join('/');
+    if (dir === 'gas') add('engine/' + name);
+    else if (dir === 'engine') add('gas/' + name);
+    add(parts[parts.length - 1]);
+  } else {
+    const n = encodeURIComponent(rel);
+    add(folder + '/' + n);
+    if (folder === 'engine') add('gas/' + n);
+    add(n);
+  }
+  return out;
 }
 
 function showPartViewer(idx) {
@@ -1583,8 +1496,8 @@ function showPartViewer(idx) {
   if (!nameEl) return;
   const it = getCurItems()[idx];
   if (!it) return;
-  nameEl.textContent = (idx + 1) + '. ' + it.point;
-  if ($('partCat')) $('partCat').textContent = it.cat || '';
+  nameEl.textContent = (idx + 1) + '. ' + _tr(it.point);
+  if ($('partCat')) $('partCat').textContent = _tr(it.cat || '');
   PV.item = it;
   applyPartMode();
 }
@@ -1595,11 +1508,11 @@ function applyPartMode() {
   if (!it || !img || !ph) return;
   const is3d = PV.mode === '3d';
 
-  if ($('btnPartMode')) $('btnPartMode').textContent = is3d ? '📷 ดูรูปจริง' : '🧊 ดู 3D';
-  if ($('partModeLabel')) $('partModeLabel').textContent = is3d ? '3D' : 'รูปจริง';
+  if ($('btnPartMode')) $('btnPartMode').textContent = _t(is3d ? 'btnPhoto' : 'btn3d');
+  if ($('partModeLabel')) $('partModeLabel').textContent = _t(is3d ? 'mode3d' : 'modePhoto');
   if ($('partHint')) $('partHint').textContent = is3d
-    ? 'ลากเพื่อหมุน · เลื่อนล้อเมาส์เพื่อซูม · ดับเบิลคลิกเพื่อรีเซ็ต'
-    : 'แตะรูปเพื่อขยายดู';
+    ? _t('hint3d')
+    : _t('hintTap');
 
   if (is3d) {
     img.classList.add('hide');
@@ -1610,15 +1523,15 @@ function applyPartMode() {
       build3DPart(it);
     } else {
       if (cv) cv.classList.add('hide');
-      $('partPhText').textContent = 'ไม่สามารถแสดงโมเดล 3D ได้ (โหลด Three.js ไม่สำเร็จ)';
+      $('partPhText').textContent = _t('ph3dFail');
       ph.classList.remove('hide');
     }
     return;
   }
 
   if (cv) cv.classList.add('hide');
-  const typeFolder = CUR.elec ? 'electric' : 'gas';
-  const primarySrc = partImageSrc(it, partKeyFor(it, CUR.elec));
+  const typeFolder = CUR.elec ? 'electric' : 'engine';
+  const cands = partImageCandidates(it, partKeyFor(it, CUR.elec));
   PV.src = '';
 
   const showPh = msg => {
@@ -1628,14 +1541,15 @@ function applyPartMode() {
     PV.src = '';
   };
 
-  if (!primarySrc) {
+  if (!cands.length) {
     img.removeAttribute('src');
-    showPh(`วางไฟล์รูปไว้ในโฟลเดอร์ asset/${typeFolder} หรือระบุใน Checklist (หรือกด "ดู 3D")`);
+    showPh(_t('phHint', { folder: typeFolder }));
     return;
   }
 
   const tok = PV.tok = PV.tok + 1;
-  const tryLoad = (url, fallbackUrl = null) => {
+  const tryLoad = i => {
+    const url = cands[i];
     const pre = new Image();
     pre.onload = () => {
       if (tok !== PV.tok) return;
@@ -1647,20 +1561,12 @@ function applyPartMode() {
     };
     pre.onerror = () => {
       if (tok !== PV.tok) return;
-      if (fallbackUrl) {
-        tryLoad(fallbackUrl, null);
-      } else {
-        showPh('ไม่พบไฟล์รูป: ' + (url.length > 80 ? url.slice(0, 60) + '…' : url));
-      }
+      if (i + 1 < cands.length) tryLoad(i + 1);
+      else showPh(_t('phNoFile') + (cands[0].length > 80 ? cands[0].slice(0, 60) + '…' : cands[0]));
     };
     pre.src = url;
   };
-  
-  let fallbackSrc = null;
-  if (primarySrc.startsWith('asset/gas/') || primarySrc.startsWith('asset/electric/')) {
-    fallbackSrc = 'asset/' + primarySrc.split('/').pop();
-  }
-  tryLoad(primarySrc, fallbackSrc);
+  tryLoad(0);
 }
 
 function togglePartMode() {
@@ -1712,7 +1618,7 @@ function initPV() {
 
 function build3DPart(it) {
   const isElec = isCurElectric();
-  BODY_C = isElec ? 0x0a84c6 : 0xf08a1c;
+  BODY_C = isElec ? 0x1b7fd9 : 0xff8a1c;
   const key = partKeyFor(it, isElec);
   const def = PART_DEFS[key] || PART_DEFS.generic;
 
@@ -1762,13 +1668,13 @@ function closePartImage() {
 function togglePartBox() {
   PV.hidden = !PV.hidden;
   $('partStage').classList.toggle('hide', PV.hidden);
-  $('btnPartToggle').textContent = PV.hidden ? 'แสดง' : 'ซ่อน';
+  $('btnPartToggle').textContent = _t(PV.hidden ? 'show' : 'hide');
 }
 
 async function loadDash() {
   const r = await apiGet('getDashboard', { token: TOKEN });
   if (!(r.ok && r.data)) {
-    if (r.code !== 'AUTH') toast(r.error || 'ไม่สามารถโหลดข้อมูลสถิติได้', 5000);
+    if (r.code !== 'AUTH') toast(_tr(r.error || _t('loadStatsFail')), 5000);
     return;
   }
 
@@ -1802,34 +1708,35 @@ async function loadDash() {
         </div>`;
     }).join('');
 
-    const tag = s => `<span class="tag ${esc(s)}">${s === 'OK' ? '✓ ปกติ' : s === 'NG' ? '✕ ผิดปกติ' : 'รอตรวจ'}</span>`;
+    const tag = s => `<span class="tag ${esc(s)}">${s === 'OK' ? _t('tagOk') : s === 'NG' ? _t('tagNg') : _t('tagPend')}</span>`;
     $('mgrid').innerHTML = (d.forklifts || []).map(m => {
-      const elec = isElecForklift(m);
+      const ki = typeInfo(m);
       return `
         <div class="mc ${esc(m.status)}">
           <div style="display:flex; justify-content:space-between; align-items:flex-start;">
             <h3>🚜 ${esc(m.name)}</h3>
-            <span class="badge-tag ${elec ? 'badge-elec' : 'badge-gas'}">${elec ? '⚡ ไฟฟ้า' : '⛽ น้ำมัน+แก๊ส'}</span>
+            <span class="badge-tag ${ki.badge}">${ki.icon} ${esc(_tr(ki.label) || _t('noType'))}</span>
           </div>
           <small>${esc(m.id)} · ${esc(m.loc)}</small>
-          <small>ผู้รับผิดชอบ: ${esc(m.owner)}</small>
+          <small>${esc(_t('ownerLbl'))}: ${esc(m.owner)}</small>
+          <small>⚖️ ${esc(_t('capLbl'))}: ${esc(m.capacity || '-')}</small>
           <p>
             ${tag(m.status)}
-            ${m.checkedToday ? '<span class="today">✓ ตรวจแล้ววันนี้</span>' : '<span class="today" style="color:var(--mute)">⏳ ยังไม่ตรวจวันนี้</span>'}
+            ${m.checkedToday ? '<span class="today">' + _t('checkedToday') + '</span>' : '<span class="today" style="color:var(--mute)">' + _t('notChecked') + '</span>'}
           </p>
-          <p style="font-size:12px; color:var(--mute);">ล่าสุด: ${esc(m.last || '-')}${m.by ? ' โดย ' + esc(m.by) : ''}</p>
-          ${m.ng ? `<p style="color:var(--ng); font-weight:600; font-size:12.5px;">จุดผิดปกติ: ${esc(m.ng)}</p>` : ''}
+          <p style="font-size:12px; color:var(--mute);">${esc(_t('lastLbl'))} ${esc(m.last || '-')}${m.by ? ' · ' + esc(m.by) : ''}</p>
+          ${m.ng ? `<p style="color:var(--ng); font-weight:600; font-size:12.5px;">${esc(_t('ngPoints'))} ${esc(m.ng)}</p>` : ''}
         </div>`;
     }).join('');
 
     const recent = d.recent || [];
     $('tRecent').innerHTML = `
       <tr>
-        <th>วัน-เวลา</th>
-        <th>ผู้ตรวจเช็ค</th>
-        <th>รถโฟล์คลิฟท์</th>
-        <th>ผลการตรวจ</th>
-        <th>จุดผิดปกติ / หมายเหตุ</th>
+        <th>${_t('thTime')}</th>
+        <th>${_t('thBy')}</th>
+        <th>${_t('thFl')}</th>
+        <th>${_t('thResult')}</th>
+        <th>${_t('thNg')}</th>
       </tr>` + (recent.length ? recent.map(x => `
       <tr>
         <td>${esc(x.t)}</td>
@@ -1838,10 +1745,10 @@ async function loadDash() {
         <td>${tag(x.status)}</td>
         <td>${x.ng ? `<b style="color:var(--ng)">[${esc(x.ng)}]</b> ` : ''}${esc(x.note || '-')}</td>
       </tr>`).join('') : `
-      <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--mute);">ยังไม่มีประวัติการตรวจเช็ค เริ่มตรวจที่หน้า "ตรวจเช็ค"</td></tr>`);
+      <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--mute);">${_t('noHistory')}</td></tr>`);
   } catch (err) {
     console.error(err);
-    toast('ไม่สามารถแสดงข้อมูลสถิติได้');
+    toast(_t('showStatsFail'));
   }
 }
 
@@ -1879,22 +1786,6 @@ function bindEvents() {
     const btn = e.target.closest('button');
     if (btn) selectInspectionPoint(+btn.dataset.p);
   };
-  $('clean').onchange = e => {
-    const c = e.target.dataset.c;
-    if (c) { cres[c] = e.target.checked; updateCleanStats(); }
-  };
-  $('tiles').onclick = e => {
-    if (e.target.closest('.ng-detail')) return;
-    const b = e.target.closest('.tile');
-    if (b) tap(b.dataset.i);
-  };
-  $('tiles').oninput = onNgInput;
-  $('tiles').onkeydown = e => {
-    if (e.target.closest('.ng-detail')) return;
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    const b = e.target.closest('.tile');
-    if (b) { e.preventDefault(); tap(b.dataset.i); }
-  };
   $('boxFocusView').oninput = onNgInput;
   $('boxFocusView').onclick = e => {
     const b = e.target.closest('[data-act="res"]');
@@ -1902,7 +1793,7 @@ function bindEvents() {
   };
   $('boxFocusView').onchange = e => {
     const c = e.target.dataset.fc;
-    if (c) { cres[c] = e.target.checked; updateCleanStats(); }
+    if (c) cres[c] = e.target.checked;
   };
 }
 
@@ -1913,13 +1804,80 @@ window.addEventListener('keydown', e => {
   if (!vLogin || vLogin.classList.contains('hide')) return;
   if (/^[0-9]$/.test(e.key)) pressKey(e.key);
   else if (e.key === 'Backspace') pressKey('⌫');
-  else if (e.key === 'Enter') { e.preventDefault(); doLogin(); }
+  else if (e.key === 'Enter') { e.preventDefault(); doLogin(); }   // กันปุ่มที่โฟกัสอยู่ถูกคลิกซ้ำ
 });
 
 window.addEventListener('DOMContentLoaded', () => {
   initCompactHeader();
+  syncStaticLabels();
   buildKeys();
   drawDots();
   bindEvents();
   if (TOKEN) enter(); else show('login');
+});
+
+/* ======================================================================
+   ภาษา (i18n) : ฟังก์ชันช่วยแสดงผลตามภาษาที่เลือก — คำแปลอยู่ในไฟล์ i18n.js
+   ====================================================================== */
+function forkliftLabel(m) {
+  const ki = typeInfo(m);
+  return `${m.id} - ${m.name} [${ki.icon} ${_tr(ki.label) || _t('noType')}]`;
+}
+
+function renderMinfo(m) {
+  if (!m) return;
+  const ki = typeInfo(m);
+  const badgeText = `${ki.icon} ${_tr(ki.label) || _t('noType')} (${_t('itemsN', { n: CUR.items.length })})`;
+  $('minfo').innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <b>🚜 ${esc(m.name)} (${esc(m.id)})</b>
+      <span class="badge-tag ${ki.badge}">${esc(badgeText)}</span>
+    </div>
+    <div style="font-size:13px; color:var(--mute); line-height:1.6;">
+      <span>🏢 <b>${esc(_t('mDept'))}:</b> ${esc(_tr(m.dept) || '-')}</span> &nbsp;·&nbsp;
+      <span>📍 <b>${esc(_t('mLoc'))}:</b> ${esc(m.loc)}</span><br>
+      <span>👤 <b>${esc(_t('mOwner'))}:</b> ${esc(m.owner)}</span> &nbsp;·&nbsp;
+      <span>⚖️ <b>${esc(_t('mCap'))}:</b> ${esc(m.capacity || '-')}</span>
+    </div>`;
+}
+
+function renderDeptOptions() {
+  const cur = $('selDept').value;
+  const ds = [...new Set(PEOPLE.map(p => (p.dept || '').trim()).filter(Boolean))];
+  $('selDept').innerHTML = '<option value="">' + _t('allDepts') + '</option>' +
+    ds.map(d => `<option value="${esc(d)}">${esc(_tr(d))}</option>`).join('');
+  $('selDept').value = cur;
+}
+
+function syncStaticLabels() {
+  const is3d = PV.mode === '3d';
+  if ($('btnLabels')) $('btnLabels').textContent = _t(V3.showLabels ? 'hideNum' : 'showNum');
+  if ($('btnPartToggle')) $('btnPartToggle').textContent = _t(PV.hidden ? 'show' : 'hide');
+  if ($('btnPartMode')) $('btnPartMode').textContent = _t(is3d ? 'btnPhoto' : 'btn3d');
+  if ($('partModeLabel')) $('partModeLabel').textContent = _t(is3d ? 'mode3d' : 'modePhoto');
+  if ($('partHint')) $('partHint').textContent = _t(is3d ? 'hint3d' : 'hintTap');
+}
+
+// เปลี่ยนภาษาโดยไม่ล้างผลที่ตรวจไปแล้ว
+function refreshLangForm() {
+  const d = $('selFormDept');
+  if (d.options[0]) d.options[0].textContent = _t('allDeptsShow');
+  [...d.options].slice(1).forEach(o => { o.textContent = _tr(o.value); });
+  [...$('selForklift').options].forEach(o => {
+    const m = FORM.forklifts.find(x => x.id === o.value);
+    if (m) o.textContent = forkliftLabel(m);
+  });
+  renderMinfo(CUR.forklift);
+  updateProgress();
+  renderFocusView();
+  showPartViewer(curFocusIdx);
+}
+
+window.addEventListener('langchange', () => {
+  setApiStatus(window._apiState !== false);
+  syncStaticLabels();
+  if (PEOPLE.length) { renderDeptOptions(); fillNames(); }
+  if (FORM && CUR.forklift) refreshLangForm();
+  const vd = $('vDash');
+  if (vd && !vd.classList.contains('hide')) loadDash();
 });
