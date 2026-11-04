@@ -5,11 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <meta name="color-scheme" content="light">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Forklift Check">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>ระบบตรวจเช็ครถโฟล์คลิฟท์ | Forklift Daily Inspection System</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20261107">
+  <link rel="stylesheet" href="style.css?v=20261108">
 </head>
 <body>
   <header class="top hide" id="top">
@@ -44,6 +51,7 @@
   </header>
 
   <main class="wrap">
+    <!-- ================= LOGIN ================= -->
     <section id="vLogin" class="card lg">
       <div class="l">
         <div>
@@ -97,9 +105,13 @@
         <div class="keys" id="keys"></div>
 
         <div class="err" id="loginErr" role="alert"></div>
+
+        <button type="button" class="btn alt hide" id="btnInstall" style="margin-top:12px;" data-i18n="installBtn">📲 ติดตั้งแอปลงมือถือ</button>
+        <p class="hint hide" id="iosHint" style="margin-top:12px;" data-i18n="iosHint">📲 iPhone/iPad: กดปุ่มแชร์ (⬆️) ใน Safari แล้วเลือก "เพิ่มไปยังหน้าจอโฮม"</p>
       </div>
     </section>
 
+    <!-- ================= FORM ================= -->
     <section id="vForm" class="hide">
 
       <div class="g2">
@@ -179,6 +191,7 @@
       </div>
     </section>
 
+    <!-- ================= DASHBOARD ================= -->
     <section id="vDash" class="hide">
       <div class="kpi">
         <div class="kc"><i class="kic">✅</i><div><span data-i18n="kToday">ตรวจวันนี้</span><b id="kTotal">0</b></div></div>
@@ -232,7 +245,7 @@
   <div class="toast hide" id="toast" role="status"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="i18n.js?v=20261107"></script>
-  <script src="app.js?v=20261107"></script>
+  <script src="i18n.js?v=20261108"></script>
+  <script src="app.js?v=20261108"></script>
 </body>
 </html>

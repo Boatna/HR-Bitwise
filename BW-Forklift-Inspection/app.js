@@ -350,7 +350,7 @@ function pickForklift() {
   renderMinfo(m);
 
   renderForklift3D(m, CUR.elec);
-  if (!V3.inited) showPartViewer(curFocusIdx);
+  if (!V3.inited) showPartViewer(curFocusIdx);   // 3D โหลดไม่ได้ ก็ยังแสดงรูปชิ้นส่วนได้
   renderAll();
 }
 
@@ -372,6 +372,7 @@ function updateProgress() {
   $('pg').style.width = (total ? (checked / total) * 100 : 0) + '%';
 }
 
+/* ---------- Focus view (ตรวจทีละจุด) ---------- */
 function renderFocusView() {
   const its = CUR.items;
   if (!its.length) {
@@ -1881,3 +1882,42 @@ window.addEventListener('langchange', () => {
   const vd = $('vDash');
   if (vd && !vd.classList.contains('hide')) loadDash();
 });
+
+/* ======================================================================
+   PWA : ติดตั้งลงหน้าจอโฮม + Service Worker (sw.js)
+   ====================================================================== */
+let deferredInstall = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();                       // เก็บไว้ใช้กับปุ่ม "ติดตั้งแอป" (Android / Chrome / Edge)
+  deferredInstall = e;
+  const b = $('btnInstall');
+  if (b) b.classList.remove('hide');
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredInstall = null;
+  const b = $('btnInstall');
+  if (b) b.classList.add('hide');
+  toast('✓ ' + _t('installBtn').replace('📲 ', ''));
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+  const b = $('btnInstall');
+  if (b) b.onclick = async () => {
+    if (!deferredInstall) return;
+    deferredInstall.prompt();
+    try { await deferredInstall.userChoice; } catch (e) {}
+    deferredInstall = null;
+    b.classList.add('hide');
+  };
+  // iOS ไม่มีหน้าต่างติดตั้งอัตโนมัติ จึงแสดงคำแนะนำ (เฉพาะตอนยังไม่ได้เปิดจากไอคอนบนหน้าจอโฮม)
+  const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone && $('iosHint')) $('iosHint').classList.remove('hide');
+});
+
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.warn('Service worker skipped:', err));
+  });
+}
