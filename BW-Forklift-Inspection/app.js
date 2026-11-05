@@ -2045,7 +2045,7 @@ window.addEventListener('DOMContentLoaded', () => {
     deferredInstall = null;
     b.classList.add('hide');
   };
-  // iOS ไม่มีหน้าต่างติดตั้งอัตโนมัติ จึงแสดงคำแนะนำ (เฉพาะตอนยังไม่ได้เปิดจากไอคอนบนหน้าจอโฮม)
+  
   const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
   if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !standalone && $('iosHint')) $('iosHint').classList.remove('hide');
 });

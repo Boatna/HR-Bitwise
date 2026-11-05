@@ -1,4 +1,4 @@
-const VERSION = 'fl-v5';
+const VERSION = 'fl-v6';
 const APP_CACHE = 'app-' + VERSION;
 const CDN_CACHE = 'cdn-' + VERSION;
 const SHELL = ['./', 'index.html', 'style.css', 'i18n.js', 'app.js', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png'];
