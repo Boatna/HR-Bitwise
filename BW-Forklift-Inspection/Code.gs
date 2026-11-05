@@ -1,3 +1,10 @@
+/**
+ * ============================================================================
+ * ระบบตรวจเช็ครถโฟล์คลิฟท์ประจำวัน (Forklift Daily Inspection System)
+ * Google Apps Script Web App Backend & Data API
+ * ============================================================================
+ */
+
 const SH = {
   EMP: 'Employees',
   FL: 'Forklift',
@@ -142,8 +149,16 @@ const safeRows_ = n => (sheet_(n) ? rows_(n) : []);
 const pin_ = v => { const s = s_(v); return /^\d{1,3}$/.test(s) ? s.padStart(4, '0') : s; };
 
 function parseDate_(val) {
-  if (val instanceof Date) return val;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
   if (!val) return null;
+  if (typeof val === 'string') {
+    const s = val.trim();
+    // รองรับ dd/MM/yyyy HH:mm หรือ dd-MM-yyyy HH:mm:ss
+    const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+    if (m) {
+      return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4] || 0), Number(m[5] || 0), Number(m[6] || 0));
+    }
+  }
   const d = new Date(val);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -160,6 +175,7 @@ const nameMap_ = () => {
 };
 
 const cleanDept_ = d => (d ? String(d).trim().replace(/^หน่วยโลหะแผ่น\//, '') : 'ทั่วไป');
+
 function requireAuth_(token) {
   if (!token) throw new Error(ERR_AUTH);
   const j = CacheService.getScriptCache().get('t_' + token);
@@ -231,18 +247,13 @@ function setup() {
 }
 
 // ===== ตารางประเภทรถ (เพิ่มประเภทใหม่ที่นี่ที่เดียว) =====
-// ระบบดึงประเภทจากคอลัมน์ Model_Type ในชีต Forklift แล้วหาแถวแรกที่ match ตรง (เรียงลำดับความสำคัญจากบนลงล่าง)
-//   match = คำที่พบใน Model_Type (ไม่สนตัวพิมพ์เล็ก/ใหญ่)
-//   group = ชุดรายการตรวจที่ใช้: 'electric' (ชุดไฟฟ้า) หรือ 'engine' (ชุดเครื่องยนต์ 14 ข้อ)
-//   icon / badge = ไอคอนและสีป้ายบนหน้าเว็บ (badge-gas ส้ม, badge-lpg เขียว, badge-elec ฟ้า, badge-other เทา)
-// ตัวอย่างเพิ่มประเภทใหม่: { key: 'cng', match: /cng|ngv/i, group: 'engine', icon: '🔥', badge: 'badge-lpg' },
 const FORKLIFT_TYPES = [
   { key: 'electric', match: /ไฟฟ้า|electric|แบตเตอรี่/i, group: 'electric', icon: '⚡', badge: 'badge-elec' },
-  { key: 'dual',     match: /(น้ำมัน|ดีเซล|เบนซิน).*(แก๊ส|แก๊ซ|lpg|cng)|(แก๊ส|แก๊ซ|lpg|cng).*(น้ำมัน|ดีเซล|เบนซิน)|dual|bi-?fuel/i, group: 'engine', icon: '⛽', badge: 'badge-gas' },
+  { key: 'dual',     match: /(น้ำมัน|ดีเซล|เบนซิน|petrol|gasoline).*(แก๊ส|แก๊ซ|lpg|cng)|(แก๊ส|แก๊ซ|lpg|cng).*(น้ำมัน|ดีเซล|เบนซิน|petrol|gasoline)|dual|bi-?fuel/i, group: 'engine', icon: '⛽', badge: 'badge-gas' },
   { key: 'diesel',   match: /ดีเซล|diesel|น้ำมัน|เบนซิน|petrol|gasoline/i, group: 'engine', icon: '⛽', badge: 'badge-gas' },
   { key: 'lpg',      match: /lpg|cng|ngv|แก๊ส|แก๊ซ|gas/i, group: 'engine', icon: '🔥', badge: 'badge-lpg' }
 ];
-// ประเภทที่ไม่ตรงกับตารางด้านบน (เช่น Hybrid ฯลฯ) -> ใช้ชุดเครื่องยนต์เป็นค่าเริ่มต้น
+
 const DEFAULT_TYPE = { key: 'other', group: 'engine', icon: '🚜', badge: 'badge-other' };
 
 function typeOf_(m) {
@@ -252,14 +263,11 @@ function typeOf_(m) {
 const kindOf_ = m => typeOf_(m).group;
 const typeFields_ = m => { const t = typeOf_(m); return { group: t.group, icon: t.icon, badge: t.badge }; };
 
-// ชุดรายการตรวจนี้ตรงกับประเภทหรือไม่ (ดูจากจุดตรวจเฉพาะของรถไฟฟ้า เช่น ปลั๊กชาร์จ/ขั้วแบต)
 function itemsMatchKind_(items, kind) {
-  const hasElec = items.some(x => /ปลั๊กชาร์จ|ขั้วแบต/.test(s_(x.Inspection_Point)));
+  const hasElec = items.some(x => /ปลั๊กชาร์จ|ขั้วแบต|charge|charging/i.test(s_(x.Inspection_Point)));
   return kind === 'electric' ? hasElec : !hasElec;
 }
 
-// รายการตรวจของรถ 1 คัน: ใช้แถวของรถคันนั้นก่อน (ถ้าตรงกับประเภท)
-// ถ้าไม่มี/ไม่ตรงประเภท -> ใช้ชุดของรถประเภทเดียวกันในชีต -> ถ้าไม่มีอีกใช้ชุดมาตรฐานในโค้ด
 function checklistFor_(m, cls, fls) {
   const kind = kindOf_(m);
   const own = cls.filter(c => c.Forklift_ID === m.Forklift_ID);
@@ -276,17 +284,18 @@ function checklistFor_(m, cls, fls) {
   if (tpl) {
     return tpl.map((c, i) => Object.assign({}, c, { Item_ID: id(i), Forklift_ID: m.Forklift_ID }));
   }
-  return SEED_INSPECT_FORKLIFT[kind].map((it, i) => ({
+  const inspectList = SEED_INSPECT_FORKLIFT[kind] || SEED_INSPECT_FORKLIFT.engine;
+  const imgList = SEED_IMG_FORKLIFT[m.Model_Type] || SEED_IMG_FORKLIFT[kind] || SEED_IMG_FORKLIFT.engine;
+  return inspectList.map((it, i) => ({
     Item_ID: id(i),
     Forklift_ID: m.Forklift_ID,
     Category: it[0],
     Inspection_Point: it[1],
     Standard_Criteria: it[2],
-    Image_File: SEED_IMG_FORKLIFT[kind][i] || ''
+    Image_File: imgList[i] || ''
   }));
 }
 
-// รายการทำความสะอาดของรถ 1 คัน: ใช้แถวของรถคันนั้นก่อน -> ไม่มีก็ใช้ชุดแรกในชีต Cleaning -> ไม่มีอีกใช้ชุดมาตรฐาน
 function cleanFor_(m, cns) {
   const own = cns.filter(c => c.Forklift_ID === m.Forklift_ID);
   if (own.length) return own;
@@ -407,7 +416,6 @@ function submitCheck(token, d) {
   const logSh = sheet_(SH.LOG);
   if (!logSh) throw new Error('ไม่พบชีต ' + SH.LOG + ' (กรุณารัน setup() ก่อน)');
 
-  // กันบันทึก/ส่งอีเมล์ซ้ำ เมื่อ client เน็ตหลุดแล้วกดส่งใหม่ด้วย submitId เดิม
   const cache = CacheService.getScriptCache();
   const dupKey = d.submitId ? 's_' + s_(d.submitId).slice(0, 64) : '';
   const now = new Date();
@@ -687,12 +695,13 @@ function recentLogs_(maxRows) {
   if (!sh) throw new Error('ไม่พบชีต ' + SH.LOG + ' (กรุณารัน setup() ก่อน)');
   const last = sh.getLastRow();
   if (last < 2) return [];
-  const cols = HEAD.Inspection_Logs;
+  const colCount = Math.max(sh.getLastColumn(), HEAD.Inspection_Logs.length);
+  const headers = sh.getRange(1, 1, 1, colCount).getValues()[0].map(s_);
   const n = Math.min(maxRows, last - 1);
-  return sh.getRange(last - n + 1, 1, n, cols.length).getValues()
+  return sh.getRange(last - n + 1, 1, n, colCount).getValues()
     .map(r => {
       const o = {};
-      cols.forEach((k, i) => { o[k] = r[i] instanceof Date ? r[i] : s_(r[i]); });
+      headers.forEach((k, i) => { if (k) o[k] = r[i] instanceof Date ? r[i] : s_(r[i]); });
       o.Timestamp = parseDate_(o.Timestamp);
       return o;
     })
@@ -738,7 +747,7 @@ function getDashboard(token) {
 
   const flname = {};
   forklifts.forEach(m => { flname[m.id] = m.name; });
-  const doneToday = forklifts.filter(m => m.checkedToday);   // นับเป็นคัน (ผลล่าสุดของวันนี้)
+  const doneToday = forklifts.filter(m => m.checkedToday);
 
   return {
     total: doneToday.length,
@@ -791,29 +800,65 @@ const SEED_INSPECT_FORKLIFT = {
 };
 
 const SEED_IMG_FORKLIFT = {
+  diesel: [
+    'diesel/Forklift-diesel-Engine-oil-level.jpg',
+    'diesel/Forklift-diesel-Coolant-reservoir-level.jpg',
+    'diesel/Forklift-diesel-Brake-and-clutch-fluid-level.jpg',
+    'diesel/Forklift-diesel-battery.jpg',
+    'diesel/Forklift-diesel-Hydraulic-oil-level.jpg',
+    'diesel/Forklift-diesel-Mast-and-forks.jpg',
+    'diesel/Forklift-diesel-Condition-of-wheels-and-tires.jpg',
+    'diesel/Forklift-diesel-Condition-of-the-hydraulic-hose.jpg',
+    'diesel/Forklift-diesel-Signal-lights-and-horn.jpg',
+    'diesel/Forklift-diesel-Brake-system.jpg',
+    'diesel/Forklift-diesel-Side-view-mirror.jpg',
+    'diesel/Forklift-diesel-steering-wheel.jpg',
+    'diesel/Forklift-diesel-Seat-belt.jpg',
+    'diesel/Forklift-diesel-Chain-condition.jpg'
+  ],
+  'petrol+LPG': [
+    'petrol+LPG/Forklift-petrol+LPG-Engine-oil-level.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-Coolant-reservoir-level.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-Brake-and-clutch-fluid-level.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-battery.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-Hydraulic-oil-level.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-Mast-and-forks.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-Wheels-and-tires.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-Condition-of-the-hydraulic-hose.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-Signal-and-horn.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-Brake-system.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-Side-view-mirror.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-steering-wheel.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-Seat-belt.jpg',
+    'petrol+LPG/Forklift-petrol+LPG-Chain-condition.jpg'
+  ],
   engine: [
-    '', '', '', 
-    'engine/battery-water.jpg', 
-    'engine/hydraulic-oil.jpg', 
-    'engine/mast-forks.jpg', 
-    'engine/wheel-tire.jpg', 
-    'engine/hydraulic-hose.jpg', 
-    'engine/lights-horn.jpg', 
-    'engine/brake.jpg', 
-    '', '', '', 
-    'engine/chain.jpg'
+    'diesel/Forklift-diesel-Engine-oil-level.jpg',
+    'diesel/Forklift-diesel-Coolant-reservoir-level.jpg',
+    'diesel/Forklift-diesel-Brake-and-clutch-fluid-level.jpg',
+    'diesel/Forklift-diesel-battery.jpg',
+    'diesel/Forklift-diesel-Hydraulic-oil-level.jpg',
+    'diesel/Forklift-diesel-Mast-and-forks.jpg',
+    'diesel/Forklift-diesel-Condition-of-wheels-and-tires.jpg',
+    'diesel/Forklift-diesel-Condition-of-the-hydraulic-hose.jpg',
+    'diesel/Forklift-diesel-Signal-lights-and-horn.jpg',
+    'diesel/Forklift-diesel-Brake-system.jpg',
+    'diesel/Forklift-diesel-Side-view-mirror.jpg',
+    'diesel/Forklift-diesel-steering-wheel.jpg',
+    'diesel/Forklift-diesel-Seat-belt.jpg',
+    'diesel/Forklift-diesel-Chain-condition.jpg'
   ],
   electric: [
-    'electric/battery-water.jpg', 
-    'electric/battery-terminal.jpg', 
-    'electric/charge-plug.jpg', 
-    'electric/mast-forks.jpg', 
-    'electric/wheel-tire.jpg', 
-    'electric/hydraulic-oil.jpg', 
-    'electric/lights-horn.jpg', 
-    'electric/hydraulic-hose.jpg', 
-    'electric/chain.jpg', 
-    'electric/brake.jpg'
+    'electric/electric-battery-water.jpg', 
+    'electric/electric-battery-terminal.jpg', 
+    'electric/electric-charge-plug.jpg', 
+    'electric/electric-mast-forks.jpg', 
+    'electric/electric-wheel-tire.jpg', 
+    'electric/electric-hydraulic-oil.jpg', 
+    'electric/electric-lights-horn.jpg', 
+    'electric/electric-hydraulic-hose.jpg', 
+    'electric/electric-chain.jpg', 
+    'electric/electric-brake.jpg'
   ]
 };
 
@@ -829,6 +874,7 @@ function seedForkliftSample(force) {
   setup();
   const empSh = sheet_(SH.EMP);
   if (empSh.getLastRow() < 2) {
+    if (empSh.getMaxRows() < 11) empSh.insertRowsAfter(empSh.getMaxRows(), 11 - empSh.getMaxRows());
     empSh.getRange(2, 1, 9, 6).setValues([
       ['EMP-001', 'สมชาย ใจดี', 'คลังสินค้าวัตถุดิบ', 'พนักงานขับโฟล์คลิฟท์', 'Plant 1', '1234'],
       ['EMP-002', 'วิชัย มั่นคง', 'คลังสินค้าวัตถุดิบ', 'พนักงานขับโฟล์คลิฟท์', 'Plant 1', '1234'],
@@ -844,6 +890,7 @@ function seedForkliftSample(force) {
 
   const flSh = sheet_(SH.FL);
   if (flSh.getLastRow() < 2) {
+    if (flSh.getMaxRows() < 11) flSh.insertRowsAfter(flSh.getMaxRows(), 11 - flSh.getMaxRows());
     flSh.getRange(2, 1, 9, 7).setValues([
       ['FL-01', 'โฟล์คลิฟท์เครื่องยนต์ #1', 'ดีเซล', 'คลังวัตถุดิบ อาคาร A', 'EMP-001', 'คลังสินค้าวัตถุดิบ', '3 ตัน'],
       ['FL-02', 'โฟล์คลิฟท์เครื่องยนต์ #2', 'ดีเซล', 'ลานกองวัตถุดิบกลางแจ้ง', 'EMP-002', 'คลังสินค้าวัตถุดิบ', '3 ตัน'],
@@ -903,17 +950,23 @@ function seedForkliftSample(force) {
     });
   });
 
-  if (clRows.length) clSh.getRange(2, 1, clRows.length, 6).setValues(clRows);
-  if (cnRows.length) cnSh.getRange(2, 1, cnRows.length, 6).setValues(cnRows);
+  if (clRows.length) {
+    const reqCl = clRows.length + 1;
+    if (clSh.getMaxRows() < reqCl) clSh.insertRowsAfter(clSh.getMaxRows(), reqCl - clSh.getMaxRows());
+    clSh.getRange(2, 1, clRows.length, 6).setValues(clRows);
+  }
+
+  if (cnRows.length) {
+    const reqCn = cnRows.length + 1;
+    if (cnSh.getMaxRows() < reqCn) cnSh.insertRowsAfter(cnSh.getMaxRows(), reqCn - cnSh.getMaxRows());
+    cnSh.getRange(2, 1, cnRows.length, 6).setValues(cnRows);
+  }
 }
 
-// เรียกจากหน้า Apps Script (Run) เมื่อมีข้อมูลเดิมอยู่แล้ว: ล้าง Checklist/Cleaning แล้วสร้างใหม่ให้รถทุกคันในชีต Forklift
 function seedForkliftSampleForce() {
   seedForkliftSample(true);
 }
 
-// สร้างประวัติการตรวจทดสอบย้อนหลัง 7 วัน (รันจากหน้า Apps Script เท่านั้น) — ใช้ดู Dashboard
-// ต้องรัน seedForkliftSample() ก่อน ข้อมูลจะถูก "เพิ่มต่อท้าย" ชีต Inspection_Logs (ไม่ส่งอีเมล์)
 function seedTestData() {
   setup();
   const fls = rows_(SH.FL), cls = rows_(SH.CL);
@@ -921,7 +974,7 @@ function seedTestData() {
   const out = [];
   for (let back = 6; back >= 0; back--) {
     fls.forEach((m, fi) => {
-      if (back > 0 && (back + fi) % 5 === 4) return;          // บางวันไม่ตรวจ ให้ดูสมจริง
+      if (back > 0 && (back + fi) % 5 === 4) return;
       const items = checklistFor_(m, cls, fls);
       if (!items.length) return;
       const ngIdx = ((back + fi) % 4 === 0) ? (fi + back) % items.length : -1;
@@ -942,6 +995,8 @@ function seedTestData() {
   }
   const sh = sheet_(SH.LOG);
   const start = sh.getLastRow() + 1;
+  const needed = start + out.length - 1;
+  if (sh.getMaxRows() < needed) sh.insertRowsAfter(sh.getMaxRows(), needed - sh.getMaxRows());
   sh.getRange(start, 1, out.length, 7).setValues(out);
   sh.getRange(start, 1, out.length, 1).setNumberFormat('dd/MM/yyyy HH:mm');
   Logger.log('เพิ่มข้อมูลทดสอบ ' + out.length + ' รายการ');

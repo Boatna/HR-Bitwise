@@ -1,9 +1,4 @@
-/* Service Worker — ระบบตรวจเช็ครถโฟล์คลิฟท์
-   - ไฟล์ของแอป (HTML/CSS/JS/รูป): โหลดจากเน็ตก่อนเสมอ (อัปเดตทันที) ถ้าออฟไลน์ใช้ที่แคชไว้
-   - CDN (Three.js / ฟอนต์): ใช้แคชก่อนแล้วอัปเดตเบื้องหลัง
-   - การเรียก Google Apps Script (API) ไม่ผ่านแคชเด็ดขาด เพื่อให้ข้อมูลตรวจเช็คเป็นปัจจุบันและไม่บันทึกซ้ำ
-   เมื่อแก้ไฟล์ในแอปแล้วอยากบังคับล้างแคช ให้เปลี่ยนเลข VERSION ด้านล่าง */
-const VERSION = 'fl-v1';
+const VERSION = 'fl-v5';
 const APP_CACHE = 'app-' + VERSION;
 const CDN_CACHE = 'cdn-' + VERSION;
 const SHELL = ['./', 'index.html', 'style.css', 'i18n.js', 'app.js', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png'];
@@ -35,12 +30,11 @@ self.addEventListener('fetch', e => {
   } else if (CDN_HOSTS.includes(url.hostname)) {
     e.respondWith(staleWhileRevalidate(req));
   }
-  // อย่างอื่น (เช่น script.google.com) ปล่อยให้เบราว์เซอร์จัดการเอง
 });
 
 async function networkFirst(req, url) {
   const cache = await caches.open(APP_CACHE);
-  const key = url.origin + url.pathname;          // ตัด ?v=... ออก ไม่ให้แคชบวม
+  const key = url.origin + url.pathname;
   try {
     const res = await fetch(req);
     if (res && res.ok) cache.put(key, res.clone());

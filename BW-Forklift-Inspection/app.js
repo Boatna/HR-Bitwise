@@ -1,4 +1,4 @@
-const API_URL = 'https://script.google.com/macros/s/AKfycbyZTAP3WLEJ7mIDFBRPXscanWWHFLxueWM-mbhfw5d4_xmyCNeD2cLuFYpbtCi1vQG3/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzbQznbfx7OxvAr0MwQc-wdWOG0UdTNepOsenOGoj3ZsFx-v1kyDR-3XI96bbtoqYtT/exec';
 const API_TIMEOUT_MS = 30000;
 const TIMEZONE = 'Asia/Bangkok';
 const ASSET_DIR = 'asset/';
@@ -165,7 +165,11 @@ function fillNames() {
   $('selName').innerHTML = '<option value="">' + _t('pickName') + '</option>' +
     PEOPLE.filter(p => !d || (p.dept || '').trim() === d)
       .map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
-  $('selName').value = keepName;
+  if (keepName && [...$('selName').options].some(o => o.value === keepName)) {
+    $('selName').value = keepName;
+  } else {
+    $('selName').value = '';
+  }
 }
 
 async function doLogin() {
@@ -314,7 +318,8 @@ function updateFormDeptFilter() {
   sel.innerHTML = '<option value="">' + _t('allDeptsShow') + '</option>' +
     depts.map(d => `<option value="${esc(d)}">${esc(_tr(d))}</option>`).join('');
   const mine = depts.find(d => d.toLowerCase() === (USER_DEPT || '').trim().toLowerCase());
-  sel.value = mine || '';
+  const mineHasForklifts = mine && FORM.forklifts.some(m => (m.dept || '').trim().toLowerCase() === mine.toLowerCase());
+  sel.value = mineHasForklifts ? mine : '';
 }
 
 function populateForkliftSelect() {
@@ -1057,6 +1062,69 @@ function pChain() {
   return g;
 }
 
+function pGasTank() {
+  const g = new THREE.Group();
+  CY(g, 0.28, 1.1, M(0xd1d5db, { metalness: 0.5, roughness: 0.4 }), 0, 0, 0, 'x');
+  put(g, new THREE.SphereGeometry(0.28, 24, 16), M(0xd1d5db, { metalness: 0.5, roughness: 0.4 }), -0.55, 0, 0);
+  put(g, new THREE.SphereGeometry(0.28, 24, 16), M(0xd1d5db, { metalness: 0.5, roughness: 0.4 }), 0.55, 0, 0);
+  TR(g, 0.22, 0.04, steel(), 0.65, 0, 0, 0, PI / 2);
+  CY(g, 0.045, 0.12, M(0xd97706, { metalness: 0.8, roughness: 0.3 }), 0.62, 0, 0, 'x');
+  TR(g, 0.05, 0.015, M(0xdc2626), 0.68, 0, 0, 0, PI / 2);
+  TR(g, 0.22, 0.04, steel(), -0.65, 0, 0, 0, PI / 2);
+  BX(g, 0.4, 0.1, 0.58, M(0xea580c, { roughness: 0.5 }), 0, 0, 0);
+  return g;
+}
+
+function pGasSecuring() {
+  const g = new THREE.Group();
+  CY(g, 0.28, 1.1, M(0x9ca3af, { metalness: 0.5, roughness: 0.6 }), 0, 0, 0, 'x');
+  [-0.32, 0.32].forEach(x => {
+    BX(g, 0.06, 0.15, 0.7, dark(), x, -0.22, 0);
+    TR(g, 0.295, 0.025, M(0xfacc15, { metalness: 0.6, roughness: 0.3 }), x, 0, 0, 0, PI / 2);
+    BX(g, 0.08, 0.1, 0.08, chrome(), x, 0.28, 0.12);
+  });
+  return g;
+}
+
+function pGasPipeline() {
+  const g = new THREE.Group();
+  CY(g, 0.28, 0.7, M(0x9ca3af, { metalness: 0.4, roughness: 0.5 }), -0.2, 0, -0.3, 'x');
+  TB(g, [[0.35, 0, -0.3], [0.45, 0.1, -0.1], [0.4, 0.05, 0.2], [0.2, -0.1, 0.4]], 0.045, rubber());
+  CY(g, 0.05, 0.1, M(0xd97706, { metalness: 0.8 }), 0.35, 0, -0.3, 'x');
+  CY(g, 0.05, 0.1, M(0xd97706, { metalness: 0.8 }), 0.2, -0.1, 0.4, 'z');
+  return g;
+}
+
+function pGasFittings() {
+  const g = new THREE.Group();
+  CY(g, 0.07, 0.2, M(0xd97706, { metalness: 0.85, roughness: 0.25 }), 0, 0, 0, 'x');
+  CY(g, 0.09, 0.08, M(0xb45309, { metalness: 0.9, roughness: 0.2 }), -0.05, 0, 0, 'x');
+  CY(g, 0.06, 0.16, chrome(), 0.14, 0, 0, 'x');
+  TR(g, 0.07, 0.018, M(0xdc2626, { roughness: 0.4 }), -0.05, 0.1, 0);
+  TB(g, [[0.22, 0, 0], [0.35, -0.1, 0.1], [0.45, -0.2, 0.2]], 0.04, rubber());
+  return g;
+}
+
+function pGasLeak() {
+  const g = new THREE.Group();
+  CY(g, 0.07, 0.22, M(0xd97706, { metalness: 0.85 }), 0, 0, 0, 'x');
+  TR(g, 0.08, 0.02, M(0xdc2626, { roughness: 0.3 }), 0, 0.12, 0);
+  put(g, new THREE.SphereGeometry(0.06, 16, 12), GL(0x38bdf8, 0.4), 0.1, 0.08, 0.05);
+  put(g, new THREE.SphereGeometry(0.04, 16, 12), GL(0x38bdf8, 0.4), 0.14, 0.12, 0.02);
+  return g;
+}
+
+function pGasGauge() {
+  const g = new THREE.Group();
+  CY(g, 0.14, 0.07, chrome(), 0, 0, 0, 'y');
+  CY(g, 0.125, 0.015, M(0xffffff, { roughness: 0.2 }), 0, 0.038, 0, 'y');
+  BX(g, 0.015, 0.02, 0.09, dark(), 0.02, 0.042, 0.02);
+  BX(g, 0.08, 0.005, 0.03, M(0x22c55e), -0.04, 0.045, -0.04);
+  BX(g, 0.05, 0.005, 0.03, M(0xef4444), 0.04, 0.045, -0.04);
+  CY(g, 0.13, 0.02, GL(0xf8fafc, 0.25), 0, 0.05, 0, 'y');
+  return g;
+}
+
 function pGeneric() {
   const g = new THREE.Group();
   RB(g, 0.6, 0.4, 0.4, dark(), 0, 0, 0, 0.05);
@@ -1082,17 +1150,23 @@ const PART_DEFS = {
   steering:    { build: pSteering,    pos: () => [0, 1.55, 0.5] },
   seatbelt:    { build: pSeatbelt,    pos: e => [0, e ? 2.08 : 2.0, -0.4] },
   chain:       { build: pChain,       pos: () => [0, 1.1, 1.9] },
+  gasTank:     { build: pGasTank,     pos: () => [0, 1.62, -1.75] },
+  gasSecuring: { build: pGasSecuring, pos: () => [-0.45, 1.62, -1.75] },
+  gasPipeline: { build: pGasPipeline, pos: () => [0.45, 1.35, -1.35] },
+  gasFittings: { build: pGasFittings, pos: () => [0.65, 1.62, -1.75] },
+  gasLeak:     { build: pGasLeak,     pos: () => [0.78, 1.62, -1.75] },
+  gasGauge:    { build: pGasGauge,    pos: () => [0.35, 1.82, -1.75] },
   generic:     { build: pGeneric,     pos: () => [0, 1.5, 0] }
 };
 
 function partKeyFor(it, elec) {
   const t = (it && it.point) || '';
-  if (/น้ำมันเครื่อง/.test(t)) return 'engine';
-  if (/หม้อพักน้ำ|หม้อน้ำ|น้ำยาหล่อเย็น/.test(t)) return 'coolant';
-  if (/ครัช|คลัทช์|คลัช/.test(t)) return 'brakeFluid';
-  if (/น้ำกลั่น/.test(t)) return elec ? 'batteryElec' : 'battery';
   if (/ขั้วแบต/.test(t)) return 'terminals';
   if (/ปลั๊ก|ชาร์จ/.test(t)) return 'chargePlug';
+  if (/น้ำมันเบรค|น้ำมันเบรก|คลัตช์|คลัช|ครัช|คลัทช์/.test(t)) return 'brakeFluid';
+  if (/น้ำมันเครื่อง/.test(t)) return 'engine';
+  if (/หม้อพักน้ำ|หม้อน้ำ|น้ำยาหล่อเย็น/.test(t)) return 'coolant';
+  if (/น้ำกลั่น|แบตเตอรี่|เเบตเตอรี่|แบตเตอร์รี่|เเบตเตอร์รี่/.test(t)) return elec ? 'batteryElec' : 'battery';
   if (/สายไฮ/.test(t)) return 'hoses';
   if (/ไฮดรอลิค|ไฮดรอลิก/.test(t)) return 'hydTank';
   if (/เสา|งา/.test(t)) return 'mast';
@@ -1103,6 +1177,12 @@ function partKeyFor(it, elec) {
   if (/เข็มขัด|เบาะ/.test(t)) return 'seatbelt';
   if (/โซ่/.test(t)) return 'chain';
   if (/เบรค|เบรก/.test(t)) return 'brake';
+  if (/รั่วซึม.*ก๊าซ|รั่วซึม.*แก๊ส/.test(t)) return 'gasLeak';
+  if (/มาตรวัด.*ก๊าซ|เกจ.*แก๊ส|เกจ.*ก๊าซ/.test(t)) return 'gasGauge';
+  if (/สายส่งก๊าซ|สายส่งแก๊ส|ท่อ.*แก๊ส/.test(t)) return 'gasPipeline';
+  if (/ยึดถังก๊าซ|ยึดถังแก๊ส|ล็อกถัง/.test(t)) return 'gasSecuring';
+  if (/ข้อต่อ.*ก๊าซ|ข้อต่อ.*แก๊ส|อุปกรณ์เชื่อมต่อ/.test(t)) return 'gasFittings';
+  if (/ถังก๊าซ|ถังแก๊ส/.test(t)) return 'gasTank';
   return 'generic';
 }
 
@@ -1442,53 +1522,106 @@ function renderForklift3D(m, isElec) {
   showPartViewer(curFocusIdx);
 }
 
+function getForkliftModelType() {
+  const m = CUR.forklift;
+  if (!m) return CUR.elec ? 'electric' : 'diesel';
+  const raw = String(m.model || '').trim();
+  if (/electric|ไฟฟ้า/i.test(raw)) return 'electric';
+  if (/petrol|gasoline|lpg|gas|แก๊ส|แก๊ซ/i.test(raw)) return 'petrol+LPG';
+  if (/diesel|ดีเซล/i.test(raw)) return 'diesel';
+  return CUR.elec ? 'electric' : 'diesel';
+}
+
 const PART_IMAGES = {
-  engine: {
-    battery:     'engine/battery-water.jpg',
-    hydTank:     'engine/hydraulic-oil.jpg',
-    mast:        'engine/mast-forks.jpg',
-    wheel:       'engine/wheel-tire.jpg',
-    hoses:       'engine/hydraulic-hose.jpg',
-    lights:      'engine/lights-horn.jpg',
-    brake:       'engine/brake.jpg',
-    chain:       'engine/chain.jpg'
-  },
   electric: {
-    battery:     'electric/battery-water.jpg',
-    batteryElec: 'electric/battery-water.jpg',
-    terminals:   'electric/battery-terminal.jpg',
-    chargePlug:  'electric/charge-plug.jpg',
-    hydTank:     'electric/hydraulic-oil.jpg',
-    hoses:       'electric/hydraulic-hose.jpg',
-    mast:        'electric/mast-forks.jpg',
-    wheel:       'electric/wheel-tire.jpg',
-    lights:      'electric/lights-horn.jpg',
-    chain:       'electric/chain.jpg',
-    brake:       'electric/brake.jpg'
+    batteryElec: 'electric/electric-battery-water.jpg',
+    battery:     'electric/electric-battery-water.jpg',
+    terminals:   'electric/electric-battery-terminal.jpg',
+    chargePlug:  'electric/electric-charge-plug.jpg',
+    mast:        'electric/electric-mast-forks.jpg',
+    chain:       'electric/electric-chain.jpg',
+    wheel:       'electric/electric-wheel-tire.jpg',
+    hydTank:     'electric/electric-hydraulic-oil.jpg',
+    hoses:       'electric/electric-hydraulic-hose.jpg',
+    lights:      'electric/electric-lights-horn.jpg',
+    brake:       'electric/electric-brake.jpg'
+  },
+  diesel: {
+    engine:      'diesel/Forklift-diesel-Engine-oil-level.jpg',
+    coolant:     'diesel/Forklift-diesel-Coolant-reservoir-level.jpg',
+    battery:     'diesel/Forklift-diesel-battery.jpg',
+    hydTank:     'diesel/Forklift-diesel-Hydraulic-oil-level.jpg',
+    hoses:       'diesel/Forklift-diesel-Condition-of-the-hydraulic-hose.jpg',
+    mast:        'diesel/Forklift-diesel-Mast-and-forks.jpg',
+    chain:       'diesel/Forklift-diesel-Chain-condition.jpg',
+    brakeFluid:  'diesel/Forklift-diesel-Brake-and-clutch-fluid-level.jpg',
+    brake:       'diesel/Forklift-diesel-Brake-system.jpg',
+    wheel:       'diesel/Forklift-diesel-Condition-of-wheels-and-tires.jpg',
+    steering:    'diesel/Forklift-diesel-steering-wheel.jpg',
+    lights:      'diesel/Forklift-diesel-Signal-lights-and-horn.jpg',
+    mirror:      'diesel/Forklift-diesel-Side-view-mirror.jpg',
+    seatbelt:    'diesel/Forklift-diesel-Seat-belt.jpg'
+  },
+  'petrol+LPG': {
+    engine:      'petrol+LPG/Forklift-petrol+LPG-Engine-oil-level.jpg',
+    coolant:     'petrol+LPG/Forklift-petrol+LPG-Coolant-reservoir-level.jpg',
+    battery:     'petrol+LPG/Forklift-petrol+LPG-battery.jpg',
+    hydTank:     'petrol+LPG/Forklift-petrol+LPG-Hydraulic-oil-level.jpg',
+    hoses:       'petrol+LPG/Forklift-petrol+LPG-Condition-of-the-hydraulic-hose.jpg',
+    mast:        'petrol+LPG/Forklift-petrol+LPG-Mast-and-forks.jpg',
+    chain:       'petrol+LPG/Forklift-petrol+LPG-Chain-condition.jpg',
+    brakeFluid:  'petrol+LPG/Forklift-petrol+LPG-Brake-and-clutch-fluid-level.jpg',
+    brake:       'petrol+LPG/Forklift-petrol+LPG-Brake-system.jpg',
+    wheel:       'petrol+LPG/Forklift-petrol+LPG-Wheels-and-tires.jpg',
+    steering:    'petrol+LPG/Forklift-petrol+LPG-steering-wheel.jpg',
+    lights:      'petrol+LPG/Forklift-petrol+LPG-Signal-and-horn.jpg',
+    mirror:      'petrol+LPG/Forklift-petrol+LPG-Side-view-mirror.jpg',
+    seatbelt:    'petrol+LPG/Forklift-petrol+LPG-Seat-belt.jpg',
+    gasTank:     'petrol+LPG/Forklift-petrol+LPG-Gas.jpg',
+    gasSecuring: 'petrol+LPG/Forklift-petrol+LPG-Securing-gas.jpg',
+    gasPipeline: 'petrol+LPG/Forklift-petrol+LPG-Gas-pipeline.jpg',
+    gasFittings: 'petrol+LPG/Gas-fittings-and-connection.jpg',
+    gasLeak:     'petrol+LPG/Forklift-petrol+LPG-Gas-leakage.jpg',
+    gasGauge:    'petrol+LPG/Forklift-petrol+LPG-Gas-level-gauge.jpg'
   }
 };
 
-// รถ "น้ำมัน+แก๊ส" และ "แก๊ส" ใช้รูปชุดเดียวกันในโฟลเดอร์ asset/engine/ (รองรับโฟลเดอร์เดิม asset/gas/ เป็นตัวสำรอง)
+// ค้นหารูปภาพชิ้นส่วนตาม Model_Type ในชีต Forklift (electric, diesel, petrol+LPG)
 function partImageCandidates(it, key) {
-  const folder = CUR.elec ? 'electric' : 'engine';
-  const f = ((it && it.img) ? String(it.img).trim() : '') || PART_IMAGES[folder][key] || '';
-  if (!f) return [];
-  if (/^(https?:|data:)/i.test(f)) return [f];
-  const rel = f.startsWith(ASSET_DIR) ? f.slice(ASSET_DIR.length) : f;
+  const modelType = getForkliftModelType();
+  const typeMap = PART_IMAGES[modelType] || PART_IMAGES.electric;
   const out = [];
-  const add = p => { const u = ASSET_DIR + p; if (!out.includes(u)) out.push(u); };
-  if (rel.includes('/')) {
-    add(rel);
-    const parts = rel.split('/'), dir = parts[0], name = parts.slice(1).join('/');
-    if (dir === 'gas') add('engine/' + name);
-    else if (dir === 'engine') add('gas/' + name);
-    add(parts[parts.length - 1]);
-  } else {
-    const n = encodeURIComponent(rel);
-    add(folder + '/' + n);
-    if (folder === 'engine') add('gas/' + n);
-    add(n);
+  const add = p => {
+    if (!p) return;
+    const u = (/^(https?:|data:)/i.test(p)) ? p : (p.startsWith(ASSET_DIR) ? p : ASSET_DIR + p);
+    if (!out.includes(u)) out.push(u);
+  };
+
+  // 1. ให้ priority สูงสุดกับรูปที่ตรงกับ key ของจุดตรวจและ Model_Type แน่นอน 100%
+  if (typeMap && typeMap[key]) {
+    add(typeMap[key]);
   }
+
+  // 2. เผื่อกรณีมีการระบุรูปเฉพาะใน it.img
+  if (it && it.img) {
+    const raw = String(it.img).trim();
+    if (raw) {
+      if (/^(https?:|data:)/i.test(raw)) add(raw);
+      else {
+        const rel = raw.startsWith(ASSET_DIR) ? raw.slice(ASSET_DIR.length) : raw;
+        add(rel);
+        if (rel.includes('/')) {
+          const parts = rel.split('/'), name = parts.slice(1).join('/');
+          add(modelType + '/' + name);
+          if (modelType === 'electric' && !name.startsWith('electric-')) add('electric/electric-' + name);
+        } else {
+          add(modelType + '/' + rel);
+          if (modelType === 'electric' && !rel.startsWith('electric-')) add('electric/electric-' + rel);
+        }
+      }
+    }
+  }
+
   return out;
 }
 
@@ -1715,10 +1848,10 @@ async function loadDash() {
       return `
         <div class="mc ${esc(m.status)}">
           <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <h3>🚜 ${esc(m.name)}</h3>
+            <h3>🚜 ${esc(_tr(m.name))}</h3>
             <span class="badge-tag ${ki.badge}">${ki.icon} ${esc(_tr(ki.label) || _t('noType'))}</span>
           </div>
-          <small>${esc(m.id)} · ${esc(m.loc)}</small>
+          <small>${esc(m.id)} · ${esc(_tr(m.loc))}</small>
           <small>${esc(_t('ownerLbl'))}: ${esc(m.owner)}</small>
           <small>⚖️ ${esc(_t('capLbl'))}: ${esc(m.capacity || '-')}</small>
           <p>
@@ -1742,7 +1875,7 @@ async function loadDash() {
       <tr>
         <td>${esc(x.t)}</td>
         <td>${esc(x.by)}</td>
-        <td><b>${esc(x.forklift)}</b></td>
+        <td><b>${esc(_tr(x.forklift))}</b></td>
         <td>${tag(x.status)}</td>
         <td>${x.ng ? `<b style="color:var(--ng)">[${esc(x.ng)}]</b> ` : ''}${esc(x.note || '-')}</td>
       </tr>`).join('') : `
@@ -1801,6 +1934,7 @@ function bindEvents() {
 window.addEventListener('keydown', e => {
   if (e.key === 'Escape') closePartImage();
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
   const vLogin = $('vLogin');
   if (!vLogin || vLogin.classList.contains('hide')) return;
   if (/^[0-9]$/.test(e.key)) pressKey(e.key);
@@ -1822,7 +1956,7 @@ window.addEventListener('DOMContentLoaded', () => {
    ====================================================================== */
 function forkliftLabel(m) {
   const ki = typeInfo(m);
-  return `${m.id} - ${m.name} [${ki.icon} ${_tr(ki.label) || _t('noType')}]`;
+  return `${m.id} - ${_tr(m.name)} [${ki.icon} ${_tr(ki.label) || _t('noType')}]`;
 }
 
 function renderMinfo(m) {
@@ -1831,12 +1965,12 @@ function renderMinfo(m) {
   const badgeText = `${ki.icon} ${_tr(ki.label) || _t('noType')} (${_t('itemsN', { n: CUR.items.length })})`;
   $('minfo').innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-      <b>🚜 ${esc(m.name)} (${esc(m.id)})</b>
+      <b>🚜 ${esc(_tr(m.name))} (${esc(m.id)})</b>
       <span class="badge-tag ${ki.badge}">${esc(badgeText)}</span>
     </div>
     <div style="font-size:13px; color:var(--mute); line-height:1.6;">
       <span>🏢 <b>${esc(_t('mDept'))}:</b> ${esc(_tr(m.dept) || '-')}</span> &nbsp;·&nbsp;
-      <span>📍 <b>${esc(_t('mLoc'))}:</b> ${esc(m.loc)}</span><br>
+      <span>📍 <b>${esc(_t('mLoc'))}:</b> ${esc(_tr(m.loc))}</span><br>
       <span>👤 <b>${esc(_t('mOwner'))}:</b> ${esc(m.owner)}</span> &nbsp;·&nbsp;
       <span>⚖️ <b>${esc(_t('mCap'))}:</b> ${esc(m.capacity || '-')}</span>
     </div>`;
