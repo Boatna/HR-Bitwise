@@ -388,6 +388,18 @@ select:focus, textarea:focus, input:focus { border-color: var(--orange); }
   border: 1px solid #bfdbfe;
 }
 
+.badge-reach {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.badge-walkie {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
 .v3 {
   position: relative;
   border: 1.5px solid var(--line);
@@ -744,21 +756,13 @@ select:focus, textarea:focus, input:focus { border-color: var(--orange); }
 }
 
 .tile.OK { background: var(--okbg); border-color: var(--ok-border); }
-
 .tile.OK .tile-no { color: var(--ok); }
-
 .tile.OK .tile-state { background: var(--ok); color: #fff; }
-
 .tile.OK .tile-std { color: #166534; border-top-color: #bbf7d0; }
-
 .tile.NG { background: var(--ngbg); border-color: var(--ng-border); }
-
 .tile.NG .tile-no { color: var(--ng); }
-
 .tile.NG .tile-state { background: var(--ng); color: #fff; }
-
 .tile.NG .tile-std { color: #991b1b; border-top-color: #fecaca; }
-
 .chk { display: grid; gap: 6px; }
 
 .chk label {
@@ -774,9 +778,7 @@ select:focus, textarea:focus, input:focus { border-color: var(--orange); }
 }
 
 .chk label:hover { border-color: #94a3b8; }
-
 .chk label:has(input:checked) { border-color: var(--orange); background: var(--orange-light); }
-
 .chk input {
   width: 19px;
   height: 19px;
@@ -1450,7 +1452,6 @@ body {
   background-attachment: fixed;
 }
 
-/* ---------- Header (สว่าง โปร่ง) ---------- */
 .top {
   background: rgba(255, 255, 255, 0.9);
   -webkit-backdrop-filter: blur(14px);
@@ -1475,7 +1476,6 @@ body {
 .av { background: var(--grad-accent); color: #fff; }
 .user-area .nm { color: var(--navy); }
 
-/* ---------- ปุ่มเปลี่ยนภาษา ---------- */
 .lang-switch {
   display: inline-flex;
   background: #eaf1ff;
@@ -1497,7 +1497,6 @@ body {
 .lang-switch button:hover { background: #dbe7ff; }
 .lang-switch button.on { background: var(--grad-primary); color: #fff; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35); }
 
-/* ---------- Card / หัวข้อ ---------- */
 .card {
   background: #fff;
   border: 1px solid var(--line-light);
@@ -1507,7 +1506,6 @@ body {
 .sec { font-size: 17px; }
 .sec::before { width: 6px; height: 20px; background: linear-gradient(180deg, #2563eb, #38bdf8); border-radius: 4px; }
 
-/* ---------- Login ---------- */
 .lg { border-radius: 26px; box-shadow: 0 20px 50px -20px rgba(30, 58, 138, 0.35); }
 .lg .l {
   background: linear-gradient(150deg, #1d4ed8 0%, #2f80f0 55%, #38bdf8 100%);
@@ -1544,8 +1542,6 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-
 .keys button:active { transform: translateY(2px); box-shadow: none; background: var(--navy); color: #fff; }
 .keys .go { background: var(--grad-accent); border-color: transparent; color: #fff; box-shadow: 0 3px 0 #e07a14; }
 
-
-/* ---------- ฟอร์มตรวจเช็ค ---------- */
 .minfo { background: #f6f9ff; border-color: var(--line-light); border-radius: 16px; }
 .v3 {
   border-radius: 18px;
@@ -1588,7 +1584,6 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-
 .btn.big { background: var(--grad-primary); color: #fff; font-size: 18px; box-shadow: 0 10px 22px rgba(37, 99, 235, 0.35); }
 .btn.big:hover { background: linear-gradient(135deg, #1d4ed8, #2f9be8); }
 
-/* ---------- Dashboard ---------- */
 .kc {
   display: flex;
   align-items: center;
@@ -1620,7 +1615,6 @@ th { background: linear-gradient(135deg, #1e3a8a, #2f55b8); }
 .toast { background: var(--navy); border-left-color: var(--orange); }
 .modal-overlay { background: rgba(30, 58, 138, 0.35); }
 
-/* ---------- มือถือ ---------- */
 @media (max-width: 820px) {
   .nav button { border-color: var(--line); }
   .nav button.on { border-color: transparent; }
@@ -1632,7 +1626,6 @@ th { background: linear-gradient(135deg, #1e3a8a, #2f55b8); }
   .top.compact .user-area .lang-switch { display: inline-flex; }
 }
 
-/* ---------- ภาษาเมียนมา: ฟอนต์ + ระยะบรรทัดให้อ่านง่าย ---------- */
 html[lang="my"] body,
 html[lang="my"] button,
 html[lang="my"] select,

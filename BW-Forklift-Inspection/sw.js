@@ -1,7 +1,8 @@
-const VERSION = 'fl-v6';
+const VERSION = 'fl-v13';
+const NET_TIMEOUT_MS = 5000;
 const APP_CACHE = 'app-' + VERSION;
 const CDN_CACHE = 'cdn-' + VERSION;
-const SHELL = ['./', 'index.html', 'style.css', 'i18n.js', 'app.js', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png'];
+const SHELL = ['./', 'index.html', 'style.css', 'i18n.js', 'app.js', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/icon-maskable-512.png'];
 const CDN_HOSTS = ['cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
@@ -35,12 +36,19 @@ self.addEventListener('fetch', e => {
 async function networkFirst(req, url) {
   const cache = await caches.open(APP_CACHE);
   const key = url.origin + url.pathname;
-  try {
-    const res = await fetch(req);
+  const hit = await cache.match(key);
+
+  const net = fetch(req).then(res => {
     if (res && res.ok) cache.put(key, res.clone());
     return res;
+  });
+  net.catch(() => {});
+
+  try {
+    if (!hit) return await net;
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), NET_TIMEOUT_MS));
+    return await Promise.race([net, timeout]);
   } catch (err) {
-    const hit = await cache.match(key);
     if (hit) return hit;
     if (req.mode === 'navigate') {
       const page = await cache.match(new URL('index.html', self.registration.scope).href);
