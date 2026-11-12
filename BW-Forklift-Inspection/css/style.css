@@ -1640,3 +1640,328 @@ html[lang="my"] .badge-tag, html[lang="my"] th {
 html[lang="my"] body { line-height: 1.85; }
 html[lang="my"] .btn, html[lang="my"] .btn-choice, html[lang="my"] .plist b, html[lang="my"] .lang-switch button { line-height: 1.7; }
 html[lang="my"] .brand b { white-space: normal; }
+
+/* =========================================================
+   Forklift UI refinement v2
+   Consistent page layout + primary and detail 3D stages
+   ========================================================= */
+
+:root {
+  --viewer-ink: #14243b;
+  --viewer-muted: #64748b;
+  --viewer-line: rgba(148, 163, 184, .28);
+  --viewer-surface: #f5f8fc;
+  --viewer-shadow: 0 14px 34px rgba(25, 48, 78, .09);
+}
+
+/* Give the whole application a little more breathing room on desktop. */
+.wrap {
+  width: min(100% - 28px, 1500px);
+  max-width: 1500px;
+  margin: 20px auto 36px;
+}
+
+.g2 {
+  grid-template-columns: minmax(0, 1.12fr) minmax(360px, .92fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.g2 > .card {
+  min-width: 0;
+  border-radius: 18px;
+  border-color: rgba(190, 204, 222, .72);
+  box-shadow: 0 8px 28px rgba(25, 48, 78, .055);
+}
+
+/* Main 3D viewer: larger, centered, and visually related to the detail viewer. */
+.v3 {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-width: 0;
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid var(--viewer-line);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 50% 34%, rgba(255,255,255,.98) 0%, rgba(246,249,253,.96) 43%, rgba(229,237,247,.98) 100%);
+  box-shadow: var(--viewer-shadow), inset 0 1px 0 rgba(255,255,255,.95);
+}
+
+.v3::after {
+  content: "";
+  position: absolute;
+  inset: auto 7% 42px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(148,163,184,.22), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.v3 canvas,
+#cv {
+  display: block;
+  width: 100%;
+  height: clamp(390px, 43vw, 540px);
+  min-height: 0;
+  touch-action: none;
+  cursor: grab;
+  outline: none;
+}
+
+.v3 canvas:active,
+#cv:active {
+  cursor: grabbing;
+}
+
+.v3bar {
+  position: absolute;
+  z-index: 4;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+  max-width: calc(100% - 24px);
+  padding: 0;
+}
+
+.v3bar .btn {
+  min-width: 40px;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 1px solid rgba(203, 213, 225, .9);
+  border-radius: 11px;
+  background: rgba(255,255,255,.92);
+  color: #29466d;
+  box-shadow: 0 3px 10px rgba(25,48,78,.08);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.v3bar .btn:hover {
+  background: #fff;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.v3note {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  right: auto;
+  bottom: 12px;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 7px 13px;
+  border: 1px solid rgba(203,213,225,.65);
+  border-radius: 999px;
+  background: rgba(255,255,255,.82);
+  color: #52647c;
+  font-size: 11.5px;
+  line-height: 1.45;
+  text-align: center;
+  box-shadow: 0 3px 12px rgba(25,48,78,.06);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+/* Model information panel and point list share the same visual language. */
+.minfo {
+  border-radius: 14px;
+  border-color: rgba(190,204,222,.72);
+  background: linear-gradient(135deg, #f8fbff, #f2f6fc);
+}
+
+.plist {
+  max-height: 360px;
+  padding: 2px 5px 2px 0;
+  overscroll-behavior: contain;
+}
+
+.plist button {
+  min-height: 48px;
+  border-radius: 12px;
+  border-color: rgba(203,213,225,.78);
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.plist button:hover {
+  transform: translateX(2px);
+}
+
+.plist button.on {
+  border-color: #f4b544;
+  background: linear-gradient(100deg, #fff8e9, #fffdf7);
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+/* Detail panel: match the main model's frame, background and controls. */
+.partbox {
+  border: 1px solid rgba(190,204,222,.78);
+  border-left: 4px solid var(--orange);
+  border-radius: 16px;
+  padding: 13px;
+  background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+  box-shadow: 0 6px 18px rgba(25,48,78,.045);
+}
+
+.partbox-head {
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.partbox-title b {
+  font-size: 17px;
+  letter-spacing: .1px;
+}
+
+.partbox-stage {
+  min-height: 260px;
+  border: 1px solid rgba(190,204,222,.65);
+  border-radius: 13px;
+  background:
+    radial-gradient(ellipse at 50% 35%, #fff 0%, #f3f7fc 58%, #e7eef7 100%);
+  box-shadow: inset 0 1px 5px rgba(25,48,78,.035);
+}
+
+.partbox-img,
+.partbox-stage canvas {
+  width: 100%;
+  height: clamp(280px, 26vw, 360px);
+  object-fit: contain;
+  background: transparent;
+}
+
+.partbox-stage .partbox-hint {
+  right: 10px;
+  bottom: 10px;
+  left: auto;
+  max-width: calc(100% - 20px);
+  padding: 5px 10px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 999px;
+  background: rgba(20,36,59,.76);
+  color: #fff;
+  font-size: 11px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.partbox-ph {
+  min-height: 240px;
+  height: auto;
+  color: #718198;
+}
+
+.partbox-ph b {
+  color: #29466d;
+}
+
+/* Keep controls and content usable on medium screens. */
+@media (max-width: 1100px) {
+  .wrap {
+    width: min(100% - 24px, 1000px);
+  }
+  .g2 {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px;
+  }
+  .v3 canvas,
+  #cv {
+    height: clamp(340px, 40vw, 440px);
+  }
+  .partbox-img,
+  .partbox-stage canvas {
+    height: 300px;
+  }
+}
+
+/* Stack the inspection form on tablets and phones without shrinking the 3D model. */
+@media (max-width: 820px) {
+  .wrap {
+    width: min(100% - 20px, 720px);
+    margin-top: 12px;
+    padding-inline: 0;
+  }
+  .g2 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .g2 > .card {
+    border-radius: 16px;
+  }
+  .v3 {
+    border-radius: 16px;
+  }
+  .v3 canvas,
+  #cv {
+    height: clamp(320px, 68vw, 420px);
+  }
+  .plist {
+    max-height: 300px;
+  }
+  .partbox-img,
+  .partbox-stage canvas {
+    height: clamp(260px, 62vw, 330px);
+  }
+}
+
+/* Compact phones: retain a generous model window and prevent toolbar overlap. */
+@media (max-width: 480px) {
+  .wrap {
+    width: calc(100% - 16px);
+    margin-top: 8px;
+  }
+  .g2 > .card {
+    padding: 13px !important;
+  }
+  .v3 canvas,
+  #cv {
+    height: 310px;
+  }
+  .v3bar {
+    top: 8px;
+    right: 8px;
+    gap: 5px;
+    max-width: calc(100% - 16px);
+  }
+  .v3bar .btn {
+    min-height: 34px;
+    min-width: 34px;
+    padding: 4px 9px;
+    font-size: 12px;
+  }
+  .v3note {
+    bottom: 8px;
+    max-width: calc(100% - 16px);
+    padding: 5px 9px;
+    font-size: 10px;
+    border-radius: 10px;
+  }
+  .partbox {
+    padding: 10px;
+  }
+  .partbox-head {
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .partbox-title b {
+    font-size: 15.5px;
+  }
+  .partbox-img,
+  .partbox-stage canvas {
+    height: 260px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plist button,
+  .v3bar .btn {
+    transition: none !important;
+  }
+}

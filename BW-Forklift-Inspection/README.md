@@ -9,15 +9,43 @@
 ```text
 Forklift Inspection/
 ├── index.html                  # หน้าเว็บหลัก (HTML Structure)
-├── style.css                   # สไตล์ ดีไซน์ Responsive และชุดสีอุตสาหกรรม
-├── app.js                      # ตรรกะการทำงาน (PIN Login, Three.js 3D, Checklist, Dashboard, API)
-├── Code.gs                     # โค้ด Google Apps Script (Web App Backend & Data API)
-├── asset/                      # โฟลเดอร์รูปภาพสำหรับรายการตรวจ
-│   ├── gas/                    # ⛽ โฟลเดอร์รูปภาพสำหรับรถโฟล์คลิฟท์แบบน้ำมัน+แก๊ส
-│   └── electric/               # ⚡ โฟลเดอร์รูปภาพสำหรับรถโฟล์คลิฟท์แบบไฟฟ้า
-├── ระบบตรวจเช็คโฟล์คลิฟท์.xlsx   # ไฟล์ Template Google Sheet พร้อมข้อมูลตั้งต้น
-└── README.md                   # คู่มือการติดตั้งและใช้งาน
+├── manifest.json               # PWA manifest
+├── sw.js                       # Service Worker (ต้องอยู่ที่ root)
+├── css/
+│   └── style.css               # สไตล์ ดีไซน์ Responsive
+├── js/
+│   ├── i18n.js                 # ภาษา ไทย/พม่า
+│   ├── config.js               # ⚙️ API_URL และค่าคงที่ (แก้ URL ที่นี่)
+│   ├── state.js                # ตัวแปรสถานะส่วนกลาง
+│   ├── utils.js                # ฟังก์ชันช่วยเหลือ, toast
+│   ├── forklift-types.js       # จำแนกประเภทรถ + แคตตาล็อก 3D
+│   ├── api.js                  # เรียก Google Apps Script
+│   ├── auth.js                 # PIN Login / Logout
+│   ├── form.js                 # หน้าตรวจเช็ค + Checklist
+│   ├── offline.js              # คิวออฟไลน์
+│   ├── submit.js               # บันทึกผลการตรวจ
+│   ├── dashboard.js            # หน้า Dashboard
+│   ├── main.js                 # จุดเริ่มต้น, event, PWA
+│   └── 3d/                     # โมเดล 3D (Three.js)
+│       ├── helpers.js          # วัสดุ/รูปทรงพื้นฐาน
+│       ├── parts-powertrain.js # เครื่องยนต์ แบตเตอรี่ ไฮดรอลิค
+│       ├── parts-chassis.js    # เสา ล้อ ไฟ เบรค พวงมาลัย โซ่
+│       ├── parts-gas-controls.js # ระบบแก๊ส + ชุดควบคุม Walkie
+│       ├── parts-registry.js   # PART_DEFS / จับคู่จุดตรวจ
+│       ├── vehicles.js         # ตัวถังรถ 3 ประเภท
+│       ├── stage.js            # renderer / แสง / ป้ายเลข
+│       ├── viewer-main.js      # ตัวแสดงโมเดลหลัก
+│       └── part-viewer.js      # กล่องชิ้นส่วน (รูปจริง/3D)
+├── backend/
+│   └── Code.gs                 # Google Apps Script (Web App Backend)
+├── icons/                      # ไอคอน PWA (ใช้ของเดิม)
+├── asset/                      # รูปภาพรายการตรวจ (ใช้ของเดิม)
+│   ├── diesel/  petrol+LPG/  electric/
+├── ระบบตรวจเช็คโฟล์คลิฟท์.xlsx   # ไฟล์ Template Google Sheet
+└── README.md
 ```
+
+> ⚠️ **ลำดับการโหลดสคริปต์ใน `index.html` สำคัญ** (ไฟล์ใช้ตัวแปรร่วมกันแบบ global เหมือนเดิม) — ห้ามสลับลำดับ
 
 ---
 
@@ -103,7 +131,7 @@ Forklift Inspection/
    - นำไฟล์ `ระบบตรวจเช็คโฟล์คลิฟท์.xlsx` ไปอัปโหลดขึ้น Google Drive แล้วเปิดเป็น Google Sheets (หรือสร้าง Google Sheet ใหม่แล้วตั้งชื่อชีตตามนี้: `Employees`, `Forklift` (มีคอลัมน์ `Vehicle_Type` สำหรับแยกประเภท Reach truck / Walkie stacker / Counter balance), `Checklist`, `Inspection_Logs`, `Management`, `Cleaning`)
 2. **เปิด Apps Script**:
    - ใน Google Sheet ไปที่เมนู **ส่วนขยาย (Extensions)** > **Apps Script**
-   - ลบโค้ดเดิมออกทั้งหมด แล้วคัดลอกโค้ดจากไฟล์ `Code.gs` ไปวาง
+   - ลบโค้ดเดิมออกทั้งหมด แล้วคัดลอกโค้ดจากไฟล์ `backend/Code.gs` ไปวาง
    - กดบันทึก (Save 💾)
 3. **เตรียมข้อมูลเริ่มต้น (Seed Data)**:
    - ที่แถบด้านบนของ Apps Script เลือกฟังก์ชัน `seedForkliftSample` แล้วกด **เรียกใช้ (Run)** (ข้อควรระวัง: จะล้างรายการ Checklist/Cleaning เดิมแล้วสร้างใหม่) เพื่อสร้างข้อมูลพนักงาน รถโฟล์คลิฟท์ และรายการตรวจทั้ง 14 และ 10 ข้อ
@@ -117,7 +145,7 @@ Forklift Inspection/
      - **ผู้มีสิทธิ์เข้าถึง (Who has access):** ทุกคน (Anyone) *(สำคัญมาก! เพื่อให้เว็บจากภายนอกหรือ GitHub Pages ส่งข้อมูลมาบันทึกได้)*
    - คลิก **ทำให้ใช้งานได้ (Deploy)** และคัดลอก **URL เว็บแอป (Web app URL)** ไว้ เช่น `https://script.google.com/macros/s/.../exec`
 5. **ผูก URL ในโค้ด (ไม่ต้องกดตั้งค่าในหน้าเว็บ):**
-   - เปิดไฟล์ `app.js` บรรทัดที่ 1 แล้วนำ Web App URL มาใส่ที่ตัวแปร:
+   - เปิดไฟล์ `js/config.js` บรรทัดที่ 2 แล้วนำ Web App URL มาใส่ที่ตัวแปร:
      ```javascript
      const API_URL = 'https://script.google.com/macros/s/.../exec';
      ```
@@ -180,7 +208,7 @@ Forklift Inspection/
 - คลิกขวาที่ไฟล์ `index.html` > เลือก **Open with Live Server**
 - เมื่อหน้าเว็บเปิดขึ้น:
   - สามารถทดสอบเข้าสู่ระบบได้ทันที (ใช้ PIN: `1234` สำหรับพนักงานขับรถ, `9999`/`0000` สำหรับแผนกซ่อมบำรุง)
-  - ตรวจสอบว่าใส่ Web App URL ที่ `app.js` บรรทัดที่ 1 แล้ว (สถานะมุมขวาบนจะแสดง "Google Sheet ออนไลน์")
+  - ตรวจสอบว่าใส่ Web App URL ที่ `js/config.js` แล้ว (สถานะมุมขวาบนจะแสดง "Google Sheet ออนไลน์")
 
 ### 2. โฮสต์ขึ้น GitHub Pages
 1. สร้าง New Repository ใน [GitHub](https://github.com)
@@ -199,4 +227,4 @@ Forklift Inspection/
    - Branch: เลือก **main** และโฟลเดอร์ **/ (root)**
    - กด **Save**
 5. รอ 1-2 นาที คุณจะได้ URL เว็บไซต์ เช่น `https://<username>.github.io/<repo-name>/`
-6. ตรวจสอบว่าใส่ Web App URL ใน `app.js` บรรทัดที่ 1 ก่อนอัปโหลด แล้วเปิดหน้าเว็บเพื่อใช้งานได้ทันที
+6. ตรวจสอบว่าใส่ Web App URL ใน `js/config.js` ก่อนอัปโหลด แล้วเปิดหน้าเว็บเพื่อใช้งานได้ทันที

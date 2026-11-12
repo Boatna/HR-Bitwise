@@ -1,8 +1,38 @@
-const VERSION = 'fl-v13';
+const VERSION = 'fl-v16';
 const NET_TIMEOUT_MS = 5000;
 const APP_CACHE = 'app-' + VERSION;
 const CDN_CACHE = 'cdn-' + VERSION;
-const SHELL = ['./', 'index.html', 'style.css', 'i18n.js', 'app.js', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/icon-maskable-512.png'];
+const SHELL = [
+  './',
+  'index.html',
+  'css/style.css',
+  'js/i18n.js',
+  'js/config.js',
+  'js/state.js',
+  'js/utils.js',
+  'js/forklift-types.js',
+  'js/api.js',
+  'js/auth.js',
+  'js/form.js',
+  'js/offline.js',
+  'js/submit.js',
+  'js/3d/helpers.js',
+  'js/3d/parts-powertrain.js',
+  'js/3d/parts-chassis.js',
+  'js/3d/parts-gas-controls.js',
+  'js/3d/parts-registry.js',
+  'js/3d/vehicles.js',
+  'js/3d/stage.js',
+  'js/3d/viewer-main.js',
+  'js/3d/part-viewer.js',
+  'js/dashboard.js',
+  'js/main.js',
+  'manifest.json',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'icons/apple-touch-icon.png',
+  'icons/icon-maskable-512.png'
+];
 const CDN_HOSTS = ['cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
@@ -39,7 +69,7 @@ async function networkFirst(req, url) {
   const hit = await cache.match(key);
 
   const net = fetch(req).then(res => {
-    if (res && res.ok) cache.put(key, res.clone());
+    if (res && res.status === 200) cache.put(key, res.clone()).catch(() => {});
     return res;
   });
   net.catch(() => {});
@@ -62,7 +92,7 @@ async function staleWhileRevalidate(req) {
   const cache = await caches.open(CDN_CACHE);
   const hit = await cache.match(req);
   const fresh = fetch(req).then(res => {
-    if (res && (res.ok || res.type === 'opaque')) cache.put(req, res.clone());
+    if (res && (res.status === 200 || res.type === 'opaque')) cache.put(req, res.clone()).catch(() => {});
     return res;
   }).catch(() => null);
   return hit || (await fresh) || Response.error();
