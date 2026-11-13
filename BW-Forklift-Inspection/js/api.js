@@ -1,4 +1,3 @@
-/* js/api.js — เรียก Google Apps Script (GET/POST) และจัดการเซสชันหมดอายุ */
 async function api(method, action, payload = {}) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);

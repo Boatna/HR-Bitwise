@@ -1,4 +1,3 @@
-/* js/offline.js — คิวออฟไลน์ (localStorage) และการส่งซ้ำอัตโนมัติ */
 const OFFLINE_KEY = 'fl_offline_queue';
 let offlineSyncing = false;
 

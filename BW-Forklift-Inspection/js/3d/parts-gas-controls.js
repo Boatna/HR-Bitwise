@@ -1,10 +1,13 @@
 /* js/3d/parts-gas-controls.js — 3D ชิ้นส่วน: ระบบแก๊ส LPG และชุดควบคุม Walkie stacker */
 function pGasTank(solo) {
   const g = new THREE.Group();
-  const tankMat = M(0xc8d1da, { metalness: 0.65, roughness: 0.35 });
+  // สีเขียวอุตสาหกรรมสำหรับถังแก๊ส LPG ตามรูปรถจริง Toyota (รูปที่ 1)
+  const tankMat = M(0x2e6f40, { metalness: 0.45, roughness: 0.4 });
   CY(g, 0.28, 1.08, tankMat, 0, 0, 0, 'x');
   put(g, new THREE.SphereGeometry(0.28, 28, 18), tankMat, -0.54, 0, 0);
   put(g, new THREE.SphereGeometry(0.28, 28, 18), tankMat, 0.54, 0, 0);
+  // แถบคาดสีขาวรอบกลางถังแก๊ส (สติกเกอร์ความปลอดภัย/ตรวจสภาพ)
+  CY(g, 0.282, 0.26, M(0xf8fafc, { roughness: 0.4 }), 0, 0, 0, 'x');
   TR(g, 0.284, 0.012, steel(), -0.35, 0, 0, 0, PI / 2);
   TR(g, 0.284, 0.012, steel(), 0.35, 0, 0, 0, PI / 2);
   TR(g, 0.23, 0.038, steel(), 0.66, 0, 0, 0, PI / 2);

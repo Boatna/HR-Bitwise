@@ -2,7 +2,7 @@
 function pMast(solo, ctx) {
   const g = new THREE.Group();
   const sub = ctx && ctx.subtype;
-  const P = sub === 'walkie_stacker' ? { S: 0.36, H: 3.2, F: 1.05, tilt: false, lbr: 0.95 }
+  const P = sub === 'walkie_stacker' ? { S: 0.36, H: 1.6, F: 1.15, tilt: false, lbr: 0.85 }
     : sub === 'reach_truck' ? { S: 0.6, H: 3.8, F: 1.15, tilt: false, lbr: 1.15 }
     : { S: 0.72, H: 3.4, F: 1.55, tilt: true, lbr: 1.35 };
   const S = P.S, H = P.H;
@@ -20,6 +20,14 @@ function pMast(solo, ctx) {
       CY(g, 0.04, 0.65, chrome(), s * (S + 0.14), 0.95, -0.16, 'z');
     }
   });
+
+  // สติกเกอร์ตัวหนังสือ TOYOTA สีขาวแนวตั้งบนเสาด้านข้างทั้งซ้าย-ขวา (ตามรูปรถจริง Toyota 2.5 ตัน)
+  if (!dkm) {
+    const mastTx = toyotaMastTex();
+    [-1, 1].forEach(s => {
+      decalPlane(g, mastTx, 0.2, 1.45, s * (S + 0.112), 2.05, 0, s);
+    });
+  }
   BX(g, 2 * S + 0.22, 0.12, 0.16, st(), 0, H - 0.02, 0);
   BX(g, 2 * S + 0.14, 0.14, 0.22, st(), 0, 0.22, 0);
   BX(g, 2 * S + 0.14, 0.1, 0.16, st(), 0, H / 2 + 0.1, -0.06);

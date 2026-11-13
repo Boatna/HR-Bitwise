@@ -1,4 +1,3 @@
-/* js/form.js — หน้าตรวจเช็ค: โหลดข้อมูลรถ, checklist, progress, รายการจุดตรวจ */
 function setCurrent(m) {
   CUR.forklift = m || null;
   CUR.elec = isElecForklift(m);

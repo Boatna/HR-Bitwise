@@ -117,7 +117,7 @@ function errorResult_(err) {
 }
 
 const sheet_ = n => SpreadsheetApp.getActiveSpreadsheet().getSheetByName(n);
-const s_ = v => (v == null ? '' : String(v).trim());
+const s_ = v => (v == null ? '' : String(v).trim().replace(/\.0+$/, ''));
 
 function rows_(name) {
   const sh = sheet_(name);
@@ -330,16 +330,82 @@ function itemsMatchKind_(items, kind) {
 
 function itemsMatchSubtype_(items, sub) {
   if (sub === 'walkie_stacker') {
-    return items.some(x => /belly|ฉุกเฉินกันชน|คันบังคับ|dead-?man|สแต็กเกอร์|tiller/i.test(s_(x.Inspection_Point)));
+    return items.some(x => /belly|ป้องกันการชน|ฉุกเฉินกันชน|กันชน|แฮนด์บังคับ|คันบังคับ|ปุ่มควบคุมทิศทาง|dead-?man|สแต็กเกอร์|tiller/i.test(s_(x.Inspection_Point)));
   }
   if (sub === 'reach_truck' || sub === 'electric') {
     return items.some(x => /ปลั๊กชาร์จ|ขั้วแบต|charge/i.test(s_(x.Inspection_Point))) &&
-      !items.some(x => /belly|ฉุกเฉินกันชน|dead-?man/i.test(s_(x.Inspection_Point)));
+      !items.some(x => /belly|ป้องกันการชน|ฉุกเฉินกันชน|กันชน|แฮนด์บังคับ|คันบังคับ|ปุ่มควบคุมทิศทาง|dead-?man/i.test(s_(x.Inspection_Point)));
   }
   if (sub === 'petrol+LPG') {
     return items.some(x => /lpg|ก๊าซ|แก๊ส/i.test(s_(x.Inspection_Point)));
   }
   return !items.some(x => /ปลั๊กชาร์จ|ขั้วแบต|lpg|ก๊าซ|แก๊ส/i.test(s_(x.Inspection_Point)));
+}
+
+function resolveItemImage_(sub, point) {
+  const p = s_(point).toLowerCase();
+  if (sub === 'reach_truck' || sub === 'electric') {
+    if (/น้ำกลั่น|battery/i.test(p)) return 'Electric-Reach-Truck/electric-battery-water.jpg';
+    if (/ขั้วแบต/i.test(p)) return 'Electric-Reach-Truck/electric-battery-terminal.jpg';
+    if (/ปลั๊ก|ชาร์จ/i.test(p)) return 'Electric-Reach-Truck/electric-charge-plug.jpg';
+    if (/เสา|งา/i.test(p)) return 'Electric-Reach-Truck/electric-mast-forks.jpg';
+    if (/โซ่/i.test(p)) return 'Electric-Reach-Truck/electric-chain.jpg';
+    if (/ล้อ|ยาง/i.test(p)) return 'Electric-Reach-Truck/electric-wheel-tire.jpg';
+    if (/สายไฮ/i.test(p)) return 'Electric-Reach-Truck/electric-hydraulic-hose.jpg';
+    if (/ไฮดรอลิ/i.test(p)) return 'Electric-Reach-Truck/electric-hydraulic-oil.jpg';
+    if (/ไฟ|แตร/i.test(p)) return 'Electric-Reach-Truck/electric-lights-horn.jpg';
+    if (/เบรค|เบรก/i.test(p)) return 'Electric-Reach-Truck/electric-brake.jpg';
+  } else if (sub === 'walkie_stacker') {
+    if (/น้ำกลั่น/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Distilled-water-level-battery.jpg';
+    if (/ขั้วแบต/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Battery-terminal.jpg';
+    if (/ปลั๊ก|ชาร์จ/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Charging-plug.jpg';
+    if (/โซ่/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.2/chain.jpg';
+    if (/เสา|งา/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Forks.jpg';
+    if (/ล้อ|ยาง/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Wheels+Tires.jpg';
+    if (/ไฟ|แตร/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Signal lights+horn.jpg';
+    if (/เบรค|เบรก/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Brake-system.jpg';
+    if (/แฮนด์|คันบังคับ|ทิศทาง|เดินหน้า/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Forward–reverse-control-button.jpg';
+    if (/ป้องกันการชน|กันชน|belly/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Anti-collision-button.jpg';
+    if (/สายไฮ/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.2/hydraulic-hose.jpg';
+    if (/ไฮดรอลิ/i.test(p)) return 'Electric-Walkie-stacker/Electric-Walkie-stacker-v.2/hydraulic-oil.jpg';
+  } else if (sub === 'petrol+LPG') {
+    if (/น้ำมันเครื่อง/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Engine-oil-level.jpg';
+    if (/หม้อพักน้ำ|หล่อเย็น|หม้อน้ำ/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Coolant-reservoir-level.jpg';
+    if (/แบตเตอรี่|น้ำกลั่น/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-battery.jpg';
+    if (/สายไฮ/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Condition-of-the-hydraulic-hose.jpg';
+    if (/ไฮดรอลิ/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Hydraulic-oil-level.jpg';
+    if (/เสา|งา/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Mast-and-forks.jpg';
+    if (/โซ่/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Chain-condition.jpg';
+    if (/คลัตช์|คลัช|ครัช/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Brake-and-clutch-fluid-level.jpg';
+    if (/เบรค|เบรก/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Brake-system.jpg';
+    if (/ล้อ|ยาง/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Wheels-and-tires.jpg';
+    if (/พวงมาลัย/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-steering-wheel.jpg';
+    if (/ไฟ|แตร/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Signal-and-horn.jpg';
+    if (/กระจก/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Side-view-mirror.jpg';
+    if (/เข็มขัด|เบาะ/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Seat-belt.jpg';
+    if (/สภาพถังก๊าซ|ถังแก๊ส/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Gas.jpg';
+    if (/ยึดถัง/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Securing-gas.jpg';
+    if (/สายส่ง/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Gas-pipeline.jpg';
+    if (/ข้อต่อ|เชื่อมต่อ/i.test(p)) return 'Forklift-petrol+LPG/Gas-fittings-and-connection.jpg';
+    if (/รั่วซึม/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Gas-leakage.jpg';
+    if (/มาตรวัด|ระดับก๊าซ|เกจ/i.test(p)) return 'Forklift-petrol+LPG/Forklift-petrol+LPG-Gas-level-gauge.jpg';
+  } else {
+    if (/น้ำมันเครื่อง/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Engine-oil-level.jpg';
+    if (/หม้อพักน้ำ|หล่อเย็น|หม้อน้ำ/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Coolant-reservoir-level.jpg';
+    if (/แบตเตอรี่|น้ำกลั่น/i.test(p)) return 'Forklift-diesel/Forklift-diesel-battery.jpg';
+    if (/สายไฮ/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Condition-of-the-hydraulic-hose.jpg';
+    if (/ไฮดรอลิ/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Hydraulic-oil-level.jpg';
+    if (/เสา|งา/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Mast-and-forks.jpg';
+    if (/โซ่/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Chain-condition.jpg';
+    if (/คลัตช์|คลัช|ครัช/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Brake-and-clutch-fluid-level.jpg';
+    if (/เบรค|เบรก/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Brake-system.jpg';
+    if (/ล้อ|ยาง/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Condition-of-wheels-and-tires.jpg';
+    if (/พวงมาลัย/i.test(p)) return 'Forklift-diesel/Forklift-diesel-steering-wheel.jpg';
+    if (/ไฟ|แตร/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Signal-lights-and-horn.jpg';
+    if (/กระจก/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Side-view-mirror.jpg';
+    if (/เข็มขัด|เบาะ/i.test(p)) return 'Forklift-diesel/Forklift-diesel-Seat-belt.jpg';
+  }
+  return '';
 }
 
 const BY_FL_ = new WeakMap();
@@ -358,43 +424,51 @@ function checklistFor_(m, cls, fls) {
   const kind = kindOf_(m);
   const by = byForklift_(cls);
   const own = by[m.Forklift_ID] || [];
-  if (own.length) return own;
 
-  // 1. ค้นหา template ตาม subtype เดียวกัน
-  let tpl = null;
-  for (let i = 0; i < fls.length && !tpl; i++) {
-    const f = fls[i];
-    if (f.Forklift_ID === m.Forklift_ID || subtypeOf_(f) !== sub) continue;
-    const rows = by[f.Forklift_ID] || [];
-    if (rows.length && itemsMatchSubtype_(rows, sub)) tpl = rows;
-  }
-
-  // 2. ถ้าไม่พบ template subtype เดียวกัน ให้ค้นหาตาม group (kind)
-  if (!tpl) {
+  let items = own;
+  if (!items.length) {
+    // 1. ค้นหา template ตาม subtype เดียวกัน
+    let tpl = null;
     for (let i = 0; i < fls.length && !tpl; i++) {
       const f = fls[i];
-      if (f.Forklift_ID === m.Forklift_ID || kindOf_(f) !== kind) continue;
+      if (f.Forklift_ID === m.Forklift_ID || subtypeOf_(f) !== sub) continue;
       const rows = by[f.Forklift_ID] || [];
-      if (rows.length && itemsMatchKind_(rows, kind)) tpl = rows;
+      if (rows.length && itemsMatchSubtype_(rows, sub)) tpl = rows;
+    }
+
+    // 2. ถ้าไม่พบ template subtype เดียวกัน ให้ค้นหาตาม group (kind)
+    if (!tpl) {
+      for (let i = 0; i < fls.length && !tpl; i++) {
+        const f = fls[i];
+        if (f.Forklift_ID === m.Forklift_ID || kindOf_(f) !== kind) continue;
+        const rows = by[f.Forklift_ID] || [];
+        if (rows.length && itemsMatchKind_(rows, kind)) tpl = rows;
+      }
+    }
+
+    const id = n => m.Forklift_ID + '-CHK-' + String(n + 1).padStart(2, '0');
+    if (tpl) {
+      items = tpl.map((c, i) => Object.assign({}, c, { Item_ID: id(i), Forklift_ID: m.Forklift_ID }));
+    } else {
+      // 3. ใช้รายการมาตรฐานตาม subtype
+      const inspectList = SEED_INSPECT_FORKLIFT[sub] || SEED_INSPECT_FORKLIFT[kind] || SEED_INSPECT_FORKLIFT.engine;
+      const imgList = SEED_IMG_FORKLIFT[sub] || SEED_IMG_FORKLIFT[m.Model_Type] || SEED_IMG_FORKLIFT[kind] || SEED_IMG_FORKLIFT.engine;
+      items = inspectList.map((it, i) => ({
+        Item_ID: id(i),
+        Forklift_ID: m.Forklift_ID,
+        Category: it[0],
+        Inspection_Point: it[1],
+        Standard_Criteria: it[2],
+        Image_File: imgList[i] || ''
+      }));
     }
   }
 
-  const id = n => m.Forklift_ID + '-CHK-' + String(n + 1).padStart(2, '0');
-  if (tpl) {
-    return tpl.map((c, i) => Object.assign({}, c, { Item_ID: id(i), Forklift_ID: m.Forklift_ID }));
-  }
-
-  // 3. ใช้รายการมาตรฐานตาม subtype
-  const inspectList = SEED_INSPECT_FORKLIFT[sub] || SEED_INSPECT_FORKLIFT[kind] || SEED_INSPECT_FORKLIFT.engine;
-  const imgList = SEED_IMG_FORKLIFT[sub] || SEED_IMG_FORKLIFT[m.Model_Type] || SEED_IMG_FORKLIFT[kind] || SEED_IMG_FORKLIFT.engine;
-  return inspectList.map((it, i) => ({
-    Item_ID: id(i),
-    Forklift_ID: m.Forklift_ID,
-    Category: it[0],
-    Inspection_Point: it[1],
-    Standard_Criteria: it[2],
-    Image_File: imgList[i] || ''
-  }));
+  // เติมรูปภาพให้อัตโนมัติถ้าในชีตยังว่างอยู่
+  return items.map((c, i) => {
+    const img = s_(c.Image_File) || resolveItemImage_(sub, c.Inspection_Point);
+    return Object.assign({}, c, { Image_File: img });
+  });
 }
 
 function cleanFor_(m, cns) {
@@ -402,10 +476,9 @@ function cleanFor_(m, cns) {
   const own = by[m.Forklift_ID] || [];
   if (own.length) return own;
   const id = n => m.Forklift_ID + '-CLN-' + String(n + 1).padStart(2, '0');
-  if (cns.length) {
-    const firstId = cns[0].Forklift_ID;
-    return (by[firstId] || [])
-      .map((c, i) => Object.assign({}, c, { Task_ID: id(i), Forklift_ID: m.Forklift_ID }));
+  const tpl = by['DEFAULT'] || by['ALL'] || (cns.length ? (by[cns[0].Forklift_ID] || []) : []);
+  if (tpl.length) {
+    return tpl.map((c, i) => Object.assign({}, c, { Task_ID: id(i), Forklift_ID: m.Forklift_ID }));
   }
   return SEED_CLEAN_FORKLIFT.map((c, i) => ({
     Task_ID: id(i), Forklift_ID: m.Forklift_ID, Area: c[0], Task: c[1], Method: c[2], Tool: c[3]
@@ -611,7 +684,7 @@ function sendInspectionEmail_(info) {
   const ownerName = info.ownerName || m.Owner_Emp_ID || '-';
 
   const subject = (isNg ? '⚠️ [ไม่ผ่าน NG ' + ngList.length + ' ข้อ]' : '✓ [ผ่านการตรวจ - OK]') +
-    ' ผลตรวจโฟล์คลิฟท์ ' + m.Forklift_ID + ' (' + m.Forklift_Name + ') โดย ' + u.name;
+    ' ผลตรวจโฟล์คลิฟท์ ' + m.Forklift_ID + ' (' + m.Forklift_Name + (m.Vehicle_Type ? ' ' + m.Vehicle_Type : '') + ' - ' + cleanDept_(m.Department) + ') โดย ' + u.name;
   let itemRowsHtml = '';
   let itemRowsText = '';
   items.forEach((it, idx) => {
@@ -789,8 +862,10 @@ function sendTestEmail() {
 
 function ngText_(json) {
   try {
-    return JSON.parse(json).items.filter(x => x.result === 'NG')
-      .map(x => x.point + (x.detail ? ' (' + x.detail + ')' : '')).join(', ');
+    const p = JSON.parse(json);
+    const its = (p && p.items && Array.isArray(p.items)) ? p.items : [];
+    return its.filter(x => x && x.result === 'NG')
+      .map(x => (x.point || '') + (x.detail ? ' (' + x.detail + ')' : '')).filter(Boolean).join(', ');
   } catch (e) {
     return '';
   }
@@ -798,8 +873,9 @@ function ngText_(json) {
 
 function cleanText_(json) {
   try {
-    const c = JSON.parse(json).cleaning;
-    return c && c.length ? c.filter(x => x.done).length + '/' + c.length : '';
+    const p = JSON.parse(json);
+    const c = (p && p.cleaning && Array.isArray(p.cleaning)) ? p.cleaning : [];
+    return c.length ? c.filter(x => x && x.done).length + '/' + c.length : '';
   } catch (e) {
     return '';
   }
@@ -865,7 +941,7 @@ function getDashboard(token) {
       vehicleType: m.Vehicle_Type || (typeOf_(m).label || ''),
       loc: m.Location,
       capacity: m.Load_Capacity || '',
-      owner: names[m.Owner_Emp_ID] || '',
+      owner: names[m.Owner_Emp_ID] || m.Owner_Emp_ID || '',
       last: r ? Utilities.formatDate(r.Timestamp, TZ, 'dd/MM/yy HH:mm') : '-',
       status: r ? r.Overall_Status : '-',
       by: r ? (names[r.Inspector_ID] || r.Inspector_ID) : '',
@@ -888,6 +964,7 @@ function getDashboard(token) {
     recent: logs.slice(-15).reverse().map(r => ({
       t: Utilities.formatDate(r.Timestamp, TZ, 'dd/MM HH:mm'),
       by: names[r.Inspector_ID] || r.Inspector_ID,
+      forkliftId: r.Forklift_ID,
       forklift: flname[r.Forklift_ID] || r.Forklift_ID,
       status: r.Overall_Status,
       ng: ngText_(r.Check_Data_JSON),
@@ -898,37 +975,37 @@ function getDashboard(token) {
 
 const SEED_INSPECT_FORKLIFT = {
   diesel: [
-    ['ห้องเครื่องยนต์', '1.ระดับน้ำมันเครื่อง', 'ดึงก้านวัดขณะดับเครื่อง ระดับอยู่ระหว่างขีด Min-Max น้ำมันไม่ดำข้นเหนียวหรือมีตะกอน'],
-    ['ระบบระบายความร้อน', '2.ระดับน้ำหม้อพักน้ำ', 'ระดับน้ำยาหล่อเย็นอยู่ในระดับ Full/Max ฝาปิดแน่นสนิท ครีบหม้อน้ำไม่อุดตัน ไม่มีรอยรั่ว'],
-    ['ระบบเบรคและควบคุม', '3.ระดับน้ำมันเบรค + ครัช', 'ระดับน้ำมันในกระปุกอยู่ในเกณฑ์ที่กำหนด กระปุกไม่แตกร้าว ไม่มีคราบน้ำมันรั่วซึม'],
-    ['ระบบไฟฟ้าและแบตเตอรี่', '4.ระดับน้ำกลั่น', 'น้ำกลั่นท่วมแผ่นธาตุทุกช่อง ฝาจุกปิดสนิท ขั้วแน่น ไม่มีคราบขี้เกลือเกาะหนา'],
-    ['ระบบไฮดรอลิค', '5.ระดับน้ำมันไฮดรอลิค', 'ตรวจเช็คขณะวางงาแนบพื้นราบ ระดับน้ำมันอยู่ในเกณฑ์ตาแมว/ก้านวัด สีน้ำมันใสไม่ขุ่น'],
-    ['เสาและชุดยก', '6.เสาและงา', 'งาทั้งสองข้างไม่คดงอหรือแตกร้าว ปลายงาเสมอกัน สลักล็อกงาอยู่ครบ เสาเลื่อนขึ้น-ลงราบเรียบ'],
-    ['ช่วงล่างและล้อ', '7.สภาพล้อ + ยาง', 'หน้ายางไม่ฉีกขาด ไม่มีเศษหิน/โลหะฝัง น็อตล้อขันแน่นครบทุกตัว กระทะล้อไม่บิดเบี้ยว'],
-    ['ระบบไฮดรอลิค', '8.สภาพสายไฮดรอลิค', 'สายไฮดรอลิคไม่บวม ไม่แตกลายงา ไม่มีรอยเสียดสี ข้อต่อท่อไม่มีน้ำมันซึมออกมา'],
-    ['ระบบความปลอดภัย', '9.ระบบไฟสัญญาณ + แตร', 'ไฟหน้า ไฟท้าย ไฟถอย ไฟฉุกเฉิน และแตรทำงานติดครบทุกฟังก์ชัน เสียงดังชัดเจน'],
-    ['ระบบเบรคและควบคุม', '10.ระบบเบรค', 'เบรคเท้ากดแล้วหน่วงหยุดได้ดี ไม่จมมิด เบรคมือ/เบรกล็อกล้อทำงานสมบูรณ์ ล็อกรถอยู่สนิท'],
-    ['ทัศนวิสัย', '11.กระจกมองข้าง', 'กระจกซ้าย-ขวาไม่แตกหรือมัว ปรับมุมมองเห็นด้านหลังได้ชัดเจน ขาจับแน่นไม่สั่นคลอน'],
-    ['ระบบเบรคและควบคุม', '12.พวงมาลัย', 'บังคับเลี้ยวได้ราบเรียบ ระยะฟรีพวงมาลัยเหมาะสม ลูกบิดพวงมาลัยแน่นหนา ไม่มีเสียงดัง'],
-    ['ระบบความปลอดภัย', '13.เข็มขัดนิรภัย', 'สายเข็มขัดไม่ฉีกขาด กลไกดึงล็อกกระตุกทำงานดี หัวล็อกแน่นไม่หลุดเอง'],
-    ['เสาและชุดยก', '14.สภาพโซ่', 'โซ่ยกตึงเท่ากันทั้งสองข้าง ไม่หย่อน ข้อต่อโซ่ไม่บิดเบี้ยวหรือตาย มีการหล่อลื่นเหมาะสม']
+    ['ระบบเครื่องยนต์และระบายความร้อน', '1. ระดับน้ำมันเครื่อง', 'ดึงก้านวัดขณะดับเครื่อง ระดับอยู่ระหว่างขีด Min-Max น้ำมันไม่ดำข้นเหนียวหรือมีตะกอน'],
+    ['ระบบเครื่องยนต์และระบายความร้อน', '2. ระดับน้ำหม้อพักน้ำ', 'ระดับน้ำยาหล่อเย็นอยู่ในระดับ Full/Max ฝาปิดแน่นสนิท ครีบหม้อน้ำไม่อุดตัน ไม่มีรอยรั่ว'],
+    ['ระบบแบตเตอรี่', '3. แบตเตอรี่', 'ไม่มีรอยแตกร้าว บวม หรือความเสียหายของตัวแบตเตอรี่ ไม่มีคราบขี้เกลือ'],
+    ['ระบบไฮดรอลิก', '4. ระดับน้ำมันไฮดรอลิก', 'ตรวจเช็คขณะวางงาแนบพื้นราบ ระดับน้ำมันอยู่ในเกณฑ์ตาแมว/ก้านวัด สีน้ำมันใสไม่ขุ่น'],
+    ['ระบบไฮดรอลิก', '5. สภาพสายไฮดรอลิก', 'สายไฮดรอลิคไม่บวม ไม่แตกลายงา ไม่มีรอยเสียดสี ข้อต่อท่อไม่มีน้ำมันซึมออกมา'],
+    ['ระบบเสาและอุปกรณ์ยก', '6. เสาและงา', 'งาทั้งสองข้างไม่คดงอหรือแตกร้าว ปลายงาเสมอกัน สลักล็อกงาอยู่ครบ เสาเลื่อนขึ้น-ลงราบเรียบ'],
+    ['ระบบเสาและอุปกรณ์ยก', '7. สภาพโซ่', 'โซ่ยกตึงเท่ากันทั้งสองข้าง ไม่หย่อน ข้อต่อโซ่ไม่บิดเบี้ยวหรือตาย มีการหล่อลื่นเหมาะสม'],
+    ['ระบบเบรค', '8. ระดับน้ำมันเบรคและคลัตช์', 'ระดับน้ำมันในกระปุกอยู่ในเกณฑ์ที่กำหนด กระปุกไม่แตกร้าว ไม่มีคราบน้ำมันรั่วซึม'],
+    ['ระบบเบรค', '9. ระบบเบรค', 'เบรคเท้ากดแล้วหน่วงหยุดได้ดี ไม่จมมิด เบรคมือ/เบรกล็อกล้อทำงานสมบูรณ์ ล็อกรถอยู่สนิท'],
+    ['ระบบบังคับเลี้ยวและล้อ', '10. สภาพล้อและยาง', 'หน้ายางไม่ฉีกขาด ไม่มีเศษหิน/โลหะฝัง น็อตล้อขันแน่นครบทุกตัว กระทะล้อไม่บิดเบี้ยว'],
+    ['ระบบบังคับเลี้ยวและล้อ', '11. พวงมาลัย', 'บังคับเลี้ยวได้ราบเรียบ ระยะฟรีพวงมาลัยเหมาะสม ลูกบิดพวงมาลัยแน่นหนา ไม่มีเสียงดัง'],
+    ['ระบบไฟสัญญาณและอุปกรณ์ความปลอดภัย', '12. ระบบไฟสัญญาณและแตร', 'ไฟหน้า ไฟท้าย ไฟถอย ไฟฉุกเฉิน และแตรทำงานติดครบทุกฟังก์ชัน เสียงดังชัดเจน'],
+    ['ระบบไฟสัญญาณและอุปกรณ์ความปลอดภัย', '13. กระจกมองข้าง', 'กระจกซ้าย-ขวาไม่แตกหรือมัว ปรับมุมมองเห็นด้านหลังได้ชัดเจน ขาจับแน่นไม่สั่นคลอน'],
+    ['ระบบไฟสัญญาณและอุปกรณ์ความปลอดภัย', '14. เข็มขัดนิรภัย', 'สายเข็มขัดไม่ฉีกขาด กลไกดึงล็อกกระตุกทำงานดี หัวล็อกแน่นไม่หลุดเอง']
   ],
 
   'petrol+LPG': [
-    ['ห้องเครื่องยนต์', '1.ระดับน้ำมันเครื่อง', 'ดึงก้านวัดขณะดับเครื่อง ระดับอยู่ระหว่างขีด Min-Max น้ำมันไม่ดำข้นเหนียวหรือมีตะกอน'],
-    ['ระบบระบายความร้อน', '2.ระดับน้ำหม้อพักน้ำ', 'ระดับน้ำยาหล่อเย็นอยู่ในระดับ Full/Max ฝาปิดแน่นสนิท ครีบหม้อน้ำไม่อุดตัน ไม่มีรอยรั่ว'],
-    ['ระบบเบรคและควบคุม', '3.ระดับน้ำมันเบรค + ครัช', 'ระดับน้ำมันในกระปุกอยู่ในเกณฑ์ที่กำหนด กระปุกไม่แตกร้าว ไม่มีคราบน้ำมันรั่วซึม'],
-    ['ระบบไฟฟ้าและแบตเตอรี่', '4.ระดับน้ำกลั่น', 'น้ำกลั่นท่วมแผ่นธาตุทุกช่อง ฝาจุกปิดสนิท ขั้วแน่น ไม่มีคราบขี้เกลือเกาะหนา'],
-    ['ระบบไฮดรอลิค', '5.ระดับน้ำมันไฮดรอลิค', 'ตรวจเช็คขณะวางงาแนบพื้นราบ ระดับน้ำมันอยู่ในเกณฑ์ตาแมว/ก้านวัด สีน้ำมันใสไม่ขุ่น'],
-    ['เสาและชุดยก', '6.เสาและงา', 'งาทั้งสองข้างไม่คดงอหรือแตกร้าว ปลายงาเสมอกัน สลักล็อกงาอยู่ครบ เสาเลื่อนขึ้น-ลงราบเรียบ'],
-    ['ช่วงล่างและล้อ', '7.สภาพล้อ + ยาง', 'หน้ายางไม่ฉีกขาด ไม่มีเศษหิน/โลหะฝัง น็อตล้อขันแน่นครบทุกตัว กระทะล้อไม่บิดเบี้ยว'],
-    ['ระบบไฮดรอลิค', '8.สภาพสายไฮดรอลิค', 'สายไฮดรอลิคไม่บวม ไม่แตกลายงา ไม่มีรอยเสียดสี ข้อต่อท่อไม่มีน้ำมันซึมออกมา'],
-    ['ระบบความปลอดภัย', '9.ระบบไฟสัญญาณ + แตร', 'ไฟหน้า ไฟท้าย ไฟถอย ไฟฉุกเฉิน และแตรทำงานติดครบทุกฟังก์ชัน เสียงดังชัดเจน'],
-    ['ระบบเบรคและควบคุม', '10.ระบบเบรค', 'เบรคเท้ากดแล้วหน่วงหยุดได้ดี ไม่จมมิด เบรคมือ/เบรกล็อกล้อทำงานสมบูรณ์ ล็อกรถอยู่สนิท'],
-    ['ทัศนวิสัย', '11.กระจกมองข้าง', 'กระจกซ้าย-ขวาไม่แตกหรือมัว ปรับมุมมองเห็นด้านหลังได้ชัดเจน ขาจับแน่นไม่สั่นคลอน'],
-    ['ระบบเบรคและควบคุม', '12.พวงมาลัย', 'บังคับเลี้ยวได้ราบเรียบ ระยะฟรีพวงมาลัยเหมาะสม ลูกบิดพวงมาลัยแน่นหนา ไม่มีเสียงดัง'],
-    ['ระบบความปลอดภัย', '13.เข็มขัดนิรภัย', 'สายเข็มขัดไม่ฉีกขาด กลไกดึงล็อกกระตุกทำงานดี หัวล็อกแน่นไม่หลุดเอง'],
-    ['เสาและชุดยก', '14.สภาพโซ่', 'โซ่ยกตึงเท่ากันทั้งสองข้าง ไม่หย่อน ข้อต่อโซ่ไม่บิดเบี้ยวหรือตาย มีการหล่อลื่นเหมาะสม'],
+    ['ระบบเครื่องยนต์และระบายความร้อน', '1. ระดับน้ำมันเครื่อง', 'ดึงก้านวัดขณะดับเครื่อง ระดับอยู่ระหว่างขีด Min-Max น้ำมันไม่ดำข้นเหนียวหรือมีตะกอน'],
+    ['ระบบเครื่องยนต์และระบายความร้อน', '2. ระดับน้ำหม้อพักน้ำ', 'ระดับน้ำยาหล่อเย็นอยู่ในระดับ Full/Max ฝาปิดแน่นสนิท ครีบหม้อน้ำไม่อุดตัน ไม่มีรอยรั่ว'],
+    ['ระบบแบตเตอรี่', '3. แบตเตอรี่', 'ไม่มีรอยแตกร้าว บวม หรือความเสียหายของตัวแบตเตอรี่ ไม่มีคราบขี้เกลือ'],
+    ['ระบบไฮดรอลิก', '4. ระดับน้ำมันไฮดรอลิก', 'ตรวจเช็คขณะวางงาแนบพื้นราบ ระดับน้ำมันอยู่ในเกณฑ์ตาแมว/ก้านวัด สีน้ำมันใสไม่ขุ่น'],
+    ['ระบบไฮดรอลิก', '5. สภาพสายไฮดรอลิก', 'สายไฮดรอลิคไม่บวม ไม่แตกลายงา ไม่มีรอยเสียดสี ข้อต่อท่อไม่มีน้ำมันซึมออกมา'],
+    ['ระบบเสาและอุปกรณ์ยก', '6. เสาและงา', 'งาทั้งสองข้างไม่คดงอหรือแตกร้าว ปลายงาเสมอกัน สลักล็อกงาอยู่ครบ เสาเลื่อนขึ้น-ลงราบเรียบ'],
+    ['ระบบเสาและอุปกรณ์ยก', '7. สภาพโซ่', 'โซ่ยกตึงเท่ากันทั้งสองข้าง ไม่หย่อน ข้อต่อโซ่ไม่บิดเบี้ยวหรือตาย มีการหล่อลื่นเหมาะสม'],
+    ['ระบบเบรค', '8. ระดับน้ำมันเบรคและคลัตช์', 'ระดับน้ำมันในกระปุกอยู่ในเกณฑ์ที่กำหนด กระปุกไม่แตกร้าว ไม่มีคราบน้ำมันรั่วซึม'],
+    ['ระบบเบรค', '9. ระบบเบรค', 'เบรคเท้ากดแล้วหน่วงหยุดได้ดี ไม่จมมิด เบรคมือ/เบรกล็อกล้อทำงานสมบูรณ์ ล็อกรถอยู่สนิท'],
+    ['ระบบบังคับเลี้ยวและล้อ', '10. สภาพล้อและยาง', 'หน้ายางไม่ฉีกขาด ไม่มีเศษหิน/โลหะฝัง น็อตล้อขันแน่นครบทุกตัว กระทะล้อไม่บิดเบี้ยว'],
+    ['ระบบบังคับเลี้ยวและล้อ', '11. พวงมาลัย', 'บังคับเลี้ยวได้ราบเรียบ ระยะฟรีพวงมาลัยเหมาะสม ลูกบิดพวงมาลัยแน่นหนา ไม่มีเสียงดัง'],
+    ['ระบบไฟสัญญาณและอุปกรณ์ความปลอดภัย', '12. ระบบไฟสัญญาณและแตร', 'ไฟหน้า ไฟท้าย ไฟถอย ไฟฉุกเฉิน และแตรทำงานติดครบทุกฟังก์ชัน เสียงดังชัดเจน'],
+    ['ระบบไฟสัญญาณและอุปกรณ์ความปลอดภัย', '13. กระจกมองข้าง', 'กระจกซ้าย-ขวาไม่แตกหรือมัว ปรับมุมมองเห็นด้านหลังได้ชัดเจน ขาจับแน่นไม่สั่นคลอน'],
+    ['ระบบไฟสัญญาณและอุปกรณ์ความปลอดภัย', '14. เข็มขัดนิรภัย', 'สายเข็มขัดไม่ฉีกขาด กลไกดึงล็อกกระตุกทำงานดี หัวล็อกแน่นไม่หลุดเอง'],
     ['ระบบเชื้อเพลิง LPG', '15. สภาพถังก๊าซ', 'ต้องไม่มีร่องรอยบุบ แตก สนิม หรือความเสียหายของถังก๊าซ'],
     ['ระบบเชื้อเพลิง LPG', '16. การยึดถังก๊าซ', 'ถังอยู่ในตำแหน่งที่ถูกต้องและอุปกรณ์ยึดถังอยู่ในสภาพสมบูรณ์'],
     ['ระบบเชื้อเพลิง LPG', '17. สภาพสายส่งก๊าซ', 'ต้องไม่มีรอยแตกร้าว ฉีกขาด บิดงอ หรือเสื่อมสภาพของสาย'],
@@ -938,20 +1015,20 @@ const SEED_INSPECT_FORKLIFT = {
   ],
 
   engine: [
-    ['ห้องเครื่องยนต์', '1.ระดับน้ำมันเครื่อง', 'ดึงก้านวัดขณะดับเครื่อง ระดับอยู่ระหว่างขีด Min-Max น้ำมันไม่ดำข้นเหนียวหรือมีตะกอน'],
-    ['ระบบระบายความร้อน', '2.ระดับน้ำหม้อพักน้ำ', 'ระดับน้ำยาหล่อเย็นอยู่ในระดับ Full/Max ฝาปิดแน่นสนิท ครีบหม้อน้ำไม่อุดตัน ไม่มีรอยรั่ว'],
-    ['ระบบเบรคและควบคุม', '3.ระดับน้ำมันเบรค + ครัช', 'ระดับน้ำมันในกระปุกอยู่ในเกณฑ์ที่กำหนด กระปุกไม่แตกร้าว ไม่มีคราบน้ำมันรั่วซึม'],
-    ['ระบบไฟฟ้าและแบตเตอรี่', '4.ระดับน้ำกลั่น', 'น้ำกลั่นท่วมแผ่นธาตุทุกช่อง ฝาจุกปิดสนิท ขั้วแน่น ไม่มีคราบขี้เกลือเกาะหนา'],
-    ['ระบบไฮดรอลิค', '5.ระดับน้ำมันไฮดรอลิค', 'ตรวจเช็คขณะวางงาแนบพื้นราบ ระดับน้ำมันอยู่ในเกณฑ์ตาแมว/ก้านวัด สีน้ำมันใสไม่ขุ่น'],
-    ['เสาและชุดยก', '6.เสาและงา', 'งาทั้งสองข้างไม่คดงอหรือแตกร้าว ปลายงาเสมอกัน สลักล็อกงาอยู่ครบ เสาเลื่อนขึ้น-ลงราบเรียบ'],
-    ['ช่วงล่างและล้อ', '7.สภาพล้อ + ยาง', 'หน้ายางไม่ฉีกขาด ไม่มีเศษหิน/โลหะฝัง น็อตล้อขันแน่นครบทุกตัว กระทะล้อไม่บิดเบี้ยว'],
-    ['ระบบไฮดรอลิค', '8.สภาพสายไฮดรอลิค', 'สายไฮดรอลิคไม่บวม ไม่แตกลายงา ไม่มีรอยเสียดสี ข้อต่อท่อไม่มีน้ำมันซึมออกมา'],
-    ['ระบบความปลอดภัย', '9.ระบบไฟสัญญาณ + แตร', 'ไฟหน้า ไฟท้าย ไฟถอย ไฟฉุกเฉิน และแตรทำงานติดครบทุกฟังก์ชัน เสียงดังชัดเจน'],
-    ['ระบบเบรคและควบคุม', '10.ระบบเบรค', 'เบรคเท้ากดแล้วหน่วงหยุดได้ดี ไม่จมมิด เบรคมือ/เบรกล็อกล้อทำงานสมบูรณ์ ล็อกรถอยู่สนิท'],
-    ['ทัศนวิสัย', '11.กระจกมองข้าง', 'กระจกซ้าย-ขวาไม่แตกหรือมัว ปรับมุมมองเห็นด้านหลังได้ชัดเจน ขาจับแน่นไม่สั่นคลอน'],
-    ['ระบบเบรคและควบคุม', '12.พวงมาลัย', 'บังคับเลี้ยวได้ราบเรียบ ระยะฟรีพวงมาลัยเหมาะสม ลูกบิดพวงมาลัยแน่นหนา ไม่มีเสียงดัง'],
-    ['ระบบความปลอดภัย', '13.เข็มขัดนิรภัย', 'สายเข็มขัดไม่ฉีกขาด กลไกดึงล็อกกระตุกทำงานดี หัวล็อกแน่นไม่หลุดเอง'],
-    ['เสาและชุดยก', '14.สภาพโซ่', 'โซ่ยกตึงเท่ากันทั้งสองข้าง ไม่หย่อน ข้อต่อโซ่ไม่บิดเบี้ยวหรือตาย มีการหล่อลื่นเหมาะสม']
+    ['ระบบเครื่องยนต์และระบายความร้อน', '1. ระดับน้ำมันเครื่อง', 'ดึงก้านวัดขณะดับเครื่อง ระดับอยู่ระหว่างขีด Min-Max น้ำมันไม่ดำข้นเหนียวหรือมีตะกอน'],
+    ['ระบบเครื่องยนต์และระบายความร้อน', '2. ระดับน้ำหม้อพักน้ำ', 'ระดับน้ำยาหล่อเย็นอยู่ในระดับ Full/Max ฝาปิดแน่นสนิท ครีบหม้อน้ำไม่อุดตัน ไม่มีรอยรั่ว'],
+    ['ระบบแบตเตอรี่', '3. แบตเตอรี่', 'ไม่มีรอยแตกร้าว บวม หรือความเสียหายของตัวแบตเตอรี่ ไม่มีคราบขี้เกลือ'],
+    ['ระบบไฮดรอลิก', '4. ระดับน้ำมันไฮดรอลิก', 'ตรวจเช็คขณะวางงาแนบพื้นราบ ระดับน้ำมันอยู่ในเกณฑ์ตาแมว/ก้านวัด สีน้ำมันใสไม่ขุ่น'],
+    ['ระบบไฮดรอลิก', '5. สภาพสายไฮดรอลิก', 'สายไฮดรอลิคไม่บวม ไม่แตกลายงา ไม่มีรอยเสียดสี ข้อต่อท่อไม่มีน้ำมันซึมออกมา'],
+    ['ระบบเสาและอุปกรณ์ยก', '6. เสาและงา', 'งาทั้งสองข้างไม่คดงอหรือแตกร้าว ปลายงาเสมอกัน สลักล็อกงาอยู่ครบ เสาเลื่อนขึ้น-ลงราบเรียบ'],
+    ['ระบบเสาและอุปกรณ์ยก', '7. สภาพโซ่', 'โซ่ยกตึงเท่ากันทั้งสองข้าง ไม่หย่อน ข้อต่อโซ่ไม่บิดเบี้ยวหรือตาย มีการหล่อลื่นเหมาะสม'],
+    ['ระบบเบรค', '8. ระดับน้ำมันเบรคและคลัตช์', 'ระดับน้ำมันในกระปุกอยู่ในเกณฑ์ที่กำหนด กระปุกไม่แตกร้าว ไม่มีคราบน้ำมันรั่วซึม'],
+    ['ระบบเบรค', '9. ระบบเบรค', 'เบรคเท้ากดแล้วหน่วงหยุดได้ดี ไม่จมมิด เบรคมือ/เบรกล็อกล้อทำงานสมบูรณ์ ล็อกรถอยู่สนิท'],
+    ['ระบบบังคับเลี้ยวและล้อ', '10. สภาพล้อและยาง', 'หน้ายางไม่ฉีกขาด ไม่มีเศษหิน/โลหะฝัง น็อตล้อขันแน่นครบทุกตัว กระทะล้อไม่บิดเบี้ยว'],
+    ['ระบบบังคับเลี้ยวและล้อ', '11. พวงมาลัย', 'บังคับเลี้ยวได้ราบเรียบ ระยะฟรีพวงมาลัยเหมาะสม ลูกบิดพวงมาลัยแน่นหนา ไม่มีเสียงดัง'],
+    ['ระบบไฟสัญญาณและอุปกรณ์ความปลอดภัย', '12. ระบบไฟสัญญาณและแตร', 'ไฟหน้า ไฟท้าย ไฟถอย ไฟฉุกเฉิน และแตรทำงานติดครบทุกฟังก์ชัน เสียงดังชัดเจน'],
+    ['ระบบไฟสัญญาณและอุปกรณ์ความปลอดภัย', '13. กระจกมองข้าง', 'กระจกซ้าย-ขวาไม่แตกหรือมัว ปรับมุมมองเห็นด้านหลังได้ชัดเจน ขาจับแน่นไม่สั่นคลอน'],
+    ['ระบบไฟสัญญาณและอุปกรณ์ความปลอดภัย', '14. เข็มขัดนิรภัย', 'สายเข็มขัดไม่ฉีกขาด กลไกดึงล็อกกระตุกทำงานดี หัวล็อกแน่นไม่หลุดเอง']
   ],
 
   reach_truck: [
@@ -968,16 +1045,16 @@ const SEED_INSPECT_FORKLIFT = {
   ],
 
   walkie_stacker: [
-    ['ระบบแบตเตอรี่และการชาร์จไฟ', '1. ระดับน้ำกลั่นแบตเตอร์รี่', 'ลูกลอยวัดระดับน้ำกลั่นลอยปกติ อยู่ระหว่างค่า Max-Min (หรือระดับไฟแบตเตอรี่พร้อมใช้งาน)'],
-    ['ระบบแบตเตอรี่และการชาร์จไฟ', '2. ขั้วแบตเตอร์รี่', 'ขั้วต่อแน่น สะอาด ปราศจากคราบขี้เกลือสะสม สายไฟไม่ชำรุดหรือมีรอยไหม้'],
-    ['ระบบแบตเตอรี่และการชาร์จไฟ', '3. ปลั๊กชาร์จไฟ', 'หัวปลั๊ก (Connector) ไม่แตกร้าว ขั้วทองแดงไม่ไหม้เกรียม เสียบต่อแน่นหนา'],
-    ['ระบบควบคุมและความปลอดภัย', '4. ปุ่มสวิตช์ถอยฉุกเฉินกันชน (Belly Button)', 'สวิตช์ที่หัวคันบังคับทำงานปกติ กดแล้วตัวรถต้องตัดการเดินหน้าและถอยหลังทันที ไม่ติดขัด'],
-    ['ระบบควบคุมและความปลอดภัย', '5. ปุ่มหยุดฉุกเฉิน (Emergency Stop)', 'กดปุ่มตัดกระแสไฟฉุกเฉินแล้วระบบตัดการทำงานทันที ปลดล็อกหมุนเด้งได้ราบรื่น'],
-    ['ระบบควบคุมและความปลอดภัย', '6. คันบังคับเลี้ยวและปุ่มเดินหน้า-ถอยหลัง', 'ด้ามจับมั่นคง สวิตช์ปีกผีเสื้อคืนตำแหน่งกึ่งกลางเมื่อปล่อย การเลี้ยวซ้าย-ขวาคล่องตัว'],
-    ['ระบบเบรค', '7. ระบบเบรค (Dead-man Brake)', 'ปล่อยคันบังคับดีดขึ้นบนสุด หรือกดลงต่ำสุด ตัวรถต้องเบรคและหยุดสนิททันที'],
-    ['ระบบเสาและอุปกรณ์ยก', '8. เสาและงา', 'งาทั้งสองข้างไม่คดงอหรือแตกร้าว ปลายงาเสมอกัน สลักล็อกงาอยู่ครบ เสาเลื่อนขึ้น-ลงราบเรียบ'],
-    ['ระบบเสาและอุปกรณ์ยก', '9. สภาพโซ่', 'ความตึงโซ่ยกต้องเท่ากันทั้ง 2 ข้าง ไม่หย่อน ข้อต่อไม่ตาย มีการหล่อลื่นเหมาะสม'],
-    ['ระบบไฮดรอลิกและล้อ', '10. สภาพล้อและระบบไฮดรอลิก', 'ระดับน้ำมันไฮดรอลิคปกติ สายไม่รั่วซึม ล้อขับและล้อรับน้ำหนักไม่แตกบิ่น ไม่มีเศษวัสดุพันแกนล้อ']
+    ['ระบบแบตเตอรี่และการชาร์จไฟ', '1. ระดับน้ำกลั่นแบตเตอรี่', 'ลูกลอยวัดระดับน้ำกลั่นลอยปกติ อยู่ระหว่างค่า Max-Min (เฉพาะแบตเตอรี่ชนิดที่ต้องเติมน้ำกลั่น)'],
+    ['ระบบแบตเตอรี่และการชาร์จไฟ', '2. ขั้วแบตเตอรี่', 'ต้องสะอาดยึดแน่น ไม่มีร่องรอยการไหม้'],
+    ['ระบบแบตเตอรี่และการชาร์จไฟ', '3. ปลั๊กชาร์จไฟ', 'ต้องอยู่ในสภาพเรียบร้อยไม่แตก'],
+    ['ระบบเสาและอุปกรณ์ยก', '4. เสาและงา', 'ต้องอยู่ในสภาพที่มั่นคงและแข็งแรง'],
+    ['ระบบเสาและอุปกรณ์ยก', '5. สภาพโซ่', 'ความตึงโซ่ต้องเท่ากันทั้ง 2 ข้าง'],
+    ['ระบบล้อและยาง', '6. สภาพล้อ + ยาง', 'ต้องไม่แตกและอยู่ในสภาพที่ใช้งานได้'],
+    ['ระบบไฟสัญญาณและอุปกรณ์เตือน', '7. ระบบไฟสัญญาณ + แตร', 'ไฟต้องติดทุกดวง สัญญาณแตรต้องดัง'],
+    ['ระบบเบรค', '8. ระบบเบรค', 'ต้องใช้งานได้ดีและเบรคต้องอยู่'],
+    ['ระบบควบคุมการขับเคลื่อน', '9. แฮนด์บังคับและปุ่มควบคุมทิศทาง', 'ต้องอยู่ในสภาพสมบูรณ์ ไม่แตกหักหรือหลวม ทำงานได้ตามปกติ'],
+    ['ระบบความปลอดภัย', '10. ปุ่มป้องกันการชน', 'สามารถสั่งให้รถหยุดหรือเคลื่อนที่ออกจากผู้ใช้งานได้ตามปกติ']
   ],
 
   electric: [
@@ -996,94 +1073,94 @@ const SEED_INSPECT_FORKLIFT = {
 
 const SEED_IMG_FORKLIFT = {
   diesel: [
-    'diesel/Forklift-diesel-Engine-oil-level.jpg',
-    'diesel/Forklift-diesel-Coolant-reservoir-level.jpg',
-    'diesel/Forklift-diesel-Brake-and-clutch-fluid-level.jpg',
-    'diesel/Forklift-diesel-battery.jpg',
-    'diesel/Forklift-diesel-Hydraulic-oil-level.jpg',
-    'diesel/Forklift-diesel-Mast-and-forks.jpg',
-    'diesel/Forklift-diesel-Condition-of-wheels-and-tires.jpg',
-    'diesel/Forklift-diesel-Condition-of-the-hydraulic-hose.jpg',
-    'diesel/Forklift-diesel-Signal-lights-and-horn.jpg',
-    'diesel/Forklift-diesel-Brake-system.jpg',
-    'diesel/Forklift-diesel-Side-view-mirror.jpg',
-    'diesel/Forklift-diesel-steering-wheel.jpg',
-    'diesel/Forklift-diesel-Seat-belt.jpg',
-    'diesel/Forklift-diesel-Chain-condition.jpg'
+    'Forklift-diesel/Forklift-diesel-Engine-oil-level.jpg',
+    'Forklift-diesel/Forklift-diesel-Coolant-reservoir-level.jpg',
+    'Forklift-diesel/Forklift-diesel-battery.jpg',
+    'Forklift-diesel/Forklift-diesel-Hydraulic-oil-level.jpg',
+    'Forklift-diesel/Forklift-diesel-Condition-of-the-hydraulic-hose.jpg',
+    'Forklift-diesel/Forklift-diesel-Mast-and-forks.jpg',
+    'Forklift-diesel/Forklift-diesel-Chain-condition.jpg',
+    'Forklift-diesel/Forklift-diesel-Brake-and-clutch-fluid-level.jpg',
+    'Forklift-diesel/Forklift-diesel-Brake-system.jpg',
+    'Forklift-diesel/Forklift-diesel-Condition-of-wheels-and-tires.jpg',
+    'Forklift-diesel/Forklift-diesel-steering-wheel.jpg',
+    'Forklift-diesel/Forklift-diesel-Signal-lights-and-horn.jpg',
+    'Forklift-diesel/Forklift-diesel-Side-view-mirror.jpg',
+    'Forklift-diesel/Forklift-diesel-Seat-belt.jpg'
   ],
   'petrol+LPG': [
-    'petrol+LPG/Forklift-petrol+LPG-Engine-oil-level.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Coolant-reservoir-level.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Brake-and-clutch-fluid-level.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-battery.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Hydraulic-oil-level.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Mast-and-forks.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Wheels-and-tires.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Condition-of-the-hydraulic-hose.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Signal-and-horn.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Brake-system.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Side-view-mirror.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-steering-wheel.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Seat-belt.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Chain-condition.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Gas.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Securing-gas.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Gas-pipeline.jpg',
-    'petrol+LPG/Gas-fittings-and-connection.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Gas-leakage.jpg',
-    'petrol+LPG/Forklift-petrol+LPG-Gas-level-gauge.jpg'
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Engine-oil-level.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Coolant-reservoir-level.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-battery.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Hydraulic-oil-level.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Condition-of-the-hydraulic-hose.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Mast-and-forks.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Chain-condition.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Brake-and-clutch-fluid-level.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Brake-system.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Wheels-and-tires.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-steering-wheel.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Signal-and-horn.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Side-view-mirror.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Seat-belt.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Gas.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Securing-gas.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Gas-pipeline.jpg',
+    'Forklift-petrol+LPG/Gas-fittings-and-connection.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Gas-leakage.jpg',
+    'Forklift-petrol+LPG/Forklift-petrol+LPG-Gas-level-gauge.jpg'
   ],
   engine: [
-    'diesel/Forklift-diesel-Engine-oil-level.jpg',
-    'diesel/Forklift-diesel-Coolant-reservoir-level.jpg',
-    'diesel/Forklift-diesel-Brake-and-clutch-fluid-level.jpg',
-    'diesel/Forklift-diesel-battery.jpg',
-    'diesel/Forklift-diesel-Hydraulic-oil-level.jpg',
-    'diesel/Forklift-diesel-Mast-and-forks.jpg',
-    'diesel/Forklift-diesel-Condition-of-wheels-and-tires.jpg',
-    'diesel/Forklift-diesel-Condition-of-the-hydraulic-hose.jpg',
-    'diesel/Forklift-diesel-Signal-lights-and-horn.jpg',
-    'diesel/Forklift-diesel-Brake-system.jpg',
-    'diesel/Forklift-diesel-Side-view-mirror.jpg',
-    'diesel/Forklift-diesel-steering-wheel.jpg',
-    'diesel/Forklift-diesel-Seat-belt.jpg',
-    'diesel/Forklift-diesel-Chain-condition.jpg'
+    'Forklift-diesel/Forklift-diesel-Engine-oil-level.jpg',
+    'Forklift-diesel/Forklift-diesel-Coolant-reservoir-level.jpg',
+    'Forklift-diesel/Forklift-diesel-battery.jpg',
+    'Forklift-diesel/Forklift-diesel-Hydraulic-oil-level.jpg',
+    'Forklift-diesel/Forklift-diesel-Condition-of-the-hydraulic-hose.jpg',
+    'Forklift-diesel/Forklift-diesel-Mast-and-forks.jpg',
+    'Forklift-diesel/Forklift-diesel-Chain-condition.jpg',
+    'Forklift-diesel/Forklift-diesel-Brake-and-clutch-fluid-level.jpg',
+    'Forklift-diesel/Forklift-diesel-Brake-system.jpg',
+    'Forklift-diesel/Forklift-diesel-Condition-of-wheels-and-tires.jpg',
+    'Forklift-diesel/Forklift-diesel-steering-wheel.jpg',
+    'Forklift-diesel/Forklift-diesel-Signal-lights-and-horn.jpg',
+    'Forklift-diesel/Forklift-diesel-Side-view-mirror.jpg',
+    'Forklift-diesel/Forklift-diesel-Seat-belt.jpg'
   ],
   reach_truck: [
-    'electric/electric-battery-water.jpg', 
-    'electric/electric-battery-terminal.jpg', 
-    'electric/electric-charge-plug.jpg', 
-    'electric/electric-mast-forks.jpg', 
-    'electric/electric-chain.jpg',
-    'electric/electric-wheel-tire.jpg', 
-    'electric/electric-hydraulic-oil.jpg', 
-    'electric/electric-hydraulic-hose.jpg', 
-    'electric/electric-lights-horn.jpg', 
-    'electric/electric-brake.jpg'
+    'Electric-Reach-Truck/electric-battery-water.jpg',
+    'Electric-Reach-Truck/electric-battery-terminal.jpg',
+    'Electric-Reach-Truck/electric-charge-plug.jpg',
+    'Electric-Reach-Truck/electric-mast-forks.jpg',
+    'Electric-Reach-Truck/electric-chain.jpg',
+    'Electric-Reach-Truck/electric-wheel-tire.jpg',
+    'Electric-Reach-Truck/electric-hydraulic-oil.jpg',
+    'Electric-Reach-Truck/electric-hydraulic-hose.jpg',
+    'Electric-Reach-Truck/electric-lights-horn.jpg',
+    'Electric-Reach-Truck/electric-brake.jpg'
   ],
   walkie_stacker: [
-    'electric/electric-battery-water.jpg', 
-    'electric/electric-battery-terminal.jpg', 
-    'electric/electric-charge-plug.jpg', 
-    'electric/electric-lights-horn.jpg',
-    'electric/electric-lights-horn.jpg',
-    'electric/electric-brake.jpg', 
-    'electric/electric-brake.jpg', 
-    'electric/electric-mast-forks.jpg', 
-    'electric/electric-chain.jpg',
-    'electric/electric-wheel-tire.jpg'
+    'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Distilled-water-level-battery.jpg',
+    'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Battery-terminal.jpg',
+    'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Charging-plug.jpg',
+    'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Forks.jpg',
+    'Electric-Walkie-stacker/Electric-Walkie-stacker-v.2/chain.jpg',
+    'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Wheels+Tires.jpg',
+    'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Signal lights+horn.jpg',
+    'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Brake-system.jpg',
+    'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Forward–reverse-control-button.jpg',
+    'Electric-Walkie-stacker/Electric-Walkie-stacker-v.1/Anti-collision-button.jpg'
   ],
   electric: [
-    'electric/electric-battery-water.jpg', 
-    'electric/electric-battery-terminal.jpg', 
-    'electric/electric-charge-plug.jpg', 
-    'electric/electric-mast-forks.jpg', 
-    'electric/electric-chain.jpg',
-    'electric/electric-wheel-tire.jpg', 
-    'electric/electric-hydraulic-oil.jpg', 
-    'electric/electric-hydraulic-hose.jpg', 
-    'electric/electric-lights-horn.jpg', 
-    'electric/electric-brake.jpg'
+    'Electric-Reach-Truck/electric-battery-water.jpg',
+    'Electric-Reach-Truck/electric-battery-terminal.jpg',
+    'Electric-Reach-Truck/electric-charge-plug.jpg',
+    'Electric-Reach-Truck/electric-mast-forks.jpg',
+    'Electric-Reach-Truck/electric-chain.jpg',
+    'Electric-Reach-Truck/electric-wheel-tire.jpg',
+    'Electric-Reach-Truck/electric-hydraulic-oil.jpg',
+    'Electric-Reach-Truck/electric-hydraulic-hose.jpg',
+    'Electric-Reach-Truck/electric-lights-horn.jpg',
+    'Electric-Reach-Truck/electric-brake.jpg'
   ]
 };
 
@@ -1251,4 +1328,69 @@ function checkData() {
   const msg = issues.length ? 'พบ ' + issues.length + ' ประเด็น:\n- ' + issues.join('\n- ') : 'ข้อมูลถูกต้องสมบูรณ์';
   Logger.log(msg);
   return issues;
+}
+
+function populateChecklistImages() {
+  const clSh = sheet_(SH.CL);
+  if (!clSh) throw new Error('ไม่พบชีต ' + SH.CL);
+  const fls = rows_(SH.FL);
+  const flMap = {};
+  fls.forEach(m => { flMap[m.Forklift_ID] = subtypeOf_(m); });
+
+  const lastRow = clSh.getLastRow();
+  if (lastRow < 2) return 'ไม่มีข้อมูลใน Checklist';
+  const data = clSh.getRange(2, 1, lastRow - 1, 6).getValues();
+  let updatedCount = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    const flId = s_(data[i][1]);
+    const point = s_(data[i][3]);
+    const curImg = s_(data[i][5]);
+    const sub = flMap[flId] || 'diesel';
+    const newImg = resolveItemImage_(sub, point);
+
+    if (newImg && (!curImg || curImg !== newImg)) {
+      data[i][5] = newImg;
+      updatedCount++;
+    }
+  }
+
+  if (updatedCount > 0) {
+    clSh.getRange(2, 6, data.length, 1).setValues(data.map(r => [r[5]]));
+  }
+  const msg = 'อัปเดตไฟล์รูปใน Checklist สำเร็จ: ' + updatedCount + ' รายการ';
+  Logger.log(msg);
+  return msg;
+}
+
+function syncCleaningTasks() {
+  const cnSh = sheet_(SH.CLN);
+  if (!cnSh) throw new Error('ไม่พบชีต ' + SH.CLN);
+  const fls = rows_(SH.FL);
+  const rows = [];
+  fls.forEach(m => {
+    SEED_CLEAN_FORKLIFT.forEach((c, idx) => {
+      rows.push([
+        m.Forklift_ID + '-CLN-' + String(idx + 1).padStart(2, '0'),
+        m.Forklift_ID,
+        c[0],
+        c[1],
+        c[2],
+        c[3]
+      ]);
+    });
+  });
+
+  if (cnSh.getLastRow() > 1) {
+    cnSh.deleteRows(2, cnSh.getLastRow() - 1);
+  }
+  if (rows.length) {
+    if (cnSh.getMaxRows() < rows.length + 1) {
+      cnSh.insertRowsAfter(cnSh.getMaxRows(), rows.length + 1 - cnSh.getMaxRows());
+    }
+    cnSh.getRange(2, 1, rows.length, 6).setValues(rows);
+  }
+  const msg = 'ซิงค์รายการทำความสะอาดสำหรับรถทั้งหมด ' + fls.length + ' คัน (' + rows.length + ' งาน) สำเร็จ';
+  Logger.log(msg);
+  return msg;
 }

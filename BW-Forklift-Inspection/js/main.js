@@ -1,4 +1,3 @@
-/* js/main.js — จุดเริ่มต้น: นำทาง, event, เปลี่ยนภาษา, PWA install, service worker */
 function show(v) {
   ['Login', 'Form', 'Dash'].forEach(x => {
     const el = $('v' + x);

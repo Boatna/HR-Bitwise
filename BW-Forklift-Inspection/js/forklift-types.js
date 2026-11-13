@@ -37,10 +37,10 @@ const model3dOf = m => {
 };
 const isElecForklift = m => ['electric_cb', 'reach_truck', 'walkie_stacker'].includes(model3dOf(m));
 const FORKLIFT_3D_META = {
-  diesel: { family:'รถเครื่องยนต์สันดาป', title:'Counterbalance · Diesel', thai:'โฟล์คลิฟท์เครื่องยนต์ดีเซล', detail:'ถ่วงน้ำหนักท้ายสีส้ม · ฝาครอบเบาะสีเทา · เสายกด้านหน้า', color:0xe8561a },
-  'petrol+LPG': { family:'รถเครื่องยนต์สันดาป', title:'Counterbalance · Petrol / LPG', thai:'โฟล์คลิฟท์เบนซิน / LPG', detail:'ถังแก๊ส LPG หลังเบาะ · ถ่วงน้ำหนักท้ายสีส้ม · เสายกด้านหน้า', color:0xe8561a },
-  electric_cb: { family:'รถไฟฟ้า', title:'Counterbalance · Electric', thai:'โฟล์คลิฟท์ไฟฟ้าแบบนั่งขับ', detail:'แบตเตอรี่ไฟฟ้า · แบบนั่งขับ · เสายกด้านหน้า', color:0x1686c9 },
-  reach_truck: { family:'รถไฟฟ้า', title:'Reach Truck', thai:'รถรีชทรัคไฟฟ้า', detail:'ตัวถังแดง · ขาค้ำยาวด้านหน้า · หลังคาแบนเทา', color:0xe0261b },
-  walkie_stacker: { family:'รถไฟฟ้า', title:'Walkie Stacker', thai:'รถแฮนด์พาเลทไฟฟ้าแบบยกสูง', detail:'ตัวถังเหลือง · คันบังคับ · แท่นยืนพับได้ · ชุดยกด้านหน้า', color:0xf2b705 }
+  diesel: { family:'รถเครื่องยนต์สันดาป', title:'Counterbalance · Toyota 2.5t', thai:'โฟล์คลิฟท์เครื่องยนต์ดีเซล (Toyota 2.5 ตัน)', detail:'ตัวถังส้ม-เทา · เสาดำติดโลโก้ Toyota · กระทะล้อเงินเจาะรู', color:0xe05020 },
+  'petrol+LPG': { family:'รถเครื่องยนต์สันดาป', title:'Counterbalance · Toyota 2.5t (LPG)', thai:'โฟล์คลิฟท์เบนซิน / LPG (Toyota 2.5 ตัน)', detail:'ถังแก๊สเขียวแนวนอน · ตัวถังส้ม-เทา · เสาดำติดโลโก้ Toyota', color:0xe05020 },
+  electric_cb: { family:'รถไฟฟ้า', title:'Counterbalance · Electric 2t', thai:'โฟล์คลิฟท์ไฟฟ้าแบบนั่งขับ (Toyota 2 ตัน)', detail:'แบตเตอรี่ไฟฟ้า · แบบนั่งขับ · ตัวถังส้ม-เทา · เสายกด้านหน้า', color:0xe05020 },
+  reach_truck: { family:'รถไฟฟ้า', title:'Reach Truck · MAXUP 20', thai:'รถรีชทรัคไฟฟ้า (MAXUP 2.0 ตัน)', detail:'ตัวถังแดง MAXUP · ขาค้ำยาวด้านหน้า · ล้อโพลียูรีเทน · ช่องระบายข้างตัวถัง', color:0xcc1824 },
+  walkie_stacker: { family:'รถไฟฟ้า', title:'Walkie Stacker · T\'Shandlift', thai:'รถยก/ลากพาเลทไฟฟ้า (CBD30-460)', detail:'ตัวถังเหลือง T\'Shandlift · แท่นยืนพับได้ · แขนกันตกพร้อมเบาะรอง · ปุ่มถอยฉุกเฉินแดง', color:0xf59e0b }
 };
 const forklift3DMeta = m => FORKLIFT_3D_META[model3dOf(m)] || FORKLIFT_3D_META.diesel;

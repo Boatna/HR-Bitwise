@@ -69,7 +69,7 @@ async function loadDash() {
       <tr>
         <td>${esc(x.t)}</td>
         <td>${esc(x.by)}</td>
-        <td><b>${esc(_tr(x.forklift))}</b></td>
+        <td><b>${esc(x.forkliftId || '')}</b>${x.forkliftId ? '<br>' : ''}<span style="font-size:12px;color:var(--mute)">${esc(_tr(x.forklift))}</span></td>
         <td>${tag(x.status)}</td>
         <td>${x.ng ? `<b style="color:var(--ng)">[${esc(x.ng)}]</b> ` : ''}${esc(x.note || '-')}</td>
       </tr>`).join('') : `

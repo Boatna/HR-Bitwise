@@ -63,9 +63,9 @@ function internalKeys(elec, sub) {
 
 function partKeyFor(it, elec) {
   const t = (it && it.point) || '';
-  if (/belly|ฉุกเฉินกันชน|กันชน/i.test(t)) return 'bellyButton';
+  if (/belly|ป้องกันการชน|ฉุกเฉินกันชน|กันชน/i.test(t)) return 'bellyButton';
   if (/หยุดฉุกเฉิน|emergency.*stop/i.test(t)) return 'emergencyStop';
-  if (/คันบังคับ|ด้ามจับ|ปุ่มเดินหน้า|tiller/i.test(t)) return 'tiller';
+  if (/คันบังคับ|ด้ามจับ|ปุ่มเดินหน้า|แฮนด์|ปุ่มควบคุม|tiller/i.test(t)) return 'tiller';
   if (/dead-?man/i.test(t)) return 'tillerBrake';
   if (/ขั้วแบต/.test(t)) return 'terminals';
   if (/ปลั๊ก|ชาร์จ/.test(t)) return 'chargePlug';

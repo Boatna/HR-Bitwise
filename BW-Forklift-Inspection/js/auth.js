@@ -1,4 +1,3 @@
-/* js/auth.js — หน้าเข้าสู่ระบบ: PIN, เลือกชื่อ/แผนก, login/logout */
 function loginMsg(text, isError) {
   const el = $('loginErr');
   el.style.color = isError ? 'var(--ng)' : 'var(--navy)';

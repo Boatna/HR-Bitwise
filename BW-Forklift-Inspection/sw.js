@@ -1,4 +1,4 @@
-const VERSION = 'fl-v16';
+const VERSION = 'fl-v17';
 const NET_TIMEOUT_MS = 5000;
 const APP_CACHE = 'app-' + VERSION;
 const CDN_CACHE = 'cdn-' + VERSION;
