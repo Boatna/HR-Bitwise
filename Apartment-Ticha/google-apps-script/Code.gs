@@ -6,7 +6,9 @@ const SHEETS = {
   PARKING: 'Parking',
   ASSETS: 'Assets',
   SETTINGS: 'Settings',
-  AUDIT_LOG: 'AuditLog'
+  AUDIT_LOG: 'AuditLog',
+  METER_READINGS: 'MeterReadings',
+  BILLS: 'Bills'
 };
 
 const TZ = 'Asia/Bangkok';
@@ -20,16 +22,24 @@ const SHEET_HEADERS = {
   Parking: ['SlotID', 'SlotNumber', 'Zone', 'VehicleType', 'Status', 'EmployeeID', 'RoomID', 'LicensePlate', 'VehicleModel', 'AssignedDate', 'Remark', 'CreatedAt', 'UpdatedAt'],
   Assets: ['AssetID', 'RoomID', 'AssetName', 'AssetCode', 'Category', 'Quantity', 'Status', 'Condition', 'Remark', 'CreatedAt', 'UpdatedAt'],
   Settings: ['Key', 'Value'],
-  AuditLog: ['LogID', 'Timestamp', 'UserEmail', 'Action', 'Module', 'RecordID', 'Remark']
+  AuditLog: ['LogID', 'Timestamp', 'UserEmail', 'Action', 'Module', 'RecordID', 'Remark'],
+  MeterReadings: ['ReadingID', 'RoomID', 'Period', 'ElecPrev', 'ElecCurr', 'ElecUnits', 'ElecRollover', 'WaterPrev', 'WaterCurr', 'WaterUnits', 'WaterRollover', 'ReadDate', 'Remark', 'Status', 'ReadBy', 'CreatedAt', 'UpdatedAt'],
+  Bills: ['BillID', 'BillNo', 'ReceiptNo', 'Period', 'RoomID', 'RoomNumber', 'BuildingName', 'TenantNames', 'TenantCount',
+    'ElecPrev', 'ElecCurr', 'ElecUnits', 'ElecRate', 'ElecAmount', 'WaterPrev', 'WaterCurr', 'WaterUnits', 'WaterRate', 'WaterAmount',
+    'RoomRent', 'OtherFee', 'OtherFeeNote', 'Discount', 'VatRate', 'VatAmount', 'TotalAmount',
+    'IssueDate', 'DueDate', 'Status', 'PaidDate', 'PayMethod', 'PayerName', 'VoidedReceipts', 'Remark', 'CreatedAt', 'UpdatedAt']
 };
 
 // คอลัมน์ที่ต้องเก็บเป็นข้อความเสมอ (กันเบอร์โทร/รหัสที่ขึ้นต้นด้วย 0 ถูกแปลงเป็นตัวเลข)
 const TEXT_COLUMNS_ = ['EmployeeID', 'Phone', 'LicensePlate', 'RoomNumber', 'SlotNumber', 'BuildingCode', 'AssetID', 'AssetCode',
-  'CheckInDate', 'ExpectedCheckOutDate', 'ActualCheckOutDate', 'AssignedDate', 'CreatedAt', 'UpdatedAt', 'Timestamp'];
+  'CheckInDate', 'ExpectedCheckOutDate', 'ActualCheckOutDate', 'AssignedDate', 'CreatedAt', 'UpdatedAt', 'Timestamp',
+  // v2.4.1: งวดบิล (เช่น 2026-11) ถ้าไม่เป็นข้อความ Sheets จะแปลงเป็นวันที่ / เลขที่เอกสาร / ค่า Settings (เช่น เลขผู้เสียภาษีขึ้นต้น 0)
+  'Period', 'BillID', 'BillNo', 'ReceiptNo', 'ReadingID', 'IssueDate', 'DueDate', 'PaidDate', 'VoidedReceipts', 'Key', 'Value'];
 
 // คอลัมน์ที่ต้องแปลงเป็น String เสมอตอนอ่านจาก Sheets
 const STRING_ON_READ_ = ['EmployeeID', 'Phone', 'LicensePlate', 'RoomNumber', 'SlotNumber', 'BuildingCode',
-  'RoomID', 'BuildingID', 'SlotID', 'OccupancyID', 'BedID', 'Floor', 'FloorID', 'AssetID', 'AssetCode'];
+  'RoomID', 'BuildingID', 'SlotID', 'OccupancyID', 'BedID', 'Floor', 'FloorID', 'AssetID', 'AssetCode',
+  'Period', 'BillID', 'BillNo', 'ReceiptNo', 'ReadingID', 'Key', 'Value'];
 
 /** รันฟังก์ชันนี้ 1 ครั้งหลังอัปเดตโค้ด เพื่อสร้างแผ่นงานที่ยังไม่มี (เช่น Parking, Assets) โดยไม่ลบข้อมูลเดิม */
 function ensureAllSheets() {
@@ -66,11 +76,46 @@ function ensureAllSheets() {
   });
 }
 
+/**
+ * (เลือกรันครั้งเดียว) ตั้งรูปแบบคอลัมน์รหัส/เบอร์โทร/วันที่ ในชีตเดิมให้เป็นข้อความ (@)
+ * และแปลงรหัสพนักงานที่ถูกเก็บเป็นตัวเลขให้เป็นข้อความ โดยไม่เปลี่ยนค่าที่แสดง
+ */
+function fixTextFormats() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let n = 0;
+  Object.keys(SHEET_HEADERS).forEach(function (name) {
+    const sh = ss.getSheetByName(name);
+    if (!sh || sh.getLastRow() < 1) return;
+    const lastCol = sh.getLastColumn();
+    const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+    headers.forEach(function (h, i) {
+      if (TEXT_COLUMNS_.indexOf(h) === -1) return;
+      const rows = Math.max(sh.getMaxRows() - 1, 1);
+      const rng = sh.getRange(2, i + 1, rows, 1);
+      const lastData = sh.getLastRow() - 1;
+      if (lastData >= 1) {
+        const dataRng = sh.getRange(2, i + 1, lastData, 1);
+        const vals = dataRng.getValues();
+        const out = vals.map(function (r) {
+          const v = r[0];
+          if (typeof v === 'number') { n++; return [String(v)]; }
+          return [v];
+        });
+        rng.setNumberFormat('@');
+        dataRng.setValues(out);
+      } else {
+        rng.setNumberFormat('@');
+      }
+    });
+  });
+  Logger.log('fixTextFormats: แปลงตัวเลขเป็นข้อความ ' + n + ' เซลล์');
+  return n;
+}
+
 // ===================== ENTRY POINTS =====================
 
-const READ_ACTIONS_ = ['getDashboardData', 'getRooms', 'getRoomById', 'getEmployees', 'getBuildings', 'getFloors',
-  'getOccupancy', 'getParking', 'getSettings', 'getAuditLogs', 'getBeds', 'getRoomRequests', 'getRepairRequests',
-  'getMaintenance', 'getRoomAssets', 'getKeys'];
+const READ_ACTIONS_ = ['getDashboardData', 'getRooms', 'getEmployees', 'getBuildings', 'getOccupancy', 'getParking',
+  'getSettings', 'getRoomAssets', 'getMeterSheet', 'getBills'];
 
 function doPost(e) {
   let body = {};
@@ -91,8 +136,9 @@ function doPost(e) {
     return jsonResponse_({ success: false, message: 'รหัสเชื่อมต่อ (API Token) ไม่ถูกต้อง กรุณาตั้งค่าที่หน้า Admin > การตั้งค่า' });
   }
 
-  if (!action || !Object.prototype.hasOwnProperty.call(Actions, action) || typeof Actions[action] !== 'function') {
-    return jsonResponse_({ success: false, message: 'ไม่พบคำสั่ง action "' + action + '" ในระบบ' });
+  const handler = getActionHandler_(action);
+  if (!handler) {
+    return jsonResponse_({ success: false, message: 'ไม่พบคำสั่ง action "' + action + '" ในระบบ (ถ้าเพิ่งอัปเดตโค้ด ให้ Deploy เวอร์ชันใหม่ และตรวจสอบว่าไม่มีไฟล์ Meters.gs ซ้ำอยู่ในโปรเจกต์)' });
   }
 
   const isRead = READ_ACTIONS_.indexOf(action) !== -1;
@@ -106,7 +152,7 @@ function doPost(e) {
   }
 
   try {
-    const result = Actions[action](body, userEmail);
+    const result = handler(body, userEmail);
     return jsonResponse_({ success: true, data: result });
   } catch (err) {
     return jsonResponse_({ success: false, message: err && err.message ? err.message : String(err) });
@@ -115,11 +161,19 @@ function doPost(e) {
   }
 }
 
+/** หา handler จาก Actions แล้วค่อย MeterActions (อยู่ท้ายไฟล์นี้) */
+function getActionHandler_(action) {
+  if (!action || typeof action !== 'string') return null;
+  if (Object.prototype.hasOwnProperty.call(Actions, action) && typeof Actions[action] === 'function') return Actions[action];
+  if (typeof MeterActions !== 'undefined' && Object.prototype.hasOwnProperty.call(MeterActions, action) && typeof MeterActions[action] === 'function') return MeterActions[action];
+  return null;
+}
+
 function doGet(e) {
   return jsonResponse_({
     success: true,
     message: 'Dormitory API is running. (ระบบบริหารหอพักพนักงาน พร้อมระบบจองที่จอดรถ)',
-    version: '2.2-parking'
+    version: '2.5.0'
   });
 }
 
@@ -161,6 +215,8 @@ function sheetToObjects_(name) {
     headers.forEach(function (h, idx) {
       let cv = normalizeCell_(row[idx]);
       if (cv !== '' && cv !== null && STRING_ON_READ_.indexOf(h) !== -1) cv = String(cv).trim();
+      // งวดบิลที่ Sheets แปลงเป็นวันที่ (เช่น 2026-10-01) ให้กลับเป็น yyyy-MM
+      if (h === 'Period' && typeof cv === 'string' && /^\d{4}-\d{2}-\d{2}/.test(cv)) cv = cv.substring(0, 7);
       obj[h] = cv;
     });
     rows.push(obj);
@@ -423,10 +479,8 @@ function computeRoomsData_() {
       floorName: 'ชั้น ' + floorVal,
       roomType: r.RoomType || (capacity === 1 ? 'Single' : (capacity === 2 ? 'Double' : 'Standard')),
       capacity: capacity,
-      gender: 'Any',
       monthlyRate: Number(r.MonthlyRate) || 0,
       hasAirConditioner: hasAirConditioner,
-      hasFurniture: true,
       remark: r.Remark || (hasAirConditioner ? 'เฟอร์นิเจอร์มาตรฐานครบชุด (ห้องแอร์)' : 'เฟอร์นิเจอร์มาตรฐาน (ห้องพัดลม)'),
       computedStatus: computedStatus,
       canCheckIn: (computedStatus === 'Available' || computedStatus === 'Partially Occupied'),
@@ -522,12 +576,6 @@ const Actions = {
       checkOutsByMonth.push(occupancyAll.filter(function (o) { return o.Status === 'CheckedOut' && isSameMonth(o.ActualCheckOutDate, d.getMonth(), d.getFullYear()); }).length);
     }
 
-    const roomTypeCounts = {};
-    rooms.forEach(function (r) {
-      const t = r.roomType || 'Standard';
-      roomTypeCounts[t] = (roomTypeCounts[t] || 0) + 1;
-    });
-
     const totalParking = parkingList.length;
     const occupiedParking = parkingList.filter(function (p) { return p.Status === 'Occupied'; }).length;
     const availableParking = parkingList.filter(function (p) { return p.Status === 'Available'; }).length;
@@ -555,8 +603,7 @@ const Actions = {
         totalOccupants: totalOccupants,
         overallOccupancyRate: overallOccupancyRate,
         newThisMonth: newThisMonth,
-        checkOutThisMonth: checkOutThisMonth,
-        pendingRequestsCount: 0
+        checkOutThisMonth: checkOutThisMonth
       },
       parkingStats: {
         total: totalParking,
@@ -569,8 +616,6 @@ const Actions = {
       },
       buildingStats: buildingStats,
       almostFullRooms: almostFullRooms,
-      recentRequests: [],
-      activeRepairs: [],
       charts: {
         roomStatus: {
           labels: ['ว่าง', 'ว่างบางส่วน', 'เต็ม', 'ปิดปรับปรุง', 'ไม่เปิดใช้งาน'],
@@ -589,10 +634,6 @@ const Actions = {
           labels: monthLabels,
           checkIns: checkInsByMonth,
           checkOuts: checkOutsByMonth
-        },
-        roomTypes: {
-          labels: Object.keys(roomTypeCounts),
-          counts: Object.values(roomTypeCounts)
         }
       }
     };
@@ -600,10 +641,6 @@ const Actions = {
 
   getRooms: function () {
     return computeRoomsData_();
-  },
-
-  getRoomById: function (body) {
-    return computeRoomsData_().find(function (r) { return String(r.roomId) === String(body.roomId); }) || null;
   },
 
   saveRoom: function (body, userEmail) {
@@ -881,18 +918,6 @@ const Actions = {
     }
   },
 
-  getFloors: function () {
-    const rooms = sheetToObjects_(SHEETS.ROOMS).filter(function (r) { return r.Status !== 'Deleted'; });
-    const floorSet = {};
-    rooms.forEach(function (r) {
-      const f = r.Floor || '1';
-      floorSet[f] = true;
-    });
-    return Object.keys(floorSet).sort(function (a, b) { return Number(a) - Number(b) || String(a).localeCompare(String(b)); }).map(function (f) {
-      return { FloorID: f, FloorNumber: f, FloorName: 'ชั้น ' + f };
-    });
-  },
-
   getOccupancy: function () {
     const occ = sheetToObjects_(SHEETS.OCCUPANCY);
     const emps = sheetToObjects_(SHEETS.EMPLOYEES);
@@ -1047,7 +1072,7 @@ const Actions = {
     updateRowById_(SHEETS.OCCUPANCY, 'OccupancyID', d.occupancyId, {
       Status: 'Transferred',
       ActualCheckOutDate: transferDate,
-      Remark: (oldOcc.Remark ? oldOcc.Remark + ' | ' : '') + 'ย้ายไปห้อง ' + (newRoom.RoomNumber || d.newRoomId),
+      Remark: (oldOcc.Remark ? oldOcc.Remark + ' | ' : '') + 'ย้ายไปห้อง ' + (newRoom.RoomNumber || d.newRoomId) + (d.reason ? ' (' + d.reason + ')' : '') + (d.remark ? ' | ' + d.remark : ''),
       UpdatedAt: nowStr_()
     });
 
@@ -1275,7 +1300,19 @@ const Actions = {
   },
 
   saveSettings: function (body, userEmail) {
-    const d = body.data;
+    const d = body.data || {};
+    // ตรวจค่าตั้งค่ามิเตอร์/บิลก่อนบันทึก (กันค่าเพี้ยนทำให้บิลผิด)
+    ['ELEC_RATE', 'WATER_RATE', 'ELEC_MIN_CHARGE', 'WATER_MIN_CHARGE', 'VAT_RATE', 'METER_MAX_ELEC', 'METER_MAX_WATER'].forEach(function (k) {
+      if (d[k] !== undefined && d[k] !== '' && !(isFinite(Number(d[k])) && Number(d[k]) >= 0)) {
+        throw new Error('ค่าตั้งค่า ' + k + ' ต้องเป็นตัวเลขที่ไม่ติดลบ');
+      }
+    });
+    if (d.BILL_DUE_DAY !== undefined && d.BILL_DUE_DAY !== '' && !(Number(d.BILL_DUE_DAY) >= 1 && Number(d.BILL_DUE_DAY) <= 28)) {
+      throw new Error('วันครบกำหนดชำระต้องอยู่ระหว่าง 1 - 28');
+    }
+    if (d.BILL_INCLUDE_RENT !== undefined && ['Yes', 'No'].indexOf(String(d.BILL_INCLUDE_RENT)) === -1) {
+      throw new Error('ค่า BILL_INCLUDE_RENT ต้องเป็น Yes หรือ No');
+    }
     Object.keys(d).forEach(function (key) {
       const existing = findRowObject_(SHEETS.SETTINGS, 'Key', key);
       if (existing) {
@@ -1288,48 +1325,6 @@ const Actions = {
     return d;
   },
 
-  getAuditLogs: function () {
-    return sheetToObjects_(SHEETS.AUDIT_LOG);
-  },
-
-  getBeds: function () {
-    const rooms = computeRoomsData_();
-    const allBeds = [];
-    rooms.forEach(function (r) {
-      (r.beds || []).forEach(function (b) {
-        allBeds.push(Object.assign({}, b, { RoomID: r.roomId }));
-      });
-    });
-    return allBeds;
-  },
-
-  saveBed: function () { return { success: true }; },
-  getRoomRequests: function () { return []; },
-  createRoomRequest: function () { return { success: true }; },
-  updateRequestStatus: function () { return { success: true }; },
-  getRepairRequests: function () { return []; },
-  saveRepairRequest: function () { return { success: true }; },
-  updateRepairStatus: function () { return { success: true }; },
-  getMaintenance: function () {
-    const rooms = computeRoomsData_().filter(function (r) { return r.computedStatus === 'Maintenance'; });
-    return rooms.map(function (r) {
-      return {
-        MaintenanceID: 'MNT-' + r.roomId,
-        RoomID: r.roomNumber,
-        StartDate: '-',
-        ExpectedEndDate: '-',
-        Problem: 'ปิดปรับปรุงห้องพัก',
-        Status: 'InProgress',
-        Technician: '-'
-      };
-    });
-  },
-  saveMaintenance: function (body, userEmail) {
-    return Actions.toggleRoomMaintenance(body, userEmail);
-  },
-  completeMaintenance: function (body, userEmail) {
-    return Actions.toggleRoomMaintenance(body, userEmail);
-  },
   getRoomAssets: function (body) {
     const assets = sheetToObjects_(SHEETS.ASSETS).filter(function (a) { return a.Status !== 'Deleted'; });
     const rooms = sheetToObjects_(SHEETS.ROOMS).filter(function (r) { return r.Status !== 'Deleted'; });
@@ -1422,6 +1417,10 @@ const Actions = {
     if (!roomId) throw new Error('กรุณาระบุรหัสห้องพัก');
     const room = findRowObject_(SHEETS.ROOMS, 'RoomID', roomId);
     if (!room || room.Status === 'Deleted') throw new Error('ไม่พบห้องพัก');
+    const dupDefault = sheetToObjects_(SHEETS.ASSETS).some(function (a) {
+      return a.Status !== 'Deleted' && String(a.RoomID) === String(roomId) && String(a.Remark || '').indexOf('ชุดมาตรฐานประจำห้อง') === 0;
+    });
+    if (dupDefault) throw new Error('ห้อง ' + room.RoomNumber + ' มีชุดครุภัณฑ์มาตรฐานอยู่แล้ว (กันสร้างซ้ำ) หากต้องการสร้างใหม่ให้ลบรายการเดิมก่อน');
     const cap = Math.max(Number(room.Capacity) || 1, 1);
     const rawHasAc = String(room.HasAirConditioner || '').trim().toLowerCase();
     const hasAc = (rawHasAc !== 'no' && rawHasAc !== 'false' && rawHasAc !== 'ไม่มี');
@@ -1454,7 +1453,314 @@ const Actions = {
     });
     logAudit_(userEmail, 'CREATE', 'Assets', roomId, 'เพิ่มชุดครุภัณฑ์มาตรฐาน ' + defaultItems.length + ' รายการให้ห้อง ' + room.RoomNumber);
     return { count: defaultItems.length };
+  }
+};
+
+
+// =====================================================================
+//  โมดูลมิเตอร์น้ำ-ไฟ / บิล / ใบเสร็จ (รวมจาก Meters.gs เดิม — ไม่ต้องมีไฟล์ Meters.gs แยกอีกแล้ว)
+// =====================================================================
+
+// ---------- helper (ตั้งชื่อขึ้นต้น m... กันชนกับ Code.gs) ----------
+function mNum_(v) { const x = Number(v); return isFinite(x) ? x : 0; }
+function mBlank_(v) { return v === '' || v === null || v === undefined; }
+function mRound2_(v) { return Math.round((Number(v) || 0) * 100) / 100; }
+function mPeriodOk_(p) { return /^\d{4}-(0[1-9]|1[0-2])$/.test(String(p || '')); }
+function mDateOk_(d) { return /^\d{4}-\d{2}-\d{2}$/.test(String(d || '')); }
+function mTodayStr_() { return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'); }
+
+/** รหัสงวดสำหรับเลขที่เอกสาร ใช้ปี พ.ศ. เช่น 2026-11 -> 256911 */
+function mDocPrefix_(period) {
+  return String(Number(period.substring(0, 4)) + 543) + period.substring(5, 7);
+}
+
+/** หาลำดับถัดไปของเลขที่เอกสารที่ขึ้นต้นด้วย prefix (เช่น "INV-256911-") */
+function mNextSeq_(prefix, docNos) {
+  let max = 0;
+  docNos.forEach(function (no) {
+    const s = String(no || '').trim();
+    if (s.indexOf(prefix) === 0) {
+      const n = parseInt(s.substring(prefix.length), 10);
+      if (isFinite(n) && n > max) max = n;
+    }
+  });
+  const n = max + 1;
+  return n < 1000 ? ('00' + n).slice(-3) : String(n);
+}
+
+function mSettings_() {
+  const out = {};
+  sheetToObjects_(SHEETS.SETTINGS).forEach(function (r) { out[r.Key] = r.Value; });
+  return out;
+}
+
+function mEmployeeName_(e, fallback) {
+  if (!e) return fallback || '';
+  return e.FullName || ((e.FirstName || '') + ' ' + (e.LastName || '')).trim() || fallback || '';
+}
+
+/** วันครบกำหนด = วันที่ BILL_DUE_DAY ของเดือนถัดจากงวดบิล */
+function mDueDate_(period, dueDay) {
+  let y = Number(period.substring(0, 4));
+  let m = Number(period.substring(5, 7)) + 1;
+  if (m > 12) { m = 1; y += 1; }
+  let day = Math.floor(mNum_(dueDay));
+  if (day < 1) day = 5;
+  if (day > 28) day = 28;
+  return y + '-' + ('0' + m).slice(-2) + '-' + ('0' + day).slice(-2);
+}
+
+/** คำนวณหน่วยที่ใช้ รองรับมิเตอร์วนครบรอบ (ต้องยืนยัน rollover จากผู้ใช้เท่านั้น) */
+function mUnits_(label, prev, curr, rollover, max) {
+  if (curr < prev) {
+    if (!rollover) {
+      throw new Error('เลขมิเตอร์' + label + 'ครั้งนี้ (' + curr + ') น้อยกว่าครั้งก่อน (' + prev + ') กรุณาตรวจสอบ หรือยืนยันว่ามิเตอร์ครบรอบ');
+    }
+    if (!(max > 0)) {
+      throw new Error('ยังไม่ได้ตั้งค่า "เลขมิเตอร์' + label + 'สูงสุด" ในแท็บตั้งค่าอัตรา จึงคำนวณมิเตอร์ครบรอบไม่ได้');
+    }
+    if (prev > max || curr > max) {
+      throw new Error('เลขมิเตอร์' + label + 'เกินค่าสูงสุดที่ตั้งไว้ (' + max + ')');
+    }
+    return mRound2_(max + 1 - prev + curr);
+  }
+  return mRound2_(curr - prev);
+}
+
+function mLoadBill_(billId) {
+  const bill = findRowObject_(SHEETS.BILLS, 'BillID', billId);
+  if (!bill) throw new Error('ไม่พบบิลที่ต้องการ');
+  return bill;
+}
+
+// ---------- API actions ----------
+const MeterActions = {
+
+  /** ตารางจดมิเตอร์ของรอบบิล: ทุกห้อง + เลขครั้งก่อน + มิเตอร์/บิลของรอบนี้ */
+  getMeterSheet: function (body) {
+    const period = String(body.period || '').trim();
+    if (!mPeriodOk_(period)) throw new Error('รอบบิลไม่ถูกต้อง (ต้องเป็นรูปแบบ yyyy-MM)');
+
+    const settings = mSettings_();
+    const rooms = sheetToObjects_(SHEETS.ROOMS).filter(function (r) { return r.Status !== 'Deleted'; });
+    const bldMap = {}, empMap = {}, tenantsByRoom = {};
+    sheetToObjects_(SHEETS.BUILDINGS).forEach(function (b) { bldMap[String(b.BuildingID)] = b; });
+    sheetToObjects_(SHEETS.EMPLOYEES).forEach(function (e) { empMap[String(e.EmployeeID)] = e; });
+    sheetToObjects_(SHEETS.OCCUPANCY).filter(function (o) { return o.Status === 'Active'; }).forEach(function (o) {
+      const k = String(o.RoomID);
+      (tenantsByRoom[k] = tenantsByRoom[k] || []).push(mEmployeeName_(empMap[String(o.EmployeeID)], o.EmployeeID));
+    });
+
+    const readingsByRoom = {};
+    sheetToObjects_(SHEETS.METER_READINGS).forEach(function (x) {
+      const k = String(x.RoomID);
+      (readingsByRoom[k] = readingsByRoom[k] || []).push(x);
+    });
+    const billsAll = sheetToObjects_(SHEETS.BILLS);
+
+    const rows = rooms.map(function (r) {
+      const roomId = String(r.RoomID);
+      const list = readingsByRoom[roomId] || [];
+      const reading = list.filter(function (x) { return String(x.Period) === period; })[0] || null;
+      const prevList = list.filter(function (x) { return String(x.Period) < period; })
+        .sort(function (a, b) { return String(b.Period).localeCompare(String(a.Period)); });
+      const prev = prevList[0] || null;
+      const bill = billsAll.filter(function (b) {
+        return String(b.RoomID) === roomId && String(b.Period) === period && b.Status !== 'Cancelled';
+      })[0] || null;
+      const tenants = tenantsByRoom[roomId] || [];
+      const bld = bldMap[String(r.BuildingID)] || {};
+      return {
+        roomId: r.RoomID,
+        roomNumber: r.RoomNumber,
+        buildingName: bld.BuildingName || ('อาคาร ' + (r.BuildingID || '')),
+        monthlyRate: mNum_(r.MonthlyRate),
+        roomStatus: r.Status || 'Active',
+        tenants: tenants,
+        occupiedCount: tenants.length,
+        prevElec: prev ? prev.ElecCurr : '',
+        prevWater: prev ? prev.WaterCurr : '',
+        reading: reading,
+        bill: bill
+      };
+    });
+
+    return { period: period, settings: settings, rows: rows };
   },
-  getKeys: function () { return []; },
-  saveKey: function () { return { success: true }; }
+
+  /** บันทึกเลขมิเตอร์ + ออก/อัปเดตใบแจ้งหนี้ของห้อง/รอบนั้น */
+  saveMeterReading: function (body, userEmail) {
+    const d = body.data || {};
+    const period = String(d.period || '').trim();
+    if (!d.roomId) throw new Error('ไม่พบรหัสห้อง');
+    if (!mPeriodOk_(period)) throw new Error('รอบบิลไม่ถูกต้อง (ต้องเป็นรูปแบบ yyyy-MM)');
+
+    const room = findRowObject_(SHEETS.ROOMS, 'RoomID', d.roomId);
+    if (!room || room.Status === 'Deleted') throw new Error('ไม่พบห้องพักที่เลือก');
+
+    const st = mSettings_();
+    const elecRate = mNum_(st.ELEC_RATE), waterRate = mNum_(st.WATER_RATE);
+    if (!(elecRate > 0) || !(waterRate > 0)) {
+      throw new Error('ยังไม่ได้ตั้งอัตราค่าไฟ/ค่าน้ำ กรุณาตั้งค่าในแท็บ "ตั้งค่าอัตรา" ก่อนออกบิล');
+    }
+
+    ['elecPrev', 'elecCurr', 'waterPrev', 'waterCurr'].forEach(function (k) {
+      if (mBlank_(d[k]) || !isFinite(Number(d[k])) || Number(d[k]) < 0) {
+        throw new Error('เลขมิเตอร์ไม่ถูกต้อง (' + k + ') ต้องกรอกเป็นตัวเลขที่ไม่ติดลบ');
+      }
+    });
+    const elecPrev = Number(d.elecPrev), elecCurr = Number(d.elecCurr);
+    const waterPrev = Number(d.waterPrev), waterCurr = Number(d.waterCurr);
+
+    const elecUnits = mUnits_('ไฟฟ้า', elecPrev, elecCurr, !!d.elecRollover, mNum_(st.METER_MAX_ELEC));
+    const waterUnits = mUnits_('น้ำ', waterPrev, waterCurr, !!d.waterRollover, mNum_(st.METER_MAX_WATER));
+
+    const otherFee = Math.max(mRound2_(d.otherFee), 0);
+    const discount = Math.max(mRound2_(d.discount), 0);
+    const otherFeeNote = String(d.otherFeeNote || '').trim().substring(0, 200);
+
+    const elecAmount = mRound2_(Math.max(elecUnits * elecRate, mNum_(st.ELEC_MIN_CHARGE)));
+    const waterAmount = mRound2_(Math.max(waterUnits * waterRate, mNum_(st.WATER_MIN_CHARGE)));
+    const taxable = mRound2_(elecAmount + waterAmount + otherFee - discount);
+    if (taxable < 0) throw new Error('ส่วนลดมากกว่ายอดค่าไฟ/ค่าน้ำ/ค่าอื่น ๆ รวมกัน');
+    const roomRent = String(st.BILL_INCLUDE_RENT) === 'Yes' ? mRound2_(room.MonthlyRate) : 0;
+    const vatRate = mNum_(st.VAT_RATE);
+    const vatAmount = mRound2_(taxable * vatRate / 100);   // VAT คิดเฉพาะค่าไฟ/น้ำ/อื่น ๆ ไม่คิดกับค่าเช่า
+    const total = mRound2_(roomRent + taxable + vatAmount);
+
+    // ข้อมูลผู้พัก ณ เวลาออกบิล
+    const empMap = {};
+    sheetToObjects_(SHEETS.EMPLOYEES).forEach(function (e) { empMap[String(e.EmployeeID)] = e; });
+    const tenants = sheetToObjects_(SHEETS.OCCUPANCY).filter(function (o) {
+      return o.Status === 'Active' && String(o.RoomID) === String(d.roomId);
+    }).map(function (o) { return mEmployeeName_(empMap[String(o.EmployeeID)], o.EmployeeID); });
+    const bld = findRowObject_(SHEETS.BUILDINGS, 'BuildingID', room.BuildingID) || {};
+    const now = nowStr_();
+
+    // เลขมิเตอร์ของรอบนี้ (1 ห้อง / 1 รอบ)
+    const existingReading = sheetToObjects_(SHEETS.METER_READINGS).filter(function (x) {
+      return String(x.RoomID) === String(d.roomId) && String(x.Period) === period;
+    })[0];
+
+    // บิลเดิมของรอบนี้ (ที่ยังไม่ยกเลิก)
+    const billsAll = sheetToObjects_(SHEETS.BILLS);
+    const existingBill = billsAll.filter(function (b) {
+      return String(b.RoomID) === String(d.roomId) && String(b.Period) === period && b.Status !== 'Cancelled';
+    })[0];
+    if (existingBill && existingBill.Status === 'Paid') {
+      throw new Error('บิลของห้องนี้ในรอบนี้ชำระแล้ว แก้ไขไม่ได้ หากต้องแก้ไขให้ยกเลิกการรับชำระก่อน');
+    }
+
+    const readingPatch = {
+      ElecPrev: elecPrev, ElecCurr: elecCurr, ElecRollover: elecCurr < elecPrev ? 'Yes' : 'No',
+      WaterPrev: waterPrev, WaterCurr: waterCurr, WaterRollover: waterCurr < waterPrev ? 'Yes' : 'No',
+      ElecUnits: elecUnits, WaterUnits: waterUnits, ReadDate: mTodayStr_(), Status: 'Recorded',   // คอลัมน์เสริมในชีต (ถ้ามี)
+      ReadBy: userEmail, UpdatedAt: now
+    };
+    if (existingReading) {
+      updateRowById_(SHEETS.METER_READINGS, 'ReadingID', existingReading.ReadingID, readingPatch);
+    } else {
+      appendRow_(SHEETS.METER_READINGS, Object.assign({
+        ReadingID: generateId_('RD'), RoomID: d.roomId, Period: period, CreatedAt: now
+      }, readingPatch));
+    }
+
+    const billFields = {
+      RoomNumber: room.RoomNumber,
+      BuildingName: bld.BuildingName || '',
+      TenantNames: tenants.join(', '),
+      TenantCount: tenants.length,
+      ElecPrev: elecPrev, ElecCurr: elecCurr, ElecUnits: elecUnits, ElecRate: elecRate, ElecAmount: elecAmount,
+      WaterPrev: waterPrev, WaterCurr: waterCurr, WaterUnits: waterUnits, WaterRate: waterRate, WaterAmount: waterAmount,
+      RoomRent: roomRent, OtherFee: otherFee, OtherFeeNote: otherFeeNote, Discount: discount,
+      VatRate: vatRate, VatAmount: vatAmount, TotalAmount: total,
+      DueDate: mDueDate_(period, st.BILL_DUE_DAY),
+      UpdatedAt: now
+    };
+
+    let billNo;
+    if (existingBill) {
+      billNo = existingBill.BillNo;
+      updateRowById_(SHEETS.BILLS, 'BillID', existingBill.BillID, billFields);
+      logAudit_(userEmail, 'UPDATE', 'Bills', existingBill.BillID, 'แก้ไขบิล ' + billNo + ' ห้อง ' + room.RoomNumber + ' ยอด ' + total);
+    } else {
+      const prefix = 'INV-' + mDocPrefix_(period) + '-';
+      billNo = prefix + mNextSeq_(prefix, billsAll.map(function (b) { return b.BillNo; }));
+      const billId = generateId_('BILL');
+      appendRow_(SHEETS.BILLS, Object.assign({
+        BillID: billId, BillNo: billNo, ReceiptNo: '', Period: period, RoomID: d.roomId,
+        IssueDate: mTodayStr_(), Status: 'Unpaid', PaidDate: '', PayMethod: '', PayerName: '', VoidedReceipts: '',
+        CreatedAt: now
+      }, billFields));
+      logAudit_(userEmail, 'CREATE', 'Bills', billId, 'ออกบิล ' + billNo + ' ห้อง ' + room.RoomNumber + ' ยอด ' + total);
+    }
+
+    return { billNo: billNo, totalAmount: total, elecUnits: elecUnits, waterUnits: waterUnits };
+  },
+
+  /** รายการบิล (กรองตามรอบ/สถานะได้) */
+  getBills: function (body) {
+    const period = String(body.period || '').trim();
+    const status = String(body.status || '').trim();
+    return sheetToObjects_(SHEETS.BILLS).filter(function (b) {
+      if (period && String(b.Period) !== period) return false;
+      if (status && b.Status !== status) return false;
+      return true;
+    }).sort(function (a, b) { return String(a.BillNo).localeCompare(String(b.BillNo), 'th', { numeric: true }); });
+  },
+
+  /** รับชำระ + ออกเลขที่ใบเสร็จ */
+  payBill: function (body, userEmail) {
+    const d = body.data || {};
+    const bill = mLoadBill_(d.billId);
+    if (bill.Status !== 'Unpaid') throw new Error('บิลนี้ไม่อยู่ในสถานะรอชำระ');
+    const paidDate = String(d.paidDate || '').trim();
+    if (!mDateOk_(paidDate)) throw new Error('กรุณาระบุวันที่รับชำระให้ถูกต้อง');
+    const issue = String(bill.IssueDate || '').substring(0, 10);
+    if (issue && paidDate < issue) throw new Error('วันที่รับชำระต้องไม่ก่อนวันที่ออกบิล (' + issue + ')');
+
+    // เลขที่ใบเสร็จห้ามซ้ำ/ห้ามนำกลับมาใช้ แม้จะเคยถูกยกเลิก (เก็บไว้ใน VoidedReceipts)
+    const used = [];
+    sheetToObjects_(SHEETS.BILLS).forEach(function (b) {
+      if (b.ReceiptNo) used.push(b.ReceiptNo);
+      String(b.VoidedReceipts || '').split(',').forEach(function (x) { if (x.trim()) used.push(x.trim()); });
+    });
+    const prefix = 'RC-' + mDocPrefix_(String(bill.Period)) + '-';
+    const receiptNo = prefix + mNextSeq_(prefix, used);
+
+    updateRowById_(SHEETS.BILLS, 'BillID', bill.BillID, {
+      Status: 'Paid',
+      ReceiptNo: receiptNo,
+      PaidDate: paidDate,
+      PayMethod: String(d.payMethod || '').substring(0, 50),
+      PayerName: String(d.payerName || '').substring(0, 200),
+      UpdatedAt: nowStr_()
+    });
+    logAudit_(userEmail, 'PAY', 'Bills', bill.BillID, 'รับชำระบิล ' + bill.BillNo + ' ห้อง ' + bill.RoomNumber + ' ใบเสร็จ ' + receiptNo + ' ยอด ' + bill.TotalAmount);
+    return { receiptNo: receiptNo };
+  },
+
+  /** ยกเลิกการรับชำระ: ใบเสร็จเดิมถูกยกเลิก บิลกลับเป็นรอชำระ */
+  voidPayment: function (body, userEmail) {
+    const bill = mLoadBill_(body.billId);
+    if (bill.Status !== 'Paid') throw new Error('บิลนี้ยังไม่ได้ชำระ');
+    const voided = String(bill.VoidedReceipts || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+    if (bill.ReceiptNo) voided.push(bill.ReceiptNo);
+    updateRowById_(SHEETS.BILLS, 'BillID', bill.BillID, {
+      Status: 'Unpaid', ReceiptNo: '', PaidDate: '', PayMethod: '', PayerName: '',
+      VoidedReceipts: voided.join(','), UpdatedAt: nowStr_()
+    });
+    logAudit_(userEmail, 'VOID', 'Bills', bill.BillID, 'ยกเลิกการรับชำระ ใบเสร็จ ' + bill.ReceiptNo + ' (บิล ' + bill.BillNo + ')');
+    return { billId: bill.BillID };
+  },
+
+  /** ยกเลิกบิล (เฉพาะที่ยังไม่ชำระ) */
+  cancelBill: function (body, userEmail) {
+    const bill = mLoadBill_(body.billId);
+    if (bill.Status === 'Paid') throw new Error('บิลที่ชำระแล้วยกเลิกไม่ได้ กรุณายกเลิกการรับชำระก่อน');
+    if (bill.Status === 'Cancelled') throw new Error('บิลนี้ถูกยกเลิกไปแล้ว');
+    updateRowById_(SHEETS.BILLS, 'BillID', bill.BillID, { Status: 'Cancelled', UpdatedAt: nowStr_() });
+    logAudit_(userEmail, 'CANCEL', 'Bills', bill.BillID, 'ยกเลิกบิล ' + bill.BillNo + ' ห้อง ' + bill.RoomNumber);
+    return { billId: bill.BillID };
+  }
 };

@@ -6,6 +6,7 @@ const Admin = {
   cachedOccupancy: [],
   cachedParking: [],
   cachedAssets: [],
+  _pendingAssetRoom: null,
 
   init() {
     this.bindEvents();
@@ -103,6 +104,9 @@ const Admin = {
         break;
       case 'parking':
         this.loadParking();
+        break;
+      case 'meters':
+        Meters.open();
         break;
       case 'buildings':
         this.loadBuildings();
@@ -294,7 +298,7 @@ const Admin = {
     document.getElementById('room-capacity').value = room ? room.capacity : '2';
     document.getElementById('room-rate').value = room ? (room.monthlyRate || 0) : '1500';
     document.getElementById('room-remark').value = room ? (room.remark || '') : 'เฟอร์นิเจอร์มาตรฐานครบชุด';
-    const hasAc = room ? (room.hasAirConditioner !== false && String(room.hasAirConditioner).toLowerCase() !== 'no') : true;
+    const hasAc = room ? !!room.hasAirConditioner : true;
     if (document.getElementById('room-has-ac')) {
       document.getElementById('room-has-ac').value = hasAc ? 'Yes' : 'No';
     }
@@ -610,7 +614,6 @@ const Admin = {
     }
   },
 
-  cachedParking: [],
   _assignEmployeeMap: {},
 
   async loadParking() {
@@ -961,7 +964,12 @@ const Admin = {
         const curVal = filterRoom.value;
         filterRoom.innerHTML = '<option value="">ทุกห้องพัก</option>' +
           (rooms || []).map(r => `<option value="${App.escAttr(r.roomId)}">ห้อง ${App.escHtml(r.roomNumber)} (${App.escHtml(r.buildingName)})</option>`).join('');
-        filterRoom.value = curVal;
+        if (this._pendingAssetRoom) {
+          filterRoom.value = String(this._pendingAssetRoom);
+          this._pendingAssetRoom = null;
+        } else {
+          filterRoom.value = curVal;
+        }
       }
 
       this.renderAssetSummary();
@@ -1046,14 +1054,9 @@ const Admin = {
   },
 
   viewRoomAssets(roomId, roomNumber) {
+    // เก็บห้องที่ต้องการไว้ก่อน แล้วให้ loadAssets ตั้งค่าตัวกรองหลังเติมรายการห้องเสร็จ (กัน race condition)
+    this._pendingAssetRoom = roomId;
     this.switchTab('assets');
-    setTimeout(() => {
-      const filterRoom = document.getElementById('filter-asset-room');
-      if (filterRoom) {
-        filterRoom.value = roomId;
-        this.filterAssets();
-      }
-    }, 200);
   },
 
   async openAssetModal(assetId = null) {

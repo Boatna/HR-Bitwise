@@ -1,6 +1,5 @@
 let allRooms = [];
 let allBuildings = [];
-let allFloors = [];
 
 async function loadRoomsData() {
   const loadingEl = document.getElementById('loading-indicator');
@@ -10,15 +9,13 @@ async function loadRoomsData() {
   if (containerEl) containerEl.innerHTML = '';
 
   try {
-    const [rooms, buildings, floors] = await Promise.all([
+    const [rooms, buildings] = await Promise.all([
       API.getRooms(),
-      API.getBuildings(),
-      API.getFloors()
+      API.getBuildings()
     ]);
 
     allRooms = rooms || [];
     allBuildings = buildings || [];
-    allFloors = floors || [];
 
     populateFilterOptions();
     renderSummaryBar();
@@ -87,8 +84,8 @@ function applyFilterAndRender() {
     if (bldVal && String(room.buildingId) !== bldVal) return false;
     if (statusVal && room.computedStatus !== statusVal) return false;
     if (typeVal && room.roomType !== typeVal) return false;
-    if (acVal === 'Yes' && (room.hasAirConditioner === false || String(room.hasAirConditioner).toLowerCase() === 'no')) return false;
-    if (acVal === 'No' && (room.hasAirConditioner !== false && String(room.hasAirConditioner).toLowerCase() !== 'no')) return false;
+    if (acVal === 'Yes' && !room.hasAirConditioner) return false;
+    if (acVal === 'No' && room.hasAirConditioner) return false;
 
     if (searchVal) {
       const matchRoom = App.lc(room.roomNumber).includes(searchVal);
@@ -141,9 +138,8 @@ function renderRooms(rooms) {
 
     const fId = r.floorId || '1';
     if (!groupedByBuilding[bId].floors[fId]) {
-      const flr = allFloors.find(f => String(f.FloorID) === String(fId));
       groupedByBuilding[bId].floors[fId] = {
-        name: flr ? flr.FloorName : `ชั้น ${fId}`,
+        name: r.floorName || `ชั้น ${fId}`,
         rooms: []
       };
     }
@@ -251,7 +247,7 @@ function showRoomDetails(roomId) {
   document.getElementById('modal-rate').textContent = room.monthlyRate ? `${Number(room.monthlyRate).toLocaleString()} บาท/เดือน` : 'ฟรี/สวัสดิการ';
   
   // แสดงข้อมูลสิ่งอำนวยความสะดวกและระบบปรับอากาศ
-  const hasAc = room.hasAirConditioner !== false && String(room.hasAirConditioner).toLowerCase() !== 'no';
+  const hasAc = !!room.hasAirConditioner;
   document.getElementById('modal-facilities').innerHTML = `
     <span class="badge bg-primary-subtle text-primary me-1 py-1 px-2 mb-1"><i class="bi bi-box-seam me-1"></i>เฟอร์นิเจอร์มาตรฐาน (เตียง, ที่นอน, ตู้, โต๊ะ, เก้าอี้)</span>
     ${hasAc

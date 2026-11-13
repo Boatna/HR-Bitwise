@@ -1,3 +1,5 @@
+const ASSET_STATUS_TH = { Normal: 'ใช้งานปกติ', Repair: 'ชำรุด/รอซ่อม', 'Need Repair': 'ชำรุด/รอซ่อม', Damaged: 'เสีย/รอจำหน่าย', Lost: 'สูญหาย' };
+
 const Reports = {
   statusLabel(st) {
     return { 'Available': 'ว่าง', 'Partially Occupied': 'ว่างบางส่วน', 'Full': 'เต็ม', 'Maintenance': 'ปิดปรับปรุง', 'Inactive': 'ไม่เปิดใช้งาน' }[st] || st;
@@ -29,7 +31,7 @@ const Reports = {
           'เลขห้อง': r.roomNumber,
           'ชั้น': r.floorId || '1',
           'ประเภท': r.roomType || 'Standard',
-          'ระบบปรับอากาศ': (r.hasAirConditioner !== false && String(r.hasAirConditioner).toLowerCase() !== 'no') ? 'ห้องแอร์' : 'ห้องพัดลม',
+          'ระบบปรับอากาศ': r.hasAirConditioner ? 'ห้องแอร์' : 'ห้องพัดลม',
           'ความจุ (คน)': r.capacity,
           'ผู้พักจริง (คน)': r.occupiedBedsCount,
           'ที่ว่าง (ที่)': r.availableBedsCount,
@@ -102,7 +104,7 @@ const Reports = {
           'รายการครุภัณฑ์': a.AssetName,
           'หมวดหมู่': a.Category || '-',
           'จำนวน': a.Quantity || 1,
-          'สถานะ': a.Status === 'Normal' ? 'ใช้งานปกติ' : (a.Status === 'Repair' ? 'ชำรุด/รอซ่อม' : (a.Status === 'Damaged' ? 'เสีย/รอจำหน่าย' : 'สูญหาย')),
+          'สถานะ': ASSET_STATUS_TH[a.Status] || a.Status || '-',
           'สภาพการใช้งาน': a.Condition || '-',
           'หมายเหตุ': a.Remark || '-'
         }));
@@ -130,7 +132,7 @@ const Reports = {
       }
     } catch (e) {
       if (seq !== this._seq) return;
-      if (tableBody) tableBody.innerHTML = `<tr><td colspan="100%" class="text-danger text-center py-4">เกิดข้อผิดพลาดในการโหลดรายงาน: ${App.escHtml(e.message)}</td></tr>`;
+      if (tableBody) tableBody.innerHTML = `<tr><td colspan="20" class="text-danger text-center py-4">เกิดข้อผิดพลาดในการโหลดรายงาน: ${App.escHtml(e.message)}</td></tr>`;
     }
   },
 

@@ -1,4 +1,4 @@
-# ระบบบริหารหอพักพนักงาน (Employee Dormitory Management System) v2.3
+# ระบบบริหารหอพักพนักงาน (Employee Dormitory Management System) v2.5.0
 
 ระบบบริหารจัดการหอพักพนักงานองค์กรแบบเข้าใจง่าย ไม่ซับซ้อน ใช้งานผ่านเว็บเบราว์เซอร์ เชื่อมต่อฐานข้อมูล Google Sheets ผ่าน Google Apps Script Web API
 
@@ -42,11 +42,12 @@ Apartment-Ticha/
 │   ├── rooms.js                 # จัดการผังสถานะห้องพัก ค้นหา กรองแอร์/พัดลม และแสดงข้อมูลที่จอดรถและ Asset ในหน้าต่างรายละเอียด
 │   ├── dashboard.js             # แสดง KPI ห้องว่าง/เต็ม และ KPI ที่จอดรถ พร้อมวาดกราฟสถิติด้วย Chart.js
 │   ├── occupancy.js             # กระบวนการ Check-in, Check-out, และย้ายห้อง (Transfer)
+│   ├── meters.js                # จดมิเตอร์ / บิล / ใบเสร็จ / ตั้งค่าอัตรา (ใช้ในแท็บ "มิเตอร์น้ำ-ไฟ / บิล" ของ admin.html)
 │   ├── admin.js                 # จัดการข้อมูลการเข้าพัก ห้องพัก ครุภัณฑ์ Asset พนักงาน ที่จอดรถ อาคาร และการตั้งค่า
 │   └── reports.js               # จัดทำรายงานห้องว่าง/ผู้พัก/ที่จอดรถ/ครุภัณฑ์ Asset และส่งออกไฟล์ CSV ภาษาไทย (Excel)
 └── google-apps-script/
-    ├── Code.gs                  # Google Apps Script Web API (Backend Engine พร้อมระบบ Asset และ Hybrid Parking)
-    ├── setup_sheets.gs          # สคริปต์สร้างฐานข้อมูล Google Sheets 8 ตารางหลักอัตโนมัติ (+ ข้อมูลตัวอย่าง)
+    ├── Code.gs                  # Google Apps Script Web API ไฟล์เดียวครบ (Asset, Hybrid Parking และโมดูลมิเตอร์/บิล MeterActions)
+    ├── setup_sheets.gs          # สคริปต์สร้างฐานข้อมูล Google Sheets 8 ตารางหลักอัตโนมัติ (+ ข้อมูลตัวอย่าง) (ไม่เปลี่ยนแปลงใน v2.5.0)
     └── appsscript.json          # ตั้งค่าโปรเจกต์ Apps Script (เขตเวลา Asia/Bangkok, สิทธิ์ Web App)
 ```
 
@@ -54,7 +55,7 @@ Apartment-Ticha/
 
 ## 🔒 ฐานข้อมูล Google Sheets (Database Schema)
 
-โครงสร้างฐานข้อมูลออกแบบให้เข้าใจง่าย ประกอบด้วย **8 ตาราง**:
+โครงสร้างฐานข้อมูลออกแบบให้เข้าใจง่าย ประกอบด้วย **10 ตาราง** (8 ตารางหลัก + `MeterReadings`, `Bills` สำหรับมิเตอร์/บิล):
 
 | แผ่นงาน (Sheet) | ข้อมูลที่จัดเก็บ |
 |:---|:---|
@@ -66,6 +67,8 @@ Apartment-Ticha/
 | **`Buildings`** | ข้อมูลอาคารหอพัก (รหัสอาคาร, ตัวย่ออาคาร, ชื่ออาคาร, ที่ตั้ง, จำนวนชั้น, สถานะ, หมายเหตุ) |
 | **`Settings`** | การตั้งค่าระบบ (ชื่อหอพัก, องค์กร, รายการเฟอร์นิเจอร์มาตรฐาน, อีเมล) |
 | **`AuditLog`** | ประวัติการทำรายการในระบบ (รหัสล็อก, เวลา, อีเมลผู้ใช้, การกระทำ, โมดูล, รหัสรายการ, หมายเหตุ) |
+| **`MeterReadings`** | เลขมิเตอร์ไฟ/น้ำรายห้องรายงวด (รหัส, ห้อง, งวด yyyy-MM, เลขก่อน/หลัง, หน่วยที่ใช้, วนครบรอบ, วันที่จด, ผู้จด) |
+| **`Bills`** | ใบแจ้งหนี้/ใบเสร็จ (เลขที่บิล INV-, เลขที่ใบเสร็จ RC-, ยอดค่าไฟ/น้ำ/เช่า/VAT/รวม, สถานะ Unpaid/Paid/Cancelled, ใบเสร็จที่ถูกยกเลิก) |
 
 ---
 
@@ -109,3 +112,86 @@ Apartment-Ticha/
 - **รองรับห้องพักทั้งแบบมีแอร์ และไม่มีแอร์ (พัดลม):** เพิ่มช่องเลือกใน Modal ห้องพัก, ป้ายสถานะชัดเจนในการ์ดห้อง, ตัวกรองแอร์/พัดลมในหน้าผังห้อง
 - **ระบบจองที่จอดรถแบบ Hybrid:** รองรับทั้งพนักงานที่พักในหอพักและพนักงานทั่วไป (ไม่ได้พักหอ) พร้อมตัวกรองกลุ่มผู้จองและป้ายสถานะแยกชัดเจน
 - **รายงานครุภัณฑ์ประจำห้องพัก:** เพิ่มปุ่มและตารางรายงาน Assets ในแท็บรายงานและส่งออก (Export CSV/Print)
+
+
+---
+
+## 📝 Changelog v2.4
+
+**ใหม่:**
+- **หน้ามิเตอร์น้ำ-ไฟ (`meters.html`):** บันทึกเลขมิเตอร์รายห้อง/รายเดือน คำนวณค่าไฟ ค่าน้ำ ค่าเช่า (ตัวเลือก) VAT (ตัวเลือก) ออก **ใบแจ้งหนี้** และ **ใบเสร็จรับเงิน** (พิมพ์ได้ ปี พ.ศ. + จำนวนเงินตัวอักษรไทย)
+- ชีตใหม่ `MeterReadings`, `Bills` และ `Meters.gs` (Backend โมดูลมิเตอร์)
+- ตั้งค่าอัตราค่าไฟ/ค่าน้ำ ขั้นต่ำ VAT วันครบกำหนด ได้ในแท็บ "ตั้งค่าอัตรา"
+
+**แก้ไข:**
+- ลบ key `cachedParking` ที่ประกาศซ้ำใน `admin.js`
+- ปรับ version label เป็น v2.4 ทุกหน้า
+
+**วิธีอัปเดต:** วาง `Code.gs` + `Meters.gs` ใน Apps Script → รัน `ensureAllSheets` 1 ครั้ง → Deploy เวอร์ชันใหม่
+
+**หมายเหตุอัตราค่าสาธารณูปโภค:** ระบบไม่ตั้งอัตราไฟ/น้ำเริ่มต้น ต้องกรอกอัตราจริงที่การไฟฟ้า/การประปาเรียกเก็บในแท็บ "ตั้งค่าอัตรา" ก่อนออกบิล (ห้ามบวกกำไร)
+
+**ตำแหน่งเมนูมิเตอร์:** จัดการระบบ (admin.html) > แท็บ "มิเตอร์น้ำ-ไฟ / บิล" (ไฟล์ meters.html แบบแยกหน้าไม่จำเป็นต้องใช้แล้ว ลบได้)
+
+---
+
+## 📝 Changelog v2.4.1 (ตรวจทานและแก้ไข)
+
+**แก้ไขข้อผิดพลาดสำคัญ:**
+- **`Meters.gs` เดิมเป็นสำเนาโค้ด frontend (`meters.js`)** ไม่มี backend มิเตอร์จริง → เขียนใหม่ทั้งไฟล์ (`getMeterSheet`, `saveMeterReading`, `getBills`, `payBill`, `voidPayment`, `cancelBill`)
+- `Code.gs` ไม่ได้ลงทะเบียน action มิเตอร์/บิล และไม่มีชีต `MeterReadings`, `Bills` → เพิ่มใน `SHEETS`/`SHEET_HEADERS`/`READ_ACTIONS_` และเพิ่มตัวค้นหา handler (`getActionHandler_`)
+- `meters.js` ใช้ id `tab-read/bills/rates` ซึ่งไม่มีในหน้า → แท็บมิเตอร์สลับไม่ได้/ขึ้น error; แก้เป็น `mt-*`
+- `admin.html` ขาดสไตล์ของตารางมิเตอร์ (เดิมอยู่เฉพาะ `meters.html`) → เพิ่มแล้ว
+- คอลัมน์ `Period` (เช่น 2026-11) / เลขที่เอกสาร / ค่า Settings (เช่น เลขผู้เสียภาษีขึ้นต้น 0) ถูก Google Sheets แปลงชนิดเอง → บังคับเป็นข้อความ
+
+**ปรับปรุง:**
+- หน้าจดมิเตอร์: เลขที่พิมพ์ค้างไว้ไม่หายเมื่อค้นหา/กรองห้อง, ประมาณการใช้ค่าอื่น ๆ/ส่วนลดจากบิลเดิมเหมือนตอนบันทึกจริง, แจ้งเตือนถ้าไม่มีเลขครั้งก่อน
+- Backend ตรวจสอบเลขมิเตอร์/อัตรา/ส่วนลดซ้ำอีกชั้น, เลขที่ใบเสร็จไม่ถูกนำกลับมาใช้ซ้ำแม้ยกเลิกการรับชำระ
+- `saveSettings` ตรวจค่าตัวเลขของอัตรา/VAT/วันครบกำหนด
+- `addDefaultAssetsForRoom` กันสร้างชุดครุภัณฑ์มาตรฐานซ้ำในห้องเดิม
+
+**วิธีอัปเดต:** วาง `Code.gs` + `Meters.gs` ใน Apps Script (ไฟล์ Meters.gs ต้องเป็นโค้ด backend ตัวใหม่นี้) → รัน `ensureAllSheets` 1 ครั้ง → Deploy เวอร์ชันใหม่ (Edit > New version) → อัปโหลด `meters.js` และ `admin.html` ทับของเดิม
+
+---
+
+## 📝 Changelog v2.4.2 (ตรวจทานครั้งที่ 2)
+
+**สำคัญ — โครงสร้างไฟล์:** `Code.gs` รวมโมดูลมิเตอร์/บิล (`MeterActions`) ไว้ในไฟล์เดียวแล้ว **ต้องลบไฟล์ `Meters.gs` เดิมออกจากโปรเจกต์ Apps Script** ไม่เช่นนั้นจะเกิด error `Identifier 'MeterActions' has already been declared`
+
+**แก้ไข:**
+- `Code.gs`: เพิ่มคอลัมน์ `ElecUnits`, `WaterUnits`, `ReadDate`, `Remark`, `Status` ใน `MeterReadings` และ `Remark` ใน `Bills` (ให้ตรงกับชีตจริง/ข้อมูลทดสอบ seed บันทึกได้ครบ)
+- `Code.gs`: ถ้า Google Sheets แปลงงวดบิลเป็นวันที่ (เช่น 2026-10-01) ระบบแปลงกลับเป็น `yyyy-MM` ตอนอ่าน ไม่ให้บิล/มิเตอร์หายจากหน้าจอ
+- `Code.gs`: ข้อความ error "ไม่พบคำสั่ง" ไม่อ้างถึง Meters.gs แล้ว
+- `Code.gs`: เพิ่มฟังก์ชัน `fixTextFormats()` (รันครั้งเดียว) แปลงรหัสพนักงาน/เบอร์โทร/ทะเบียนในชีตเดิมที่ถูกเก็บเป็นตัวเลขให้เป็นข้อความ
+- `admin.js`: ปุ่ม "Asset" ในหน้าห้องพักกรองห้องที่เลือกได้ถูกต้องแน่นอน (แก้ race condition เดิมที่ใช้ setTimeout)
+- `admin.html`: เพิ่มหมวด "สุขภัณฑ์ / ห้องน้ำ" ในตัวกรองครุภัณฑ์ให้ตรงกับฟอร์ม
+- ปรับ version label เป็น v2.4.2 ทุกหน้า
+
+**วิธีอัปเดต:** วาง `Code.gs` ใหม่ → **ลบ `Meters.gs`** → รัน `ensureAllSheets` → (ถ้าต้องการ) รัน `fixTextFormats` → Deploy เวอร์ชันใหม่ (Edit > New version) → อัปโหลด `admin.js`, `admin.html`, `app.js` และหน้า HTML อื่น ๆ ทับของเดิม
+
+---
+
+## 📝 Changelog v2.5.0 (ล้างโค้ดที่ไม่ใช้ + ตรวจความสอดคล้อง)
+
+**ลบออก:**
+- `meters.html` (ซ้ำกับแท็บมิเตอร์ใน `admin.html`) รวมถึงโค้ดเริ่มหน้าแยกท้าย `meters.js` และ `isMeters` ใน `app.js`
+- `Code.gs`: action ที่ไม่มีหน้าจอเรียกใช้ (`getBeds`, `saveBed`, `getRoomRequests`, `createRoomRequest`, `updateRequestStatus`, `getRepairRequests`, `saveRepairRequest`, `updateRepairStatus`, `getMaintenance`, `saveMaintenance`, `completeMaintenance`, `getKeys`, `saveKey`, `getRoomById`, `getAuditLogs`, `getFloors`) และฟิลด์ที่ไม่มีใครใช้ใน dashboard/rooms
+- `Code.gs`: ฟังก์ชันทดสอบ/ตรวจระบบ `seedMeterTestData`, `clearMeterTestData`, `diagnoseMeters`
+- `api.js`: placeholder "Backward compatibility" ทั้งหมด, `getRoomById`, `getFloors`, `getAuditLogs`
+- `app.js`: case ของป้ายสถานะที่ไม่ได้ใช้ (Pending, Approved, Rejected, Completed, CheckedOut, Transferred)
+- `occupancy.js`: `currentOccupants` และ `bedId`/`newBedId` ที่ backend คำนวณเองอยู่แล้ว
+
+**แก้ไข / ปรับให้ง่ายขึ้น:**
+- หน้าผังห้องใช้ `floorName` จาก `getRooms` แทนการเรียก `getFloors` เพิ่ม (ลดหนึ่ง request)
+- เช็กห้องแอร์/พัดลมใช้ `room.hasAirConditioner` (boolean จาก backend) ตรง ๆ แทนการเทียบข้อความซ้ำหลายไฟล์
+- `reports.js`: สถานะครุภัณฑ์ `Need Repair` เดิมแสดงเป็น "สูญหาย" แก้ให้แสดงถูกต้อง และแก้ `colspan="100%"` เป็นตัวเลข
+- `Code.gs` `transferRoom`: บันทึกเหตุผลและหมายเหตุการย้ายห้องลงรายการเดิม (เดิมถูกทิ้ง)
+- `dashboard.js` เขียนใหม่ให้สั้นลง ใช้ฟังก์ชันวาดกราฟร่วมกัน
+- ปรับ version label เป็น v2.5.0 ทุกหน้า
+
+**วิธีอัปเดต:** วาง `Code.gs` ใหม่ (ต้องไม่มี `Meters.gs`) → Deploy เวอร์ชันใหม่ (Edit > New version) → อัปโหลด `.html` และ `js/*.js` ทับของเดิม → **ลบ `meters.html`** ไม่ต้องรัน `ensureAllSheets` เพราะโครงสร้างชีตไม่เปลี่ยน
+
+**ก่อนใช้งานจริง (ตรวจจากข้อมูลชีต):**
+- ลบข้อมูลทดสอบ: แถวที่ `Remark = TEST-SEED` ในชีต `Bills` และ `ReadBy = TEST-SEED` ในชีต `MeterReadings` (ฟังก์ชัน `clearMeterTestData` ถูกลบแล้ว ต้องลบเองหรือเขียนใหม่)
+- ตรวจรหัสพนักงานให้ไม่ซ้ำ (เดิมพบ `1480151` ซ้ำสองคน) และกำหนดค่า `HasAirConditioner` ของแต่ละห้อง (ถ้าว่าง ระบบถือว่าเป็นห้องแอร์)
+- อัตราค่าไฟ/ค่าน้ำและค่าขั้นต่ำ ต้องไม่เกินอัตราที่การไฟฟ้า/การประปาเรียกเก็บจริง (ห้ามบวกกำไร) ควรตรวจกับฝ่ายกฎหมาย/บัญชี และกรอกที่อยู่ เลขผู้เสียภาษี ช่องทางชำระเงินให้ครบ

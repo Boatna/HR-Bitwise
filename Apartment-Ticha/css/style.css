@@ -508,3 +508,11 @@ body {
   color: #475569;
   border: 1px solid #cbd5e1;
 }
+
+/* Meters */
+    .meter-input { width: 96px; text-align: right; }
+    .unit-cell { min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
+    .meter-table th, .meter-table td { white-space: nowrap; }
+    .meter-table .group-elec { background: #fffbeb; }
+    .meter-table .group-water { background: #eff6ff; }
+    .unit-warn { color: #b45309; font-weight: 600; }

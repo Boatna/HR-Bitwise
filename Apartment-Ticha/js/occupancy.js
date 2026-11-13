@@ -1,7 +1,6 @@
 const OccupancyWorkflow = {
   activeRooms: [],
   activeEmployees: [],
-  currentOccupants: [],
   selectedCheckinEmployeeId: '',
 
   async initModalData() {
@@ -209,7 +208,6 @@ const OccupancyWorkflow = {
         employeeId,
         roomId,
         bedNumber: Number(bedNumber) || 1,
-        bedId: 'BED-' + roomId + '-' + (bedNumber || 1),
         checkInDate,
         expectedCheckOutDate,
         remark
@@ -343,7 +341,6 @@ const OccupancyWorkflow = {
         occupancyId,
         newRoomId,
         newBedNumber: Number(newBedNumber) || 1,
-        newBedId: 'BED-' + newRoomId + '-' + (newBedNumber || 1),
         transferDate,
         reason,
         remark

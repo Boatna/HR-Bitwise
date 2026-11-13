@@ -1,26 +1,23 @@
-let charts = {};
-
 async function loadDashboard() {
   const loadingEl = document.getElementById('loading-indicator');
   const contentEl = document.getElementById('dashboard-content');
   const errorEl = document.getElementById('dashboard-error');
 
-  if (loadingEl) loadingEl.classList.remove('d-none');
-  if (contentEl) contentEl.classList.add('d-none');
-  if (errorEl) errorEl.classList.add('d-none');
+  loadingEl?.classList.remove('d-none');
+  contentEl?.classList.add('d-none');
+  errorEl?.classList.add('d-none');
 
   try {
     const data = await API.getDashboardData();
     renderKPIs(data.kpi);
-    renderCharts(data);
+    renderCharts(data.charts || {});
     renderBuildingOccupancy(data.buildingStats);
     renderAlmostFullRooms(data.almostFullRooms);
     renderParking(data.parkingStats);
-
-    if (contentEl) contentEl.classList.remove('d-none');
+    contentEl?.classList.remove('d-none');
   } catch (error) {
     console.error('Error loading dashboard:', error);
-    // แสดงข้อผิดพลาดในกล่องแยก (ไม่เขียนทับ dashboard-content ไม่งั้นกราฟ/KPI จะหายถาวรจนกว่าจะรีเฟรชหน้า)
+    // แสดงข้อผิดพลาดในกล่องแยก (ไม่เขียนทับ dashboard-content ไม่งั้นกราฟ/KPI จะหายถาวร)
     if (errorEl) {
       errorEl.classList.remove('d-none');
       errorEl.innerHTML = `
@@ -31,11 +28,10 @@ async function loadDashboard() {
           <button class="btn btn-outline-primary" onclick="loadDashboard()">
             <i class="bi bi-arrow-clockwise me-1"></i> ลองใหม่อีกครั้ง
           </button>
-        </div>
-      `;
+        </div>`;
     }
   } finally {
-    if (loadingEl) loadingEl.classList.add('d-none');
+    loadingEl?.classList.add('d-none');
   }
 }
 
@@ -46,17 +42,24 @@ function setText(id, value) {
 
 function renderKPIs(kpi) {
   if (!kpi) return;
-  setText('kpi-total-rooms', kpi.totalRooms || 0);
-  setText('kpi-avail-rooms', kpi.availableRooms || 0);
-  setText('kpi-partial-rooms', kpi.partiallyOccupiedRooms || 0);
-  setText('kpi-full-rooms', kpi.fullRooms || 0);
-  setText('kpi-maint-rooms', kpi.maintenanceRooms || 0);
-  setText('kpi-total-beds', kpi.totalBeds || 0);
-  setText('kpi-avail-beds', kpi.availableBeds || 0);
-  setText('kpi-total-occupants', kpi.totalOccupants || 0);
+  const map = {
+    'kpi-total-rooms': kpi.totalRooms,
+    'kpi-avail-rooms': kpi.availableRooms,
+    'kpi-partial-rooms': kpi.partiallyOccupiedRooms,
+    'kpi-full-rooms': kpi.fullRooms,
+    'kpi-maint-rooms': kpi.maintenanceRooms,
+    'kpi-total-beds': kpi.totalBeds,
+    'kpi-avail-beds': kpi.availableBeds,
+    'kpi-total-occupants': kpi.totalOccupants,
+    'kpi-new-this-month': kpi.newThisMonth,
+    'kpi-checkout-this-month': kpi.checkOutThisMonth
+  };
+  Object.keys(map).forEach(id => setText(id, map[id] || 0));
   setText('kpi-rate', `${kpi.overallOccupancyRate || 0}%`);
-  setText('kpi-new-this-month', kpi.newThisMonth || 0);
-  setText('kpi-checkout-this-month', kpi.checkOutThisMonth || 0);
+}
+
+function progressColor(pct) {
+  return pct >= 90 ? 'bg-danger' : (pct >= 70 ? 'bg-warning' : 'bg-success');
 }
 
 function renderParking(ps) {
@@ -73,7 +76,6 @@ function renderParking(ps) {
     const total = t?.total || 0;
     const occ = t?.occupied || 0;
     const pct = total > 0 ? Math.round((occ / total) * 100) : 0;
-    const color = pct >= 90 ? 'bg-danger' : (pct >= 70 ? 'bg-warning' : 'bg-primary');
     return `
       <div class="col-12 col-md-6">
         <div class="d-flex justify-content-between mb-1">
@@ -81,7 +83,7 @@ function renderParking(ps) {
           <span class="small text-muted">${occ} / ${total} ช่อง (ว่าง ${t?.available || 0})</span>
         </div>
         <div class="progress" style="height: 10px; border-radius: 6px;">
-          <div class="progress-bar ${color}" style="width: ${pct}%"></div>
+          <div class="progress-bar ${progressColor(pct)}" style="width: ${pct}%"></div>
         </div>
       </div>`;
   };
@@ -91,186 +93,91 @@ function renderParking(ps) {
 function renderBuildingOccupancy(buildingStats) {
   const container = document.getElementById('building-occupancy-bars');
   if (!container) return;
-
   if (!buildingStats || buildingStats.length === 0) {
     container.innerHTML = '<p class="text-muted text-center py-3">ไม่มีข้อมูลอาคาร</p>';
     return;
   }
-
-  let html = '';
-  buildingStats.forEach(b => {
-    let colorClass = 'bg-success';
-    if (b.occupancyRate >= 90) colorClass = 'bg-danger';
-    else if (b.occupancyRate >= 70) colorClass = 'bg-warning text-dark';
-
-    html += `
-      <div class="mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="fw-semibold text-dark">${App.escHtml(b.buildingName)}</span>
-          <span class="small text-muted">${b.occupiedBeds} / ${b.totalBeds} ที่ (<strong>${b.occupancyRate}%</strong>)</span>
-        </div>
-        <div class="progress" style="height: 12px; border-radius: 6px;">
-          <div class="progress-bar ${colorClass}" role="progressbar" style="width: ${b.occupancyRate}%;" aria-valuenow="${b.occupancyRate}" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
+  container.innerHTML = buildingStats.map(b => `
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <span class="fw-semibold text-dark">${App.escHtml(b.buildingName)}</span>
+        <span class="small text-muted">${b.occupiedBeds} / ${b.totalBeds} ที่ (<strong>${b.occupancyRate}%</strong>)</span>
       </div>
-    `;
-  });
-  container.innerHTML = html;
+      <div class="progress" style="height: 12px; border-radius: 6px;">
+        <div class="progress-bar ${progressColor(b.occupancyRate)}" role="progressbar" style="width: ${b.occupancyRate}%;" aria-valuenow="${b.occupancyRate}" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+    </div>`).join('');
 }
 
-function renderAlmostFullRooms(almostFullRooms) {
+function renderAlmostFullRooms(rooms) {
   const container = document.getElementById('almost-full-rooms-list');
   if (!container) return;
-
-  if (!almostFullRooms || almostFullRooms.length === 0) {
+  if (!rooms || rooms.length === 0) {
     container.innerHTML = '<div class="text-muted text-center py-3"><i class="bi bi-check2-circle text-success me-1"></i>ไม่มีห้องที่เหลือ 1 ที่สุดท้าย</div>';
     return;
   }
-
-  let html = '<div class="list-group list-group-flush">';
-  almostFullRooms.forEach(r => {
-    html += `
-      <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
-        <div>
-          <span class="fw-bold text-dark">ห้อง ${App.escHtml(r.roomNumber)}</span>
-          <small class="text-muted ms-2">${App.escHtml(r.buildingName)}</small>
-        </div>
-        <span class="badge bg-warning text-dark">เหลือ ${r.available} ที่สุดท้าย</span>
+  container.innerHTML = '<div class="list-group list-group-flush">' + rooms.map(r => `
+    <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+      <div>
+        <span class="fw-bold text-dark">ห้อง ${App.escHtml(r.roomNumber)}</span>
+        <small class="text-muted ms-2">${App.escHtml(r.buildingName)}</small>
       </div>
-    `;
-  });
-  html += '</div>';
-  container.innerHTML = html;
+      <span class="badge bg-warning text-dark">เหลือ ${r.available} ที่สุดท้าย</span>
+    </div>`).join('') + '</div>';
 }
 
-function destroyChart(id) {
-  if (charts[id]) {
-    try { charts[id].destroy(); } catch (e) {}
-    delete charts[id];
-  }
-  if (typeof Chart !== 'undefined' && Chart.getChart) {
-    const existing = Chart.getChart(id);
-    if (existing) {
-      try { existing.destroy(); } catch (e) {}
+/** วาดกราฟ (ทำลายกราฟเดิมบน canvas เดียวกันก่อนเสมอ) */
+function drawChart(id, config) {
+  const canvas = document.getElementById(id);
+  if (!canvas || typeof Chart === 'undefined') return;
+  Chart.getChart(canvas)?.destroy();
+  new Chart(canvas.getContext('2d'), config);
+}
+
+function barConfig(labels, data, label, color, extra = {}) {
+  const valueAxis = { beginAtZero: true, ticks: { precision: 0 }, ...(extra.max ? { max: extra.max } : {}) };
+  return {
+    type: 'bar',
+    data: { labels, datasets: [{ label, data, backgroundColor: color }] },
+    options: {
+      responsive: true,
+      indexAxis: extra.horizontal ? 'y' : 'x',
+      plugins: { legend: { display: false } },
+      scales: { [extra.horizontal ? 'x' : 'y']: valueAxis }
     }
-  }
+  };
 }
 
-function renderCharts(data) {
-  const chartConfig = data.charts || {};
-
-  // 1. สัดส่วนสถานะห้องพัก
-  destroyChart('chart-room-status');
-  const ctx1 = document.getElementById('chart-room-status')?.getContext('2d');
-  if (ctx1 && chartConfig.roomStatus) {
-    charts['chart-room-status'] = new Chart(ctx1, {
+function renderCharts(c) {
+  if (c.roomStatus) {
+    drawChart('chart-room-status', {
       type: 'doughnut',
       data: {
-        labels: chartConfig.roomStatus.labels,
-        datasets: [{
-          data: chartConfig.roomStatus.counts,
-          backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#f97316', '#64748b']
-        }]
+        labels: c.roomStatus.labels,
+        datasets: [{ data: c.roomStatus.counts, backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#f97316', '#64748b'] }]
       },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'bottom' } }
-      }
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
   }
-
-  // 2. ผู้พักแยกตามอาคาร
-  destroyChart('chart-occupants-building');
-  const ctx2 = document.getElementById('chart-occupants-building')?.getContext('2d');
-  if (ctx2 && chartConfig.buildingOccupancy) {
-    charts['chart-occupants-building'] = new Chart(ctx2, {
-      type: 'bar',
-      data: {
-        labels: chartConfig.buildingOccupancy.labels,
-        datasets: [{
-          label: 'จำนวนผู้พัก (คน)',
-          data: chartConfig.buildingOccupancy.counts,
-          backgroundColor: '#2563eb'
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-      }
-    });
+  if (c.buildingOccupancy) {
+    const b = c.buildingOccupancy;
+    drawChart('chart-occupants-building', barConfig(b.labels, b.counts, 'จำนวนผู้พัก (คน)', '#2563eb'));
+    drawChart('chart-occupancy-rate', barConfig(b.labels, b.rates, 'อัตราการเข้าพัก (%)', '#0ea5e9', { max: 100 }));
   }
-
-  // 3. Occupancy Rate แยกตามอาคาร
-  destroyChart('chart-occupancy-rate');
-  const ctx3 = document.getElementById('chart-occupancy-rate')?.getContext('2d');
-  if (ctx3 && chartConfig.buildingOccupancy) {
-    charts['chart-occupancy-rate'] = new Chart(ctx3, {
-      type: 'bar',
-      data: {
-        labels: chartConfig.buildingOccupancy.labels,
-        datasets: [{
-          label: 'อัตราการเข้าพัก (%)',
-          data: chartConfig.buildingOccupancy.rates,
-          backgroundColor: '#0ea5e9'
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, max: 100 } }
-      }
-    });
+  if (c.departmentDistribution) {
+    const d = c.departmentDistribution;
+    drawChart('chart-dept', barConfig(d.labels, d.counts, 'จำนวน (คน)', '#8b5cf6', { horizontal: true }));
   }
-
-  // 4. ผู้พักแยกตามแผนก
-  destroyChart('chart-dept');
-  const ctx4 = document.getElementById('chart-dept')?.getContext('2d');
-  if (ctx4 && chartConfig.departmentDistribution) {
-    charts['chart-dept'] = new Chart(ctx4, {
-      type: 'bar',
-      data: {
-        labels: chartConfig.departmentDistribution.labels,
-        datasets: [{
-          label: 'จำนวน (คน)',
-          data: chartConfig.departmentDistribution.counts,
-          backgroundColor: '#8b5cf6'
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
-      }
-    });
-  }
-
-  // 5. แนวโน้ม 6 เดือนย้อนหลัง
-  destroyChart('chart-monthly-trends');
-  const ctx5 = document.getElementById('chart-monthly-trends')?.getContext('2d');
-  if (ctx5 && chartConfig.monthlyTrends) {
-    charts['chart-monthly-trends'] = new Chart(ctx5, {
+  if (c.monthlyTrends) {
+    const m = c.monthlyTrends;
+    const line = (label, data, color, bg) => ({ label, data, borderColor: color, backgroundColor: bg, fill: true, tension: 0.3 });
+    drawChart('chart-monthly-trends', {
       type: 'line',
       data: {
-        labels: chartConfig.monthlyTrends.labels,
+        labels: m.labels,
         datasets: [
-          {
-            label: 'ผู้เข้าพักใหม่',
-            data: chartConfig.monthlyTrends.checkIns,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            fill: true,
-            tension: 0.3
-          },
-          {
-            label: 'ผู้ย้ายออก',
-            data: chartConfig.monthlyTrends.checkOuts,
-            borderColor: '#ef4444',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            fill: true,
-            tension: 0.3
-          }
+          line('ผู้เข้าพักใหม่', m.checkIns, '#10b981', 'rgba(16, 185, 129, 0.1)'),
+          line('ผู้ย้ายออก', m.checkOuts, '#ef4444', 'rgba(239, 68, 68, 0.1)')
         ]
       },
       options: {
@@ -282,6 +189,4 @@ function renderCharts(data) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadDashboard();
-});
+document.addEventListener('DOMContentLoaded', loadDashboard);

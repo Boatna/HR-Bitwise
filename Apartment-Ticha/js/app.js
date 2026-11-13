@@ -19,7 +19,7 @@ const App = {
             <img src="assets/mascot.png" alt="ทาคุจัง" class="rounded-circle bg-white shadow-sm flex-shrink-0" style="width: 40px; height: 40px; object-fit: contain; padding: 2px;">
             <div class="brand-text">
               <div class="fw-bold brand-title leading-tight">ระบบบริหารหอพักพนักงาน</div>
-              <small class="text-white-50 brand-subtitle">Employee Dormitory Management v2.2</small>
+              <small class="text-white-50 brand-subtitle">Employee Dormitory Management v2.5.0</small>
             </div>
           </a>
 
@@ -154,33 +154,9 @@ const App = {
         label = 'ใช้งานอยู่';
         icon = 'bi-check-circle-fill text-success';
         break;
-      case 'Pending':
-        label = 'รอตรวจสอบ';
-        icon = 'bi-clock-fill text-warning';
-        break;
-      case 'Approved':
-        label = 'อนุมัติแล้ว';
-        icon = 'bi-check-all text-primary';
-        break;
-      case 'Rejected':
-        label = 'ปฏิเสธ';
-        icon = 'bi-x-octagon-fill text-danger';
-        break;
       case 'Occupied':
         label = 'มีผู้จอง';
         icon = 'bi-car-front-fill text-primary';
-        break;
-      case 'CheckedOut':
-        label = 'ย้ายออกแล้ว';
-        icon = 'bi-box-arrow-right text-secondary';
-        break;
-      case 'Transferred':
-        label = 'ย้ายห้อง';
-        icon = 'bi-arrow-left-right text-secondary';
-        break;
-      case 'Completed':
-        label = 'เสร็จสมบูรณ์';
-        icon = 'bi-check2-circle text-success';
         break;
     }
 
@@ -218,7 +194,7 @@ const App = {
   },
 
   getAcBadge(hasAirConditioner) {
-    if (hasAirConditioner !== false && String(hasAirConditioner).toLowerCase() !== 'no' && String(hasAirConditioner).toLowerCase() !== 'false') {
+    if (hasAirConditioner) {
       return `<span class="badge badge-ac px-2 py-1"><i class="bi bi-snow text-success"></i> ห้องแอร์</span>`;
     }
     return `<span class="badge badge-fan px-2 py-1"><i class="bi bi-wind text-secondary"></i> ห้องพัดลม</span>`;

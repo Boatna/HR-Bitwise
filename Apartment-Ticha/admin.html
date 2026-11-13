@@ -11,6 +11,15 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ===== สไตล์แท็บมิเตอร์น้ำ-ไฟ (ย้ายมาจาก meters.html) ===== */
+    .meter-input { width: 96px; text-align: right; }
+    .unit-cell { min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
+    .meter-table th, .meter-table td { white-space: nowrap; }
+    .meter-table .group-elec { background: #fffbeb; }
+    .meter-table .group-water { background: #eff6ff; }
+    .unit-warn { color: #b45309; font-weight: 600; }
+  </style>
 </head>
 <body>
   <div id="navbar-container"></div>
@@ -41,6 +50,9 @@
         </a>
         <a class="nav-link" href="#" data-tab="parking">
           <i class="bi bi-car-front-fill text-warning"></i> ที่จอดรถ (Parking)
+        </a>
+        <a class="nav-link" href="#" data-tab="meters">
+          <i class="bi bi-lightning-charge-fill text-warning"></i> มิเตอร์น้ำ-ไฟ / บิล
         </a>
       </nav>
 
@@ -225,6 +237,7 @@
                   <option value="เฟอร์นิเจอร์">เฟอร์นิเจอร์</option>
                   <option value="เครื่องนอน">เครื่องนอน</option>
                   <option value="ความปลอดภัย">ความปลอดภัย/กุญแจ</option>
+                  <option value="สุขภัณฑ์">สุขภัณฑ์ / ห้องน้ำ</option>
                   <option value="อื่นๆ">อื่นๆ</option>
                 </select>
               </div>
@@ -394,6 +407,176 @@
           </div>
         </div>
       </section>
+
+      <!-- Tab: มิเตอร์น้ำ-ไฟ / บิล / ใบเสร็จ -->
+      <section id="tab-meters" class="tab-content-section d-none">
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+      <div>
+        <h3 class="fw-bold mb-1 text-dark"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>มิเตอร์น้ำ-ไฟ และบิลค่าใช้จ่าย</h3>
+        <p class="text-muted mb-0">จดเลขมิเตอร์รายห้อง คำนวณค่าไฟ-ค่าน้ำ ออกใบแจ้งหนี้ และใบเสร็จรับเงิน</p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <label for="period-picker" class="fw-semibold text-dark mb-0">รอบบิล</label>
+        <input type="month" id="period-picker" class="form-control" style="width: 180px;">
+      </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="meterTabs">
+      <li class="nav-item"><button class="nav-link active" data-tab="read"><i class="bi bi-speedometer me-1"></i>จดมิเตอร์</button></li>
+      <li class="nav-item"><button class="nav-link" data-tab="bills"><i class="bi bi-receipt me-1"></i>บิลและใบเสร็จ</button></li>
+      <li class="nav-item"><button class="nav-link" data-tab="rates"><i class="bi bi-sliders me-1"></i>ตั้งค่าอัตรา</button></li>
+    </ul>
+
+    <!-- Tab: จดมิเตอร์ -->
+    <section id="mt-read">
+      <div class="card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body p-3">
+          <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-4">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" id="search-meter" class="form-control border-start-0" placeholder="ค้นหาเลขห้อง หรือชื่อผู้พัก...">
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <select id="filter-meter-state" class="form-select">
+                <option value="">ทุกห้อง</option>
+                <option value="pending">ยังไม่จดมิเตอร์</option>
+                <option value="done">จดแล้ว</option>
+                <option value="occupied">เฉพาะห้องที่มีผู้พัก</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-auto ms-auto d-flex align-items-center gap-3">
+              <small class="text-muted" id="meter-progress"></small>
+              <button class="btn btn-outline-secondary btn-sm" onclick="Meters.loadSheet()"><i class="bi bi-arrow-clockwise me-1"></i>รีเฟรช</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-card shadow-sm">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 meter-table">
+            <thead>
+              <tr>
+                <th rowspan="2">ห้อง</th>
+                <th rowspan="2">ผู้พัก</th>
+                <th colspan="3" class="text-center group-elec">ไฟฟ้า (หน่วย)</th>
+                <th colspan="3" class="text-center group-water">น้ำ (หน่วย)</th>
+                <th rowspan="2" class="text-end">ประมาณการ (บาท)</th>
+                <th rowspan="2">สถานะบิล</th>
+                <th rowspan="2">จัดการ</th>
+              </tr>
+              <tr>
+                <th class="group-elec">ครั้งก่อน</th><th class="group-elec">ครั้งนี้</th><th class="group-elec text-end">ใช้</th>
+                <th class="group-water">ครั้งก่อน</th><th class="group-water">ครั้งนี้</th><th class="group-water text-end">ใช้</th>
+              </tr>
+            </thead>
+            <tbody id="meter-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <p class="text-muted small mt-2 mb-0">ช่อง "ครั้งก่อน" ดึงจากการจดครั้งล่าสุดอัตโนมัติ แก้ได้เมื่อเปลี่ยนมิเตอร์ใหม่ หากเลขครั้งนี้น้อยกว่าครั้งก่อน ระบบจะถามว่ามิเตอร์วนครบรอบหรือไม่</p>
+    </section>
+
+    <!-- Tab: บิลและใบเสร็จ -->
+    <section id="mt-bills" class="d-none">
+      <div class="row g-2 mb-3" id="bill-summary"></div>
+      <div class="card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body p-3">
+          <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-4">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" id="search-bill" class="form-control border-start-0" placeholder="ค้นหาเลขที่บิล ห้อง หรือชื่อผู้พัก...">
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <select id="filter-bill-status" class="form-select">
+                <option value="">ทุกสถานะ (ยกเว้นยกเลิก)</option>
+                <option value="Unpaid">รอชำระ</option>
+                <option value="Paid">ชำระแล้ว</option>
+                <option value="Cancelled">ยกเลิก</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-auto ms-auto">
+              <button class="btn btn-outline-secondary btn-sm" onclick="Meters.loadBills()"><i class="bi bi-arrow-clockwise me-1"></i>รีเฟรช</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="table-card shadow-sm">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>เลขที่บิล</th><th>ห้อง / ผู้พัก</th><th class="text-end">ไฟ</th><th class="text-end">น้ำ</th>
+                <th class="text-end">ยอดรวม (บาท)</th><th>ครบกำหนด</th><th>สถานะ</th><th>จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="bill-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab: ตั้งค่าอัตรา -->
+    <section id="mt-rates" class="d-none">
+      <div class="row g-4">
+        <div class="col-12 col-lg-7">
+          <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white py-3 border-0">
+              <h5 class="fw-bold text-dark mb-0"><i class="bi bi-cash-coin text-primary me-2"></i>อัตราค่าสาธารณูปโภค</h5>
+            </div>
+            <div class="card-body p-4 pt-0">
+              <div class="row g-3">
+                <div class="col-6"><label class="form-label fw-semibold">ค่าไฟ (บาท/หน่วย)</label><input type="number" step="0.01" min="0" id="set-ELEC_RATE" class="form-control"></div>
+                <div class="col-6"><label class="form-label fw-semibold">ค่าน้ำ (บาท/หน่วย)</label><input type="number" step="0.01" min="0" id="set-WATER_RATE" class="form-control"></div>
+                <div class="col-6"><label class="form-label fw-semibold">ค่าไฟขั้นต่ำ (บาท/เดือน)</label><input type="number" step="0.01" min="0" id="set-ELEC_MIN_CHARGE" class="form-control"></div>
+                <div class="col-6"><label class="form-label fw-semibold">ค่าน้ำขั้นต่ำ (บาท/เดือน)</label><input type="number" step="0.01" min="0" id="set-WATER_MIN_CHARGE" class="form-control"></div>
+                <div class="col-6">
+                  <label class="form-label fw-semibold">รวมค่าเช่าห้องในบิล</label>
+                  <select id="set-BILL_INCLUDE_RENT" class="form-select"><option value="Yes">รวม (ใช้ค่าเช่าจากข้อมูลห้อง)</option><option value="No">ไม่รวม</option></select>
+                </div>
+                <div class="col-6"><label class="form-label fw-semibold">VAT (%)</label><input type="number" step="0.01" min="0" id="set-VAT_RATE" class="form-control"><small class="text-muted">คิดเฉพาะค่าไฟ/น้ำ/อื่น ๆ ไม่คิดกับค่าเช่า</small></div>
+                <div class="col-6"><label class="form-label fw-semibold">ครบกำหนดชำระ (วันที่ของเดือนถัดไป)</label><input type="number" min="1" max="28" id="set-BILL_DUE_DAY" class="form-control"></div>
+                <div class="col-6"></div>
+                <div class="col-6"><label class="form-label fw-semibold">เลขมิเตอร์ไฟสูงสุด (ก่อนวนกลับ 0)</label><input type="number" min="1" id="set-METER_MAX_ELEC" class="form-control"></div>
+                <div class="col-6"><label class="form-label fw-semibold">เลขมิเตอร์น้ำสูงสุด (ก่อนวนกลับ 0)</label><input type="number" min="1" id="set-METER_MAX_WATER" class="form-control"></div>
+              </div>
+              <hr class="my-4">
+              <h6 class="fw-bold text-dark mb-3">ข้อมูลที่แสดงบนบิล / ใบเสร็จ</h6>
+              <div class="row g-3">
+                <div class="col-12"><label class="form-label fw-semibold">ที่อยู่หน่วยงาน</label><input type="text" id="set-COMPANY_ADDRESS" class="form-control"></div>
+                <div class="col-12"><label class="form-label fw-semibold">เลขประจำตัวผู้เสียภาษี (ถ้ามี)</label><input type="text" id="set-COMPANY_TAXID" class="form-control"></div>
+                <div class="col-12"><label class="form-label fw-semibold">ช่องทางชำระเงิน (แสดงท้ายใบแจ้งหนี้)</label><input type="text" id="set-PAY_INFO" class="form-control" placeholder="เช่น โอนเข้าบัญชี ... หรือหักจากเงินเดือน"></div>
+                <div class="col-12"><button class="btn btn-primary" onclick="Meters.saveRates()"><i class="bi bi-save me-1"></i>บันทึกอัตรา</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-5">
+          <div class="card border-0 shadow-sm rounded-4 bg-light">
+            <div class="card-body p-4">
+              <h6 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle text-primary me-2"></i>หลักการคำนวณ</h6>
+              <ul class="text-muted small ps-3 mb-3" style="line-height: 1.8;">
+                <li>หน่วยที่ใช้ = เลขครั้งนี้ − เลขครั้งก่อน (รองรับมิเตอร์วนครบรอบ)</li>
+                <li>ค่าไฟ/ค่าน้ำ = หน่วย × อัตรา และไม่ต่ำกว่าขั้นต่ำที่ตั้งไว้</li>
+                <li>ยอดรวม = ค่าไฟ + ค่าน้ำ + ค่าเช่า (ถ้าเลือก) + ค่าอื่น ๆ − ส่วนลด + VAT</li>
+                <li>เลขที่เอกสารใช้ปี พ.ศ. เช่น INV-256911-001 และ RC-256911-001</li>
+                <li>ห้องที่มีผู้พักหลายคน บิลแสดงยอดเฉลี่ยต่อคนให้ด้วย</li>
+              </ul>
+              <div class="alert alert-warning small mb-0">
+                <strong>ข้อควรระวังทางกฎหมาย:</strong> ผู้ให้เช่าที่พักอาศัยต้องเรียกเก็บค่าไฟและค่าน้ำตามอัตราจริงที่การไฟฟ้า/การประปาเรียกเก็บ ห้ามบวกกำไร (สคบ. ย้ำและมีโทษตามกฎหมาย) ระบบจึงไม่มีอัตราเริ่มต้น กรุณากรอกอัตราจริงจากใบแจ้งหนี้ของการไฟฟ้า/การประปา และตรวจประกาศล่าสุดกับนโยบายบริษัทก่อนใช้
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </section>
 
       <!-- Tab 4: ข้อมูลอาคาร (Buildings) -->
       <section id="tab-buildings" class="tab-content-section d-none">
@@ -1075,7 +1258,7 @@
 
   <footer class="bg-white border-top py-3 text-center text-muted small mt-auto">
     <div class="container">
-      &copy; 2026 ระบบบริหารหอพักพนักงาน (Employee Dormitory Management System) | v2.2
+      &copy; 2026 ระบบบริหารหอพักพนักงาน (Employee Dormitory Management System) | v2.5.0
     </div>
   </footer>
 
@@ -1085,6 +1268,7 @@
   <script src="js/app.js"></script>
   <script src="js/occupancy.js"></script>
   <script src="js/reports.js"></script>
+  <script src="js/meters.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

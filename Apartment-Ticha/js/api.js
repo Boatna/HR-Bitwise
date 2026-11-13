@@ -1,5 +1,5 @@
 const API = {
-  DEFAULT_API_URL: 'https://script.google.com/macros/s/AKfycbx09smCCZvRZsDNWzK8VoEVc4Bq2YH5FESudF-b0rKiD8nWLReSznGISmpSAb27Jpv5vw/exec',
+  DEFAULT_API_URL: 'https://script.google.com/macros/s/AKfycbz7Zt7b3HL6yc10kmXu4FDgk6xbrf6Qn2kIysFq-NpBOY5nU8VL4xujbNhgT3wZtlClvg/exec',
   STORAGE_URL_KEY: 'DORM_API_URL',
   USER_STORAGE_KEY: 'DORM_CURRENT_USER',
   STORAGE_TOKEN_KEY: 'DORM_API_TOKEN',
@@ -110,9 +110,6 @@ const API = {
   getRooms() {
     return this.call('getRooms');
   },
-  getRoomById(roomId) {
-    return this.call('getRoomById', { roomId });
-  },
   saveRoom(data) {
     return this.call('saveRoom', { data });
   },
@@ -134,15 +131,12 @@ const API = {
     return this.call('deleteEmployee', { employeeId });
   },
 
-  // ---------- อาคาร / ชั้น ----------
+  // ---------- อาคาร ----------
   getBuildings() {
     return this.call('getBuildings');
   },
   saveBuilding(data) {
     return this.call('saveBuilding', { data });
-  },
-  getFloors() {
-    return this.call('getFloors');
   },
 
   // ---------- การเข้าพัก (Occupancy) ----------
@@ -176,10 +170,7 @@ const API = {
     return this.call('deleteParkingSlot', { slotId });
   },
 
-  // ---------- การตั้งค่าและ Audit ----------
-  getAuditLogs() {
-    return this.call('getAuditLogs');
-  },
+  // ---------- การตั้งค่า ----------
   getSettings() {
     return this.call('getSettings');
   },
@@ -187,24 +178,17 @@ const API = {
     return this.call('saveSettings', { data });
   },
 
-  // Backward compatibility placeholders
-  getBeds() { return this.call('getBeds'); },
-  saveBed(data) { return this.call('saveBed', { data }); },
-  getRoomRequests() { return this.call('getRoomRequests'); },
-  createRoomRequest(data) { return this.call('createRoomRequest', { data }); },
-  updateRequestStatus(data) { return this.call('updateRequestStatus', { data }); },
-  getMaintenance() { return this.call('getMaintenance'); },
-  saveMaintenance(data) { return this.call('saveMaintenance', { data }); },
-  completeMaintenance(maintenanceId) { return this.call('completeMaintenance', { maintenanceId }); },
-  getRepairRequests() { return this.call('getRepairRequests'); },
-  saveRepairRequest(data) { return this.call('saveRepairRequest', { data }); },
-  updateRepairStatus(data) { return this.call('updateRepairStatus', { data }); },
+  // ---------- ครุภัณฑ์ห้องพัก (Assets) ----------
   getRoomAssets(roomId = null) { return this.call('getRoomAssets', roomId ? { roomId } : {}); },
   saveAsset(data) { return this.call('saveAsset', { data }); },
   deleteAsset(assetId) { return this.call('deleteAsset', { assetId }); },
   addDefaultAssetsForRoom(roomId) { return this.call('addDefaultAssetsForRoom', { roomId }); },
-  getKeys() { return this.call('getKeys'); },
-  saveKey(data) { return this.call('saveKey', { data }); },
-  getAdminUsers() { return this.call('getAdminUsers'); },
-  saveAdminUser(data) { return this.call('saveAdminUser', { data }); }
+
+  // ---------- มิเตอร์น้ำ-ไฟ / บิล / ใบเสร็จ ----------
+  getMeterSheet(period) { return this.call('getMeterSheet', { period }); },
+  saveMeterReading(data) { return this.call('saveMeterReading', { data }); },
+  getBills(params = {}) { return this.call('getBills', params); },
+  payBill(data) { return this.call('payBill', { data }); },
+  voidPayment(billId) { return this.call('voidPayment', { billId }); },
+  cancelBill(billId) { return this.call('cancelBill', { billId }); }
 };
