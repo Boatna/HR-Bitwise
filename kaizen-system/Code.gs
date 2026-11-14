@@ -10,6 +10,8 @@ const CONFIG = {
   COMMENT_SHEET: 'Comments',
   PROGRESS_SHEET: 'MonthlyProgress',
 
+  TIMEZONE: 'Asia/Bangkok', // ใช้ทุกจุดที่เกี่ยวกับวันที่/เวลา ไม่พึ่งค่า Time zone ของโปรเจกต์
+
   TARGET_DEFAULT: 6,
   TARGET_EXEMPT: 4,
   TARGET_ZERO: 0,
@@ -55,7 +57,7 @@ const CONFIG = {
 
   MAX_FILE_SIZE: 10 * 1024 * 1024,
   MAX_FILES_PER_KAIZEN: 10,
-  MAX_TOTAL_UPLOAD_SIZE: 50 * 1024 * 1024,
+  MAX_TOTAL_UPLOAD_SIZE: 25 * 1024 * 1024, // Apps Script รับ POST ได้ไม่เกิน ~50MB และ base64 ใหญ่ขึ้น ~33%
 
   SCRIPT_PROP_FOLDER_ID_KEY: 'SCRIPT_PROP_FOLDER_ID_KEY',
 
@@ -335,15 +337,34 @@ function normalizeDept_(val) {
     .replace(/\s+/g, ' ');
 }
 
+// สร้างวันที่ 00:00 ตามเวลาไทยเสมอ (ไม่ขึ้นกับ Time zone ของโปรเจกต์)
+function makeBangkokDate_(y, m, d) {
+  try {
+    const pad = function (n) { return ('0' + parseInt(n, 10)).slice(-2); };
+    return Utilities.parseDate(parseInt(y, 10) + '-' + pad(m) + '-' + pad(d), CONFIG.TIMEZONE, 'yyyy-MM-dd');
+  } catch (e) {
+    return new Date(NaN);
+  }
+}
+
+function getNowBEYear_() {
+  return parseInt(Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy'), 10) + 543;
+}
+
+function getNowMonth_() {
+  return parseInt(Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'M'), 10);
+}
+
 function toBEDateString_(dateVal) {
   if (!dateVal) return '';
   const d = (dateVal instanceof Date) ? dateVal : new Date(dateVal);
   if (isNaN(d.getTime())) return String(dateVal);
-  const day = d.getDate();
+  const day = parseInt(Utilities.formatDate(d, CONFIG.TIMEZONE, 'd'), 10);
   const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-  let y = d.getFullYear();
+  let y = parseInt(Utilities.formatDate(d, CONFIG.TIMEZONE, 'yyyy'), 10);
+  const mIdx = parseInt(Utilities.formatDate(d, CONFIG.TIMEZONE, 'M'), 10) - 1;
   if (y < 2400) y += 543;
-  return day + ' ' + monthNames[d.getMonth()] + ' ' + y;
+  return day + ' ' + monthNames[mIdx] + ' ' + y;
 }
 
 function getTargetForPosition_(position) {
@@ -360,6 +381,24 @@ function resolveDoneCount_(doneCount, computedCount) {
     return computed;
   }
   return Math.max(Number(doneCount) || 0, computed);
+}
+
+// ยอด "ทำแล้ว" ของพนักงาน — ใช้สูตรเดียวทุกหน้า (Dashboard, หน้าพนักงาน, ความคืบหน้า Kaizen)
+//   = max( คอลัมน์ Done ใน HR_Employees [เฉพาะปีปัจจุบัน],
+//          Kaizen ที่อนุมัติแล้วในปีนั้น,
+//          ยอดที่กรอกมือใน MonthlyProgress )
+function computeDoneCount_(doneColumn, approvedCount, manualProgressTotal) {
+  return resolveDoneCount_(doneColumn, Math.max(Number(approvedCount) || 0, Number(manualProgressTotal) || 0));
+}
+
+function getApprovedCountMap_(beYear, records) {
+  const map = {};
+  (records || getKaizenRecords()).forEach(function (r) {
+    if (r.beYear === Number(beYear) && r.status === CONFIG.STATUS_APPROVED) {
+      map[r.empId] = (map[r.empId] || 0) + 1;
+    }
+  });
+  return map;
 }
 
 function safeJSONParse_(str) {
@@ -382,13 +421,67 @@ function extractDriveFileIdFromUrl_(url) {
   return m ? m[0] : '';
 }
 
-function clearKaizenCache_() {
+// CacheService เก็บได้ไม่เกิน ~100KB ต่อ key ถ้าข้อมูลใหญ่กว่านี้ cache.put จะล้มเหลวเงียบ ๆ
+// จึงแบ่งเก็บเป็นชิ้นเล็ก (chunk) เพื่อให้ cache ทำงานได้จริงเมื่อข้อมูลเพิ่มขึ้น
+const CACHE_CHUNK_SIZE_ = 30000;
+
+function cachePutLarge_(key, obj, ttlSeconds) {
   try {
     const cache = CacheService.getScriptCache();
-    cache.remove('kaizen_records_all');
-    cache.remove('employees_list');
-    cache.remove('employees_all_list');
+    const json = JSON.stringify(obj);
+    const n = Math.ceil(json.length / CACHE_CHUNK_SIZE_);
+    const pairs = {};
+    for (let i = 0; i < n; i++) {
+      pairs[key + '_' + i] = json.substr(i * CACHE_CHUNK_SIZE_, CACHE_CHUNK_SIZE_);
+    }
+    pairs[key + '_n'] = String(n);
+    cache.putAll(pairs, ttlSeconds || 60);
   } catch (e) {}
+}
+
+function cacheGetLarge_(key) {
+  try {
+    const cache = CacheService.getScriptCache();
+    const n = parseInt(cache.get(key + '_n') || '0', 10);
+    if (!n) return null;
+    const keys = [];
+    for (let i = 0; i < n; i++) keys.push(key + '_' + i);
+    const got = cache.getAll(keys);
+    let json = '';
+    for (let i = 0; i < n; i++) {
+      const part = got[keys[i]];
+      if (part === null || part === undefined) return null;
+      json += part;
+    }
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
+function cacheRemoveLarge_(key) {
+  try {
+    const cache = CacheService.getScriptCache();
+    const n = parseInt(cache.get(key + '_n') || '0', 10);
+    const keys = [key + '_n'];
+    for (let i = 0; i < n; i++) keys.push(key + '_' + i);
+    cache.removeAll(keys);
+  } catch (e) {}
+}
+
+function clearKaizenCache_() {
+  cacheRemoveLarge_('kaizen_records_all');
+  cacheRemoveLarge_('employees_list');
+  try {
+    CacheService.getScriptCache().removeAll(['kaizen_records_all', 'employees_list', 'employees_all_list']);
+  } catch (e) {}
+}
+
+function formatTimestamp_(v) {
+  if (!v) return '';
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return '';
+  return Utilities.formatDate(d, CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm');
 }
 
 function getOrCreateDriveFolder_() {
@@ -481,7 +574,7 @@ function saveMultipleFilesToDrive_(files, kaizenId, startCount) {
       if (totalSize > CONFIG.MAX_TOTAL_UPLOAD_SIZE) {
         results.push({
           name: fileData.name,
-          error: 'ขนาดไฟล์รวมเกิน 50 MB'
+          error: 'ขนาดไฟล์รวมเกิน 25 MB'
         });
         continue;
       }
@@ -565,15 +658,8 @@ function deleteKaizenFilesFromDrive_(recordData) {
 }
 
 function getEmployees() {
-  const cache = CacheService.getScriptCache();
-  const cacheKey = 'employees_list';
-
-  try {
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return JSON.parse(cached);
-    }
-  } catch (e) {}
+  const cachedEmp = cacheGetLarge_('employees_list');
+  if (cachedEmp) return cachedEmp;
 
   try {
     let sh = null;
@@ -625,9 +711,7 @@ function getEmployees() {
       });
     });
 
-    try {
-      cache.put(cacheKey, JSON.stringify(employees), CONFIG.CACHE_DURATION_SECONDS);
-    } catch (e) {}
+    cachePutLarge_('employees_list', employees, CONFIG.CACHE_DURATION_SECONDS);
 
     return employees;
   } catch (e) {
@@ -699,11 +783,8 @@ function getManagers() {
 }
 
 function getKaizenRecords() {
-  const cache = CacheService.getScriptCache();
-  try {
-    const cached = cache.get('kaizen_records_all');
-    if (cached) return JSON.parse(cached);
-  } catch (e) {}
+  const cachedRecs = cacheGetLarge_('kaizen_records_all');
+  if (cachedRecs) return cachedRecs;
 
   const sh = getSheet_(CONFIG.DATA_SHEET);
   const lastRow = sh.getLastRow();
@@ -715,7 +796,8 @@ function getKaizenRecords() {
   const records = [];
   values.forEach(function (row, idx) {
     if (!row[0]) return;
-    const dateObj = row[1] ? new Date(row[1]) : null;
+    let dateObj = row[1] ? new Date(row[1]) : null;
+    if (dateObj && isNaN(dateObj.getTime())) dateObj = null; // กันค่าวันที่เพี้ยนทำให้ทั้งระบบพัง
 
     let categories = {};
     if (row[11]) {
@@ -753,11 +835,11 @@ function getKaizenRecords() {
     records.push({
       rowIndex: idx + 2,
       id: String(row[0] || '').trim(),
-      date: dateObj ? Utilities.formatDate(dateObj, Session.getScriptTimeZone(), 'yyyy-MM-dd') : '',
+      date: dateObj ? Utilities.formatDate(dateObj, CONFIG.TIMEZONE, 'yyyy-MM-dd') : '',
       dateDisplay: toBEDateString_(row[1]),
       beYear: (function() {
         if (dateObj && !isNaN(dateObj.getTime())) {
-          const yr = dateObj.getFullYear();
+          const yr = parseInt(Utilities.formatDate(dateObj, CONFIG.TIMEZONE, 'yyyy'), 10);
           return yr > 2400 ? yr : yr + 543;
         }
         if (row[0]) {
@@ -774,7 +856,7 @@ function getKaizenRecords() {
       result: row[7] || '',
       pdfUrl: String(row[8] || '').trim(),
       excelUrl: String(row[9] || '').trim(),
-      timestamp: row[10] ? Utilities.formatDate(new Date(row[10]), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm') : '',
+      timestamp: formatTimestamp_(row[10]),
       categories: categories,
       status: status,
       rejectReason: row[23] || '',
@@ -796,9 +878,7 @@ function getKaizenRecords() {
     return b.id.localeCompare(a.id, undefined, { numeric: true });
   });
 
-  try {
-    cache.put('kaizen_records_all', JSON.stringify(records), 60);
-  } catch (e) {}
+  cachePutLarge_('kaizen_records_all', records, 60);
 
   return records;
 }
@@ -1072,6 +1152,16 @@ function addKaizenRecordWithMultipleFiles(payload) {
       throw new Error('กรุณาเลือกประเภท Kaizen');
     }
 
+    if (!String(payload.detail || '').trim()) {
+      throw new Error('กรุณากรอกผลลัพธ์ (ทำแล้วดีขึ้นอย่างไร)');
+    }
+    if (!payload.categories || Object.keys(payload.categories).filter(function (k) { return payload.categories[k]; }).length === 0) {
+      throw new Error('กรุณาเลือกหมวดหมู่อย่างน้อย 1 หมวดหมู่');
+    }
+    if (String(payload.title).length > 200) {
+      throw new Error('หัวข้อ Kaizen ยาวเกิน 200 ตัวอักษร');
+    }
+
     if (payload.files && payload.files.length > 0) {
       let totalSize = 0;
       for (let i = 0; i < payload.files.length; i++) {
@@ -1083,7 +1173,7 @@ function addKaizenRecordWithMultipleFiles(payload) {
         totalSize += fileSize;
       }
       if (totalSize > CONFIG.MAX_TOTAL_UPLOAD_SIZE) {
-        throw new Error('ขนาดไฟล์รวมเกิน 50 MB กรุณาลดขนาดหรือจำนวนไฟล์');
+        throw new Error('ขนาดไฟล์รวมเกิน 25 MB กรุณาลดขนาดหรือจำนวนไฟล์');
       }
     }
 
@@ -1091,7 +1181,7 @@ function addKaizenRecordWithMultipleFiles(payload) {
     if (payload.date) {
       const parts = String(payload.date).split('-');
       if (parts.length === 3) {
-        dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        dateObj = makeBangkokDate_(parts[0], parts[1], parts[2]);
       } else {
         dateObj = new Date(payload.date);
       }
@@ -1132,7 +1222,7 @@ function addKaizenRecordWithMultipleFiles(payload) {
             payload.beforeImageMimeType,
             newId + '_before'
           );
-        } catch (imgErr) {}
+        } catch (imgErr) { fileErrors.push({ name: 'รูปภาพ Before/After', error: imgErr.message }); }
       }
 
       if (payload.afterImageBase64 && payload.afterImageFileName) {
@@ -1143,7 +1233,7 @@ function addKaizenRecordWithMultipleFiles(payload) {
             payload.afterImageMimeType,
             newId + '_after'
           );
-        } catch (imgErr) {}
+        } catch (imgErr) { fileErrors.push({ name: 'รูปภาพ Before/After', error: imgErr.message }); }
       }
 
       const lastCol = sh.getLastColumn();
@@ -1847,11 +1937,11 @@ function getMyRecords(empId) {
     if (!id) throw new Error('ไม่พบรหัสพนักงาน');
     const allRecords = getKaizenRecords();
     const records = allRecords.filter(r => r.empId === id);
-    const nowBE = new Date().getFullYear() + 543;
+    const nowBE = getNowBEYear_();
     const emp = getEmployees().find(e => e.empId === id);
     const approvedThisYear = records.filter(r => r.beYear === nowBE && r.status === CONFIG.STATUS_APPROVED).length;
     const prog = getProgressMap_(nowBE)[id];
-    const doneCount = resolveDoneCount_(emp ? emp.doneCount : null, Math.max(approvedThisYear, prog ? prog.total : 0));
+    const doneCount = computeDoneCount_(emp ? emp.doneCount : null, approvedThisYear, prog ? prog.total : 0);
     return { success: true, records: records, beYear: nowBE, doneCount: doneCount, target: emp ? emp.target : null };
   } catch (err) {
     return { success: false, message: err.message };
@@ -2007,17 +2097,21 @@ function resubmitKaizenRecord(payload) {
       beforeImageUrl = sh.getRange(rowIndex, 28).getValue() || '';
       if (payload.beforeImageBase64 && payload.beforeImageFileName) {
         try {
+          const oldBeforeUrl = beforeImageUrl;
           beforeImageUrl = saveFileToDrive_(payload.beforeImageBase64, payload.beforeImageFileName, payload.beforeImageMimeType, idCell + '_before');
           sh.getRange(rowIndex, 28).setValue(beforeImageUrl);
-        } catch (imgErr) {}
+          if (oldBeforeUrl && oldBeforeUrl !== beforeImageUrl) trashDriveFileByUrl_(oldBeforeUrl);
+        } catch (imgErr) { fileErrors.push({ name: 'รูปภาพ Before/After', error: imgErr.message }); }
       }
 
       afterImageUrl = sh.getRange(rowIndex, 29).getValue() || '';
       if (payload.afterImageBase64 && payload.afterImageFileName) {
         try {
+          const oldAfterUrl = afterImageUrl;
           afterImageUrl = saveFileToDrive_(payload.afterImageBase64, payload.afterImageFileName, payload.afterImageMimeType, idCell + '_after');
           sh.getRange(rowIndex, 29).setValue(afterImageUrl);
-        } catch (imgErr) {}
+          if (oldAfterUrl && oldAfterUrl !== afterImageUrl) trashDriveFileByUrl_(oldAfterUrl);
+        } catch (imgErr) { fileErrors.push({ name: 'รูปภาพ Before/After', error: imgErr.message }); }
       }
 
       const newData = {
@@ -2307,7 +2401,7 @@ function addKaizenRecordByManager(payload) {
     if (payload.date) {
       const parts = String(payload.date).split('-');
       if (parts.length === 3) {
-        dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        dateObj = makeBangkokDate_(parts[0], parts[1], parts[2]);
       } else {
         dateObj = new Date(payload.date);
       }
@@ -2323,7 +2417,7 @@ function addKaizenRecordByManager(payload) {
     const categories = payload.categories || {};
     const categoriesJson = JSON.stringify(categories);
 
-    let newId, newRowIndex, sh, fileUrls = [], beforeImageUrl = '', afterImageUrl = '';
+    let newId, newRowIndex, sh, fileUrls = [], beforeImageUrl = '', afterImageUrl = '', fileErrors = [];
 
     const lock = LockService.getScriptLock();
     lock.waitLock(30000);
@@ -2339,13 +2433,13 @@ function addKaizenRecordByManager(payload) {
       if (payload.beforeImageBase64 && payload.beforeImageFileName) {
         try {
           beforeImageUrl = saveFileToDrive_(payload.beforeImageBase64, payload.beforeImageFileName, payload.beforeImageMimeType, newId + '_before');
-        } catch (imgErr) {}
+        } catch (imgErr) { fileErrors.push({ name: 'รูปภาพ Before/After', error: imgErr.message }); }
       }
 
       if (payload.afterImageBase64 && payload.afterImageFileName) {
         try {
           afterImageUrl = saveFileToDrive_(payload.afterImageBase64, payload.afterImageFileName, payload.afterImageMimeType, newId + '_after');
-        } catch (imgErr) {}
+        } catch (imgErr) { fileErrors.push({ name: 'รูปภาพ Before/After', error: imgErr.message }); }
       }
 
       const lastCol = sh.getLastColumn();
@@ -2488,7 +2582,7 @@ function getEmployeesForManager(reviewerId, beYear) {
     }
 
     const allRecords = getKaizenRecords();
-    const nowBEYear = new Date().getFullYear() + 543;
+    const nowBEYear = getNowBEYear_();
 
     const yearsSet = {};
     allRecords.forEach(r => { if (r.beYear) yearsSet[r.beYear] = true; });
@@ -2513,10 +2607,11 @@ function getEmployeesForManager(reviewerId, beYear) {
       }
     });
 
+    const progressMapEM = getProgressMap_(targetYear);
     let achievedCount = 0;
     employees = employees.map(function (e) {
       const computedCount = countByEmp[e.empId] || 0;
-      const count = resolveDoneCount_(e.doneCount, computedCount);
+      const count = computeDoneCount_(targetYear === nowBEYear ? e.doneCount : null, computedCount, (progressMapEM[e.empId] || { total: 0 }).total);
       const submitted = submittedByEmp[e.empId] || 0;
       const pending = pendingByEmp[e.empId] || 0;
       const rejected = rejectedByEmp[e.empId] || 0;
@@ -2592,11 +2687,12 @@ function getMonthlyProgressForManager(reviewerId, beYear) {
       employees = employees.filter(e => normalizeDept_(e.department) === dept);
     }
 
-    const nowBEYear = new Date().getFullYear() + 543;
+    const nowBEYear = getNowBEYear_();
     const targetYear = beYear ? Number(beYear) : nowBEYear;
-    const currentMonth = new Date().getMonth() + 1;
+    const currentMonth = getNowMonth_();
 
     const progressMap = getProgressMap_(targetYear);
+    const approvedMap = getApprovedCountMap_(targetYear);
 
     const yearsSet = {};
     yearsSet[nowBEYear] = true;
@@ -2618,7 +2714,10 @@ function getMonthlyProgressForManager(reviewerId, beYear) {
     employees = employees.map(function (e) {
       const target = (typeof e.target === 'number' && e.target !== null) ? e.target : getTargetForPosition_(e.position);
       const prog = progressMap[e.empId] || { monthly: {}, total: 0 };
-      const total = prog.total || 0;
+      const manualTotal = prog.total || 0;
+      const approvedCount = approvedMap[e.empId] || 0;
+      const doneColumn = (typeof e.doneCount === 'number') ? e.doneCount : null;
+      const total = computeDoneCount_(targetYear === nowBEYear ? doneColumn : null, approvedCount, manualTotal);
       const achieved = total >= target;
       const percent = target > 0 ? Math.min(100, Math.round((total / target) * 100)) : 100;
       const thisMonthCount = (prog.monthly && prog.monthly[currentMonth]) ? prog.monthly[currentMonth] : 0;
@@ -2636,6 +2735,9 @@ function getMonthlyProgressForManager(reviewerId, beYear) {
         plant: e.plant || '',
         target: target,
         total: total,
+        manualTotal: manualTotal,
+        approvedCount: approvedCount,
+        doneColumn: doneColumn,
         monthly: prog.monthly || {},
         thisMonthCount: thisMonthCount,
         remaining: remaining,
@@ -2758,7 +2860,7 @@ function getDashboardData(beYear, department) {
 
     const yearsSet = {};
     allRecords.forEach(r => { if (r.beYear) yearsSet[r.beYear] = true; });
-    const nowBEYear = new Date().getFullYear() + 543;
+    const nowBEYear = getNowBEYear_();
     yearsSet[nowBEYear] = true;
     const availableYears = Object.keys(yearsSet).map(Number).sort((a, b) => b - a);
 
@@ -2834,7 +2936,7 @@ function getDashboardData(beYear, department) {
     const employeeRows = employees.map(function (emp) {
       const computedCount = countByEmp[emp.empId] || 0;
       const progTotal = (progressMap[emp.empId] || { total: 0 }).total;
-      const count = resolveDoneCount_(emp.doneCount, Math.max(computedCount, progTotal));
+      const count = computeDoneCount_(targetYear === nowBEYear ? emp.doneCount : null, computedCount, progTotal);
       const target = (typeof emp.target === 'number') ? emp.target : getTargetForPosition_(emp.position);
       const achieved = count >= target;
       const percent = target > 0 ? Math.min(100, Math.round((count / target) * 100)) : 100;
@@ -3347,7 +3449,7 @@ function getEmailLogs(payload) {
     const values = sh.getRange(startRow, 1, numRows, 6).getValues();
     const logs = values.map(function (row) {
       return {
-        timestamp: row[0] ? Utilities.formatDate(new Date(row[0]), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss') : '',
+        timestamp: row[0] ? Utilities.formatDate(new Date(row[0]), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss') : '',
         type: row[1] || '',
         kaizenId: row[2] || '',
         recipients: row[3] || '',
@@ -3563,7 +3665,7 @@ function parseDatePayload_(s) {
   if (!s) return null;
   const parts = String(s).split('-');
   const d = (parts.length === 3)
-    ? new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10))
+    ? makeBangkokDate_(parts[0], parts[1], parts[2])
     : new Date(s);
   return isNaN(d.getTime()) ? null : d;
 }

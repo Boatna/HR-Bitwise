@@ -1,6 +1,6 @@
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQjgWIuki4ooEjE7D8we-PYbEV4DMiFAfZ3wc5Y4biS7MgQj0tsBDx0rPgdid0a4Rx/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwilCRzDsZ37Q96kIRfwTWhP5vcgHjI14KeOPhf8TTIhRmxE_Owo_Slyp0pCrSq_onF5Q/exec';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
+const MAX_TOTAL_SIZE = 25 * 1024 * 1024; // รวมไฟล์แนบ + รูป Before/After (Apps Script จำกัดขนาดคำขอ)
 const CONFIG_MAX_FILES_PER_KAIZEN = 10;
 const monthNamesTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const STORAGE_KEY = 'kaizenUserSession_v2';
@@ -123,6 +123,7 @@ let selectedFiles = [];
 let existingFileUrlsForEdit = [];
 let currentCommentKaizenId = null;
 let isLoading = false;
+let queueReqSeq = 0;
 let loadingBarRefCount = 0;
 let PROGRESS_EMPLOYEES = [];
 let progressBeYear = null;
@@ -406,7 +407,7 @@ function handleMultiFileSelect(fileList) {
     }
     const prospectiveTotal = currentTotalSize + f.size;
     if (prospectiveTotal > MAX_TOTAL_SIZE) {
-      rejected.push(f.name + ' (ขนาดรวมเกิน 50MB)');
+      rejected.push(f.name + ' (ขนาดรวมเกิน 25MB)');
       return;
     }
     currentTotalSize = prospectiveTotal;
@@ -843,7 +844,6 @@ function switchView(view) {
 }
 
 function loadMyRecords() {
-  if (isLoading) return;
   showLoading();
   callAppsScript('getMyRecords', { empId: CURRENT_USER.id })
     .then(function(res) {
@@ -1008,7 +1008,6 @@ function repairDepartmentNames() {
             showSuccess(res.message);
             loadQueue();
             DASHBOARD_DATA = null;
-            loadHrDashboard();
           } else showError(res.message);
         })
         .catch(function(err) { hideLoading(); showError(err); });
@@ -1036,7 +1035,6 @@ function syncManagerDepartments() {
             showSuccess(res.message);
             loadQueue();
             DASHBOARD_DATA = null;
-            loadHrDashboard();
           } else showError(res.message);
         })
         .catch(function(err) { hideLoading(); showError(err); });
@@ -1064,7 +1062,6 @@ function fixColumnAlignment() {
             showSuccess(res.message);
             loadQueue();
             DASHBOARD_DATA = null;
-            loadHrDashboard();
           } else showError(res.message);
         })
         .catch(function(err) { hideLoading(); showError(err); });
@@ -1097,7 +1094,6 @@ function autoRepairAllSheetsUI() {
             });
             loadQueue();
             DASHBOARD_DATA = null;
-            loadHrDashboard();
           } else showError(res.message);
         })
         .catch(function(err) { hideLoading(); showError(err); });
@@ -1125,7 +1121,6 @@ function setupDatabaseUI() {
             showSuccess(res.message);
             loadQueue();
             DASHBOARD_DATA = null;
-            loadHrDashboard();
           } else showError(res.message);
         })
         .catch(function(err) { hideLoading(); showError(err); });
@@ -1236,14 +1231,15 @@ function debugReviewQueue() {
 }
 
 function loadQueue() {
-  if (isLoading) return;
   showLoading();
+  const seq = ++queueReqSeq;
   const scopeSel = document.getElementById('mgrScopeFilter');
   const keyword = document.getElementById('mgrSearch').value.trim();
   const scope = (scopeSel && scopeSel.dataset.userSet === '1') ? scopeSel.value : '';
   callAppsScript('getReviewQueue', { reviewerId: CURRENT_USER.id, scope: scope, keyword: keyword })
     .then(function(res) {
       hideLoading();
+      if (seq !== queueReqSeq) return; // มีคำขอใหม่กว่าแล้ว ทิ้งผลลัพธ์เก่า
       if (!res.success) { showError(res.message); return; }
       QUEUE_RECORDS = res.records || [];
       if (scopeSel && res.scope) scopeSel.value = res.scope;
@@ -1349,13 +1345,13 @@ function buildDetailModalCardHtml(r) {
     '<div class="kz-ba-row">' +
     '<div class="detail-ba-item before"><div class="ba-header">🔴 Before</div><div class="ba-body">' +
     (r.beforeImageUrl ?
-      '<div class="img-frame clickable"><img src="' + driveImageSrc(r.beforeImageUrl) + '" alt="รูปก่อนปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.beforeImageUrl) + '\', \'Before\')" onerror="this.parentElement.outerHTML=\'<div class=\\\'ba-empty\\\'>โหลดรูปไม่ได้</div>\'"></div>' :
+      '<div class="img-frame clickable"><img src="' + driveImageSrc(r.beforeImageUrl) + '" alt="รูปก่อนปรับปรุง" loading="lazy" class="kz-zoom" data-full="' + escapeHtml(r.beforeImageUrl) + '" data-label="Before" onerror="this.parentElement.outerHTML=\'<div class=\\\'ba-empty\\\'>โหลดรูปไม่ได้</div>\'"></div>' :
       '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
     '</div></div>' +
     '<div class="kz-ba-arrow">➜</div>' +
     '<div class="detail-ba-item after"><div class="ba-header">🟢 After</div><div class="ba-body">' +
     (r.afterImageUrl ?
-      '<div class="img-frame clickable"><img src="' + driveImageSrc(r.afterImageUrl) + '" alt="รูปหลังปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.afterImageUrl) + '\', \'After\')" onerror="this.parentElement.outerHTML=\'<div class=\\\'ba-empty\\\'>โหลดรูปไม่ได้</div>\'"></div>' :
+      '<div class="img-frame clickable"><img src="' + driveImageSrc(r.afterImageUrl) + '" alt="รูปหลังปรับปรุง" loading="lazy" class="kz-zoom" data-full="' + escapeHtml(r.afterImageUrl) + '" data-label="After" onerror="this.parentElement.outerHTML=\'<div class=\\\'ba-empty\\\'>โหลดรูปไม่ได้</div>\'"></div>' :
       '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
     '</div></div>' +
     '</div>';
@@ -1383,15 +1379,15 @@ function buildDetailModalCardHtml(r) {
   html += '<div class="kz-actions" style="margin-top:0;padding-top:0;border-top:none;">';
 
   if (isManagerRole && isPending && canApproveThis) {
-    html += '<button type="button" class="btn-success" onclick="reviewRecord(' + r.rowIndex + ', \'' + escapeHtml(r.id) + '\', \'approve\')" aria-label="อนุมัติ">✅ อนุมัติ</button>';
-    html += '<button type="button" class="btn-danger" onclick="document.getElementById(\'detailModal\').classList.add(\'hidden\');promptReject(' + r.rowIndex + ', \'' + escapeHtml(r.id) + '\')" aria-label="ตีกลับ">❌ ตีกลับ</button>';
+    html += '<button type="button" class="btn-success dtApprove" data-row="' + r.rowIndex + '" data-id="' + escapeHtml(r.id) + '" aria-label="อนุมัติ">✅ อนุมัติ</button>';
+    html += '<button type="button" class="btn-danger dtReject" data-row="' + r.rowIndex + '" data-id="' + escapeHtml(r.id) + '" aria-label="ตีกลับ">❌ ตีกลับ</button>';
   } else if (isManagerRole && isPending && !canApproveThis) {
     html += '<div class="kz-waiting-note">⏳ รอผู้ตรวจสอบที่เกี่ยวข้อง</div>';
   }
 
   html += '<div class="kz-act-secondary">' +
-    '<button type="button" class="btn-secondary" onclick="showVersionHistory(\'' + escapeHtml(r.id) + '\')" aria-label="ดูประวัติการแก้ไข">📜 ดูประวัติ</button>' +
-    '<button type="button" class="btn-secondary" onclick="openCommentModal(\'' + escapeHtml(r.id) + '\')" aria-label="แสดงความคิดเห็น">💬 ความคิดเห็น</button>' +
+    '<button type="button" class="btn-secondary dtHistory" data-id="' + escapeHtml(r.id) + '" aria-label="ดูประวัติการแก้ไข">📜 ดูประวัติ</button>' +
+    '<button type="button" class="btn-secondary dtComment" data-id="' + escapeHtml(r.id) + '" aria-label="แสดงความคิดเห็น">💬 ความคิดเห็น</button>' +
     '</div>';
 
   html += '</div>'; 
@@ -1446,13 +1442,13 @@ function buildMgrCardHtml(r) {
     '<div class="kz-ba-row">' +
     '<div class="detail-ba-item before"><div class="ba-header">🔴 Before</div><div class="ba-body">' +
     (r.beforeImageUrl ?
-      '<div class="img-frame clickable"><img src="' + driveImageSrc(r.beforeImageUrl) + '" alt="รูปก่อนปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.beforeImageUrl) + '\', \'Before\')" onerror="this.parentElement.outerHTML=\'<div class=\\\'ba-empty\\\'>โหลดรูปไม่ได้</div>\'"></div>' :
+      '<div class="img-frame clickable"><img src="' + driveImageSrc(r.beforeImageUrl) + '" alt="รูปก่อนปรับปรุง" loading="lazy" class="kz-zoom" data-full="' + escapeHtml(r.beforeImageUrl) + '" data-label="Before" onerror="this.parentElement.outerHTML=\'<div class=\\\'ba-empty\\\'>โหลดรูปไม่ได้</div>\'"></div>' :
       '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
     '</div></div>' +
     '<div class="kz-ba-arrow">➜</div>' +
     '<div class="detail-ba-item after"><div class="ba-header">🟢 After</div><div class="ba-body">' +
     (r.afterImageUrl ?
-      '<div class="img-frame clickable"><img src="' + driveImageSrc(r.afterImageUrl) + '" alt="รูปหลังปรับปรุง" loading="lazy" onclick="openImageViewer(\'' + encodeURI(r.afterImageUrl) + '\', \'After\')" onerror="this.parentElement.outerHTML=\'<div class=\\\'ba-empty\\\'>โหลดรูปไม่ได้</div>\'"></div>' :
+      '<div class="img-frame clickable"><img src="' + driveImageSrc(r.afterImageUrl) + '" alt="รูปหลังปรับปรุง" loading="lazy" class="kz-zoom" data-full="' + escapeHtml(r.afterImageUrl) + '" data-label="After" onerror="this.parentElement.outerHTML=\'<div class=\\\'ba-empty\\\'>โหลดรูปไม่ได้</div>\'"></div>' :
       '<div class="ba-empty">ไม่มีรูปภาพ</div>') +
     '</div></div>' +
     '</div>';
@@ -1535,7 +1531,7 @@ function bindMgrTableEvents(container) {
   container.querySelectorAll('.btnApprove').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      reviewRecord(this.dataset.row, this.dataset.id, 'approve');
+      approveRecord(this.dataset.row, this.dataset.id);
     });
   });
 
@@ -1585,6 +1581,21 @@ function promptReject(rowIndex, id) {
   });
 }
 
+function approveRecord(rowIndex, id) {
+  Swal.fire({
+    icon: 'question',
+    title: 'ยืนยันการอนุมัติ',
+    text: 'ต้องการอนุมัติ Kaizen ' + id + ' ใช่หรือไม่?',
+    showCancelButton: true,
+    confirmButtonText: 'อนุมัติ',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#1B6E4C',
+    cancelButtonColor: '#8695B4'
+  }).then(function(result) {
+    if (result.isConfirmed) reviewRecord(rowIndex, id, 'approve');
+  });
+}
+
 function reviewRecord(rowIndex, id, decision, reason) {
   showLoading();
   callAppsScript('reviewKaizenRecord', {
@@ -1602,7 +1613,9 @@ function reviewRecord(rowIndex, id, decision, reason) {
         document.getElementById('detailModal').classList.add('hidden');
         DASHBOARD_DATA = null;
         loadQueue();
-        loadHrDashboard();
+        if (!document.getElementById('mgrHrDashView').classList.contains('hidden')) {
+          loadHrDashboard(document.getElementById('hrDashYear').value);
+        }
         if (currentEmpHistoryEmpId && !document.getElementById('empHistoryModal').classList.contains('hidden')) {
           showEmployeeHistory(currentEmpHistoryEmpId, currentEmpHistoryEmpName);
         }
@@ -1611,9 +1624,28 @@ function reviewRecord(rowIndex, id, decision, reason) {
     .catch(function(err) { hideLoading(); showError(err); });
 }
 
+function bindDetailEvents(container) {
+  container.querySelectorAll('.dtApprove').forEach(function(btn) {
+    btn.addEventListener('click', function() { approveRecord(this.dataset.row, this.dataset.id); });
+  });
+  container.querySelectorAll('.dtReject').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.getElementById('detailModal').classList.add('hidden');
+      promptReject(this.dataset.row, this.dataset.id);
+    });
+  });
+  container.querySelectorAll('.dtHistory').forEach(function(btn) {
+    btn.addEventListener('click', function() { showVersionHistory(this.dataset.id); });
+  });
+  container.querySelectorAll('.dtComment').forEach(function(btn) {
+    btn.addEventListener('click', function() { openCommentModal(this.dataset.id); });
+  });
+}
+
 function showDetail(r, allowReview) {
   const body = document.getElementById('detailBody');
   body.innerHTML = buildDetailModalCardHtml(r);
+  bindDetailEvents(body);
   const actions = document.getElementById('detailReviewActions');
   actions.classList.add('hidden');
   actions.innerHTML = '';
@@ -1847,7 +1879,6 @@ function performAdvancedSearch(params) {
 }
 
 function loadHrDashboard(beYear) {
-  if (isLoading) return;
   const yearToLoad = beYear ? Number(beYear) : null;
   document.getElementById('hrDashScopeLabel').textContent = ' (ทุกแผนก)';
 
@@ -2047,7 +2078,6 @@ function populateProgressFilterOptions(plants, departments) {
 }
 
 function loadMonthlyProgress(beYear) {
-  if (isLoading) return;
   showLoading();
 
   document.getElementById('progressTableBody').innerHTML =
@@ -2118,7 +2148,7 @@ function renderProgressTable() {
       '<td class="text-xs" style="color:var(--ink-faint);">' + escapeHtml(e.plant || '-') + '</td>' +
       '<td>' + escapeHtml(e.department) + '</td>' +
       '<td class="text-center font-semibold num">' + e.target + '</td>' +
-      '<td class="text-center font-bold num" style="color:' + (e.achieved ? 'var(--brand-600)' : 'var(--ink)') + ';">' + e.total + '</td>' +
+      '<td class="text-center font-bold num" style="color:' + (e.achieved ? 'var(--brand-600)' : 'var(--ink)') + ';" title="กรอกมือ ' + (e.manualTotal || 0) + ' · อนุมัติในระบบ ' + (e.approvedCount || 0) + (e.doneColumn !== null && e.doneColumn !== undefined ? ' · คอลัมน์ Done ' + e.doneColumn : '') + ' (ระบบใช้ค่าสูงสุด)">' + e.total + '</td>' +
       '<td class="text-center font-semibold num" style="color:' + (e.remaining > 0 ? 'var(--warn-600)' : 'var(--good-600)') + ';">' + e.remaining + '</td>' +
       '<td><div class="flex items-center gap-2"><div class="progress-track flex-1"><div class="progress-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div><span class="text-xs font-semibold num min-w-[2.5rem]">' + pct + '%</span></div></td>' +
       '<td class="text-center"><input type="number" min="0" step="1" class="count-input progress-count-input" data-empid="' + escapeHtml(e.empId) + '" value="' + monthCount + '" aria-label="จำนวน Kaizen เดือนนี้"></td>' +
@@ -2178,25 +2208,8 @@ function saveProgressCountForRow(btn) {
       btn.textContent = originalText;
       if (res.success) {
         if (tr) tr.classList.remove('count-row-dirty');
-        const emp = PROGRESS_EMPLOYEES.find(function(e) { return e.empId === empId; });
-        if (emp) {
-          const prevMonthCount = (emp.monthly && emp.monthly[month] !== undefined) ? emp.monthly[month] : 0;
-          emp.monthly = emp.monthly || {};
-          emp.monthly[month] = count;
-          emp.total = emp.total - prevMonthCount + count;
-          emp.achieved = emp.total >= emp.target;
-          emp.percent = emp.target > 0 ? Math.min(100, Math.round((emp.total / emp.target) * 100)) : 100;
-          emp.remaining = Math.max(0, emp.target - emp.total);
-        }
-        const achievedCount = PROGRESS_EMPLOYEES.filter(function(e) { return e.achieved; }).length;
-        const totalEmployees = PROGRESS_EMPLOYEES.length;
-        renderProgressSummary({
-          totalEmployees: totalEmployees,
-          achievedCount: achievedCount,
-          notAchievedCount: totalEmployees - achievedCount,
-          achievedPercent: totalEmployees > 0 ? Math.round((achievedCount / totalEmployees) * 100) : 0
-        });
-        renderProgressTable();
+        // ยอดรวมคำนวณจากหลายแหล่ง (กรอกมือ/อนุมัติแล้ว/Done) จึงโหลดจากเซิร์ฟเวอร์ใหม่เพื่อให้ตัวเลขตรงกันทุกหน้า
+        loadMonthlyProgress(beYear);
         showSuccess('บันทึกจำนวนสำเร็จ');
       } else showError(res.message);
     })
@@ -2208,7 +2221,6 @@ function saveProgressCountForRow(btn) {
 }
 
 function loadEmployeeManage() {
-  if (isLoading) return;
   showLoading();
   callAppsScript('getAllEmployeesRaw', { reviewerId: CURRENT_USER.id })
     .then(function(res) {
@@ -2355,7 +2367,7 @@ function exportProgressToExcel() {
   const monthLabel = monthNamesTH[(month || 1) - 1] || ('เดือน ' + month);
   const beYear = Number(document.getElementById('progressYear').value) || progressBeYear;
 
-  const headers = ['รหัสพนักงาน', 'ชื่อ-สกุล', 'Plant', 'แผนก', 'เป้าหมาย/ปี', 'ส่งแล้ว(สะสม)', 'คงเหลือ', '% ความคืบหน้า', 'สถานะ', 'จำนวนเดือน ' + monthLabel];
+  const headers = ['รหัสพนักงาน', 'ชื่อ-สกุล', 'Plant', 'แผนก', 'เป้าหมาย/ปี', 'ทำแล้ว(รวม)', 'คงเหลือ', '% ความคืบหน้า', 'สถานะ', 'จำนวนเดือน ' + monthLabel];
   const aoa = [headers];
 
   rows.forEach(function(e) {
@@ -2745,6 +2757,19 @@ function onSubmit(e) {
     return;
   }
 
+  const _bf = document.getElementById('beforeImageInput').files[0];
+  const _af = document.getElementById('afterImageInput').files[0];
+  const totalBytes = selectedFiles.reduce(function(sum, f) { return sum + (f.file.size || 0); }, 0) + (_bf ? _bf.size : 0) + (_af ? _af.size : 0);
+  if (totalBytes > MAX_TOTAL_SIZE) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'ขนาดไฟล์รวมเกินกำหนด',
+      text: 'รวมไฟล์แนบและรูป Before/After ต้องไม่เกิน 25MB (ตอนนี้ ' + (totalBytes / 1024 / 1024).toFixed(1) + ' MB)',
+      confirmButtonColor: '#1B6E4C'
+    });
+    return;
+  }
+
   currentTransactionId = 'txn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
   isSubmitting = true;
 
@@ -2813,9 +2838,18 @@ function onSubmit(e) {
           setProcessingStep(steps, 'done', 'done');
           setTimeout(function() {
             closeProcessingModal();
-            showSuccess(res.message);
             closeForm();
             loadMyRecords();
+            if (res.fileErrors && res.fileErrors.length > 0) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'บันทึกสำเร็จ แต่บางไฟล์ไม่ถูกบันทึก',
+                html: res.fileErrors.map(function(f) { return escapeHtml(f.name) + ': ' + escapeHtml(f.error); }).join('<br>'),
+                confirmButtonColor: '#1B6E4C'
+              });
+            } else {
+              showSuccess(res.message);
+            }
           }, 500);
         } else {
           const activeStep = ['save', 'pdf', 'email', 'upload'].find(function(id) { return processingStepStates[id] === 'active'; }) || 'upload';
@@ -3039,7 +3073,14 @@ function bindEvents() {
   bindCategoryEvents();
   bindKaizenTypeEvents();
 
+  document.addEventListener('click', function(ev) {
+    const img = ev.target && ev.target.closest ? ev.target.closest('.kz-zoom') : null;
+    if (img) openImageViewer(img.dataset.full, img.dataset.label);
+  });
+
   document.addEventListener('keydown', function(ev) {
+    const viewer = document.getElementById('imageViewerModal');
+    if (ev.key === 'Escape' && viewer) { viewer.remove(); return; }
     if (ev.key === 'Escape') {
       if (!document.getElementById('formModal').classList.contains('hidden')) {
         if (!isSubmitting) closeForm();
@@ -3068,6 +3109,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var lg = document.querySelector('#loginScreen img[alt="Bitwise Group"]');
     var hl = document.getElementById('headerLogo');
     if (lg && hl) hl.src = lg.src;
+    var ll = document.querySelector('.loading-logo img');
+    if (lg && ll) ll.src = lg.src;
   })();
 
   const saved = loadSession();

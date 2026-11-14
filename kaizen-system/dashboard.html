@@ -449,7 +449,6 @@
         </div>
 
         <div id="modalHistoryList" class="space-y-3">
-          <!-- Item Cards will be rendered here -->
         </div>
         <div id="modalEmptyState" class="text-center py-10 text-slate-400 hidden">
           ยังไม่มีข้อมูล Kaizen ในปีที่เลือก
@@ -461,10 +460,8 @@
       </div>
     </div>
   </div>
-
-  <!-- Application Logic -->
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgZFSU9i6V9fq7q8U6_DBn-XggZ58-Hzdm47TRbFmUvb1o0CvsO9PjrhiILoOwPyDepw/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwilCRzDsZ37Q96kIRfwTWhP5vcgHjI14KeOPhf8TTIhRmxE_Owo_Slyp0pCrSq_onF5Q/exec';
 
     const CATEGORY_MAP = {
       'P': { name: 'P: ผลผลิต', color: '#1B6E4C' },
@@ -491,18 +488,15 @@
     let DASHBOARD_RAW = null;
     let currentYear = null;
     let selectedDepartment = '';
-    let currentStatusFilter = 'all'; // all | achieved | not_achieved
+    let currentStatusFilter = 'all';
     let searchQuery = '';
     let autoRefreshTimer = null;
     let countdownInterval = null;
     let secondsLeft = 300;
-
-    // Charts instances
     let monthlyChart = null;
     let categoryChartInstance = null;
     let typeChartInstance = null;
 
-    // Helper: Escape HTML
     function escapeHtml(str) {
       if (str === null || str === undefined) return '';
       return String(str)
@@ -899,14 +893,13 @@
       });
     }
 
-    // Render Employee Table with Filter & Search
-    function renderEmployeeTable() {
-      if (!DASHBOARD_RAW || !DASHBOARD_RAW.employees) return;
-
+    // รายชื่อพนักงานหลังกรอง (ใช้ร่วมกันทั้งตารางและ Export)
+    function getFilteredEmployees() {
+      if (!DASHBOARD_RAW || !DASHBOARD_RAW.employees) return [];
       const q = searchQuery.toLowerCase().trim();
-      const filtered = DASHBOARD_RAW.employees.filter(function(e) {
+      return DASHBOARD_RAW.employees.filter(function(e) {
         const matchSearch = !q ||
-          (e.empId && e.empId.toLowerCase().includes(q)) ||
+          (e.empId && String(e.empId).toLowerCase().includes(q)) ||
           (e.name && e.name.toLowerCase().includes(q)) ||
           (e.department && e.department.toLowerCase().includes(q)) ||
           (e.position && e.position.toLowerCase().includes(q));
@@ -917,6 +910,13 @@
 
         return matchSearch && matchStatus;
       });
+    }
+
+    // Render Employee Table with Filter & Search
+    function renderEmployeeTable() {
+      if (!DASHBOARD_RAW || !DASHBOARD_RAW.employees) return;
+
+      const filtered = getFilteredEmployees();
 
       document.getElementById('filteredEmpCount').textContent = filtered.length;
       const tbody = document.getElementById('employeeTableBody');
@@ -1031,7 +1031,7 @@
     // Export Employee Data to Excel
     function exportToExcel() {
       if (!DASHBOARD_RAW || !DASHBOARD_RAW.employees) return;
-      const dataToExport = DASHBOARD_RAW.employees.map(function(e) {
+      const dataToExport = getFilteredEmployees().map(function(e) {
         return {
           'รหัสพนักงาน': e.empId,
           'ชื่อ-นามสกุล': e.name,
